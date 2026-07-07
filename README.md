@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rental ERP
 
-## Getting Started
+Enterprise rental management system for **Manyar Tent Service** (Pakistan).
 
-First, run the development server:
+Built to manage tent and event rental operations, with a long-term path toward a scalable, multi-tenant SaaS platform.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack
+
+| Layer        | Technology                          |
+| ------------ | ----------------------------------- |
+| Framework    | [Next.js 16](https://nextjs.org) (App Router) |
+| Language     | TypeScript (strict mode)            |
+| Styling      | Tailwind CSS v4                     |
+| Linting      | ESLint (eslint-config-next)         |
+| Runtime      | React 19                            |
+
+## Purpose
+
+Rental ERP centralizes rental business operations — inventory, bookings, customers, billing, and reporting — for tent and event rental companies. This repository is the foundation for that platform.
+
+## Folder Structure
+
+```
+rental-erp/
+├── docs/                    # Project documentation
+├── public/                  # Static assets
+├── src/
+│   ├── app/                 # Next.js App Router (routes, layouts, pages)
+│   ├── modules/             # Feature modules (domain-specific code)
+│   └── shared/              # Cross-cutting, reusable code
+│       ├── components/      # Shared UI components
+│       ├── config/          # App configuration
+│       ├── constants/       # Application constants
+│       ├── hooks/           # Shared React hooks
+│       ├── lib/             # Third-party integrations & core utilities
+│       ├── services/        # API / data access layer
+│       ├── types/           # Shared TypeScript types
+│       └── utils/           # Pure helper functions
+├── eslint.config.mjs        # ESLint configuration
+├── next.config.ts           # Next.js configuration
+├── postcss.config.mjs       # PostCSS / Tailwind pipeline
+└── tsconfig.json            # TypeScript configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Architecture Notes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **`src/app/`** — Routing and page composition only. Keep business logic in modules.
+- **`src/modules/`** — Feature-based folders (e.g. customers, inventory) added as modules are built.
+- **`src/shared/`** — Code reused across multiple modules. Avoid importing module code from other modules directly.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How to Run Locally
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+- Node.js 20+
+- npm
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Install dependencies
+npm install
 
-## Deploy on Vercel
+# Start development server
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Other Commands
+
+```bash
+npm run lint    # Run ESLint
+npm run build   # Production build
+npm run start   # Start production server (after build)
+```
+
+## Version
+
+**0.1.0** — Project foundation (Milestone 1)
+
+## Documentation
+
+| Document | Purpose |
+| -------- | ------- |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Coding standards, branching, commits, and review process |
+| [CHANGELOG.md](./CHANGELOG.md) | Version history and release notes |
+| [docs/](./docs/) | Technical documentation (architecture, API, UI, deployment, etc.) |

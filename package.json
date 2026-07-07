@@ -1,7 +1,12 @@
 {
   "name": "rental-erp",
   "version": "0.1.0",
+  "description": "Enterprise rental management system for Manyar Tent Service",
   "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
