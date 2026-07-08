@@ -14,3 +14,9 @@ export {
   type CreateSharedNotificationDepsOptions,
   type SharedNotificationDeps,
 } from "./shared-notification-deps";
+export {
+  createSharedStorageDeps,
+  createFileStorageFromExecutionContext,
+  type CreateSharedStorageDepsOptions,
+  type SharedStorageDeps,
+} from "./shared-storage-deps";
