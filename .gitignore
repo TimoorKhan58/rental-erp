@@ -44,3 +44,8 @@ yarn-error.log*
 # TypeScript — incremental build info and auto-generated declarations
 *.tsbuildinfo
 next-env.d.ts
+
+# Prisma — generated client (regenerated via `npx prisma generate`)
+/src/generated/
+
+/src/generated/prisma

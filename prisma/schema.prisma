@@ -1,0 +1,868 @@
+// Prisma schema — Rental ERP (M3-FINAL-FIX)
+// Docs: https://pris.ly/d/prisma-schema
+//
+// Service-layer validation (not enforced in Prisma):
+// - quantity > 0 (RentalOrderItem, DispatchItem, RepairItem, ReturnInspectionItem, etc.)
+// - amount >= 0 (Payment, Expense, and other monetary fields)
+// - repairCost >= 0 (RepairItem)
+// - width > 0, height > 0 (DashboardWidget)
+// - paddingLength > 0, currentNumber >= startingNumber (DocumentSequence)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Access control ────────────────────────────────────────────
+//
+// Soft delete (deletedAt, deletedBy) is planned for a future production phase
+// after business approval. Not implemented in the current schema freeze.
+
+model Role {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String @unique
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  name                   String
+  email                  String                 @unique
+  passwordHash             String
+  roleId                 String                 @db.Uuid
+  role                   Role                   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive               Boolean                @default(true)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  inventoryTransactions  InventoryTransaction[]
+  rentalOrders           RentalOrder[]
+  dispatches             Dispatch[]
+  returnInspections      ReturnInspection[]
+  repairs                Repair[]
+  receivedPayments       Payment[]
+  recordedExpenses       Expense[]
+  auditLogs              AuditLog[]
+  notificationRecipients NotificationRecipient[]
+  userDashboards         UserDashboard[]
+
+  @@index([roleId])
+  @@index([isActive])
+  @@map("users")
+}
+
+// ── Customers ─────────────────────────────────────────────────
+//
+// Soft delete (deletedAt, deletedBy) is planned for a future production phase
+// after business approval. Not implemented in the current schema freeze.
+
+model Customer {
+  id           String   @id @default(uuid()) @db.Uuid
+  customerCode String   @unique
+  name         String
+  phone        String   @unique
+  cnic         String?
+  address      String
+  notes        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  rentalOrders RentalOrder[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("customers")
+}
+
+// ── Catalog ─────────────────────────────────────────────────────
+//
+// Soft delete (deletedAt, deletedBy) is planned for a future production phase
+// after business approval. Not implemented in the current schema freeze.
+
+model Category {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  products    Product[]
+
+  @@index([isActive])
+  @@map("categories")
+}
+
+model Product {
+  id                String    @id @default(uuid()) @db.Uuid
+  productCode       String    @unique
+  categoryId        String    @db.Uuid
+  category          Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name              String
+  description       String?
+  purchaseCost      Decimal   @db.Decimal(12, 2)
+  rentalPricePerDay Decimal   @db.Decimal(12, 2)
+  totalQuantity     Int
+  minimumStock      Int       @default(0)
+  unit              String
+  isRentable        Boolean   @default(true)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  inventory         Inventory?
+  rentalOrderItems  RentalOrderItem[]
+  dispatchItems     DispatchItem[]
+  repairItems         RepairItem[]
+
+  @@index([categoryId])
+  @@index([name])
+  @@index([isActive, isRentable])
+  @@map("products")
+}
+
+// ── Inventory ───────────────────────────────────────────────────
+
+enum InventoryTransactionType {
+  PURCHASE
+  ADJUSTMENT
+  RESERVE
+  DISPATCH
+  RETURN
+  REPAIR_OUT
+  REPAIR_IN
+  LOST
+  DAMAGED
+}
+
+model Inventory {
+  id                String                 @id @default(uuid()) @db.Uuid
+  productId         String                 @unique @db.Uuid
+  product           Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  totalQuantity     Int
+  availableQuantity Int
+  reservedQuantity  Int
+  onRentQuantity    Int
+  repairQuantity    Int
+  lostQuantity      Int
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  transactions      InventoryTransaction[]
+
+  @@index([productId])
+  @@map("inventory")
+}
+
+model InventoryTransaction {
+  id                String                   @id @default(uuid()) @db.Uuid
+  inventoryId       String                   @db.Uuid
+  inventory         Inventory                @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  transactionType   InventoryTransactionType
+  quantity          Int
+  previousQuantity  Int
+  newQuantity       Int
+  referenceNumber   String?
+  notes             String
+  createdAt         DateTime                 @default(now())
+  createdById       String                   @db.Uuid
+  createdBy         User                     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([inventoryId])
+  @@index([transactionType])
+  @@index([createdAt])
+  @@map("inventory_transactions")
+}
+
+// ── Rental orders ───────────────────────────────────────────────
+
+enum RentalOrderStatus {
+  DRAFT
+  CONFIRMED
+  RESERVED
+  DISPATCHED
+  ON_RENT
+  PARTIALLY_RETURNED
+  RETURNED
+  COMPLETED
+  CANCELLED
+}
+
+model RentalOrder {
+  id                 String             @id @default(uuid()) @db.Uuid
+  orderNumber        String             @unique
+  customerId         String             @db.Uuid
+  customer           Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  status             RentalOrderStatus  @default(DRAFT)
+  bookingDate        DateTime           @db.Date
+  eventStartDate     DateTime           @db.Date
+  eventEndDate       DateTime           @db.Date
+  expectedReturnDate DateTime           @db.Date
+  actualReturnDate   DateTime?          @db.Date
+  deliveryRequired   Boolean
+  deliveryAddress    String
+  deliveryCharges    Decimal            @db.Decimal(12, 2)
+  labourCharges      Decimal            @db.Decimal(12, 2)
+  discount           Decimal            @db.Decimal(12, 2)
+  notes              String?
+  subtotal           Decimal            @db.Decimal(12, 2)
+  grandTotal         Decimal            @db.Decimal(12, 2)
+  createdById        String             @db.Uuid
+  createdBy          User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  items              RentalOrderItem[]
+  dispatches         Dispatch[]
+  returnInspections  ReturnInspection[]
+  payments           Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([customerId, status])
+  @@index([eventStartDate])
+  @@index([eventEndDate])
+  @@map("rental_orders")
+}
+
+model RentalOrderItem {
+  id                String      @id @default(uuid()) @db.Uuid
+  rentalOrderId     String      @db.Uuid
+  rentalOrder       RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  productId         String      @db.Uuid
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity          Int
+  rentalPricePerDay Decimal     @db.Decimal(12, 2)
+  numberOfDays      Int
+  lineTotal         Decimal     @db.Decimal(12, 2)
+  notes             String?
+  dispatchItems         DispatchItem[]
+  returnInspectionItems ReturnInspectionItem[]
+
+  @@index([rentalOrderId])
+  @@index([productId])
+  @@map("rental_order_items")
+}
+
+// ── Dispatch & delivery ─────────────────────────────────────────
+
+enum DeliveryMethod {
+  DELIVERY
+  CUSTOMER_PICKUP
+}
+
+enum DispatchStatus {
+  PENDING
+  LOADED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+model Dispatch {
+  id              String         @id @default(uuid()) @db.Uuid
+  dispatchNumber  String         @unique
+  rentalOrderId   String         @db.Uuid
+  rentalOrder     RentalOrder    @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  dispatchDate    DateTime
+  deliveryMethod  DeliveryMethod
+  // Future architecture: vehicleNumber will migrate to a dedicated Vehicle module.
+  // driverName and driverPhone will migrate to dedicated Employee and Driver modules.
+  // These free-text fields are retained until those modules are implemented.
+  /// Temporary free-text fields — will migrate to dedicated Vehicle and Driver modules.
+  vehicleNumber   String?
+  /// Temporary free-text fields — will migrate to dedicated Employee and Driver modules.
+  driverName      String?
+  /// Temporary free-text fields — will migrate to dedicated Employee and Driver modules.
+  driverPhone     String?
+  deliveryAddress String
+  remarks         String?
+  status          DispatchStatus @default(PENDING)
+  loadedAt        DateTime?
+  departedAt      DateTime?
+  deliveredAt     DateTime?
+  createdById     String         @db.Uuid
+  createdBy       User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  items           DispatchItem[]
+
+  @@index([rentalOrderId])
+  @@index([dispatchDate])
+  @@index([status])
+  @@map("dispatches")
+}
+
+model DispatchItem {
+  id                String           @id @default(uuid()) @db.Uuid
+  dispatchId        String           @db.Uuid
+  dispatch          Dispatch         @relation(fields: [dispatchId], references: [id], onDelete: Restrict)
+  productId         String           @db.Uuid
+  product           Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  rentalOrderItemId String?          @db.Uuid
+  rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
+  quantity          Int
+  notes             String?
+
+  @@index([dispatchId])
+  @@index([productId])
+  @@map("dispatch_items")
+}
+
+// ── Return & inspection ─────────────────────────────────────────
+
+enum ReturnStatus {
+  PENDING
+  INSPECTING
+  COMPLETED
+}
+
+model ReturnInspection {
+  id             String                 @id @default(uuid()) @db.Uuid
+  returnNumber   String                 @unique
+  rentalOrderId  String                 @db.Uuid
+  rentalOrder    RentalOrder            @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  inspectionDate DateTime
+  inspectedById  String                 @db.Uuid
+  inspectedBy    User                   @relation(fields: [inspectedById], references: [id], onDelete: Restrict)
+  remarks        String?
+  status         ReturnStatus           @default(PENDING)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  items          ReturnInspectionItem[]
+  repairs        Repair[]
+
+  @@index([rentalOrderId])
+  @@index([inspectionDate])
+  @@index([status])
+  @@map("return_inspections")
+}
+
+model ReturnInspectionItem {
+  id                 String           @id @default(uuid()) @db.Uuid
+  returnInspectionId String           @db.Uuid
+  returnInspection   ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
+  rentalOrderItemId  String           @db.Uuid
+  rentalOrderItem    RentalOrderItem  @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
+  returnedQuantity   Int
+  goodQuantity       Int
+  brokenQuantity     Int
+  repairQuantity     Int
+  lostQuantity       Int
+  missingQuantity    Int
+  damageCharge       Decimal          @db.Decimal(12, 2)
+  notes              String?
+
+  @@map("return_inspection_items")
+}
+
+// ── Repair management ───────────────────────────────────────────
+
+enum RepairStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  WRITE_OFF
+}
+
+enum RepairType {
+  CLEANING
+  WELDING
+  STITCHING
+  PAINTING
+  FRAME_REPAIR
+  FABRIC_REPAIR
+  OTHER
+}
+
+model Repair {
+  id                 String           @id @default(uuid()) @db.Uuid
+  repairNumber       String           @unique
+  returnInspectionId String           @db.Uuid
+  returnInspection   ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
+  repairDate         DateTime
+  assignedTo         String
+  estimatedCost      Decimal          @db.Decimal(12, 2)
+  actualCost         Decimal          @db.Decimal(12, 2)
+  status             RepairStatus     @default(PENDING)
+  remarks            String?
+  completedAt        DateTime?
+  createdById        String           @db.Uuid
+  createdBy          User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  items              RepairItem[]
+
+  @@index([repairDate])
+  @@index([status])
+  @@index([returnInspectionId])
+  @@map("repairs")
+}
+
+model RepairItem {
+  id         String     @id @default(uuid()) @db.Uuid
+  repairId   String     @db.Uuid
+  repair     Repair     @relation(fields: [repairId], references: [id], onDelete: Restrict)
+  productId  String     @db.Uuid
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity   Int
+  repairType RepairType
+  repairCost Decimal    @db.Decimal(12, 2)
+  remarks    String?
+
+  @@index([repairId])
+  @@index([productId])
+  @@map("repair_items")
+}
+
+// ── Payments ────────────────────────────────────────────────────
+
+enum PaymentType {
+  ADVANCE
+  PARTIAL
+  FINAL
+  REFUND
+  DAMAGE_RECOVERY
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  JAZZCASH
+  EASYPAISA
+  CHEQUE
+  OTHER
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  paymentNumber   String        @unique
+  rentalOrderId   String        @db.Uuid
+  rentalOrder     RentalOrder   @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  paymentDate     DateTime
+  paymentType     PaymentType
+  paymentMethod   PaymentMethod
+  amount          Decimal       @db.Decimal(12, 2)
+  referenceNumber String?
+  receivedById    String        @db.Uuid
+  receivedBy      User          @relation(fields: [receivedById], references: [id], onDelete: Restrict)
+  remarks         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([paymentDate])
+  @@index([paymentType])
+  @@index([paymentMethod])
+  @@index([rentalOrderId])
+  @@index([rentalOrderId, paymentDate])
+  @@map("payments")
+}
+
+// ── Expenses ────────────────────────────────────────────────────
+
+enum ExpenseCategory {
+  FUEL
+  LABOUR
+  VEHICLE_MAINTENANCE
+  REPAIR
+  OFFICE
+  PURCHASE
+  UTILITY
+  TRANSPORT
+  MISCELLANEOUS
+}
+
+model Expense {
+  id              String          @id @default(uuid()) @db.Uuid
+  expenseNumber   String          @unique
+  expenseDate     DateTime
+  expenseCategory ExpenseCategory
+  amount          Decimal         @db.Decimal(12, 2)
+  paymentMethod   PaymentMethod
+  vendor          String?
+  description     String
+  referenceNumber String?
+  recordedById    String          @db.Uuid
+  recordedBy      User            @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([expenseDate])
+  @@index([expenseCategory])
+  @@index([expenseDate, expenseCategory])
+  @@map("expenses")
+}
+
+// ── Company settings ────────────────────────────────────────────
+//
+// createdBy / updatedBy audit fields may be introduced in a future phase if
+// enhanced configuration auditing becomes a business requirement.
+
+enum DocumentType {
+  RENTAL_ORDER
+  PAYMENT
+  DISPATCH
+  EXPENSE
+  REPAIR
+  CUSTOMER
+  PRODUCT
+}
+
+model CompanySetting {
+  id                     String             @id @default(uuid()) @db.Uuid
+  companyName            String
+  businessName           String
+  ownerName              String?
+  phone                  String
+  secondaryPhone         String?
+  email                  String
+  website                String?
+  address                String
+  city                   String
+  province               String
+  country                String
+  postalCode             String?
+  ntn                    String?
+  strn                   String?
+  logoUrl                String?
+  faviconUrl             String?
+  currencyCode           String
+  currencySymbol         String
+  timezone               String
+  language               String
+  dateFormat             String
+  timeFormat             String
+  numberFormat           String
+  defaultRentalDays      Int
+  defaultTaxPercentage   Decimal            @db.Decimal(5, 2)
+  securityDepositEnabled Boolean            @default(false)
+  lateFeeEnabled         Boolean            @default(false)
+  isActive               Boolean            @default(true)
+  setupCompleted         Boolean            @default(false)
+  maintenanceMode        Boolean            @default(false)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  documentSequences      DocumentSequence[]
+
+  @@map("company_settings")
+}
+
+model DocumentSequence {
+  id               String         @id @default(uuid()) @db.Uuid
+  companySettingId String         @db.Uuid
+  companySetting   CompanySetting @relation(fields: [companySettingId], references: [id], onDelete: Restrict)
+  documentType     DocumentType
+  prefix           String
+  suffix           String?
+  startingNumber   Int
+  currentNumber    Int
+  paddingLength    Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([companySettingId, documentType])
+  @@map("document_sequences")
+}
+
+// ── System settings ─────────────────────────────────────────────
+//
+// createdBy / updatedBy audit fields may be introduced in a future phase if
+// enhanced configuration auditing becomes a business requirement.
+
+enum Environment {
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum BackupFrequency {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model SystemSetting {
+  id                         String          @id @default(uuid()) @db.Uuid
+  appName                    String
+  appVersion                 String
+  environment                Environment     @default(DEVELOPMENT)
+  supportEmail               String?
+  supportPhone               String?
+  minPasswordLength          Int             @default(8)
+  maxLoginAttempts           Int             @default(5)
+  lockoutDurationMinutes     Int             @default(30)
+  requireEmailVerification   Boolean         @default(false)
+  allowPasswordReset         Boolean         @default(true)
+  sessionTimeoutMinutes      Int             @default(60)
+  rememberMeDurationDays     Int             @default(7)
+  maxConcurrentSessions      Int             @default(3)
+  passwordExpiryDays         Int?
+  ipWhitelistEnabled         Boolean         @default(false)
+  auditLogRetentionDays      Int             @default(90)
+  maxUploadSizeMb            Int             @default(10)
+  allowedFileTypes           String
+  uploadStoragePath          String?
+  emailNotificationsEnabled  Boolean         @default(true)
+  smsNotificationsEnabled    Boolean         @default(false)
+  defaultNotificationEmail   String?
+  backupEnabled              Boolean         @default(false)
+  backupFrequency            BackupFrequency @default(DAILY)
+  backupRetentionDays        Int             @default(30)
+  lastBackupAt               DateTime?
+  defaultDashboardView       String          @default("overview")
+  recentItemsLimit           Int             @default(10)
+  chartDefaultPeriodDays     Int             @default(30)
+  createdAt                  DateTime        @default(now())
+  updatedAt                  DateTime        @updatedAt
+  featureFlags               FeatureFlag[]
+
+  @@map("system_settings")
+}
+
+model FeatureFlag {
+  id              String        @id @default(uuid()) @db.Uuid
+  systemSettingId String        @db.Uuid
+  systemSetting   SystemSetting @relation(fields: [systemSettingId], references: [id], onDelete: Restrict)
+  featureKey      String
+  displayName     String
+  enabled         Boolean       @default(false)
+  description     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([systemSettingId, featureKey])
+  @@index([featureKey])
+  @@index([enabled])
+  @@map("feature_flags")
+}
+
+// ── Audit log ───────────────────────────────────────────────────
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  LOGIN
+  LOGOUT
+  FAILED_LOGIN
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+  APPROVE
+  REJECT
+  CANCEL
+  DISPATCH
+  RETURN
+  PAYMENT_RECEIVED
+  EXPENSE_RECORDED
+  EXPORT
+  IMPORT
+  PRINT
+}
+
+enum AuditStatus {
+  SUCCESS
+  FAILED
+  WARNING
+}
+
+model AuditLog {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String?     @db.Uuid
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  module       String
+  entityName   String
+  recordId     String
+  action       AuditAction
+  status       AuditStatus
+  oldValues    Json?
+  newValues    Json?
+  ipAddress    String?
+  userAgent    String?
+  requestId    String?
+  httpMethod   String?
+  route        String?
+  errorMessage String?
+  createdAt    DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([module])
+  @@index([entityName])
+  @@index([recordId])
+  @@index([action])
+  @@index([status])
+  @@index([requestId])
+  @@map("audit_logs")
+}
+
+// ── Notifications ───────────────────────────────────────────────
+//
+// createdBy / updatedBy audit fields may be introduced in a future phase if
+// enhanced configuration auditing becomes a business requirement.
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model NotificationTemplate {
+  id            String               @id @default(uuid()) @db.Uuid
+  name          String
+  eventKey      String               @unique
+  channel       NotificationChannel
+  subject       String?
+  title         String
+  body          String
+  enabled       Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  notifications Notification[]
+
+  @@map("notification_templates")
+}
+
+model Notification {
+  id             String                 @id @default(uuid()) @db.Uuid
+  templateId     String?                @db.Uuid
+  template       NotificationTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  channel        NotificationChannel
+  status         NotificationStatus     @default(PENDING)
+  priority       NotificationPriority   @default(NORMAL)
+  module         String
+  entityName     String
+  recordId       String
+  subject        String
+  title          String
+  body           String
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  failedAt       DateTime?
+  retryCount     Int                    @default(0)
+  failureReason  String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  recipients     NotificationRecipient[]
+
+  @@index([status])
+  @@index([channel])
+  @@index([scheduledAt])
+  @@index([sentAt])
+  @@index([module])
+  @@index([entityName])
+  @@index([recordId])
+  @@map("notifications")
+}
+
+model NotificationRecipient {
+  id                String       @id @default(uuid()) @db.Uuid
+  notificationId    String       @db.Uuid
+  notification      Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  userId            String?      @db.Uuid
+  user              User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  recipientName     String
+  recipientEmail    String?
+  recipientPhone    String?
+  recipientWhatsApp String?
+  isRead            Boolean      @default(false)
+  readAt            DateTime?
+  createdAt         DateTime     @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notification_recipients")
+}
+
+// ── Dashboard ───────────────────────────────────────────────────
+//
+// createdBy / updatedBy audit fields may be introduced in a future phase if
+// enhanced configuration auditing becomes a business requirement.
+
+enum WidgetType {
+  KPI
+  CHART
+  TABLE
+  LIST
+  CALENDAR
+  METRIC
+  CUSTOM
+}
+
+model Dashboard {
+  id             String            @id @default(uuid()) @db.Uuid
+  name           String
+  code           String            @unique
+  description    String?
+  isDefault      Boolean           @default(false)
+  enabled        Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  widgets        DashboardWidget[]
+  userDashboards UserDashboard[]
+
+  @@map("dashboards")
+}
+
+model DashboardWidget {
+  id                     String    @id @default(uuid()) @db.Uuid
+  dashboardId            String    @db.Uuid
+  dashboard              Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  widgetKey              String
+  title                  String
+  widgetType             WidgetType
+  configuration          Json
+  row                    Int
+  column                 Int
+  width                  Int
+  height                 Int
+  refreshIntervalSeconds Int?
+  visible                Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([dashboardId, widgetKey])
+  @@index([dashboardId])
+  @@index([widgetKey])
+  @@index([visible])
+  @@map("dashboard_widgets")
+}
+
+model UserDashboard {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dashboardId  String    @db.Uuid
+  dashboard    Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Restrict)
+  isFavorite   Boolean   @default(false)
+  isDefault    Boolean   @default(false)
+  customLayout Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, dashboardId])
+  @@index([userId])
+  @@index([dashboardId])
+  @@index([isFavorite])
+  @@map("user_dashboards")
+}

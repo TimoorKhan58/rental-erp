@@ -1,0 +1,18 @@
+export type Brand<T, B extends string> = T & { readonly __brand: B };
+
+export type UserId = Brand<string, "UserId">;
+export type CustomerId = Brand<string, "CustomerId">;
+export type ProductId = Brand<string, "ProductId">;
+export type RentalOrderId = Brand<string, "RentalOrderId">;
+export type DispatchId = Brand<string, "DispatchId">;
+export type ReturnInspectionId = Brand<string, "ReturnInspectionId">;
+export type RepairId = Brand<string, "RepairId">;
+export type PaymentId = Brand<string, "PaymentId">;
+export type ExpenseId = Brand<string, "ExpenseId">;
+export type RoleId = Brand<string, "RoleId">;
+export type InventoryId = Brand<string, "InventoryId">;
+export type NotificationId = Brand<string, "NotificationId">;
+export type AuditLogId = Brand<string, "AuditLogId">;
+export type DashboardId = Brand<string, "DashboardId">;
+export type CompanySettingId = Brand<string, "CompanySettingId">;
+export type DocumentSequenceId = Brand<string, "DocumentSequenceId">;
