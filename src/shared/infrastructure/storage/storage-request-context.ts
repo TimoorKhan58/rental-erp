@@ -1,12 +1,12 @@
 import type { RequestContext } from "@/shared/application/context";
 
+import {
+  createRequestLogContext,
+  type RequestLogContext,
+} from "@/shared/infrastructure/request";
+
 export function createStorageLogContext(
   request: RequestContext,
-): Record<string, unknown> {
-  return {
-    requestId: request.requestId,
-    userId: request.userId,
-    route: request.route,
-    httpMethod: request.httpMethod,
-  };
+): RequestLogContext {
+  return createRequestLogContext(request);
 }

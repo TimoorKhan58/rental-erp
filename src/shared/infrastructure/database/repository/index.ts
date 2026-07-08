@@ -1,37 +1,25 @@
-export { mapPrismaError } from "./prisma-error-mapper";
-export {
-  createPrismaClient,
-  getPrismaClient,
-  prisma,
-  default as defaultPrismaClient,
-} from "./prisma-client";
-export type {
-  DbClient,
-  PrismaClient,
-  TransactionClient,
-} from "./prisma-types";
-export {
-  resolveDbClient,
-  resolveDbClientFromContext,
-  withPrismaError,
-} from "./repository-base";
 export {
   createRepositoryBase,
   createRepositoryBaseFromExecutionContext,
   createRepositoryBaseFromFullExecutionContext,
   createRepositoryBaseFromSharedDeps,
-  createRepositoryRunner,
   createRepositoryRunnerFromExecutionContext,
   createRepositoryRunnerFromOptions,
   createRepositoryRunnerFromSharedDeps,
+} from "./create-repository-base";
+export {
   createPrismaRepositoryBase,
   PrismaRepositoryBase,
+} from "./prisma-repository-base";
+export {
   repositoryCount,
   repositoryCreate,
   repositoryDelete,
   repositoryFindFirst,
   repositoryFindMany,
   repositoryUpdate,
+} from "./repository-operations";
+export {
   buildPaginationMeta,
   buildPrismaSearchWhere,
   buildSearchWhereFromInput,
@@ -42,6 +30,18 @@ export {
   normalizeSearchTerm,
   resolveSearchSpec,
   runRepositoryPagedQuery,
+  type ComposedPrismaQuery,
+  type ComposePrismaQueryOptions,
+  type CreateRepositoryQuerySpecInput,
+  type ExecutePagedQueryOptions,
+  type PagedQueryArgs,
+  type PagedQueryHandlers,
+  type RepositoryQuerySpec,
+  type ResolvedSearchSpec,
+  type RunRepositoryPagedQueryOptions,
+  type SearchInput,
+} from "./query";
+export {
   createRepositoryUnitOfWork,
   createRepositoryUnitOfWorkContext,
   createRepositoryUnitOfWorkContextForTransaction,
@@ -51,6 +51,12 @@ export {
   runWithRepositoryUnitOfWorkFromExecutionContext,
   runWithUnitOfWorkRepositories,
   runWithUnitOfWorkRepositoriesFromExecutionContext,
+  type IUnitOfWork,
+  type RepositoryUnitOfWorkContext,
+  type UnitOfWorkOperation,
+  type UnitOfWorkRepositoryFactory,
+} from "./unit-of-work";
+export {
   createObservableRepositoryRunner,
   createObservableRepositoryRunnerFromExecutionContext,
   createObservableRepositoryRunnerFromSharedDeps,
@@ -60,31 +66,18 @@ export {
   wrapRepositoryRunnerWithObservability,
   type CreateObservableRepositoryRunnerOptions,
   type IRepositoryMetrics,
-  type IUnitOfWork,
   type ObservableRepositoryRunnerOptions,
   type RepositoryMetricsObservation,
   type RepositoryObservationContext,
   type RepositoryObservationMeta,
-  type RepositoryUnitOfWorkContext,
-  type UnitOfWorkOperation,
-  type UnitOfWorkRepositoryFactory,
-  type ComposedPrismaQuery,
-  type ComposePrismaQueryOptions,
-  type CreateRepositoryQuerySpecInput,
-  type ExecutePagedQueryOptions,
-  type PagedQueryArgs,
-  type PagedQueryHandlers,
-  type RepositoryBaseOptions,
-  type RepositoryExecutionContext,
-  type RepositoryFactoryOptions,
-  type RepositoryOperationMeta,
-  type RepositoryQuerySpec,
-  type RepositoryRunner,
-  type ResolvedSearchSpec,
-  type RunRepositoryPagedQueryOptions,
-  type SearchInput,
-} from "./repository";
+} from "./observability";
 export {
-  PrismaTransactionManager,
-  type ITransactionManager,
-} from "./transaction-manager";
+  createRepositoryRunner,
+  type RepositoryRunner,
+} from "./repository-runner";
+export type {
+  RepositoryBaseOptions,
+  RepositoryExecutionContext,
+  RepositoryFactoryOptions,
+  RepositoryOperationMeta,
+} from "./repository-types";
