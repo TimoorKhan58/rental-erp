@@ -1,4 +1,5 @@
 import type { CustomerDto } from "@/modules/customer/application/dtos/customer.dto";
+import type { PaginatedResult, PaginationMeta } from "@/shared/domain/pagination";
 
 export interface CustomerResponse {
   id: string;
@@ -13,6 +14,11 @@ export interface CustomerResponse {
   updatedAt: string;
 }
 
+export interface CustomerListResponse {
+  items: CustomerResponse[];
+  meta: PaginationMeta;
+}
+
 export function toCustomerResponse(dto: CustomerDto): CustomerResponse {
   return {
     id: dto.id,
@@ -25,5 +31,14 @@ export function toCustomerResponse(dto: CustomerDto): CustomerResponse {
     isActive: dto.isActive,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+  };
+}
+
+export function toCustomerListResponse(
+  result: PaginatedResult<CustomerDto>,
+): CustomerListResponse {
+  return {
+    items: result.items.map(toCustomerResponse),
+    meta: result.meta,
   };
 }

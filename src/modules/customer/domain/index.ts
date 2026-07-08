@@ -3,6 +3,14 @@ export {
   CustomerDomainError,
   CustomerInvariantError,
 } from "./customer.errors";
+export {
+  CUSTOMER_ENTITY_NAME,
+  CUSTOMER_MODULE,
+  CUSTOMER_SEARCH_FIELDS,
+  CUSTOMER_SORT_FIELDS,
+  type CustomerSortField,
+} from "./customer.constants";
+export type { CustomerListQuery } from "./customer-list.query";
 export type { ICustomerRepository } from "./customer.repository.interface";
 export type { CreateCustomerData, UpdateCustomerData } from "./customer.types";
 export {

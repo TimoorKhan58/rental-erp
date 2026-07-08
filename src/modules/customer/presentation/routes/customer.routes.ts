@@ -1,6 +1,5 @@
 /**
  * Customer API route definitions.
- * Endpoints will be wired in Phase 5-002.
  */
 
 export const CUSTOMER_ROUTES = {
