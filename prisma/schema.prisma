@@ -45,7 +45,11 @@ model User {
   dispatches             Dispatch[]
   returnInspections      ReturnInspection[]
   repairs                Repair[]
-  receivedPayments       Payment[]
+  maintenances           Maintenance[]
+  rentalInvoices         RentalInvoice[]
+  createdPayments        Payment[]
+  createdJournalEntries  JournalEntry[] @relation("JournalEntryCreatedBy")
+  postedJournalEntries   JournalEntry[] @relation("JournalEntryPostedBy")
   recordedExpenses       Expense[]
   auditLogs              AuditLog[]
   notificationRecipients NotificationRecipient[]
@@ -72,7 +76,9 @@ model Customer {
   isActive     Boolean  @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  rentalOrders RentalOrder[]
+  rentalOrders   RentalOrder[]
+  rentalInvoices RentalInvoice[]
+  payments       Payment[]
 
   @@index([name])
   @@index([isActive])
@@ -92,9 +98,10 @@ model Supplier {
   email        String?
   address      String
   notes        String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  purchaseOrders PurchaseOrder[]
 
   @@index([name])
   @@index([isActive])
@@ -116,8 +123,12 @@ model Warehouse {
   phone         String?
   isActive      Boolean     @default(true)
   createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  inventories   Inventory[]
+  updatedAt      DateTime        @updatedAt
+  inventories    Inventory[]
+  purchaseOrders PurchaseOrder[]
+  rentalOrders   RentalOrder[]
+  repairs        Repair[]
+  maintenances   Maintenance[]
 
   @@index([name])
   @@index([isActive])
@@ -156,10 +167,13 @@ model Product {
   isActive          Boolean   @default(true)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  inventories       Inventory[]
-  rentalOrderItems  RentalOrderItem[]
-  dispatchItems     DispatchItem[]
-  repairItems         RepairItem[]
+  inventories          Inventory[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  rentalOrderItems     RentalOrderItem[]
+  dispatchItems        DispatchItem[]
+  repairItems          RepairItem[]
+  repairs              Repair[]
+  maintenances         Maintenance[]
 
   @@index([categoryId])
   @@index([name])
@@ -192,6 +206,7 @@ model Inventory {
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
   transactions     InventoryTransaction[]
+  maintenances     Maintenance[]
 
   @@unique([productId, warehouseId])
   @@index([productId])
@@ -225,6 +240,52 @@ model InventoryTransaction {
   @@map("inventory_transactions")
 }
 
+// ── Procurement ─────────────────────────────────────────────────
+
+enum PurchaseOrderStatus {
+  DRAFT
+  APPROVED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id           String                @id @default(uuid()) @db.Uuid
+  poNumber     String                @unique
+  supplierId   String                @db.Uuid
+  supplier     Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  warehouseId  String                @db.Uuid
+  warehouse    Warehouse             @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  status       PurchaseOrderStatus   @default(DRAFT)
+  orderDate    DateTime
+  expectedDate DateTime?
+  remarks      String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  items        PurchaseOrderItem[]
+
+  @@index([status])
+  @@index([supplierId])
+  @@index([warehouseId])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String        @id @default(uuid()) @db.Uuid
+  purchaseOrderId  String        @db.Uuid
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId        String        @db.Uuid
+  product          Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity         Int
+  unitCost         Decimal       @db.Decimal(12, 2)
+  receivedQuantity Int           @default(0)
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
+}
+
 // ── Rental orders ───────────────────────────────────────────────
 
 enum RentalOrderStatus {
@@ -244,6 +305,8 @@ model RentalOrder {
   orderNumber        String             @unique
   customerId         String             @db.Uuid
   customer           Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  warehouseId        String             @db.Uuid
+  warehouse          Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   status             RentalOrderStatus  @default(DRAFT)
   bookingDate        DateTime           @db.Date
   eventStartDate     DateTime           @db.Date
@@ -265,9 +328,10 @@ model RentalOrder {
   items              RentalOrderItem[]
   dispatches         Dispatch[]
   returnInspections  ReturnInspection[]
-  payments           Payment[]
+  rentalInvoices     RentalInvoice[]
 
   @@index([customerId])
+  @@index([warehouseId])
   @@index([status])
   @@index([customerId, status])
   @@index([eventStartDate])
@@ -283,6 +347,7 @@ model RentalOrderItem {
   product           Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity          Int
   rentalPricePerDay Decimal     @db.Decimal(12, 2)
+  reservedQuantity  Int         @default(0)
   numberOfDays      Int
   lineTotal         Decimal     @db.Decimal(12, 2)
   notes             String?
@@ -302,10 +367,10 @@ enum DeliveryMethod {
 }
 
 enum DispatchStatus {
-  PENDING
-  LOADED
-  IN_TRANSIT
-  DELIVERED
+  DRAFT
+  READY
+  DISPATCHED
+  COMPLETED
   CANCELLED
 }
 
@@ -327,7 +392,7 @@ model Dispatch {
   driverPhone     String?
   deliveryAddress String
   remarks         String?
-  status          DispatchStatus @default(PENDING)
+  status          DispatchStatus @default(DRAFT)
   loadedAt        DateTime?
   departedAt      DateTime?
   deliveredAt     DateTime?
@@ -336,6 +401,7 @@ model Dispatch {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   items           DispatchItem[]
+  returnInspections ReturnInspection[]
 
   @@index([rentalOrderId])
   @@index([dispatchDate])
@@ -362,9 +428,11 @@ model DispatchItem {
 // ── Return & inspection ─────────────────────────────────────────
 
 enum ReturnStatus {
-  PENDING
-  INSPECTING
+  DRAFT
+  RECEIVED
+  INSPECTED
   COMPLETED
+  CANCELLED
 }
 
 model ReturnInspection {
@@ -372,17 +440,23 @@ model ReturnInspection {
   returnNumber   String                 @unique
   rentalOrderId  String                 @db.Uuid
   rentalOrder    RentalOrder            @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  dispatchId     String                 @db.Uuid
+  dispatch       Dispatch               @relation(fields: [dispatchId], references: [id], onDelete: Restrict)
   inspectionDate DateTime
   inspectedById  String                 @db.Uuid
   inspectedBy    User                   @relation(fields: [inspectedById], references: [id], onDelete: Restrict)
   remarks        String?
-  status         ReturnStatus           @default(PENDING)
+  status         ReturnStatus           @default(DRAFT)
+  receivedAt     DateTime?
+  inspectedAt    DateTime?
+  completedAt    DateTime?
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   items          ReturnInspectionItem[]
   repairs        Repair[]
 
   @@index([rentalOrderId])
+  @@index([dispatchId])
   @@index([inspectionDate])
   @@index([status])
   @@map("return_inspections")
@@ -427,26 +501,36 @@ enum RepairType {
 }
 
 model Repair {
-  id                 String           @id @default(uuid()) @db.Uuid
-  repairNumber       String           @unique
-  returnInspectionId String           @db.Uuid
-  returnInspection   ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
-  repairDate         DateTime
-  assignedTo         String
-  estimatedCost      Decimal          @db.Decimal(12, 2)
-  actualCost         Decimal          @db.Decimal(12, 2)
-  status             RepairStatus     @default(PENDING)
-  remarks            String?
-  completedAt        DateTime?
-  createdById        String           @db.Uuid
-  createdBy          User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  items              RepairItem[]
+  id                     String           @id @default(uuid()) @db.Uuid
+  repairNumber           String           @unique
+  returnInspectionId     String           @db.Uuid
+  returnInspection       ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
+  returnInspectionItemId String           @db.Uuid
+  productId              String           @db.Uuid
+  product                Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouseId            String           @db.Uuid
+  warehouse              Warehouse        @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  quantity               Int
+  repairDate             DateTime
+  assignedTo             String?
+  estimatedCost          Decimal          @default(0) @db.Decimal(12, 2)
+  actualCost             Decimal          @default(0) @db.Decimal(12, 2)
+  status                 RepairStatus     @default(PENDING)
+  remarks                String?
+  startedAt              DateTime?
+  completedAt            DateTime?
+  createdById            String           @db.Uuid
+  createdBy              User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  items                  RepairItem[]
 
   @@index([repairDate])
   @@index([status])
   @@index([returnInspectionId])
+  @@index([returnInspectionItemId])
+  @@index([productId])
+  @@index([warehouseId])
   @@map("repairs")
 }
 
@@ -466,47 +550,256 @@ model RepairItem {
   @@map("repair_items")
 }
 
+// ── Maintenance / Service Jobs ────────────────────────────────────
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceServiceType {
+  PREVENTIVE
+  CLEANING
+  INSPECTION
+  CALIBRATION
+  LUBRICATION
+  OTHER
+}
+
+model Maintenance {
+  id                 String                 @id @default(uuid()) @db.Uuid
+  maintenanceNumber  String                 @unique
+  productId          String                 @db.Uuid
+  product            Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouseId        String                 @db.Uuid
+  warehouse          Warehouse              @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  inventoryId        String                 @db.Uuid
+  inventory          Inventory              @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  quantity           Int
+  serviceType        MaintenanceServiceType
+  technician         String?
+  vendor             String?
+  scheduledDate      DateTime
+  startedAt          DateTime?
+  completedAt        DateTime?
+  estimatedCost      Decimal                @default(0) @db.Decimal(12, 2)
+  actualCost         Decimal                @default(0) @db.Decimal(12, 2)
+  notes              String?
+  status             MaintenanceStatus      @default(SCHEDULED)
+  createdById        String                 @db.Uuid
+  createdBy          User                   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([maintenanceNumber])
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([inventoryId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("maintenances")
+}
+
+// ── Rental Invoicing ──────────────────────────────────────────────
+
+enum RentalInvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  VOID
+}
+
+enum RentalInvoiceLineType {
+  RENTAL_CHARGE
+  DELIVERY_CHARGE
+  PICKUP_CHARGE
+  DAMAGE_CHARGE
+  LOST_ITEM_CHARGE
+  REPAIR_CHARGE
+  MANUAL_CHARGE
+  DISCOUNT
+  TAX
+}
+
+model RentalInvoice {
+  id            String              @id @default(uuid()) @db.Uuid
+  invoiceNumber String              @unique
+  rentalOrderId String              @db.Uuid
+  rentalOrder   RentalOrder         @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  customerId    String              @db.Uuid
+  customer      Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invoiceDate   DateTime            @db.Date
+  dueDate       DateTime?           @db.Date
+  subtotal      Decimal             @db.Decimal(12, 2)
+  discount      Decimal             @db.Decimal(12, 2)
+  tax           Decimal             @db.Decimal(12, 2)
+  grandTotal    Decimal             @db.Decimal(12, 2)
+  paidAmount    Decimal             @default(0) @db.Decimal(12, 2)
+  balance       Decimal             @db.Decimal(12, 2)
+  status        RentalInvoiceStatus @default(DRAFT)
+  notes         String?
+  issuedAt      DateTime?
+  voidedAt      DateTime?
+  createdById   String              @db.Uuid
+  createdBy     User                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  items         RentalInvoiceItem[]
+  payments      Payment[]
+
+  @@index([invoiceNumber])
+  @@index([rentalOrderId])
+  @@index([customerId])
+  @@index([invoiceDate])
+  @@index([status])
+  @@index([customerId, status])
+  @@map("rental_invoices")
+}
+
+model RentalInvoiceItem {
+  id              String                @id @default(uuid()) @db.Uuid
+  rentalInvoiceId String                @db.Uuid
+  rentalInvoice   RentalInvoice         @relation(fields: [rentalInvoiceId], references: [id], onDelete: Cascade)
+  lineType        RentalInvoiceLineType
+  description     String
+  quantity        Int
+  unitPrice       Decimal               @db.Decimal(12, 2)
+  lineTotal       Decimal               @db.Decimal(12, 2)
+  sortOrder       Int                   @default(0)
+
+  @@index([rentalInvoiceId])
+  @@map("rental_invoice_items")
+}
+
 // ── Payments ────────────────────────────────────────────────────
 
-enum PaymentType {
-  ADVANCE
-  PARTIAL
-  FINAL
-  REFUND
-  DAMAGE_RECOVERY
+enum PaymentStatus {
+  PENDING
+  POSTED
+  VOID
 }
 
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
-  JAZZCASH
-  EASYPAISA
   CHEQUE
+  CARD
+  ONLINE
   OTHER
 }
 
 model Payment {
   id              String        @id @default(uuid()) @db.Uuid
   paymentNumber   String        @unique
-  rentalOrderId   String        @db.Uuid
-  rentalOrder     RentalOrder   @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  rentalInvoiceId String        @db.Uuid
+  rentalInvoice   RentalInvoice @relation(fields: [rentalInvoiceId], references: [id], onDelete: Restrict)
+  customerId      String        @db.Uuid
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   paymentDate     DateTime
-  paymentType     PaymentType
   paymentMethod   PaymentMethod
   amount          Decimal       @db.Decimal(12, 2)
   referenceNumber String?
-  receivedById    String        @db.Uuid
-  receivedBy      User          @relation(fields: [receivedById], references: [id], onDelete: Restrict)
-  remarks         String?
+  notes           String?
+  status          PaymentStatus @default(PENDING)
+  postedAt        DateTime?
+  voidedAt        DateTime?
+  createdById     String        @db.Uuid
+  createdBy       User          @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([paymentNumber])
   @@index([paymentDate])
-  @@index([paymentType])
   @@index([paymentMethod])
-  @@index([rentalOrderId])
-  @@index([rentalOrderId, paymentDate])
+  @@index([status])
+  @@index([rentalInvoiceId])
+  @@index([customerId])
+  @@index([rentalInvoiceId, paymentDate])
   @@map("payments")
+}
+
+// ── Accounting / General Ledger ───────────────────────────────────
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  VOID
+}
+
+enum JournalReferenceType {
+  RENTAL_INVOICE
+  PAYMENT
+  MANUAL
+  OTHER
+}
+
+model Account {
+  id           String             @id @default(uuid()) @db.Uuid
+  accountCode  String             @unique
+  name         String
+  accountType  AccountType
+  description  String?
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  journalLines JournalEntryLine[]
+
+  @@index([accountCode])
+  @@index([accountType])
+  @@index([isActive])
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id            String                @id @default(uuid()) @db.Uuid
+  journalNumber String                @unique
+  journalDate   DateTime              @db.Date
+  description   String
+  referenceType JournalReferenceType?
+  referenceId   String?               @db.Uuid
+  status        JournalEntryStatus    @default(DRAFT)
+  postedAt      DateTime?
+  voidedAt      DateTime?
+  createdById   String                @db.Uuid
+  createdBy     User                  @relation("JournalEntryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  postedById    String?               @db.Uuid
+  postedBy      User?                 @relation("JournalEntryPostedBy", fields: [postedById], references: [id], onDelete: Restrict)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  lines         JournalEntryLine[]
+
+  @@index([journalNumber])
+  @@index([journalDate])
+  @@index([status])
+  @@index([referenceType, referenceId])
+  @@map("journal_entries")
+}
+
+model JournalEntryLine {
+  id             String       @id @default(uuid()) @db.Uuid
+  journalEntryId String       @db.Uuid
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountId      String       @db.Uuid
+  account        Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  debit          Decimal      @default(0) @db.Decimal(12, 2)
+  credit         Decimal      @default(0) @db.Decimal(12, 2)
+  memo           String?
+  sortOrder      Int          @default(0)
+
+  @@index([journalEntryId])
+  @@index([accountId])
+  @@map("journal_entry_lines")
 }
 
 // ── Expenses ────────────────────────────────────────────────────

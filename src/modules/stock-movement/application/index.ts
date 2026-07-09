@@ -39,6 +39,7 @@ export type {
   StockMovementWriteScope,
 } from "./services/stock-movement-transaction.runner";
 export { computeMovementEffect } from "./services/movement-effect";
+export { executeCreateStockMovementInScope } from "./services/create-stock-movement-in-scope";
 export { CreateStockMovementService } from "./services/create-stock-movement.service";
 export { GetStockMovementByIdService } from "./services/get-stock-movement-by-id.service";
 export { ListStockMovementsService } from "./services/list-stock-movements.service";

@@ -1,0 +1,54 @@
+import type { PaginatedResult } from "@/shared/domain/pagination";
+
+import type { DispatchDto } from "../dtos/dispatch.dto";
+import type {
+  CreateDispatchInput,
+  DispatchIdParamInput,
+  UpdateDispatchInput,
+} from "../schemas/dispatch.schemas";
+import type { ListDispatchesInput } from "../schemas/list-dispatches.schema";
+import type { IDispatchService } from "./dispatch-application-services.interface";
+import type { CancelDispatchService } from "./cancel-dispatch.service";
+import type { CompleteDispatchService } from "./complete-dispatch.service";
+import type { CreateDispatchService } from "./create-dispatch.service";
+import type { GetDispatchByIdService } from "./get-dispatch-by-id.service";
+import type { ListDispatchesService } from "./list-dispatches.service";
+import type { UpdateDispatchService } from "./update-dispatch.service";
+
+export class DispatchService implements IDispatchService {
+  constructor(
+    private readonly getDispatchById: GetDispatchByIdService,
+    private readonly listDispatches: ListDispatchesService,
+    private readonly createDispatch: CreateDispatchService,
+    private readonly updateDispatch: UpdateDispatchService,
+    private readonly completeDispatch: CompleteDispatchService,
+    private readonly cancelDispatch: CancelDispatchService,
+  ) {}
+
+  getById(params: DispatchIdParamInput): Promise<DispatchDto> {
+    return this.getDispatchById.execute(params);
+  }
+
+  list(input: ListDispatchesInput): Promise<PaginatedResult<DispatchDto>> {
+    return this.listDispatches.execute(input);
+  }
+
+  create(input: CreateDispatchInput): Promise<DispatchDto> {
+    return this.createDispatch.execute(input);
+  }
+
+  update(
+    params: DispatchIdParamInput,
+    input: UpdateDispatchInput,
+  ): Promise<DispatchDto> {
+    return this.updateDispatch.execute(params, input);
+  }
+
+  complete(params: DispatchIdParamInput): Promise<DispatchDto> {
+    return this.completeDispatch.execute(params);
+  }
+
+  cancel(params: DispatchIdParamInput): Promise<DispatchDto> {
+    return this.cancelDispatch.execute(params);
+  }
+}
