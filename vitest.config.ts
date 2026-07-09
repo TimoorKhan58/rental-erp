@@ -12,6 +12,7 @@ export default defineConfig({
         "src/modules/supplier/**/*.ts",
         "src/modules/warehouse/**/*.ts",
         "src/modules/product/**/*.ts",
+        "src/modules/inventory/**/*.ts",
       ],
       exclude: [
         "src/modules/customer/**/*.test.ts",
@@ -22,6 +23,8 @@ export default defineConfig({
         "src/modules/warehouse/tests/**",
         "src/modules/product/**/*.test.ts",
         "src/modules/product/tests/**",
+        "src/modules/inventory/**/*.test.ts",
+        "src/modules/inventory/tests/**",
       ],
     },
   },

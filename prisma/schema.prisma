@@ -114,9 +114,10 @@ model Warehouse {
   address       String?
   contactPerson String?
   phone         String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  inventories   Inventory[]
 
   @@index([name])
   @@index([isActive])
@@ -155,7 +156,7 @@ model Product {
   isActive          Boolean   @default(true)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  inventory         Inventory?
+  inventories       Inventory[]
   rentalOrderItems  RentalOrderItem[]
   dispatchItems     DispatchItem[]
   repairItems         RepairItem[]
@@ -182,20 +183,24 @@ enum InventoryTransactionType {
 }
 
 model Inventory {
-  id                String                 @id @default(uuid()) @db.Uuid
-  productId         String                 @unique @db.Uuid
-  product           Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
-  totalQuantity     Int
-  availableQuantity Int
-  reservedQuantity  Int
-  onRentQuantity    Int
-  repairQuantity    Int
-  lostQuantity      Int
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  transactions      InventoryTransaction[]
+  id               String                 @id @default(uuid()) @db.Uuid
+  productId        String                 @db.Uuid
+  product          Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouseId      String                 @db.Uuid
+  warehouse        Warehouse              @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  quantityOnHand   Int
+  reservedQuantity Int                    @default(0)
+  minimumStock     Int                    @default(0)
+  maximumStock     Int?
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  transactions     InventoryTransaction[]
 
+  @@unique([productId, warehouseId])
   @@index([productId])
+  @@index([warehouseId])
+  @@index([isActive])
   @@map("inventory")
 }
 
