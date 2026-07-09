@@ -2,6 +2,8 @@ export type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type UserId = Brand<string, "UserId">;
 export type CustomerId = Brand<string, "CustomerId">;
+export type SupplierId = Brand<string, "SupplierId">;
+export type WarehouseId = Brand<string, "WarehouseId">;
 export type ProductId = Brand<string, "ProductId">;
 export type RentalOrderId = Brand<string, "RentalOrderId">;
 export type DispatchId = Brand<string, "DispatchId">;

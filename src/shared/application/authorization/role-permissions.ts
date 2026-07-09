@@ -10,6 +10,9 @@ import {
 const READ_PERMISSIONS: Permission[] = [
   PERMISSIONS.identity.read,
   PERMISSIONS.customers.read,
+  PERMISSIONS.suppliers.read,
+  PERMISSIONS.warehouses.read,
+  PERMISSIONS.products.read,
   PERMISSIONS.catalog.read,
   PERMISSIONS.inventory.read,
   PERMISSIONS.rentalOrders.read,
@@ -28,6 +31,9 @@ const MANAGER_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter(
 
 const WORKER_PERMISSIONS: Permission[] = [
   PERMISSIONS.customers.read,
+  PERMISSIONS.suppliers.read,
+  PERMISSIONS.warehouses.read,
+  PERMISSIONS.products.read,
   PERMISSIONS.catalog.read,
   PERMISSIONS.inventory.read,
   PERMISSIONS.inventory.update,

@@ -11,6 +11,24 @@ export const PERMISSIONS = {
     update: "customers:update",
     delete: "customers:delete",
   },
+  suppliers: {
+    read: "suppliers:read",
+    create: "suppliers:create",
+    update: "suppliers:update",
+    delete: "suppliers:delete",
+  },
+  warehouses: {
+    read: "warehouses:read",
+    create: "warehouses:create",
+    update: "warehouses:update",
+    delete: "warehouses:delete",
+  },
+  products: {
+    read: "products:read",
+    create: "products:create",
+    update: "products:update",
+    delete: "products:delete",
+  },
   catalog: {
     read: "catalog:read",
     create: "catalog:create",
