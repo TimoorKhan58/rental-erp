@@ -13,6 +13,7 @@ export default defineConfig({
         "src/modules/warehouse/**/*.ts",
         "src/modules/product/**/*.ts",
         "src/modules/inventory/**/*.ts",
+        "src/modules/stock-movement/**/*.ts",
       ],
       exclude: [
         "src/modules/customer/**/*.test.ts",
@@ -25,6 +26,8 @@ export default defineConfig({
         "src/modules/product/tests/**",
         "src/modules/inventory/**/*.test.ts",
         "src/modules/inventory/tests/**",
+        "src/modules/stock-movement/**/*.test.ts",
+        "src/modules/stock-movement/tests/**",
       ],
     },
   },

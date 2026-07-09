@@ -13,6 +13,7 @@ export type PaymentId = Brand<string, "PaymentId">;
 export type ExpenseId = Brand<string, "ExpenseId">;
 export type RoleId = Brand<string, "RoleId">;
 export type InventoryId = Brand<string, "InventoryId">;
+export type StockMovementId = Brand<string, "StockMovementId">;
 export type NotificationId = Brand<string, "NotificationId">;
 export type AuditLogId = Brand<string, "AuditLogId">;
 export type DashboardId = Brand<string, "DashboardId">;

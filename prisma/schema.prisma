@@ -170,16 +170,12 @@ model Product {
 
 // ── Inventory ───────────────────────────────────────────────────
 
-enum InventoryTransactionType {
-  PURCHASE
-  ADJUSTMENT
+enum StockMovementType {
+  IN
+  OUT
   RESERVE
-  DISPATCH
-  RETURN
-  REPAIR_OUT
-  REPAIR_IN
-  LOST
-  DAMAGED
+  RELEASE
+  ADJUSTMENT
 }
 
 model Inventory {
@@ -205,21 +201,26 @@ model Inventory {
 }
 
 model InventoryTransaction {
-  id                String                   @id @default(uuid()) @db.Uuid
-  inventoryId       String                   @db.Uuid
-  inventory         Inventory                @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
-  transactionType   InventoryTransactionType
-  quantity          Int
-  previousQuantity  Int
-  newQuantity       Int
-  referenceNumber   String?
-  notes             String
-  createdAt         DateTime                 @default(now())
-  createdById       String                   @db.Uuid
-  createdBy         User                     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  id               String            @id @default(uuid()) @db.Uuid
+  inventoryId      String            @db.Uuid
+  inventory        Inventory         @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  productId        String            @db.Uuid
+  warehouseId      String            @db.Uuid
+  movementType     StockMovementType
+  quantity         Int
+  previousQuantity Int
+  newQuantity      Int
+  referenceType    String?
+  referenceId      String?
+  remarks          String            @default("")
+  createdAt        DateTime          @default(now())
+  createdById      String            @db.Uuid
+  createdBy        User              @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   @@index([inventoryId])
-  @@index([transactionType])
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([movementType])
   @@index([createdAt])
   @@map("inventory_transactions")
 }

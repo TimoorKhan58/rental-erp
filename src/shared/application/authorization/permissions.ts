@@ -42,6 +42,10 @@ export const PERMISSIONS = {
     delete: "inventory:delete",
     adjust: "inventory:adjust",
   },
+  stockMovements: {
+    read: "stock-movements:read",
+    create: "stock-movements:create",
+  },
   rentalOrders: {
     read: "rental-orders:read",
     create: "rental-orders:create",
