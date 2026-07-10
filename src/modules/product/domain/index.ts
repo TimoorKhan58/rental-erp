@@ -12,7 +12,19 @@ export {
 } from "./product.constants";
 export type { ProductListQuery } from "./product-list.query";
 export type { IProductRepository } from "./product.repository.interface";
-export type { CreateProductData, UpdateProductData } from "./product.types";
+export type {
+  CreateProductData,
+  ProductAttributeValueData,
+  ProductAttributeValueRecord,
+  ProductImageData,
+  ProductImageRecord,
+  ProductMetadata,
+  ProductSpecificationData,
+  ProductSpecificationRecord,
+  ProductTagIds,
+  UpdateProductData,
+} from "./product.types";
+export type { ProductRecord } from "./product.repository.interface";
 export {
   createProductCode,
   type ProductCode,

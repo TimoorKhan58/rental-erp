@@ -17,6 +17,72 @@ datasource db {
   provider = "postgresql"
 }
 
+// ── Better Auth (session provider) ────────────────────────────
+//
+// Canonical credentials and sessions. Linked to ERP users via erpUserId / authUserId.
+
+model AuthUser {
+  id            String        @id
+  name          String
+  email         String        @unique
+  emailVerified Boolean       @default(false)
+  image         String?
+  role          String        @default("viewer")
+  erpUserId     String?       @unique @db.Uuid
+  erpUser       User?         @relation("AuthUserToErpUser", fields: [erpUserId], references: [id], onDelete: SetNull)
+  linkedErpUser User?         @relation("ErpUserToAuthUser")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  sessions      AuthSession[]
+  accounts      AuthAccount[]
+
+  @@map("user")
+}
+
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model AuthAccount {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model AuthVerification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
 // ── Access control ────────────────────────────────────────────
 //
 // Soft delete (deletedAt, deletedBy) is planned for a future production phase
@@ -34,7 +100,10 @@ model User {
   id                     String                 @id @default(uuid()) @db.Uuid
   name                   String
   email                  String                 @unique
-  passwordHash             String
+  passwordHash           String?
+  authUserId             String?                @unique
+  authUser               AuthUser?              @relation("ErpUserToAuthUser", fields: [authUserId], references: [id], onDelete: SetNull)
+  linkedAuthUser         AuthUser?              @relation("AuthUserToErpUser")
   roleId                 String                 @db.Uuid
   role                   Role                   @relation(fields: [roleId], references: [id], onDelete: Restrict)
   isActive               Boolean                @default(true)
@@ -50,10 +119,17 @@ model User {
   createdPayments        Payment[]
   createdJournalEntries  JournalEntry[] @relation("JournalEntryCreatedBy")
   postedJournalEntries   JournalEntry[] @relation("JournalEntryPostedBy")
-  recordedExpenses       Expense[]
+  recordedExpenses       Expense[]               @relation("ExpenseRecordedBy")
+  approvedExpenses       Expense[]               @relation("ExpenseApprovedBy")
+  paidExpenses           Expense[]               @relation("ExpensePaidBy")
   auditLogs              AuditLog[]
   notificationRecipients NotificationRecipient[]
   userDashboards         UserDashboard[]
+  createdAssets          Asset[]                 @relation("AssetCreatedBy")
+  assignedAssets         Asset[]                 @relation("AssetAssignedTo")
+  disposedAssets         Asset[]                 @relation("AssetDisposedBy")
+  assetTransfers         AssetTransfer[]
+  assetMaintenanceRecords AssetMaintenanceHistory[]
 
   @@index([roleId])
   @@index([isActive])
@@ -102,6 +178,8 @@ model Supplier {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   purchaseOrders PurchaseOrder[]
+  assets         Asset[]
+  expenses       Expense[]
 
   @@index([name])
   @@index([isActive])
@@ -127,8 +205,11 @@ model Warehouse {
   inventories    Inventory[]
   purchaseOrders PurchaseOrder[]
   rentalOrders   RentalOrder[]
-  repairs        Repair[]
-  maintenances   Maintenance[]
+  repairs              Repair[]
+  maintenances         Maintenance[]
+  assets               Asset[]
+  assetTransfersFrom   AssetTransfer[] @relation("AssetTransferFrom")
+  assetTransfersTo     AssetTransfer[] @relation("AssetTransferTo")
 
   @@index([name])
   @@index([isActive])
@@ -140,15 +221,147 @@ model Warehouse {
 // Soft delete (deletedAt, deletedBy) is planned for a future production phase
 // after business approval. Not implemented in the current schema freeze.
 
+enum AttributeDataType {
+  TEXT
+  NUMBER
+  BOOLEAN
+}
+
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
   name        String    @unique
   description String?
   isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   products    Product[]
 
   @@index([isActive])
   @@map("categories")
+}
+
+model Brand {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([isActive])
+  @@map("brands")
+}
+
+model UnitOfMeasure {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([isActive])
+  @@map("units_of_measure")
+}
+
+model ProductAttribute {
+  id        String              @id @default(uuid()) @db.Uuid
+  name      String              @unique
+  dataType  AttributeDataType   @default(TEXT)
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  values    ProductAttributeValue[]
+
+  @@index([isActive])
+  @@map("product_attributes")
+}
+
+model ProductTag {
+  id          String                 @id @default(uuid()) @db.Uuid
+  name        String                 @unique
+  color       String?
+  isActive    Boolean                @default(true)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  assignments ProductTagAssignment[]
+
+  @@index([isActive])
+  @@map("product_tags")
+}
+
+model ProductTagAssignment {
+  productId String     @db.Uuid
+  tagId     String     @db.Uuid
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       ProductTag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  createdAt DateTime   @default(now())
+
+  @@id([productId, tagId])
+  @@index([tagId])
+  @@map("product_tag_assignments")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductSpecification {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, key])
+  @@index([productId])
+  @@map("product_specifications")
+}
+
+model ProductAttributeValue {
+  id          String           @id @default(uuid()) @db.Uuid
+  productId   String           @db.Uuid
+  attributeId String           @db.Uuid
+  product     Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attribute   ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Restrict)
+  value       String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([productId, attributeId])
+  @@index([attributeId])
+  @@map("product_attribute_values")
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@map("product_variants")
 }
 
 model Product {
@@ -156,6 +369,10 @@ model Product {
   productCode       String    @unique
   categoryId        String?   @db.Uuid
   category          Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brandId           String?   @db.Uuid
+  brand             Brand?    @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  unitId            String?   @db.Uuid
+  unitOfMeasure     UnitOfMeasure? @relation(fields: [unitId], references: [id], onDelete: Restrict)
   name              String
   description       String?
   purchaseCost      Decimal   @db.Decimal(12, 2)
@@ -174,8 +391,15 @@ model Product {
   repairItems          RepairItem[]
   repairs              Repair[]
   maintenances         Maintenance[]
+  tagAssignments       ProductTagAssignment[]
+  images               ProductImage[]
+  specifications       ProductSpecification[]
+  attributeValues      ProductAttributeValue[]
+  variants             ProductVariant[]
 
   @@index([categoryId])
+  @@index([brandId])
+  @@index([unitId])
   @@index([name])
   @@index([productCode])
   @@index([isActive])
@@ -778,6 +1002,7 @@ model JournalEntry {
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   lines         JournalEntryLine[]
+  expenses      Expense[]
 
   @@index([journalNumber])
   @@index([journalDate])
@@ -804,36 +1029,70 @@ model JournalEntryLine {
 
 // ── Expenses ────────────────────────────────────────────────────
 
-enum ExpenseCategory {
-  FUEL
-  LABOUR
-  VEHICLE_MAINTENANCE
-  REPAIR
-  OFFICE
-  PURCHASE
-  UTILITY
-  TRANSPORT
-  MISCELLANEOUS
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum ExpenseType {
+  VENDOR
+  MANUAL
+}
+
+model ExpenseCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  expenses    Expense[]
+
+  @@index([isActive])
+  @@map("expense_categories")
 }
 
 model Expense {
   id              String          @id @default(uuid()) @db.Uuid
   expenseNumber   String          @unique
   expenseDate     DateTime
-  expenseCategory ExpenseCategory
+  categoryId      String          @db.Uuid
+  category        ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  expenseType     ExpenseType
+  status          ExpenseStatus   @default(DRAFT)
   amount          Decimal         @db.Decimal(12, 2)
-  paymentMethod   PaymentMethod
-  vendor          String?
+  paymentMethod   PaymentMethod?
+  supplierId      String?         @db.Uuid
+  supplier        Supplier?       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  vendorName      String?
   description     String
+  notes           String?
+  attachmentRef   String?
   referenceNumber String?
+  rejectionReason String?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  paidAt          DateTime?
+  journalEntryId  String?         @db.Uuid
+  journalEntry    JournalEntry?   @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
   recordedById    String          @db.Uuid
-  recordedBy      User            @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  recordedBy      User            @relation("ExpenseRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
+  approvedById    String?         @db.Uuid
+  approvedBy      User?           @relation("ExpenseApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  paidById        String?         @db.Uuid
+  paidBy          User?           @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Restrict)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   @@index([expenseDate])
-  @@index([expenseCategory])
-  @@index([expenseDate, expenseCategory])
+  @@index([status])
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([expenseDate, status])
   @@map("expenses")
 }
 
@@ -879,6 +1138,7 @@ model CompanySetting {
   numberFormat           String
   defaultRentalDays      Int
   defaultTaxPercentage   Decimal            @db.Decimal(5, 2)
+  fiscalYearStartMonth   Int                @default(1)
   securityDepositEnabled Boolean            @default(false)
   lateFeeEnabled         Boolean            @default(false)
   isActive               Boolean            @default(true)
@@ -1136,6 +1396,106 @@ model NotificationRecipient {
   @@index([userId])
   @@index([isRead])
   @@map("notification_recipients")
+}
+
+// ── Asset Management ────────────────────────────────────────────
+//
+// Company-owned assets (vehicles, machinery, tools, etc.) separate from rental inventory.
+
+enum AssetStatus {
+  ACTIVE
+  UNDER_MAINTENANCE
+  TRANSFERRED
+  DISPOSED
+}
+
+model AssetCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assets      Asset[]
+
+  @@index([isActive])
+  @@map("asset_categories")
+}
+
+model Asset {
+  id                 String      @id @default(uuid()) @db.Uuid
+  assetCode          String      @unique
+  name               String
+  categoryId         String      @db.Uuid
+  category           AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  serialNumber       String?
+  purchaseDate       DateTime    @db.Date
+  purchaseCost       Decimal     @db.Decimal(12, 2)
+  residualValue      Decimal     @db.Decimal(12, 2)
+  usefulLifeMonths   Int
+  currentBookValue   Decimal     @db.Decimal(12, 2)
+  warehouseId        String      @db.Uuid
+  warehouse          Warehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  assignedEmployeeId String?     @db.Uuid
+  assignedEmployee   User?       @relation("AssetAssignedTo", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  vendorId           String?     @db.Uuid
+  vendor             Supplier?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  notes              String?
+  status             AssetStatus @default(ACTIVE)
+  disposalDate       DateTime?   @db.Date
+  disposalAmount     Decimal?    @db.Decimal(12, 2)
+  disposalReason     String?
+  disposedById       String?     @db.Uuid
+  disposedBy         User?       @relation("AssetDisposedBy", fields: [disposedById], references: [id], onDelete: SetNull)
+  createdById        String      @db.Uuid
+  createdBy          User        @relation("AssetCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  transfers          AssetTransfer[]
+  maintenanceHistory AssetMaintenanceHistory[]
+
+  @@index([categoryId])
+  @@index([warehouseId])
+  @@index([status])
+  @@index([assetCode])
+  @@index([name])
+  @@map("assets")
+}
+
+model AssetTransfer {
+  id              String    @id @default(uuid()) @db.Uuid
+  assetId         String    @db.Uuid
+  asset           Asset     @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  fromWarehouseId String    @db.Uuid
+  fromWarehouse   Warehouse @relation("AssetTransferFrom", fields: [fromWarehouseId], references: [id], onDelete: Restrict)
+  toWarehouseId   String    @db.Uuid
+  toWarehouse     Warehouse @relation("AssetTransferTo", fields: [toWarehouseId], references: [id], onDelete: Restrict)
+  transferDate    DateTime  @db.Date
+  reason          String?
+  transferredById String    @db.Uuid
+  transferredBy   User      @relation(fields: [transferredById], references: [id], onDelete: Restrict)
+  createdAt       DateTime  @default(now())
+
+  @@index([assetId])
+  @@index([transferDate])
+  @@map("asset_transfers")
+}
+
+model AssetMaintenanceHistory {
+  id            String   @id @default(uuid()) @db.Uuid
+  assetId       String   @db.Uuid
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  serviceDate   DateTime @db.Date
+  vendor        String?
+  cost          Decimal  @db.Decimal(12, 2)
+  description   String
+  completedById String   @db.Uuid
+  completedBy   User     @relation(fields: [completedById], references: [id], onDelete: Restrict)
+  createdAt     DateTime @default(now())
+
+  @@index([assetId])
+  @@index([serviceDate])
+  @@map("asset_maintenance_history")
 }
 
 // ── Dashboard ───────────────────────────────────────────────────

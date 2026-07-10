@@ -15,10 +15,12 @@ import {
   buildProductEntity,
 } from "../tests/helpers/product.fixtures";
 
-interface ProductRecord {
+interface MockProductRow {
   id: string;
   productCode: string;
   categoryId: string | null;
+  brandId: string | null;
+  unitId: string | null;
   name: string;
   description: string | null;
   purchaseCost: Prisma.Decimal;
@@ -32,7 +34,28 @@ interface ProductRecord {
   updatedAt: Date;
 }
 
-function cloneProductRecord(record: ProductRecord): ProductRecord {
+type MockProductDetailRow = MockProductRow & {
+  tagAssignments: Array<{ tagId: string }>;
+  images: [];
+  specifications: [];
+  attributeValues: [];
+  _count: { variants: number };
+};
+
+function withProductDetails(record: MockProductRow): MockProductDetailRow {
+  return {
+    ...cloneProductRecord(record),
+    brandId: record.brandId ?? null,
+    unitId: record.unitId ?? null,
+    tagAssignments: [],
+    images: [],
+    specifications: [],
+    attributeValues: [],
+    _count: { variants: 0 },
+  };
+}
+
+function cloneProductRecord(record: MockProductRow): MockProductRow {
   return {
     ...record,
     purchaseCost: new Prisma.Decimal(record.purchaseCost.toString()),
@@ -43,8 +66,8 @@ function cloneProductRecord(record: ProductRecord): ProductRecord {
 }
 
 function clonePartialProductRecord(
-  data: Partial<ProductRecord>,
-): Partial<ProductRecord> {
+  data: Partial<MockProductRow>,
+): Partial<MockProductRow> {
   return {
     ...data,
     ...(data.purchaseCost !== undefined
@@ -61,9 +84,9 @@ function clonePartialProductRecord(
 }
 
 function applyWhereFilter(
-  items: ProductRecord[],
+  items: MockProductRow[],
   where?: Record<string, unknown>,
-): ProductRecord[] {
+): MockProductRow[] {
   if (!where) {
     return items;
   }
@@ -80,7 +103,7 @@ function applyWhereFilter(
     const orClauses = where.OR as Array<Record<string, { contains: string }>>;
     return items.filter((item) =>
       orClauses.some((orClause) => {
-        const field = Object.keys(orClause)[0] as keyof ProductRecord;
+        const field = Object.keys(orClause)[0] as keyof MockProductRow;
         const contains = orClause[field]?.contains.toLowerCase();
         const value = item[field];
         return value !== null && String(value).toLowerCase().includes(contains ?? "");
@@ -95,13 +118,13 @@ function applyWhereFilter(
   return items;
 }
 
-function createMockProductStore(initial: ProductRecord[] = []) {
+function createMockProductStore(initial: MockProductRow[] = []) {
   const records = new Map(initial.map((record) => [record.id, cloneProductRecord(record)]));
 
   const product = {
-    findUnique: vi.fn(async ({ where, select }: { where: Record<string, unknown>; select?: Record<string, boolean> }) => {
+    findUnique: vi.fn(async ({ where, select, include }: { where: Record<string, unknown>; select?: Record<string, boolean>; include?: unknown }) => {
       const match = [...records.values()].find((record) =>
-        Object.entries(where).every(([key, value]) => record[key as keyof ProductRecord] === value),
+        Object.entries(where).every(([key, value]) => record[key as keyof MockProductRow] === value),
       );
 
       if (!match) {
@@ -112,18 +135,20 @@ function createMockProductStore(initial: ProductRecord[] = []) {
         return { id: match.id };
       }
 
-      return cloneProductRecord(match);
+      const cloned = cloneProductRecord(match);
+      return include ? withProductDetails(cloned) : cloned;
     }),
-    findMany: vi.fn(async ({ where, orderBy, skip, take }: {
+    findMany: vi.fn(async ({ where, orderBy, skip, take, include }: {
       where?: Record<string, unknown>;
       orderBy?: Record<string, string>;
       skip?: number;
       take?: number;
+      include?: unknown;
     }) => {
       const items = applyWhereFilter([...records.values()], where);
 
       if (orderBy) {
-        const field = Object.keys(orderBy)[0] as keyof ProductRecord;
+        const field = Object.keys(orderBy)[0] as keyof MockProductRow;
         const direction = orderBy[field] === "desc" ? -1 : 1;
         items.sort((left, right) => {
           const leftValue = left[field] ?? "";
@@ -140,36 +165,42 @@ function createMockProductStore(initial: ProductRecord[] = []) {
         });
       }
 
-      return items.slice(skip ?? 0, (skip ?? 0) + (take ?? items.length)).map(cloneProductRecord);
+      return items
+        .slice(skip ?? 0, (skip ?? 0) + (take ?? items.length))
+        .map((item) => (include ? withProductDetails(item) : cloneProductRecord(item)));
     }),
     count: vi.fn(async ({ where }: { where?: Record<string, unknown> }) =>
       applyWhereFilter([...records.values()], where).length,
     ),
-    create: vi.fn(async ({ data }: { data: Omit<ProductRecord, "id" | "createdAt" | "updatedAt"> }) => {
+    create: vi.fn(async ({ data, include }: { data: Omit<MockProductRow, "id" | "createdAt" | "updatedAt">; include?: unknown }) => {
       const now = new Date();
-      const record: ProductRecord = {
+      const record: MockProductRow = {
         id: crypto.randomUUID(),
+        brandId: null,
+        unitId: null,
         createdAt: now,
         updatedAt: now,
         ...clonePartialProductRecord(data),
-      } as ProductRecord;
+      } as MockProductRow;
       records.set(record.id, record);
-      return cloneProductRecord(record);
+      const cloned = cloneProductRecord(record);
+      return include ? withProductDetails(cloned) : cloned;
     }),
-    update: vi.fn(async ({ where, data }: { where: { id: string }; data: Partial<ProductRecord> }) => {
+    update: vi.fn(async ({ where, data, include }: { where: { id: string }; data: Partial<MockProductRow>; include?: unknown }) => {
       const existing = records.get(where.id);
       if (!existing) {
         throw new Error("not found");
       }
 
       const normalized = clonePartialProductRecord(data);
-      const updated: ProductRecord = {
+      const updated: MockProductRow = {
         ...existing,
         ...normalized,
         updatedAt: new Date(),
       };
       records.set(where.id, updated);
-      return cloneProductRecord(updated);
+      const cloned = cloneProductRecord(updated);
+      return include ? withProductDetails(cloned) : cloned;
     }),
     delete: vi.fn(async ({ where }: { where: { id: string } }) => {
       records.delete(where.id);
@@ -195,10 +226,12 @@ function createMockRunner(db: DbClient): RepositoryRunner {
 }
 
 describe("PrismaProductRepository", () => {
-  const baseRecord: ProductRecord = {
+  const baseRecord: MockProductRow = {
     id: PRODUCT_ID,
     productCode: "PROD-001",
     categoryId: null,
+    brandId: null,
+    unitId: null,
     name: "Wedding Tent 20x40",
     description: "Large wedding tent suitable for outdoor events",
     purchaseCost: new Prisma.Decimal(50000),
@@ -218,9 +251,9 @@ describe("PrismaProductRepository", () => {
 
     const product = await repository.findById(PRODUCT_ID);
 
-    expect(product?.name).toBe("Wedding Tent 20x40");
-    expect(product?.rentalRate).toBe(1500);
-    expect(product?.replacementCost).toBe(50000);
+    expect(product?.product.name).toBe("Wedding Tent 20x40");
+    expect(product?.product.rentalRate).toBe(1500);
+    expect(product?.product.replacementCost).toBe(50000);
   });
 
   it("creates with default inventory fields", async () => {
@@ -240,7 +273,7 @@ describe("PrismaProductRepository", () => {
         }),
       }),
     );
-    expect(created.rentalRate).toBe(1500);
+    expect(created.product.rentalRate).toBe(1500);
   });
 
   it("creates, updates, and deletes products", async () => {
@@ -250,12 +283,12 @@ describe("PrismaProductRepository", () => {
     const created = await repository.create(buildCreateProductData());
     expect(store.size).toBe(1);
 
-    const updated = await repository.update(created.id, {
+    const updated = await repository.update(created.product.id, {
       name: createProductName("Updated"),
     });
-    expect(updated.name).toBe("Updated");
+    expect(updated.product.name).toBe("Updated");
 
-    await repository.delete(created.id);
+    await repository.delete(created.product.id);
     expect(store.size).toBe(0);
   });
 
@@ -282,7 +315,7 @@ describe("PrismaProductRepository", () => {
     });
 
     expect(result.items).toHaveLength(1);
-    expect(result.items[0]?.name).toBe("Alpha Chairs");
+    expect(result.items[0]?.product.name).toBe("Alpha Chairs");
     expect(result.meta.total).toBe(1);
   });
 
@@ -306,7 +339,7 @@ describe("PrismaProductRepository", () => {
       sortOrder: "asc",
     });
 
-    expect(result.items[0]?.rentalRate).toBe(100);
+    expect(result.items[0]?.product.rentalRate).toBe(100);
   });
 
   it("uses transaction client via runner.withTransaction", async () => {
@@ -341,10 +374,12 @@ describe("PrismaProductRepository", () => {
 describe("PrismaProductRepository mapping", () => {
   it("maps persisted records to domain entities", async () => {
     const entity = buildProductEntity();
-    const record: ProductRecord = {
+    const record: MockProductRow = {
       id: entity.id,
       productCode: entity.productCode,
       categoryId: null,
+      brandId: null,
+      unitId: null,
       name: entity.name,
       description: entity.description,
       purchaseCost: new Prisma.Decimal(entity.replacementCost ?? 0),
@@ -362,14 +397,16 @@ describe("PrismaProductRepository mapping", () => {
 
     const found = await repository.findByProductCode("PROD-001");
 
-    expect(found?.toProps().id).toBe(entity.id);
+    expect(found?.product.toProps().id).toBe(entity.id);
   });
 
   it("maps zero purchase cost to null replacement cost", async () => {
-    const record: ProductRecord = {
+    const record: MockProductRow = {
       id: PRODUCT_ID,
       productCode: "PROD-003",
       categoryId: null,
+      brandId: null,
+      unitId: null,
       name: "No Cost Item",
       description: null,
       purchaseCost: new Prisma.Decimal(0),
@@ -387,6 +424,6 @@ describe("PrismaProductRepository mapping", () => {
 
     const found = await repository.findById(PRODUCT_ID);
 
-    expect(found?.replacementCost).toBeNull();
+    expect(found?.product.replacementCost).toBeNull();
   });
 });

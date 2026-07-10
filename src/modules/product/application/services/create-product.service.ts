@@ -7,6 +7,7 @@ import {
   CreateProductSchema,
   type CreateProductInput,
 } from "../schemas/product.schemas";
+import { validateProductCatalogRefs } from "./product-catalog.validation";
 import { toProductAuditValues } from "./product-audit.mapper";
 import {
   PRODUCT_ENTITY_NAME,
@@ -23,30 +24,47 @@ export class CreateProductService {
     const data = parseRequest(CreateProductSchema, input);
     const createData = toCreateProductData(data);
 
-    return this.transactionRunner.run(async ({ repository, auditLogger }) => {
-      const existingCode = await repository.findByProductCode(
-        createData.productCode,
-      );
+    return this.transactionRunner.run(
+      async ({
+        repository,
+        categoryRepository,
+        brandRepository,
+        unitRepository,
+        auditLogger,
+      }) => {
+        await validateProductCatalogRefs(
+          { categoryRepository, brandRepository, unitRepository },
+          {
+            categoryId: createData.categoryId,
+            brandId: createData.brandId,
+            unitId: createData.unitId,
+          },
+        );
 
-      if (existingCode !== null) {
-        throw new ConflictError({
-          message: "Product code already exists",
-          details: { productCode: createData.productCode },
+        const existingCode = await repository.findByProductCode(
+          createData.productCode,
+        );
+
+        if (existingCode !== null) {
+          throw new ConflictError({
+            message: "Product code already exists",
+            details: { productCode: createData.productCode },
+          });
+        }
+
+        const record = await repository.create(createData);
+
+        await auditLogger.log({
+          module: PRODUCT_MODULE,
+          entityName: PRODUCT_ENTITY_NAME,
+          recordId: record.product.id,
+          action: "CREATE",
+          status: "SUCCESS",
+          newValues: toProductAuditValues(record.product),
         });
-      }
 
-      const product = await repository.create(createData);
-
-      await auditLogger.log({
-        module: PRODUCT_MODULE,
-        entityName: PRODUCT_ENTITY_NAME,
-        recordId: product.id,
-        action: "CREATE",
-        status: "SUCCESS",
-        newValues: toProductAuditValues(product),
-      });
-
-      return toProductDto(product);
-    });
+        return toProductDto(record);
+      },
+    );
   }
 }

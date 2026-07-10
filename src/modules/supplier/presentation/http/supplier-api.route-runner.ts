@@ -1,31 +1,23 @@
 import type { NextRequest } from "next/server";
 
-import { auth } from "@/lib/auth";
 import type { SupplierApplicationServices } from "@/modules/supplier/application/services/supplier-application-services.interface";
-import {
-  createExecutionContext,
-  createRequestContext,
-  type ExecutionContext,
-} from "@/shared/application/context";
+import type { ExecutionContext } from "@/shared/application/context";
 import { assertPermission } from "@/shared/application/authorization";
 import type { Permission } from "@/shared/application/authorization";
-import { isUserRole } from "@/shared/application/authorization/types";
-import { appConfig } from "@/shared/config/app.config";
 import {
   normalizeError,
   serializeAppError,
-  UnauthorizedError,
 } from "@/shared/infrastructure/errors";
+import {
+  authenticateApiRequest,
+  toUnauthorizedRouteResult,
+} from "@/shared/infrastructure/http/authenticate-api-request";
 import {
   errorResponse,
   successResponse,
   type RouteHandlerResult,
 } from "@/shared/infrastructure/http/api-response";
 import { getRequestId } from "@/shared/infrastructure/http/headers";
-import {
-  createConsoleLogger,
-  createRequestLogger,
-} from "@/shared/infrastructure/logging";
 
 export interface SupplierApiRouteOptions<T> {
   request: NextRequest;
@@ -46,45 +38,9 @@ export async function runSupplierApiRoute<T>(
     options;
   const requestId = getRequestId(request.headers);
 
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-
-  if (session === null) {
-    const error = new UnauthorizedError();
-    const serialized = serializeAppError(error, requestId);
-
-    return {
-      status: error.httpStatus,
-      body: errorResponse(serialized.error, requestId),
-    };
-  }
-
-  const role = isUserRole(session.user.role) ? session.user.role : undefined;
-
-  const requestContext = createRequestContext({
-    requestId,
-    route,
-    httpMethod,
-    userId: session.user.id,
-    role,
-    ipAddress: request.headers.get("x-forwarded-for") ?? undefined,
-    userAgent: request.headers.get("user-agent") ?? undefined,
-  });
-
-  const baseLogger = createConsoleLogger({ level: appConfig.logging.level });
-  const logger = createRequestLogger(baseLogger, {
-    requestId,
-    route,
-    userId: session.user.id,
-  });
-
-  const ctx = createExecutionContext({
-    request: requestContext,
-    logger,
-  });
-
   try {
+    const { ctx } = await authenticateApiRequest(request, route, httpMethod);
+
     assertPermission(ctx.request, permission);
 
     const services = resolveServices(ctx);
@@ -95,6 +51,12 @@ export async function runSupplierApiRoute<T>(
       body: successResponse(data, requestId),
     };
   } catch (error) {
+    const authFailure = toUnauthorizedRouteResult(error, requestId);
+
+    if (authFailure.status === 401) {
+      return authFailure;
+    }
+
     const normalized = normalizeError(error);
     const serialized = serializeAppError(normalized, requestId);
 

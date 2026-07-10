@@ -14,6 +14,8 @@ export const PRODUCT_SORT_FIELDS = [
   "unit",
   "rentalRate",
   "replacementCost",
+  "categoryId",
+  "brandId",
   "createdAt",
   "updatedAt",
   "isActive",

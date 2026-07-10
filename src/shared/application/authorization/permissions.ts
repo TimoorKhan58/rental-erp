@@ -126,10 +126,27 @@ export const PERMISSIONS = {
   reports: {
     read: "reports:read",
   },
+  assets: {
+    read: "assets:read",
+    create: "assets:create",
+    update: "assets:update",
+    transfer: "assets:transfer",
+    dispose: "assets:dispose",
+    maintenance: "assets:maintenance",
+  },
+  assetCategories: {
+    read: "asset-categories:read",
+    create: "asset-categories:create",
+    update: "asset-categories:update",
+    delete: "asset-categories:delete",
+  },
   expenses: {
     read: "expenses:read",
     create: "expenses:create",
     update: "expenses:update",
+    approve: "expenses:approve",
+    reject: "expenses:reject",
+    pay: "expenses:pay",
   },
   audit: {
     read: "audit:read",
@@ -138,8 +155,17 @@ export const PERMISSIONS = {
     read: "notifications:read",
     send: "notifications:send",
   },
+  dashboard: {
+    read: "dashboard:read",
+    update: "dashboard:update",
+  },
   settings: {
-    manage: "settings:manage",
+    read: "settings:read",
+    update: "settings:update",
+  },
+  sequences: {
+    read: "sequences:read",
+    update: "sequences:update",
   },
 } as const;
 

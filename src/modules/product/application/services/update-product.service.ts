@@ -10,6 +10,7 @@ import {
   type ProductIdParamInput,
   type UpdateProductInput,
 } from "../schemas/product.schemas";
+import { validateProductCatalogRefs } from "./product-catalog.validation";
 import { toProductAuditValues } from "./product-audit.mapper";
 import {
   PRODUCT_ENTITY_NAME,
@@ -31,29 +32,46 @@ export class UpdateProductService {
     const productId = toProductId(id);
     const updateData = toUpdateProductData(data);
 
-    return this.transactionRunner.run(async ({ repository, auditLogger }) => {
-      const existing = await repository.findById(productId);
+    return this.transactionRunner.run(
+      async ({
+        repository,
+        categoryRepository,
+        brandRepository,
+        unitRepository,
+        auditLogger,
+      }) => {
+        const existing = await repository.findById(productId);
 
-      if (existing === null) {
-        throw new NotFoundError({
-          message: "Product not found",
-          details: { id },
+        if (existing === null) {
+          throw new NotFoundError({
+            message: "Product not found",
+            details: { id },
+          });
+        }
+
+        await validateProductCatalogRefs(
+          { categoryRepository, brandRepository, unitRepository },
+          {
+            categoryId: updateData.categoryId,
+            brandId: updateData.brandId,
+            unitId: updateData.unitId,
+          },
+        );
+
+        const updated = await repository.update(productId, updateData);
+
+        await auditLogger.log({
+          module: PRODUCT_MODULE,
+          entityName: PRODUCT_ENTITY_NAME,
+          recordId: updated.product.id,
+          action: "UPDATE",
+          status: "SUCCESS",
+          oldValues: toProductAuditValues(existing.product),
+          newValues: toProductAuditValues(updated.product),
         });
-      }
 
-      const updated = await repository.update(productId, updateData);
-
-      await auditLogger.log({
-        module: PRODUCT_MODULE,
-        entityName: PRODUCT_ENTITY_NAME,
-        recordId: updated.id,
-        action: "UPDATE",
-        status: "SUCCESS",
-        oldValues: toProductAuditValues(existing),
-        newValues: toProductAuditValues(updated),
-      });
-
-      return toProductDto(updated);
-    });
+        return toProductDto(updated);
+      },
+    );
   }
 }

@@ -14,15 +14,15 @@ export class GetProductByIdService {
 
   async execute(input: ProductIdParamInput): Promise<ProductDto> {
     const params = parseRequest(ProductIdParamSchema, input);
-    const product = await this.repository.findById(toProductId(params.id));
+    const record = await this.repository.findById(toProductId(params.id));
 
-    if (product === null) {
+    if (record === null) {
       throw new NotFoundError({
         message: "Product not found",
         details: { id: params.id },
       });
     }
 
-    return toProductDto(product);
+    return toProductDto(record);
   }
 }

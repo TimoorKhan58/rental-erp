@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { ProductListQuery } from "@/modules/product/domain/product-list.query";
+import type { ProductRecord } from "@/modules/product/domain/product.repository.interface";
 import type { ProductId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -12,7 +13,6 @@ import {
   runRepositoryPagedQuery,
 } from "@/shared/infrastructure/database";
 
-import { Product } from "@/modules/product/domain/product.entity";
 import type { IProductRepository } from "@/modules/product/domain/product.repository.interface";
 import type {
   CreateProductData,
@@ -21,8 +21,9 @@ import type {
 import { PRODUCT_SEARCH_FIELDS } from "@/modules/product/domain/product.constants";
 
 import {
+  PRODUCT_DETAIL_INCLUDE,
   toProductCreateInput,
-  toProductDomain,
+  toProductRecord,
   toProductUpdateInput,
 } from "../mappers/product.persistence.mapper";
 
@@ -47,6 +48,22 @@ function mapProductFilter(
     where.isActive = Boolean(filter.isActive);
   }
 
+  if (filter.categoryId !== undefined) {
+    where.categoryId = String(filter.categoryId);
+  }
+
+  if (filter.brandId !== undefined) {
+    where.brandId = String(filter.brandId);
+  }
+
+  if (filter.tagId !== undefined) {
+    where.tagAssignments = {
+      some: {
+        tagId: String(filter.tagId),
+      },
+    };
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -67,36 +84,59 @@ function mapProductSort(
   return mapped;
 }
 
+function buildListFilter(query: ProductListQuery): Record<string, unknown> | undefined {
+  const filter: Record<string, unknown> = {};
+
+  if (query.isActive !== undefined) {
+    filter.isActive = query.isActive;
+  }
+
+  if (query.categoryId !== undefined) {
+    filter.categoryId = query.categoryId;
+  }
+
+  if (query.brandId !== undefined) {
+    filter.brandId = query.brandId;
+  }
+
+  if (query.tagId !== undefined) {
+    filter.tagId = query.tagId;
+  }
+
+  return Object.keys(filter).length > 0 ? filter : undefined;
+}
+
 export class PrismaProductRepository implements IProductRepository {
   constructor(private readonly runner: RepositoryRunner) {}
 
-  findById(id: ProductId): Promise<Product | null> {
+  findById(id: ProductId): Promise<ProductRecord | null> {
     return repositoryFindFirst(
       this.runner,
       (db) =>
         db.product.findUnique({
           where: { id },
+          include: PRODUCT_DETAIL_INCLUDE,
         }),
       { model: MODEL, operation: "findById" },
-    ).then((record) => (record ? toProductDomain(record) : null));
+    ).then((record) => (record ? toProductRecord(record) : null));
   }
 
-  findByProductCode(productCode: string): Promise<Product | null> {
+  findByProductCode(productCode: string): Promise<ProductRecord | null> {
     return repositoryFindFirst(
       this.runner,
       (db) =>
         db.product.findUnique({
           where: { productCode },
+          include: PRODUCT_DETAIL_INCLUDE,
         }),
       { model: MODEL, operation: "findByProductCode" },
-    ).then((record) => (record ? toProductDomain(record) : null));
+    ).then((record) => (record ? toProductRecord(record) : null));
   }
 
   async findPaged(
     query: ProductListQuery,
-  ): Promise<PaginatedResult<Product>> {
-    const filter =
-      query.isActive !== undefined ? { isActive: query.isActive } : undefined;
+  ): Promise<PaginatedResult<ProductRecord>> {
+    const filter = buildListFilter(query);
 
     const result = await runRepositoryPagedQuery(
       this.runner,
@@ -120,6 +160,7 @@ export class PrismaProductRepository implements IProductRepository {
               orderBy: args.orderBy,
               skip: args.skip,
               take: args.take,
+              include: PRODUCT_DETAIL_INCLUDE,
             }),
           count: (db, args) =>
             db.product.count({
@@ -131,7 +172,7 @@ export class PrismaProductRepository implements IProductRepository {
     );
 
     return {
-      items: result.items.map(toProductDomain),
+      items: result.items.map(toProductRecord),
       meta: result.meta,
     };
   }
@@ -150,31 +191,33 @@ export class PrismaProductRepository implements IProductRepository {
     return record !== null;
   }
 
-  async create(data: CreateProductData): Promise<Product> {
+  async create(data: CreateProductData): Promise<ProductRecord> {
     const record = await repositoryCreate(
       this.runner,
       (db) =>
         db.product.create({
-          data: toProductCreateInput(data) as Prisma.ProductCreateInput,
+          data: toProductCreateInput(data),
+          include: PRODUCT_DETAIL_INCLUDE,
         }),
       { model: MODEL, operation: "create" },
     );
 
-    return toProductDomain(record);
+    return toProductRecord(record);
   }
 
-  async update(id: ProductId, data: UpdateProductData): Promise<Product> {
+  async update(id: ProductId, data: UpdateProductData): Promise<ProductRecord> {
     const record = await repositoryUpdate(
       this.runner,
       (db) =>
         db.product.update({
           where: { id },
-          data: toProductUpdateInput(data),
+          data: toProductUpdateInput(data) as Prisma.ProductUpdateInput,
+          include: PRODUCT_DETAIL_INCLUDE,
         }),
       { model: MODEL, operation: "update" },
     );
 
-    return toProductDomain(record);
+    return toProductRecord(record);
   }
 
   delete(id: ProductId): Promise<void> {

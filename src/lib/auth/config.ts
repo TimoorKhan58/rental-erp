@@ -29,6 +29,11 @@ export const auth = betterAuth({
         defaultValue: DEFAULT_USER_ROLE,
         input: false,
       },
+      erpUserId: {
+        type: "string",
+        required: false,
+        input: false,
+      },
     },
   },
   session: {

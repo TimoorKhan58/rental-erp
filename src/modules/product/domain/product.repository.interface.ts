@@ -3,14 +3,23 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Product } from "./product.entity";
 import type { ProductListQuery } from "./product-list.query";
-import type { CreateProductData, UpdateProductData } from "./product.types";
+import type {
+  CreateProductData,
+  ProductMetadata,
+  UpdateProductData,
+} from "./product.types";
+
+export interface ProductRecord {
+  product: Product;
+  metadata: ProductMetadata;
+}
 
 export interface IProductRepository {
-  findById(id: ProductId): Promise<Product | null>;
-  findByProductCode(productCode: string): Promise<Product | null>;
-  findPaged(query: ProductListQuery): Promise<PaginatedResult<Product>>;
+  findById(id: ProductId): Promise<ProductRecord | null>;
+  findByProductCode(productCode: string): Promise<ProductRecord | null>;
+  findPaged(query: ProductListQuery): Promise<PaginatedResult<ProductRecord>>;
   exists(id: ProductId): Promise<boolean>;
-  create(data: CreateProductData): Promise<Product>;
-  update(id: ProductId, data: UpdateProductData): Promise<Product>;
+  create(data: CreateProductData): Promise<ProductRecord>;
+  update(id: ProductId, data: UpdateProductData): Promise<ProductRecord>;
   delete(id: ProductId): Promise<void>;
 }

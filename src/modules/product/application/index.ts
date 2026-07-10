@@ -1,7 +1,10 @@
 export type {
   CreateProductDto,
+  ProductAttributeValueDto,
   ProductDto,
   ProductIdParamDto,
+  ProductImageDto,
+  ProductSpecificationDto,
   UpdateProductDto,
 } from "./dtos/product.dto";
 export { toProductListQuery } from "./mappers/product-list.mapper";

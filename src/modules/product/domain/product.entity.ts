@@ -1,4 +1,9 @@
-import type { ProductId } from "@/shared/domain/ids";
+import type {
+  BrandId,
+  CategoryId,
+  ProductId,
+  UnitOfMeasureId,
+} from "@/shared/domain/ids";
 import type { Entity } from "@/shared/domain/base-entity";
 
 import type { CreateProductData } from "./product.types";
@@ -22,6 +27,9 @@ export interface ProductProps {
   rentalRate: RentalRate;
   replacementCost: ReplacementCost | null;
   isActive: boolean;
+  categoryId: CategoryId | null;
+  brandId: BrandId | null;
+  unitId: UnitOfMeasureId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +43,9 @@ export class Product implements Entity<ProductId> {
   readonly rentalRate: RentalRate;
   readonly replacementCost: ReplacementCost | null;
   readonly isActive: boolean;
+  readonly categoryId: CategoryId | null;
+  readonly brandId: BrandId | null;
+  readonly unitId: UnitOfMeasureId | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
@@ -47,6 +58,9 @@ export class Product implements Entity<ProductId> {
     this.rentalRate = props.rentalRate;
     this.replacementCost = props.replacementCost;
     this.isActive = props.isActive;
+    this.categoryId = props.categoryId;
+    this.brandId = props.brandId;
+    this.unitId = props.unitId;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
   }
@@ -62,6 +76,9 @@ export class Product implements Entity<ProductId> {
       rentalRate: data.rentalRate,
       replacementCost: data.replacementCost ?? null,
       isActive: data.isActive ?? true,
+      categoryId: data.categoryId ?? null,
+      brandId: data.brandId ?? null,
+      unitId: data.unitId ?? null,
     };
   }
 
@@ -75,6 +92,9 @@ export class Product implements Entity<ProductId> {
       rentalRate: createRentalRate(props.rentalRate),
       replacementCost: createReplacementCost(props.replacementCost),
       isActive: props.isActive,
+      categoryId: props.categoryId,
+      brandId: props.brandId,
+      unitId: props.unitId,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
     });
@@ -90,6 +110,9 @@ export class Product implements Entity<ProductId> {
       rentalRate: this.rentalRate,
       replacementCost: this.replacementCost,
       isActive: this.isActive,
+      categoryId: this.categoryId,
+      brandId: this.brandId,
+      unitId: this.unitId,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

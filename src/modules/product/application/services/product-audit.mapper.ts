@@ -15,5 +15,8 @@ export function toProductAuditValues(product: Product): AuditValues {
     rentalRate: decimalToDtoString(props.rentalRate),
     replacementCost: decimalToDtoString(props.replacementCost),
     isActive: props.isActive,
+    categoryId: props.categoryId,
+    brandId: props.brandId,
+    unitId: props.unitId,
   };
 }

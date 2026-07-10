@@ -28,13 +28,19 @@ const READ_PERMISSIONS: Permission[] = [
   PERMISSIONS.journalEntries.read,
   PERMISSIONS.financialReports.read,
   PERMISSIONS.reports.read,
+  PERMISSIONS.assets.read,
+  PERMISSIONS.assetCategories.read,
   PERMISSIONS.expenses.read,
+  PERMISSIONS.settings.read,
+  PERMISSIONS.sequences.read,
   PERMISSIONS.audit.read,
   PERMISSIONS.notifications.read,
+  PERMISSIONS.dashboard.read,
+  PERMISSIONS.dashboard.update,
 ];
 
 const MANAGER_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter(
-  (permission) => permission !== PERMISSIONS.settings.manage,
+  (permission) => permission !== PERMISSIONS.settings.update,
 );
 
 const WORKER_PERMISSIONS: Permission[] = [
@@ -87,6 +93,18 @@ const WORKER_PERMISSIONS: Permission[] = [
   PERMISSIONS.payments.post,
   PERMISSIONS.payments.void,
   PERMISSIONS.notifications.read,
+  PERMISSIONS.dashboard.read,
+  PERMISSIONS.dashboard.update,
+  PERMISSIONS.assets.read,
+  PERMISSIONS.assets.create,
+  PERMISSIONS.assets.update,
+  PERMISSIONS.assets.transfer,
+  PERMISSIONS.assets.dispose,
+  PERMISSIONS.assets.maintenance,
+  PERMISSIONS.assetCategories.read,
+  PERMISSIONS.assetCategories.create,
+  PERMISSIONS.assetCategories.update,
+  PERMISSIONS.assetCategories.delete,
 ];
 
 const ACCOUNTANT_PERMISSIONS: Permission[] = [
@@ -109,6 +127,19 @@ const ACCOUNTANT_PERMISSIONS: Permission[] = [
   PERMISSIONS.journalEntries.void,
   PERMISSIONS.expenses.create,
   PERMISSIONS.expenses.update,
+  PERMISSIONS.expenses.approve,
+  PERMISSIONS.expenses.reject,
+  PERMISSIONS.expenses.pay,
+  PERMISSIONS.assets.read,
+  PERMISSIONS.assets.create,
+  PERMISSIONS.assets.update,
+  PERMISSIONS.assets.transfer,
+  PERMISSIONS.assets.dispose,
+  PERMISSIONS.assets.maintenance,
+  PERMISSIONS.assetCategories.read,
+  PERMISSIONS.assetCategories.create,
+  PERMISSIONS.assetCategories.update,
+  PERMISSIONS.assetCategories.delete,
 ];
 
 export const ROLE_PERMISSIONS = {

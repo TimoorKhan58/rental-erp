@@ -59,6 +59,9 @@ export function buildProductEntity(
     rentalRate: override.rentalRate ?? created.rentalRate,
     replacementCost: override.replacementCost ?? created.replacementCost,
     isActive: override.isActive ?? created.isActive,
+    categoryId: override.categoryId ?? created.categoryId,
+    brandId: override.brandId ?? created.brandId,
+    unitId: override.unitId ?? created.unitId,
     createdAt: override.createdAt ?? now,
     updatedAt: override.updatedAt ?? now,
   });
@@ -79,6 +82,14 @@ export function buildProductDtoFromEntity(product: Product) {
         ? null
         : props.replacementCost.toFixed(2),
     isActive: props.isActive,
+    categoryId: props.categoryId,
+    brandId: props.brandId,
+    unitId: props.unitId,
+    tags: [],
+    images: [],
+    specifications: [],
+    attributeValues: [],
+    variantCount: 0,
     createdAt: props.createdAt.toISOString(),
     updatedAt: props.updatedAt.toISOString(),
   };

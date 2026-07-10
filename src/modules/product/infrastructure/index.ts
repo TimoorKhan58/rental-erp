@@ -13,6 +13,9 @@ export {
 export {
   toProductCreateInput,
   toProductDomain,
+  toProductMetadata,
+  toProductRecord,
   toProductUpdateInput,
+  PRODUCT_DETAIL_INCLUDE,
 } from "./mappers/product.persistence.mapper";
 export { PrismaProductRepository } from "./repositories/prisma-product.repository";

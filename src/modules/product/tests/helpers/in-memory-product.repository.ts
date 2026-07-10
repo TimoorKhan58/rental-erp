@@ -1,8 +1,10 @@
 import { Product } from "@/modules/product/domain/product.entity";
 import type { ProductListQuery } from "@/modules/product/domain/product-list.query";
+import type { ProductRecord } from "@/modules/product/domain/product.repository.interface";
 import type { IProductRepository } from "@/modules/product/domain/product.repository.interface";
 import type {
   CreateProductData,
+  ProductMetadata,
   UpdateProductData,
 } from "@/modules/product/domain/product.types";
 import type { ProductId } from "@/shared/domain/ids";
@@ -12,6 +14,22 @@ import { buildProductEntity } from "./product.fixtures";
 
 interface StoredProduct {
   record: ReturnType<Product["toProps"]>;
+  metadata: ProductMetadata;
+}
+
+const EMPTY_METADATA: ProductMetadata = {
+  tagIds: [],
+  images: [],
+  specifications: [],
+  attributeValues: [],
+  variantCount: 0,
+};
+
+function toProductRecord(stored: StoredProduct): ProductRecord {
+  return {
+    product: Product.reconstitute(stored.record),
+    metadata: structuredClone(stored.metadata),
+  };
 }
 
 export class InMemoryProductRepository implements IProductRepository {
@@ -21,7 +39,10 @@ export class InMemoryProductRepository implements IProductRepository {
     return new Map(
       Array.from(this.store.entries()).map(([id, value]) => [
         id,
-        { record: structuredClone(value.record) },
+        {
+          record: structuredClone(value.record),
+          metadata: structuredClone(value.metadata),
+        },
       ]),
     );
   }
@@ -29,7 +50,10 @@ export class InMemoryProductRepository implements IProductRepository {
   restore(snapshot: Map<string, StoredProduct>): void {
     this.store.clear();
     for (const [id, value] of snapshot.entries()) {
-      this.store.set(id, { record: structuredClone(value.record) });
+      this.store.set(id, {
+        record: structuredClone(value.record),
+        metadata: structuredClone(value.metadata),
+      });
     }
   }
 
@@ -37,53 +61,72 @@ export class InMemoryProductRepository implements IProductRepository {
     this.store.clear();
     for (const product of products) {
       const props = product.toProps();
-      this.store.set(props.id, { record: props });
+      this.store.set(props.id, {
+        record: props,
+        metadata: structuredClone(EMPTY_METADATA),
+      });
     }
   }
 
-  findById(id: ProductId): Promise<Product | null> {
+  findById(id: ProductId): Promise<ProductRecord | null> {
     const stored = this.store.get(id);
-    return Promise.resolve(stored ? Product.reconstitute(stored.record) : null);
+    return Promise.resolve(stored ? toProductRecord(stored) : null);
   }
 
-  findByProductCode(productCode: string): Promise<Product | null> {
+  findByProductCode(productCode: string): Promise<ProductRecord | null> {
     for (const stored of this.store.values()) {
       if (stored.record.productCode === productCode) {
-        return Promise.resolve(Product.reconstitute(stored.record));
+        return Promise.resolve(toProductRecord(stored));
       }
     }
 
     return Promise.resolve(null);
   }
 
-  async findPaged(query: ProductListQuery): Promise<PaginatedResult<Product>> {
-    let items = Array.from(this.store.values()).map((stored) =>
-      Product.reconstitute(stored.record),
-    );
+  async findPaged(query: ProductListQuery): Promise<PaginatedResult<ProductRecord>> {
+    let items = Array.from(this.store.values()).map(toProductRecord);
 
     if (query.isActive !== undefined) {
-      items = items.filter((item) => item.isActive === query.isActive);
+      items = items.filter((item) => item.product.isActive === query.isActive);
+    }
+
+    if (query.categoryId !== undefined) {
+      items = items.filter(
+        (item) => item.product.categoryId === query.categoryId,
+      );
+    }
+
+    if (query.brandId !== undefined) {
+      items = items.filter((item) => item.product.brandId === query.brandId);
+    }
+
+    if (query.tagId !== undefined) {
+      items = items.filter((item) =>
+        item.metadata.tagIds.includes(query.tagId!),
+      );
     }
 
     if (query.search) {
       const term = query.search.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(term) ||
-          item.productCode.toLowerCase().includes(term) ||
-          (item.description?.toLowerCase().includes(term) ?? false) ||
-          item.unit.toLowerCase().includes(term),
-      );
+      items = items.filter((item) => {
+        const product = item.product;
+        return (
+          product.name.toLowerCase().includes(term) ||
+          product.productCode.toLowerCase().includes(term) ||
+          (product.description?.toLowerCase().includes(term) ?? false) ||
+          product.unit.toLowerCase().includes(term)
+        );
+      });
     }
 
     if (query.sortBy) {
       const direction = query.sortOrder === "desc" ? -1 : 1;
       items.sort((left, right) => {
         const leftValue = String(
-          left[query.sortBy as keyof Product] ?? "",
+          left.product[query.sortBy as keyof Product] ?? "",
         ).toLowerCase();
         const rightValue = String(
-          right[query.sortBy as keyof Product] ?? "",
+          right.product[query.sortBy as keyof Product] ?? "",
         ).toLowerCase();
 
         return leftValue.localeCompare(rightValue) * direction;
@@ -109,7 +152,7 @@ export class InMemoryProductRepository implements IProductRepository {
     return this.store.has(id);
   }
 
-  async create(data: CreateProductData): Promise<Product> {
+  async create(data: CreateProductData): Promise<ProductRecord> {
     const normalized = Product.create(data);
     const now = new Date();
     const id = crypto.randomUUID() as ProductId;
@@ -121,11 +164,34 @@ export class InMemoryProductRepository implements IProductRepository {
       updatedAt: now,
     });
 
-    this.store.set(id, { record: product.toProps() });
-    return product;
+    const metadata: ProductMetadata = {
+      tagIds: data.tagIds ? [...data.tagIds] : [],
+      images: (data.images ?? []).map((image, index) => ({
+        id: crypto.randomUUID(),
+        url: image.url,
+        altText: image.altText ?? null,
+        sortOrder: image.sortOrder ?? index,
+        isPrimary: image.isPrimary ?? index === 0,
+      })),
+      specifications: (data.specifications ?? []).map((specification, index) => ({
+        id: crypto.randomUUID(),
+        key: specification.key,
+        value: specification.value,
+        sortOrder: specification.sortOrder ?? index,
+      })),
+      attributeValues: (data.attributeValues ?? []).map((attributeValue) => ({
+        id: crypto.randomUUID(),
+        attributeId: attributeValue.attributeId,
+        value: attributeValue.value,
+      })),
+      variantCount: 0,
+    };
+
+    this.store.set(id, { record: product.toProps(), metadata });
+    return toProductRecord(this.store.get(id)!);
   }
 
-  async update(id: ProductId, data: UpdateProductData): Promise<Product> {
+  async update(id: ProductId, data: UpdateProductData): Promise<ProductRecord> {
     const existing = this.store.get(id);
 
     if (!existing) {
@@ -146,11 +212,51 @@ export class InMemoryProductRepository implements IProductRepository {
           ? data.replacementCost
           : existing.record.replacementCost,
       isActive: data.isActive ?? existing.record.isActive,
+      categoryId:
+        data.categoryId !== undefined
+          ? data.categoryId
+          : existing.record.categoryId,
+      brandId:
+        data.brandId !== undefined ? data.brandId : existing.record.brandId,
+      unitId: data.unitId !== undefined ? data.unitId : existing.record.unitId,
       updatedAt: new Date(),
     });
 
-    this.store.set(id, { record: updated.toProps() });
-    return updated;
+    const metadata: ProductMetadata = {
+      tagIds:
+        data.tagIds !== undefined ? [...data.tagIds] : existing.metadata.tagIds,
+      images:
+        data.images !== undefined
+          ? data.images.map((image, index) => ({
+              id: crypto.randomUUID(),
+              url: image.url,
+              altText: image.altText ?? null,
+              sortOrder: image.sortOrder ?? index,
+              isPrimary: image.isPrimary ?? index === 0,
+            }))
+          : existing.metadata.images,
+      specifications:
+        data.specifications !== undefined
+          ? data.specifications.map((specification, index) => ({
+              id: crypto.randomUUID(),
+              key: specification.key,
+              value: specification.value,
+              sortOrder: specification.sortOrder ?? index,
+            }))
+          : existing.metadata.specifications,
+      attributeValues:
+        data.attributeValues !== undefined
+          ? data.attributeValues.map((attributeValue) => ({
+              id: crypto.randomUUID(),
+              attributeId: attributeValue.attributeId,
+              value: attributeValue.value,
+            }))
+          : existing.metadata.attributeValues,
+      variantCount: existing.metadata.variantCount,
+    };
+
+    this.store.set(id, { record: updated.toProps(), metadata });
+    return toProductRecord(this.store.get(id)!);
   }
 
   async delete(id: ProductId): Promise<void> {

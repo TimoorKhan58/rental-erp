@@ -34,10 +34,10 @@ export class DeleteProductService {
       await auditLogger.log({
         module: PRODUCT_MODULE,
         entityName: PRODUCT_ENTITY_NAME,
-        recordId: existing.id,
+        recordId: existing.product.id,
         action: "DELETE",
         status: "SUCCESS",
-        oldValues: toProductAuditValues(existing),
+        oldValues: toProductAuditValues(existing.product),
       });
     });
   }

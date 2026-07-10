@@ -18,7 +18,8 @@ vi.mock("@/shared/config/env", () => ({
 }));
 
 import { PERMISSIONS } from "@/shared/application/authorization";
-import { USER_ROLES } from "@/constants/roles";
+import { USER_ROLES, type UserRole } from "@/constants/roles";
+import { createMockAuthSession } from "@/shared/infrastructure/auth/test-session.factory";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
 import { NotFoundError } from "@/shared/infrastructure/errors";
 import type { RentalInvoiceApplicationServices } from "@/modules/rental-invoice/application/services/rental-invoice-application-services.interface";
@@ -40,19 +41,8 @@ vi.mock("@/lib/auth", () => ({
   },
 }));
 
-function mockSession(role: string) {
-  getSessionMock.mockResolvedValue({
-    user: {
-      id: "user-1",
-      role,
-      name: "Test User",
-      email: "test@example.com",
-    },
-    session: {
-      id: "session-1",
-      expiresAt: new Date(),
-    },
-  });
+function mockSession(role: UserRole) {
+  getSessionMock.mockResolvedValue(createMockAuthSession(role));
 }
 
 function createMockServices() {
