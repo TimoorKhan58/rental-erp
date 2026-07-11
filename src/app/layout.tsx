@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { APPLICATION } from "@/constants/application";
-import { ThemeProvider } from "@/components/shared/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { AppProviders } from "@/providers";
 import { cn } from "@/lib/utils";
 import "./globals.css";
+import "@/styles/tokens.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,15 +29,7 @@ export default function RootLayout({
       className={cn("h-full antialiased", inter.variable)}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster richColors closeButton />
-        </ThemeProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

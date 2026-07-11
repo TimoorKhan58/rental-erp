@@ -36,9 +36,9 @@ export function Sidebar() {
           className="shrink-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           {collapsed ? (
-            <PanelLeftOpenIcon className="size-4" />
+            <PanelLeftOpenIcon className="size-4" aria-hidden="true" />
           ) : (
-            <PanelLeftCloseIcon className="size-4" />
+            <PanelLeftCloseIcon className="size-4" aria-hidden="true" />
           )}
         </Button>
       </div>

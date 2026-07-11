@@ -1,10 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { BellIcon, MenuIcon, UserIcon } from "lucide-react";
+import { useState } from "react";
+import {
+  MenuIcon,
+  PlusIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-react";
 import { APPLICATION } from "@/constants/application";
+import { ROUTES } from "@/config/routes";
 import { useSession } from "@/lib/auth/client";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { SearchInput } from "@/components/design-system/form";
+import { AppButton } from "@/components/design-system/button";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { NotificationTopbarControl } from "@/features/notification";
 import { useSidebar } from "./sidebar-context";
 
 function getInitials(name: string): string {
@@ -26,15 +36,22 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
+const QUICK_ACTION_LINKS = [
+  { label: "New Customer", href: ROUTES.customersNew },
+  { label: "New Rental", href: ROUTES.rentalOrders },
+  { label: "Receive Payment", href: ROUTES.payments },
+] as const;
+
 export function Topbar() {
   const { openMobile } = useSidebar();
   const { data: session } = useSession();
+  const [search, setSearch] = useState("");
 
   const userName = session?.user.name ?? "Guest";
   const userInitials = session?.user.name ? getInitials(session.user.name) : "G";
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
+    <header className="sticky top-0 z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
       <Button
         variant="ghost"
         size="icon"
@@ -42,31 +59,51 @@ export function Topbar() {
         onClick={openMobile}
         aria-label="Open navigation menu"
       >
-        <MenuIcon className="size-4" />
+        <MenuIcon className="size-4" aria-hidden="true" />
       </Button>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="truncate text-sm font-semibold lg:hidden">
-          {APPLICATION.name}
-        </span>
-        <span className="hidden text-sm font-semibold lg:inline">
-          {APPLICATION.client}
-        </span>
+      <div className="hidden min-w-0 flex-1 items-center gap-3 md:flex">
+        <span className="truncate text-sm font-semibold">{APPLICATION.client}</span>
+        <div className="hidden max-w-sm flex-1 lg:block">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search customers, orders, products..."
+          />
+        </div>
       </div>
 
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Notifications"
-          disabled
-        >
-          <BellIcon className="size-4" />
-        </Button>
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-1 md:flex-none">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <AppButton
+                variant="outline"
+                size="sm"
+                className="hidden sm:inline-flex"
+                leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+                aria-label="Quick actions"
+              />
+            }
+          >
+            Quick Actions
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {QUICK_ACTION_LINKS.map((action) => (
+              <DropdownMenuItem key={action.label} render={<Link href={action.href} />}>
+                {action.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <NotificationTopbarControl />
 
         <ThemeToggle />
 
-        <Separator orientation="vertical" className="mx-1 h-6" />
+        <Separator orientation="vertical" className="mx-1 hidden h-6 sm:block" />
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -88,18 +125,21 @@ export function Topbar() {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>{session?.user.email ?? "Not signed in"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <UserIcon />
+            <DropdownMenuItem render={<Link href={ROUTES.settingsProfile} />}>
+              <UserIcon aria-hidden="true" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem disabled>Settings</DropdownMenuItem>
+            <DropdownMenuItem render={<Link href={ROUTES.settings} />}>
+              <SettingsIcon aria-hidden="true" />
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             {session ? (
-              <DropdownMenuItem render={<Link href="/logout" />}>
+              <DropdownMenuItem render={<Link href={ROUTES.logout} />}>
                 Sign out
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem render={<Link href="/login" />}>
+              <DropdownMenuItem render={<Link href={ROUTES.login} />}>
                 Sign in
               </DropdownMenuItem>
             )}

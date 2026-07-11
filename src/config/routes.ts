@@ -1,0 +1,123 @@
+/**
+ * Application route definitions for all Phase 7 frontend modules.
+ */
+export const ROUTES = {
+  home: "/",
+  login: "/login",
+  logout: "/logout",
+  unauthorized: "/unauthorized",
+
+  // Module routes
+  dashboard: "/dashboard",
+  customers: "/customers",
+  customersNew: "/customers/new",
+  customerDetail: (id: string) => `/customers/${id}`,
+  customerEdit: (id: string) => `/customers/${id}/edit`,
+  suppliers: "/suppliers",
+  suppliersNew: "/suppliers/new",
+  supplierDetail: (id: string) => `/suppliers/${id}`,
+  supplierEdit: (id: string) => `/suppliers/${id}/edit`,
+  warehouses: "/warehouses",
+  warehousesNew: "/warehouses/new",
+  warehouseDetail: (id: string) => `/warehouses/${id}`,
+  warehouseEdit: (id: string) => `/warehouses/${id}/edit`,
+  products: "/products",
+  productsNew: "/products/new",
+  productDetail: (id: string) => `/products/${id}`,
+  productEdit: (id: string) => `/products/${id}/edit`,
+  inventory: "/inventory",
+  inventoryDetail: (id: string) => `/inventory/${id}`,
+  procurements: "/procurements",
+  procurementsNew: "/procurements/new",
+  procurementDetail: (id: string) => `/procurements/${id}`,
+  procurementEdit: (id: string) => `/procurements/${id}/edit`,
+  rentalOrders: "/rental-orders",
+  rentalOrdersNew: "/rental-orders/new",
+  rentalOrderDetail: (id: string) => `/rental-orders/${id}`,
+  rentalOrderEdit: (id: string) => `/rental-orders/${id}/edit`,
+  dispatches: "/dispatches",
+  dispatchesNew: "/dispatches/new",
+  dispatchDetail: (id: string) => `/dispatches/${id}`,
+  dispatchEdit: (id: string) => `/dispatches/${id}/edit`,
+  returns: "/returns",
+  returnsNew: "/returns/new",
+  returnDetail: (id: string) => `/returns/${id}`,
+  returnEdit: (id: string) => `/returns/${id}/edit`,
+  repairs: "/repairs",
+  repairsNew: "/repairs/new",
+  repairDetail: (id: string) => `/repairs/${id}`,
+  repairEdit: (id: string) => `/repairs/${id}/edit`,
+  maintenance: "/maintenance",
+  maintenanceNew: "/maintenance/new",
+  maintenanceDetail: (id: string) => `/maintenance/${id}`,
+  maintenanceEdit: (id: string) => `/maintenance/${id}/edit`,
+  rentalInvoices: "/rental-invoices",
+  rentalInvoiceDetail: (id: string) => `/rental-invoices/${id}`,
+  payments: "/payments",
+  paymentsNew: "/payments/new",
+  paymentDetail: (id: string) => `/payments/${id}`,
+  paymentEdit: (id: string) => `/payments/${id}/edit`,
+  accounting: "/accounting",
+  accountingChartOfAccounts: "/accounting/chart-of-accounts",
+  accountingJournalEntries: "/accounting/journal-entries",
+  accountingJournalEntryDetail: (id: string) => `/accounting/journal-entries/${id}`,
+  accountingGeneralLedger: "/accounting/general-ledger",
+  accountingTrialBalance: "/accounting/trial-balance",
+  reports: "/reports",
+  reportsProfitLoss: "/reports/profit-loss",
+  reportsBalanceSheet: "/reports/balance-sheet",
+  reportsCashFlow: "/reports/cash-flow",
+  reportsRevenue: "/reports/revenue",
+  reportsExpenses: "/reports/expenses",
+  reportsRental: "/reports/rental",
+  reportsInventory: "/reports/inventory",
+  reportsCustomers: "/reports/customers",
+  audit: "/audit",
+  auditDetail: (id: string) => `/audit/${id}`,
+  notifications: "/notifications",
+  notificationDetail: (id: string) => `/notifications/${id}`,
+  settings: "/settings",
+  settingsProfile: "/settings/profile",
+  settingsCompany: "/settings/company",
+  settingsPreferences: "/settings/preferences",
+  settingsSecurity: "/settings/security",
+} as const;
+
+export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
+
+/** Routes that require an authenticated session. */
+export const PROTECTED_ROUTE_PREFIXES = [
+  ROUTES.home,
+  ROUTES.dashboard,
+  ROUTES.customers,
+  ROUTES.suppliers,
+  ROUTES.warehouses,
+  ROUTES.products,
+  ROUTES.inventory,
+  ROUTES.procurements,
+  ROUTES.rentalOrders,
+  ROUTES.dispatches,
+  ROUTES.returns,
+  ROUTES.repairs,
+  ROUTES.maintenance,
+  ROUTES.rentalInvoices,
+  ROUTES.payments,
+  ROUTES.accounting,
+  ROUTES.reports,
+  ROUTES.audit,
+  ROUTES.notifications,
+  ROUTES.settings,
+] as const;
+
+/** Routes accessible without authentication. */
+export const PUBLIC_ROUTES = [
+  ROUTES.login,
+  ROUTES.logout,
+  ROUTES.unauthorized,
+] as const;
+
+export type RouteConfig = {
+  path: AppRoute;
+  label: string;
+  protected: boolean;
+};

@@ -1,0 +1,16 @@
+export type {
+  ActivityItem,
+  ChartDataPoint,
+  DashboardData,
+  DashboardMetric,
+  DashboardNotification,
+  DashboardSummary,
+  DashboardTrend,
+  FinancialSummaryItem,
+  InventoryOverviewItem,
+  QuickAction,
+  RentalTrendPoint,
+  RevenueOverview,
+  SystemStatusItem,
+  UpcomingTask,
+} from "./dashboard.types";

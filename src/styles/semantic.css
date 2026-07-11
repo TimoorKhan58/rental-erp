@@ -1,0 +1,55 @@
+/**
+ * Semantic color tokens — light and dark themes.
+ * Components must reference these tokens, not raw color values.
+ */
+:root {
+  --surface: var(--card);
+  --surface-foreground: var(--card-foreground);
+
+  --success: oklch(0.62 0.17 145);
+  --success-foreground: oklch(0.98 0.02 145);
+  --success-muted: oklch(0.95 0.04 145);
+
+  --warning: oklch(0.75 0.15 75);
+  --warning-foreground: oklch(0.28 0.06 75);
+  --warning-muted: oklch(0.96 0.04 75);
+
+  --info: oklch(0.62 0.14 240);
+  --info-foreground: oklch(0.98 0.02 240);
+  --info-muted: oklch(0.95 0.03 240);
+
+  --error: var(--destructive);
+  --error-foreground: oklch(0.98 0.02 25);
+  --error-muted: oklch(0.95 0.04 25);
+
+  --primary-hover: color-mix(in oklch, var(--primary) 88%, var(--foreground));
+  --primary-active: color-mix(in oklch, var(--primary) 78%, var(--foreground));
+  --primary-disabled: color-mix(in oklch, var(--primary) 55%, transparent);
+
+  --secondary-hover: color-mix(in oklch, var(--secondary) 92%, var(--foreground));
+  --secondary-active: color-mix(in oklch, var(--secondary) 86%, var(--foreground));
+
+  --muted-hover: color-mix(in oklch, var(--muted) 92%, var(--foreground));
+  --border-strong: color-mix(in oklch, var(--border) 75%, var(--foreground));
+
+  --shadow-color: oklch(0.2 0 0 / 8%);
+}
+
+.dark {
+  --success: oklch(0.7 0.14 145);
+  --success-foreground: oklch(0.18 0.04 145);
+  --success-muted: oklch(0.28 0.06 145);
+
+  --warning: oklch(0.78 0.12 75);
+  --warning-foreground: oklch(0.2 0.05 75);
+  --warning-muted: oklch(0.3 0.05 75);
+
+  --info: oklch(0.72 0.12 240);
+  --info-foreground: oklch(0.18 0.04 240);
+  --info-muted: oklch(0.28 0.05 240);
+
+  --error-foreground: oklch(0.98 0.02 25);
+  --error-muted: oklch(0.32 0.08 25);
+
+  --shadow-color: oklch(0 0 0 / 35%);
+}

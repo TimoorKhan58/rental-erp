@@ -28,7 +28,13 @@
       "@/lib/*": ["./src/lib/*"],
       "@/config/*": ["./src/config/*"],
       "@/constants/*": ["./src/constants/*"],
-      "@/types/*": ["./src/types/*"]
+      "@/types/*": ["./src/types/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/providers/*": ["./src/providers/*"],
+      "@/layouts/*": ["./src/layouts/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/design-system/*": ["./src/components/design-system/*"]
     }
   },
   "include": [
