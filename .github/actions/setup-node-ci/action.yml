@@ -1,0 +1,44 @@
+name: Setup Node.js and dependencies
+
+description: Install Node.js LTS, restore npm cache, install dependencies, and generate Prisma Client.
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "22"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Cache Prisma engines
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules/.cache/prisma
+          ~/.cache/prisma
+        key: prisma-${{ runner.os }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma', 'prisma.config.ts') }}
+        restore-keys: |
+          prisma-${{ runner.os }}-
+
+    - name: Prisma generate
+      shell: bash
+      run: npx prisma generate
+      env:
+        # Required because prisma.config.ts loads validated app env.
+        APP_ENV: local
+        DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/rental_erp_ci
+        BETTER_AUTH_SECRET: ci-build-placeholder-secret-32chars!!
+        APP_URL: http://localhost:3000
+        BETTER_AUTH_URL: http://localhost:3000

@@ -1,0 +1,3 @@
+# Force LF for shell scripts used inside Linux containers
+scripts/*.sh text eol=lf
+scripts/db/*.sh text eol=lf

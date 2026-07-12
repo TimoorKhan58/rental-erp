@@ -1,1 +1,1 @@
-export * from "./report-charts";
+export { AmountBarChart, StatusPieChart } from "./lazy-charts";

@@ -25,6 +25,16 @@
 .env
 .env.local
 .env*.local
+.env.docker
+.env.production
+.env.staging
+
+# TLS private material (placeholders/docs under nginx/certs stay tracked)
+nginx/certs/*.pem
+nginx/certs/*.key
+nginx/certs/*.crt
+!nginx/certs/README.md
+!nginx/certs/.gitkeep
 
 # Logs — runtime and package-manager log files
 /logs
@@ -49,3 +59,8 @@ next-env.d.ts
 /src/generated/
 
 /src/generated/prisma
+
+# Database backups — never commit dumps
+/backups
+*.sql.gz
+*.sql.zip

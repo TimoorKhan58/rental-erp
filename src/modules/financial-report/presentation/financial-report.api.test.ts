@@ -1,21 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/shared/config/env", () => ({
-  env: {
-    NODE_ENV: "test",
-    APP_NAME: "Rental ERP",
-    APP_URL: "http://localhost:3000",
-    DATABASE_URL: "postgresql://test:test@localhost:5432/test",
-    BETTER_AUTH_SECRET: "test-secret-that-is-at-least-32-characters",
-    BETTER_AUTH_URL: "http://localhost:3000",
-    LOG_LEVEL: "error",
-    UPLOAD_STORAGE: "local",
-    UPLOAD_PATH: "./uploads",
-    ENABLE_EMAIL: false,
-    ENABLE_SMS: false,
-    TIMEZONE: "UTC",
-  },
-}));
+vi.mock("@/shared/config/env", async () => {
+  const { testEnvFixture } = await import("@/shared/config/env.test-fixture");
+  return { env: testEnvFixture };
+});
 
 import { PERMISSIONS } from "@/shared/application/authorization";
 import { USER_ROLES, type UserRole } from "@/constants/roles";

@@ -1,6 +1,12 @@
 import type { LogLevel } from "@/shared/config/env.schema";
 
 import type { ILogger, LoggerBindings } from "./logger";
+import {
+  formatStructuredLogLine,
+  redactSensitiveFields,
+  serializeErrorForLog,
+  type LogFormat,
+} from "./log-redaction";
 
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 10,
@@ -11,23 +17,9 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 
 export interface ConsoleLoggerOptions {
   level?: LogLevel;
+  format?: LogFormat;
   bindings?: LoggerBindings;
-}
-
-function serializeError(error: unknown): Record<string, unknown> | undefined {
-  if (error === undefined) {
-    return undefined;
-  }
-
-  if (error instanceof Error) {
-    return {
-      errorName: error.name,
-      errorMessage: error.message,
-      ...(error.stack ? { stack: error.stack } : {}),
-    };
-  }
-
-  return { errorValue: error };
+  service?: string;
 }
 
 function formatMetadata(
@@ -36,16 +28,16 @@ function formatMetadata(
   error?: unknown,
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = { ...bindings, ...meta };
-  const serializedError = serializeError(error);
+  const serializedError = serializeErrorForLog(error);
 
   if (serializedError !== undefined) {
     Object.assign(payload, serializedError);
   }
 
-  return payload;
+  return redactSensitiveFields(payload);
 }
 
-function formatLogBlock(
+function formatPrettyLogBlock(
   level: string,
   message: string,
   metadata: Record<string, unknown>,
@@ -62,10 +54,14 @@ function formatLogBlock(
 class ConsoleLogger implements ILogger {
   private readonly bindings: LoggerBindings;
   private readonly minLevel: LogLevel;
+  private readonly format: LogFormat;
+  private readonly service: string;
 
   constructor(options: ConsoleLoggerOptions = {}) {
     this.bindings = options.bindings ?? {};
     this.minLevel = options.level ?? "info";
+    this.format = options.format ?? "pretty";
+    this.service = options.service ?? "rental-erp";
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
@@ -87,6 +83,8 @@ class ConsoleLogger implements ILogger {
   child(bindings: LoggerBindings): ILogger {
     return new ConsoleLogger({
       level: this.minLevel,
+      format: this.format,
+      service: this.service,
       bindings: {
         ...this.bindings,
         ...bindings,
@@ -106,7 +104,17 @@ class ConsoleLogger implements ILogger {
     }
 
     const metadata = formatMetadata(this.bindings, meta, error);
-    const output = formatLogBlock(label, message, metadata);
+    const output =
+      this.format === "json"
+        ? formatStructuredLogLine({
+            level,
+            message,
+            service: this.service,
+            bindings: this.bindings,
+            meta,
+            error,
+          })
+        : formatPrettyLogBlock(label, message, metadata);
 
     switch (level) {
       case "debug":

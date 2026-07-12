@@ -1,5 +1,6 @@
 export {
   createRequestContext,
+  getRequestDurationMs,
   type CreateRequestContextInput,
   type RequestContext,
 } from "./request-context";

@@ -2,6 +2,7 @@ import type { LogLevel } from "@/shared/config/env.schema";
 
 import { createConsoleLogger } from "./console-logger";
 import type { ILogger, LoggerBindings } from "./logger";
+import { redactSensitiveFields, serializeErrorForLog } from "./log-redaction";
 
 interface PinoLikeLogger {
   debug(objectOrMessage: Record<string, unknown> | string, message?: string): void;
@@ -14,21 +15,7 @@ interface PinoLikeLogger {
 type PinoFactory = (options?: { level?: string }) => PinoLikeLogger;
 
 function serializeError(error: unknown): Record<string, unknown> | undefined {
-  if (error === undefined) {
-    return undefined;
-  }
-
-  if (error instanceof Error) {
-    return {
-      err: {
-        type: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-    };
-  }
-
-  return { err: error };
+  return serializeErrorForLog(error);
 }
 
 function tryLoadPino(): PinoFactory | null {
@@ -71,10 +58,10 @@ class PinoLoggerAdapter implements ILogger {
     error: unknown,
     meta?: Record<string, unknown>,
   ): void {
-    const payload: Record<string, unknown> = {
+    const payload: Record<string, unknown> = redactSensitiveFields({
       ...meta,
       ...serializeError(error),
-    };
+    });
 
     if (Object.keys(payload).length > 0) {
       this.pino[level](payload, message);

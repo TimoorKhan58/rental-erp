@@ -1,13 +1,12 @@
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { ExecutionContext, RequestContext } from "@/shared/application/context";
-import { appConfig } from "@/shared/config/app.config";
 import type { AuditContext, IAuditLogger } from "@/shared/infrastructure/audit/audit-logger.interface";
 import { createAuditContextFromRequest } from "@/shared/infrastructure/audit/audit-request-context";
 import type { ITransactionManager } from "@/shared/infrastructure/database/transaction-manager";
 import type { IFileStorage } from "@/shared/infrastructure/storage/file-storage.interface";
 import type { INotificationService } from "@/shared/infrastructure/notifications/notification-service.interface";
 import {
-  createConsoleLogger,
+  createAppLogger,
   type ILogger,
 } from "@/shared/infrastructure/logging";
 
@@ -44,7 +43,7 @@ export function createSharedDeps(
   options: CreateSharedDepsOptions = {},
 ): SharedDeps {
   const logger =
-    options.logger ?? createConsoleLogger({ level: appConfig.logging.level });
+    options.logger ?? createAppLogger();
   const databaseDeps = createSharedDatabaseDeps();
   const auditDeps = createSharedAuditDeps(databaseDeps, {
     logger,

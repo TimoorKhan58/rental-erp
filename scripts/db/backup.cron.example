@@ -1,0 +1,7 @@
+# Example cron entry for nightly backups (do not install automatically).
+#
+# 0 2 * * * cd /opt/rental-erp && \
+#   DATABASE_URL="..." BACKUP_DIR=/var/backups/rental-erp BACKUP_RETENTION_DAYS=14 \
+#   /bin/bash ./scripts/db/backup.sh >> /var/log/rental-erp-backup.log 2>&1
+#
+# Prefer a secret manager / systemd EnvironmentFile over inline credentials.

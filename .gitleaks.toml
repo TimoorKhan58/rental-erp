@@ -1,0 +1,30 @@
+# Gitleaks configuration (Phase 8-009)
+# Install: https://github.com/gitleaks/gitleaks
+# Run:     gitleaks detect --source . --config .gitleaks.toml
+#
+# Also run the portable project scanner: npm run secrets:scan
+
+title = "rental-erp"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders and generated examples"
+paths = [
+  '''(.*?)(\.env\.example|\.env\.staging\.example|\.env\.production\.example|\.env\.docker\.example)$''',
+  '''docs/.*''',
+  '''(.*?)package-lock\.json$''',
+  '''(.*?)\\\.next\\.*''',
+  '''(.*?)\\node_modules\\.*''',
+]
+
+regexes = [
+  '''docker-build-placeholder-secret-32chars''',
+  '''replace-with-at-least-32-character-secret''',
+  '''local-dev-placeholder-secret-32chars!!''',
+  '''local-development-secret-value-32chars!''',
+  '''test-secret-that-is-at-least-32-characters''',
+  '''prod-unique-secret-value-32chars-ok!!''',
+  '''staging-unique-secret-value-32chars-ok''',
+]

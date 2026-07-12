@@ -1,0 +1,164 @@
+name: rental-erp-prod
+
+# Production example Compose stack with Nginx reverse proxy (Phase 8-005).
+# Copy `.env.production.example` → `.env.production` and set real secrets + TLS certs.
+# Managed Postgres: remove the `db` service and set DATABASE_URL externally.
+#
+# Public ports: HTTP ${HTTP_PORT:-80}, HTTPS ${HTTPS_PORT:-443}
+# App and database ports are internal only.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-rental_erp}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-rental_erp}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - data
+    # Database is not published to the host.
+
+  migrate:
+    profiles: ["migrate"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    env_file:
+      - path: .env.production
+        required: false
+    environment:
+      NODE_ENV: production
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      APP_URL: ${APP_URL:?APP_URL is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://erp.example.com}
+      WAIT_FOR_DB: "true"
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - data
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        DATABASE_URL: postgresql://build:build@127.0.0.1:5432/rental_erp_build
+        BETTER_AUTH_SECRET: docker-build-placeholder-secret-32chars
+        APP_URL: ${APP_URL:-http://localhost:3000}
+        BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+        APP_ENV: local
+    restart: unless-stopped
+    # Application is internal-only — Nginx is the public entrypoint.
+    expose:
+      - "3000"
+    env_file:
+      - path: .env.production
+        required: false
+    environment:
+      NODE_ENV: production
+      APP_ENV: ${APP_ENV:-production}
+      APP_NAME: ${APP_NAME:-Rental ERP}
+      APP_URL: ${APP_URL:?APP_URL is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://erp.example.com}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      UPLOAD_STORAGE: ${UPLOAD_STORAGE:-local}
+      UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}
+      ENABLE_EMAIL: ${ENABLE_EMAIL:-false}
+      ENABLE_SMS: ${ENABLE_SMS:-false}
+      TIMEZONE: ${TIMEZONE:-Asia/Karachi}
+      APP_LOCALE: ${APP_LOCALE:-en-PK}
+      # Prefer Nginx edge headers when the proxy is enabled.
+      SECURE_COOKIES: ${SECURE_COOKIES:-true}
+      ENABLE_SECURITY_HEADERS: ${ENABLE_SECURITY_HEADERS:-false}
+      ENABLE_HSTS: ${ENABLE_HSTS:-false}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+    volumes:
+      - app_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - app
+      - data
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      NGINX_SERVER_NAME: ${NGINX_SERVER_NAME:-erp.example.com}
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - nginx_certbot_www:/var/www/certbot
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-fsS",
+          "http://127.0.0.1/api/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - edge
+      - app
+
+volumes:
+  postgres_data:
+  app_uploads:
+  nginx_certbot_www:
+
+networks:
+  # Public-facing proxy network (nginx only publishes host ports).
+  edge:
+    driver: bridge
+  # Nginx ↔ Next.js application
+  app:
+    driver: bridge
+  # Application ↔ PostgreSQL (nginx cannot reach the database)
+  data:
+    driver: bridge

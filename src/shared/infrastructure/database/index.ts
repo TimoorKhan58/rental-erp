@@ -5,6 +5,10 @@ export {
   prisma,
   default as defaultPrismaClient,
 } from "./prisma-client";
+export {
+  checkDatabaseHealth,
+  type DatabaseHealthResult,
+} from "./database-health";
 export type {
   DbClient,
   PrismaClient,

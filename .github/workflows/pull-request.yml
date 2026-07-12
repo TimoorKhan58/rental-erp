@@ -1,0 +1,94 @@
+name: Pull Request Validation
+
+# Fast fail-fast checks for pull requests.
+# Shares the same quality gates as Continuous Integration and also validates Docker.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  NODE_VERSION: "22"
+  NEXT_TELEMETRY_DISABLED: "1"
+  APP_ENV: local
+  APP_URL: http://localhost:3000
+  BETTER_AUTH_URL: http://localhost:3000
+  DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/rental_erp_ci
+  BETTER_AUTH_SECRET: ci-build-placeholder-secret-32chars!!
+
+jobs:
+  pr-checks:
+    name: PR Checks
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup application toolchain
+        uses: ./.github/actions/setup-node-ci
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Environment config checks
+        run: npm run config:check
+
+      - name: Production build
+        run: npm run build
+
+  pr-docker:
+    name: PR Docker Build
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    needs: pr-checks
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: runner
+          push: false
+          tags: rental-erp:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha,scope=rental-erp-runner
+          cache-to: type=gha,mode=max,scope=rental-erp-runner
+          build-args: |
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            APP_ENV=local
+            NODE_ENV=production
+            APP_URL=http://localhost:3000
+            BETTER_AUTH_URL=http://localhost:3000
+            DATABASE_URL=postgresql://ci:ci@127.0.0.1:5432/rental_erp_ci
+            BETTER_AUTH_SECRET=ci-build-placeholder-secret-32chars!!

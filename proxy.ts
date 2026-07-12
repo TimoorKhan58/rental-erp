@@ -13,6 +13,15 @@ function isPublicPath(pathname: string): boolean {
     return true;
   }
 
+  // Liveness / readiness / metrics must remain reachable without a session.
+  if (pathname.startsWith("/api/health")) {
+    return true;
+  }
+
+  if (pathname === "/api/metrics") {
+    return true;
+  }
+
   return false;
 }
 

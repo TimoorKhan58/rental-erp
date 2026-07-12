@@ -1,0 +1,130 @@
+# Rental ERP — HTTP and HTTPS virtual hosts
+#
+# HTTP  :80  → permanent redirect to HTTPS
+# HTTPS :443 → reverse proxy to Next.js upstream (app:3000)
+#
+# Server name is substituted at container start from NGINX_SERVER_NAME
+# (default: erp.example.com). See docker-compose.prod.yml.
+
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
+# ── HTTP → HTTPS redirect ──────────────────────────────────────────────────
+server {
+  listen 80;
+  listen [::]:80;
+  server_name ${NGINX_SERVER_NAME};
+
+  # Allow ACME HTTP-01 challenges without redirect (Let's Encrypt).
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+    default_type "text/plain";
+    allow all;
+  }
+
+  # Load-balancer / uptime probes may hit HTTP health before TLS is ready.
+  location = /api/health {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+# ── HTTPS reverse proxy ────────────────────────────────────────────────────
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  http2 on;
+  server_name ${NGINX_SERVER_NAME};
+
+  include /etc/nginx/snippets/ssl-params.conf;
+  include /etc/nginx/snippets/security-headers.conf;
+
+  # Next.js build / immutable hashed assets — long cache.
+  location /_next/static/ {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    proxy_hide_header Cache-Control;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  # Public static files from /public (images, fonts, favicon, etc.).
+  location ~* \.(?:js|css|mjs|map|woff2?|ttf|otf|eot|ico|gif|jpe?g|png|svg|webp|avif)$ {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    proxy_hide_header Cache-Control;
+    add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  # Health endpoints — no long-term caching; suitable for LB probes.
+  location = /api/health {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  location = /api/health/ready {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  location = /api/health/live {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  location = /api/health/startup {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  location = /api/metrics {
+    include /etc/nginx/snippets/proxy-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  # Authentication — stricter rate limit (login / password flows).
+  location ^~ /api/auth/ {
+    limit_req zone=auth_limit burst=20 nodelay;
+    include /etc/nginx/snippets/proxy-params.conf;
+    include /etc/nginx/snippets/websocket-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  # Application API — moderate rate limit; health/metrics excluded above.
+  location ^~ /api/ {
+    limit_req zone=api_limit burst=60 nodelay;
+    include /etc/nginx/snippets/proxy-params.conf;
+    include /etc/nginx/snippets/websocket-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+
+  # API and dynamic app routes — do not cache by default.
+  location / {
+    include /etc/nginx/snippets/proxy-params.conf;
+    include /etc/nginx/snippets/websocket-params.conf;
+    proxy_pass http://rental_erp_app;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/snippets/security-headers.conf;
+  }
+}

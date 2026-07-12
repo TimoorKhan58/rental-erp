@@ -7,8 +7,9 @@ import { ApiClientError } from "@/lib/api";
 
 const defaultQueryOptions: DefaultOptions = {
   queries: {
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
+    // Align with feature-hook defaults (most lists use 5m); reduce refetch churn.
+    staleTime: 2 * 60_000,
+    gcTime: 10 * 60_000,
     retry: (failureCount, error) => {
       if (error instanceof ApiClientError) {
         if (error.status === 401 || error.status === 403 || error.status === 404) {
@@ -19,6 +20,7 @@ const defaultQueryOptions: DefaultOptions = {
       return failureCount < 2;
     },
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   },
   mutations: {
     retry: false,

@@ -6,22 +6,28 @@ import {
   createRequestContext,
   type ExecutionContext,
 } from "@/shared/application/context";
-import { appConfig } from "@/shared/config/app.config";
 import {
   normalizeError,
   serializeAppError,
   UnauthorizedError,
 } from "@/shared/infrastructure/errors";
 import { errorResponse } from "@/shared/infrastructure/http/api-response";
-import { getRequestId } from "@/shared/infrastructure/http/headers";
 import {
-  createConsoleLogger,
+  getCorrelationId,
+  getRequestId,
+  getTenantId,
+} from "@/shared/infrastructure/http/headers";
+import { resolveClientIp } from "@/shared/infrastructure/http/client-ip";
+import {
+  createAppLogger,
   createRequestLogger,
 } from "@/shared/infrastructure/logging";
 import { resolveSessionUser } from "@/shared/infrastructure/auth";
+import { enterRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
 
 export interface AuthenticatedApiRequestResult {
   requestId: string;
+  correlationId: string;
   ctx: ExecutionContext;
 }
 
@@ -31,6 +37,8 @@ export async function authenticateApiRequest(
   httpMethod: string,
 ): Promise<AuthenticatedApiRequestResult> {
   const requestId = getRequestId(request.headers);
+  const correlationId = getCorrelationId(request.headers, requestId);
+  const tenantId = getTenantId(request.headers);
 
   const session = await auth.api.getSession({
     headers: request.headers,
@@ -50,23 +58,39 @@ export async function authenticateApiRequest(
 
   const requestContext = createRequestContext({
     requestId,
+    correlationId,
+    tenantId,
     route,
     httpMethod,
     userId: resolvedUser.erpUserId,
     role: resolvedUser.role,
-    ipAddress: request.headers.get("x-forwarded-for") ?? undefined,
+    ipAddress: resolveClientIp(request.headers),
     userAgent: request.headers.get("user-agent") ?? undefined,
   });
 
-  const baseLogger = createConsoleLogger({ level: appConfig.logging.level });
+  enterRequestTrace({
+    requestId,
+    correlationId,
+    tenantId,
+    userId: resolvedUser.erpUserId,
+    route,
+    httpMethod,
+    startedAtMs: requestContext.startedAtMs,
+  });
+
+  const baseLogger = createAppLogger();
   const logger = createRequestLogger(baseLogger, {
     requestId,
+    correlationId,
+    tenantId,
     route,
+    httpMethod,
     userId: resolvedUser.erpUserId,
   });
 
   return {
     requestId,
+    correlationId,
     ctx: createExecutionContext({
       request: requestContext,
       logger,

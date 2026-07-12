@@ -1,14 +1,13 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { getDatabaseUrl } from "@/shared/config/database.config";
+import { getDatabasePoolConfig } from "@/shared/config/database.config";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 export function createPrismaClient(): PrismaClient {
-  const connectionString = getDatabaseUrl();
-  const adapter = new PrismaPg({ connectionString });
+  const adapter = new PrismaPg(getDatabasePoolConfig());
 
   return new PrismaClient({ adapter });
 }

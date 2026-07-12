@@ -1,0 +1,58 @@
+import type { Env } from "./env.schema";
+
+/**
+ * Complete env fixture for unit tests that mock `@/shared/config/env`.
+ * Keep in sync with `env.schema.ts` transforms/defaults.
+ */
+export const testEnvFixture = {
+  NODE_ENV: "test",
+  APP_ENV: "test",
+  APP_NAME: "Rental ERP",
+  APP_URL: "http://localhost:3000",
+  APP_LOCALE: "en-PK",
+  DATABASE_URL: "postgresql://test:test@localhost:5432/test",
+  DATABASE_POOL_MAX: 5,
+  DATABASE_POOL_IDLE_TIMEOUT_MS: 30_000,
+  DATABASE_POOL_CONNECTION_TIMEOUT_MS: 5_000,
+  BACKUP_DIR: "./backups",
+  BACKUP_RETENTION_DAYS: 14,
+  BETTER_AUTH_SECRET: "test-secret-that-is-at-least-32-characters",
+  BETTER_AUTH_URL: "http://localhost:3000",
+  AUTH_SESSION_EXPIRES_IN_SECONDS: 60 * 60 * 24 * 7,
+  AUTH_SESSION_UPDATE_AGE_SECONDS: 60 * 60 * 24,
+  AUTH_COOKIE_CACHE_MAX_AGE_SECONDS: 60 * 5,
+  AUTH_MIN_PASSWORD_LENGTH: 8,
+  AUTH_TRUSTED_ORIGINS: [],
+  AUTH_RATE_LIMIT_ENABLED: true,
+  AUTH_RATE_LIMIT_WINDOW_SECONDS: 60,
+  AUTH_RATE_LIMIT_MAX: 100,
+  AUTH_RATE_LIMIT_SIGN_IN_WINDOW_SECONDS: 60,
+  AUTH_RATE_LIMIT_SIGN_IN_MAX: 10,
+  AUTH_RATE_LIMIT_PASSWORD_RESET_WINDOW_SECONDS: 60,
+  AUTH_RATE_LIMIT_PASSWORD_RESET_MAX: 5,
+  TRUSTED_PROXIES: [],
+  SECURE_COOKIES: false,
+  ENABLE_SECURITY_HEADERS: false,
+  ENABLE_HSTS: false,
+  LOG_LEVEL: "error",
+  LOG_FORMAT: "json",
+  ENABLE_METRICS: true,
+  METRICS_BEARER_TOKEN: undefined,
+  ERROR_TRACKER_PROVIDER: "none",
+  ERROR_TRACKER_DSN: undefined,
+  UPLOAD_STORAGE: "local",
+  UPLOAD_PATH: "./uploads",
+  UPLOAD_MAX_FILE_SIZE_MB: 10,
+  CACHE_TTL_SECONDS: 300,
+  SMTP_HOST: undefined,
+  SMTP_PORT: undefined,
+  SMTP_USER: undefined,
+  SMTP_PASSWORD: undefined,
+  SMTP_FROM: undefined,
+  SMTP_SECURE: true,
+  ENABLE_EMAIL: false,
+  ENABLE_SMS: false,
+  TIMEZONE: "UTC",
+} as const satisfies Env;
+
+export type TestEnvFixture = typeof testEnvFixture;

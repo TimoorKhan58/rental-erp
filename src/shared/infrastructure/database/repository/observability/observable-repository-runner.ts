@@ -11,6 +11,7 @@ import {
   toRepositoryMetricsObservation,
 } from "./repository-observation-meta";
 import type { RepositoryObservationContext } from "./repository-observation-context";
+import { prometheusRepositoryMetrics } from "@/shared/infrastructure/observability/prometheus-repository-metrics";
 import type { IRepositoryMetrics } from "./repository-metrics.interface";
 import { noopRepositoryMetrics } from "./repository-metrics.interface";
 
@@ -25,7 +26,11 @@ export interface ObservableRepositoryRunnerOptions {
 export function createObservableRepositoryRunner(
   options: ObservableRepositoryRunnerOptions,
 ): RepositoryRunner {
-  const metrics = options.metrics ?? noopRepositoryMetrics;
+  const metrics =
+    options.metrics ??
+    (process.env.ENABLE_METRICS === "false"
+      ? noopRepositoryMetrics
+      : prometheusRepositoryMetrics);
 
   return {
     get db(): DbClient {

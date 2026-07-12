@@ -67,6 +67,4 @@ export async function runDispatchApiRoute<T>(
   }
 }
 
-export function toJsonResponse(result: RouteHandlerResult<unknown>): Response {
-  return Response.json(result.body, { status: result.status });
-}
+export { toJsonResponse } from "@/shared/infrastructure/http/to-json-response";

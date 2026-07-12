@@ -77,7 +77,7 @@ npm run start   # Start production server (after build)
 
 ## Version
 
-**0.1.0** — Project foundation (Milestone 1)
+**0.1.0** — Feature-complete ERP with Phase 8 production engineering (see completion report).
 
 ## Documentation
 
@@ -85,4 +85,11 @@ npm run start   # Start production server (after build)
 | -------- | ------- |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Coding standards, branching, commits, and review process |
 | [CHANGELOG.md](./CHANGELOG.md) | Version history and release notes |
-| [docs/](./docs/) | Technical documentation (architecture, API, UI, deployment, etc.) |
+| [docs/PROJECT_COMPLETION_REPORT.md](./docs/PROJECT_COMPLETION_REPORT.md) | Final project completion & production-ready verdict |
+| [docs/production/README.md](./docs/production/README.md) | **Production documentation index (Phase 8)** |
+| [docs/production/DEPLOYMENT.md](./docs/production/DEPLOYMENT.md) | Production deployment & go-live guide |
+| [docs/](./docs/) | Technical documentation (architecture, API, UI, etc.) |
+| [docs/production/CICD.md](./docs/production/CICD.md) | GitHub Actions CI/CD workflows |
+| [docs/production/DOCKER.md](./docs/production/DOCKER.md) | Docker build and Compose guide |
+| [docs/production/REVERSE_PROXY.md](./docs/production/REVERSE_PROXY.md) | Nginx reverse proxy and networking |
+| [docs/production/CONFIGURATION_GUIDE.md](./docs/production/CONFIGURATION_GUIDE.md) | Environment-driven configuration |
