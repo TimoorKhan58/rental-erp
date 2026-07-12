@@ -52,6 +52,7 @@ export const ROUTES = {
   maintenanceDetail: (id: string) => `/maintenance/${id}`,
   maintenanceEdit: (id: string) => `/maintenance/${id}/edit`,
   rentalInvoices: "/rental-invoices",
+  rentalInvoicesNew: "/rental-invoices/new",
   rentalInvoiceDetail: (id: string) => `/rental-invoices/${id}`,
   payments: "/payments",
   paymentsNew: "/payments/new",

@@ -26,6 +26,24 @@ export type RentalInvoiceLineType = (typeof RENTAL_INVOICE_LINE_TYPES)[number];
 
 export type PaymentStatusFilter = "unpaid" | "partial" | "paid" | "void";
 
+export type CreateRentalInvoiceItemPayload = {
+  lineType: RentalInvoiceLineType;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  sortOrder?: number;
+};
+
+export type CreateRentalInvoicePayload = {
+  invoiceNumber: string;
+  rentalOrderId: string;
+  customerId: string;
+  invoiceDate: string;
+  dueDate?: string | null;
+  notes?: string | null;
+  items: CreateRentalInvoiceItemPayload[];
+};
+
 export type RentalInvoiceItemResponse = {
   id: string;
   lineType: RentalInvoiceLineType;

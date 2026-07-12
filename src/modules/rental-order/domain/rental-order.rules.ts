@@ -188,7 +188,7 @@ export function assertCanCancel(
   status: RentalOrderStatus,
   items: RentalOrderItemProps[],
 ): void {
-  if (status === "RESERVED" || status === "CANCELLED") {
+  if (status !== "DRAFT" && status !== "CONFIRMED") {
     throw new RentalOrderInvalidStatusError(status, "cancel");
   }
 

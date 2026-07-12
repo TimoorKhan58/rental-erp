@@ -6,8 +6,9 @@ import { useAppMutation } from "@/lib/query";
 import { getCurrentUserPermissions } from "@/features/customer/services";
 import { getCustomers } from "@/features/customer/services";
 import { getRentalOrders } from "@/features/rental-order/services";
-import type { ListRentalInvoicesParams } from "../types";
+import type { CreateRentalInvoicePayload, ListRentalInvoicesParams } from "../types";
 import {
+  createRentalInvoice,
   getRentalInvoice,
   getRentalInvoices,
   issueRentalInvoice,
@@ -73,6 +74,15 @@ export function useRentalInvoiceFilterOptions() {
   };
 }
 
+export function useInvoiceableRentalOrders() {
+  return useQuery({
+    queryKey: queryKeys.rentalOrders.list({ pageSize: 100, status: "COMPLETED" }),
+    queryFn: () => getRentalOrders({ pageSize: 100, status: "COMPLETED" }),
+    staleTime: 60_000,
+    select: (data) => data.items,
+  });
+}
+
 export function useRentalInvoices(params: ListRentalInvoicesParams) {
   return useQuery({
     queryKey: queryKeys.rentalInvoices.list(params),
@@ -85,6 +95,21 @@ export function useRentalInvoice(id: string) {
     queryKey: queryKeys.rentalInvoices.detail(id),
     queryFn: () => getRentalInvoice(id),
     enabled: Boolean(id),
+  });
+}
+
+export function useCreateRentalInvoice() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: (payload: CreateRentalInvoicePayload) => createRentalInvoice(payload),
+    showSuccessToast: true,
+    successMessage: "Invoice created successfully.",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.rentalInvoices.lists(),
+      });
+    },
   });
 }
 

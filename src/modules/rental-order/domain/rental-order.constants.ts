@@ -5,6 +5,11 @@ export const RENTAL_ORDER_STATUSES = [
   "DRAFT",
   "CONFIRMED",
   "RESERVED",
+  "DISPATCHED",
+  "ON_RENT",
+  "PARTIALLY_RETURNED",
+  "RETURNED",
+  "COMPLETED",
   "CANCELLED",
 ] as const;
 

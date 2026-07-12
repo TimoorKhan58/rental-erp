@@ -29,7 +29,10 @@ export const auth = betterAuth({
     minPasswordLength: authConfig.minPasswordLength,
   },
   disabledPaths: ["/sign-up/email"],
+  // Prisma models are Auth* because `User`/`Account` are ERP entities.
+  // modelName must match Prisma client keys (camelCase).
   user: {
+    modelName: "authUser",
     additionalFields: {
       role: {
         type: "string",
@@ -45,12 +48,19 @@ export const auth = betterAuth({
     },
   },
   session: {
+    modelName: "authSession",
     expiresIn: authConfig.session.expiresInSeconds,
     updateAge: authConfig.session.updateAgeSeconds,
     cookieCache: {
       enabled: true,
       maxAge: authConfig.session.cookieCacheMaxAgeSeconds,
     },
+  },
+  account: {
+    modelName: "authAccount",
+  },
+  verification: {
+    modelName: "authVerification",
   },
   /**
    * Built-in Better Auth rate limiting (in-memory per process).

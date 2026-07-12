@@ -91,8 +91,8 @@ export const MOCK_DASHBOARD_METRICS: DashboardMetric[] = [
 export const MOCK_QUICK_ACTIONS: QuickAction[] = [
   { id: "new-customer", label: "New Customer", href: ROUTES.customers },
   { id: "new-rental", label: "New Rental", href: ROUTES.rentalOrders },
-  { id: "new-invoice", label: "New Invoice", href: ROUTES.payments },
-  { id: "receive-payment", label: "Receive Payment", href: ROUTES.payments },
+  { id: "new-invoice", label: "New Invoice", href: ROUTES.rentalInvoicesNew },
+  { id: "receive-payment", label: "Receive Payment", href: ROUTES.paymentsNew },
   { id: "purchase-order", label: "Purchase Order", href: ROUTES.inventory },
   { id: "add-product", label: "Add Product", href: ROUTES.products },
 ];

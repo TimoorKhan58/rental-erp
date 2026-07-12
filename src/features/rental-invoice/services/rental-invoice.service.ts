@@ -1,5 +1,6 @@
 import type {
   ListRentalInvoicesParams,
+  CreateRentalInvoicePayload,
   RentalInvoiceListResponse,
   RentalInvoiceResponse,
 } from "../types";
@@ -15,6 +16,12 @@ export async function getRentalInvoices(
 
 export async function getRentalInvoice(id: string): Promise<RentalInvoiceResponse> {
   return apiGet<RentalInvoiceResponse>(`${BASE}/${id}`);
+}
+
+export async function createRentalInvoice(
+  payload: CreateRentalInvoicePayload,
+): Promise<RentalInvoiceResponse> {
+  return apiPost<RentalInvoiceResponse>(BASE, payload);
 }
 
 export async function issueRentalInvoice(id: string): Promise<RentalInvoiceResponse> {

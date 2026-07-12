@@ -16,7 +16,7 @@ export function canCancelRentalOrder(
   status: RentalOrderStatus,
   items: RentalOrderItemResponse[],
 ): boolean {
-  if (status === "RESERVED" || status === "CANCELLED") {
+  if (status !== "DRAFT" && status !== "CONFIRMED") {
     return false;
   }
 
@@ -27,6 +27,11 @@ export const STATUS_LABELS: Record<RentalOrderStatus, string> = {
   DRAFT: "Draft",
   CONFIRMED: "Confirmed",
   RESERVED: "Reserved",
+  DISPATCHED: "Dispatched",
+  ON_RENT: "On rent",
+  PARTIALLY_RETURNED: "Partially returned",
+  RETURNED: "Returned",
+  COMPLETED: "Completed",
   CANCELLED: "Cancelled",
 };
 
