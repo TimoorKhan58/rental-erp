@@ -197,6 +197,110 @@ export function assertCanCancel(
   }
 }
 
+const LIFECYCLE_STATUS_RANK: Record<RentalOrderStatus, number> = {
+  DRAFT: 0,
+  CONFIRMED: 1,
+  RESERVED: 2,
+  DISPATCHED: 3,
+  ON_RENT: 4,
+  PARTIALLY_RETURNED: 5,
+  RETURNED: 6,
+  COMPLETED: 7,
+  CANCELLED: -1,
+};
+
+export function assertCanApplyLifecycleStatus(
+  current: RentalOrderStatus,
+  next: RentalOrderStatus,
+): void {
+  if (current === "CANCELLED" || current === "COMPLETED") {
+    throw new RentalOrderInvalidStatusError(current, "advance lifecycle");
+  }
+
+  if (
+    next === "DRAFT" ||
+    next === "CONFIRMED" ||
+    next === "RESERVED" ||
+    next === "CANCELLED"
+  ) {
+    throw new RentalOrderInvalidStatusError(current, `set to ${next}`);
+  }
+
+  if (LIFECYCLE_STATUS_RANK[next] < LIFECYCLE_STATUS_RANK[current]) {
+    throw new RentalOrderInvalidStatusError(current, `set to ${next}`);
+  }
+}
+
+export function computeStatusAfterDispatchComplete(
+  current: RentalOrderStatus,
+  items: RentalOrderItemProps[],
+  dispatchedByItemId: ReadonlyMap<string, number>,
+): RentalOrderStatus {
+  if (current === "CANCELLED" || current === "COMPLETED") {
+    return current;
+  }
+
+  let totalReserved = 0;
+  let totalDispatched = 0;
+
+  for (const item of items) {
+    const reserved = item.reservedQuantity;
+    const dispatched = dispatchedByItemId.get(item.id) ?? 0;
+    totalReserved += reserved;
+    totalDispatched += Math.min(dispatched, reserved);
+  }
+
+  let next: RentalOrderStatus = current;
+
+  if (totalDispatched > 0) {
+    next =
+      totalReserved > 0 && totalDispatched >= totalReserved
+        ? "ON_RENT"
+        : "DISPATCHED";
+  }
+
+  return LIFECYCLE_STATUS_RANK[next] >= LIFECYCLE_STATUS_RANK[current]
+    ? next
+    : current;
+}
+
+export function computeStatusAfterReturnComplete(
+  current: RentalOrderStatus,
+  items: RentalOrderItemProps[],
+  returnedByItemId: ReadonlyMap<string, number>,
+): RentalOrderStatus {
+  if (current === "CANCELLED" || current === "COMPLETED") {
+    return current;
+  }
+
+  let totalReserved = 0;
+  let totalReturned = 0;
+  let anyReturned = false;
+
+  for (const item of items) {
+    const reserved = item.reservedQuantity;
+    const returned = returnedByItemId.get(item.id) ?? 0;
+    totalReserved += reserved;
+    totalReturned += Math.min(returned, reserved);
+    if (returned > 0) {
+      anyReturned = true;
+    }
+  }
+
+  let next: RentalOrderStatus = current;
+
+  if (anyReturned) {
+    next =
+      totalReserved > 0 && totalReturned >= totalReserved
+        ? "COMPLETED"
+        : "PARTIALLY_RETURNED";
+  }
+
+  return LIFECYCLE_STATUS_RANK[next] >= LIFECYCLE_STATUS_RANK[current]
+    ? next
+    : current;
+}
+
 export function normalizeRentalOrderProps(
   props: RentalOrderProps,
 ): RentalOrderProps {

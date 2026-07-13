@@ -1,10 +1,9 @@
 "use client";
 
 import { memo } from "react";
-import { MetricCard } from "@/components/shared/metric-card";
-import { SectionCard } from "@/components/design-system/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { InventoryOverviewItem } from "../types";
+import { DashboardWidget, DashboardWidgetSkeleton } from "./widgets";
 
 type InventoryOverviewSectionProps = {
   items: InventoryOverviewItem[];
@@ -17,33 +16,46 @@ export const InventoryOverviewSection = memo(function InventoryOverviewSection({
 }: InventoryOverviewSectionProps) {
   if (isLoading) {
     return (
-      <section aria-label="Inventory overview" aria-busy="true">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <DashboardWidgetSkeleton title="Loading inventory health">
+        <div
+          className="grid gap-3 sm:grid-cols-2"
+          aria-busy="true"
+          aria-label="Inventory health"
+        >
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-28 w-full" />
+            <Skeleton key={index} className="h-24 w-full rounded-lg" />
           ))}
         </div>
-      </section>
+      </DashboardWidgetSkeleton>
     );
   }
 
   return (
-    <section aria-label="Inventory overview">
-      <SectionCard
-        title="Inventory Overview"
-        description="Stock and asset availability snapshot"
+    <DashboardWidget
+      title="Inventory Health"
+      description="Stock and asset availability snapshot"
+    >
+      <ul
+        className="grid gap-2 sm:grid-cols-2"
+        aria-label="Inventory health"
       >
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {items.map((item) => (
-            <MetricCard
-              key={item.id}
-              label={item.label}
-              value={item.value.toLocaleString("en-PK")}
-              hint={item.description}
-            />
-          ))}
-        </div>
-      </SectionCard>
-    </section>
+        {items.map((item) => (
+          <li
+            key={item.id}
+            className="rounded-lg border border-border/80 px-3 py-2"
+          >
+            <p className="font-sans text-xs font-medium text-muted-foreground">
+              {item.label}
+            </p>
+            <p className="mt-0.5 font-sans text-xl font-semibold tracking-tight tabular-nums text-foreground leading-none">
+              {item.value.toLocaleString("en-PK")}
+            </p>
+            <p className="mt-1 font-sans text-xs text-muted-foreground">
+              {item.description}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </DashboardWidget>
   );
 });

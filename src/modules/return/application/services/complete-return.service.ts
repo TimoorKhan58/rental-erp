@@ -1,4 +1,13 @@
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
+import {
+  computeStatusAfterReturnComplete,
+  RentalOrderInvalidStatusError,
+} from "@/modules/rental-order/domain";
+import { toRentalOrderAuditValues } from "@/modules/rental-order/application/services/rental-order-audit.mapper";
+import {
+  RENTAL_ORDER_ENTITY_NAME,
+  RENTAL_ORDER_MODULE,
+} from "@/modules/rental-order/application/services/rental-order-service.constants";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
   ReturnInvalidStatusError,
@@ -165,6 +174,67 @@ export class CompleteReturnService {
           oldValues: previousValues,
           newValues: toReturnAuditValues(updated),
         });
+
+        const completedReturns = await returnRepository.findPaged({
+          page: 1,
+          pageSize: 500,
+          rentalOrderId: rentalOrder.id,
+          status: "COMPLETED",
+        });
+
+        const returnedByItemId = new Map<string, number>();
+
+        for (const returnRecord of completedReturns.items) {
+          for (const item of returnRecord.items) {
+            const previous = returnedByItemId.get(item.rentalOrderItemId) ?? 0;
+            returnedByItemId.set(
+              item.rentalOrderItemId,
+              previous + item.returnedQuantity,
+            );
+          }
+        }
+
+        const nextOrderStatus = computeStatusAfterReturnComplete(
+          rentalOrder.status,
+          rentalOrder.items,
+          returnedByItemId,
+        );
+
+        if (nextOrderStatus !== rentalOrder.status) {
+          let advancedOrder;
+
+          try {
+            advancedOrder = rentalOrder.withLifecycleStatus(nextOrderStatus);
+          } catch (error) {
+            if (error instanceof RentalOrderInvalidStatusError) {
+              throw new UnprocessableError({
+                message: error.message,
+                details: {
+                  currentStatus: error.currentStatus,
+                  action: error.action,
+                },
+              });
+            }
+
+            throw error;
+          }
+
+          const previousOrderValues = toRentalOrderAuditValues(rentalOrder);
+          const updatedOrder = await rentalOrderRepository.updateStatus(
+            rentalOrder.id,
+            advancedOrder.status,
+          );
+
+          await auditLogger.log({
+            module: RENTAL_ORDER_MODULE,
+            entityName: RENTAL_ORDER_ENTITY_NAME,
+            recordId: updatedOrder.id,
+            action: "UPDATE",
+            status: "SUCCESS",
+            oldValues: previousOrderValues,
+            newValues: toRentalOrderAuditValues(updatedOrder),
+          });
+        }
 
         return toReturnDto(updated);
       },

@@ -1,9 +1,10 @@
 /**
  * Enterprise design tokens — spacing, typography, layout, elevation, motion.
+ * Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 (8px system).
  * Consumed via Tailwind @theme and utility classes.
  */
 @theme inline {
-  /* Spacing scale */
+  /* Spacing scale (preferred: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64) */
   --spacing-0: 0;
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
@@ -16,7 +17,7 @@
   --spacing-12: 3rem;
   --spacing-16: 4rem;
 
-  --spacing-page-x: 1rem;
+  --spacing-page-x: 1.5rem;
   --spacing-page-y: 1.5rem;
   --spacing-section: 1.5rem;
   --spacing-stack-xs: 0.25rem;
@@ -45,7 +46,7 @@
   --text-label: 0.8125rem;
   --text-mono: 0.8125rem;
 
-  /* Typography — weights */
+  /* Typography — weights (Inter 400/500/600/700) */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -57,12 +58,12 @@
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
 
-  /* Shadows */
+  /* Shadows — minimal (border-first) */
   --shadow-xs: 0 1px 2px var(--shadow-color);
-  --shadow-sm: 0 1px 3px var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
-  --shadow-md: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px var(--shadow-color);
-  --shadow-lg: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color);
-  --shadow-xl: 0 20px 25px -5px var(--shadow-color), 0 8px 10px -6px var(--shadow-color);
+  --shadow-sm: 0 1px 2px var(--shadow-color);
+  --shadow-md: 0 2px 4px -1px var(--shadow-color);
+  --shadow-lg: 0 4px 8px -2px var(--shadow-color);
+  --shadow-xl: 0 8px 16px -4px var(--shadow-color);
 
   /* Z-index scale */
   --z-base: 0;
@@ -78,15 +79,15 @@
   /* Opacity */
   --opacity-disabled: 0.5;
   --opacity-muted: 0.72;
-  --opacity-overlay: 0.6;
+  --opacity-overlay: 0.5;
 
-  /* Motion — minimal durations */
+  /* Motion — 100–200ms */
   --duration-instant: 75ms;
-  --duration-fast: 150ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
+  --duration-fast: 100ms;
+  --duration-normal: 150ms;
+  --duration-slow: 200ms;
 
-  /* Breakpoints */
+  /* Breakpoints — desktop-first */
   --breakpoint-xs: 30rem;
   --breakpoint-sm: 40rem;
   --breakpoint-md: 48rem;
@@ -109,6 +110,14 @@
   --color-error: var(--error);
   --color-error-foreground: var(--error-foreground);
   --color-error-muted: var(--error-muted);
+
+  /* Interactive + structural bridges */
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-disabled: var(--primary-disabled);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-active: var(--secondary-active);
+  --color-border-strong: var(--border-strong);
 }
 
 @layer utilities {
@@ -150,6 +159,7 @@
   .shadow-token-xl { box-shadow: var(--shadow-xl); }
 
   .transition-token {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
     transition-duration: var(--duration-normal);
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -157,5 +167,13 @@
   .overflow-safe {
     max-width: 100%;
     overflow-x: auto;
+  }
+
+  /* Border-first surface utility */
+  .surface-bordered {
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    border-radius: var(--radius-lg);
+    box-shadow: none;
   }
 }

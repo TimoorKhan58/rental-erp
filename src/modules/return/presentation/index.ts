@@ -6,6 +6,7 @@ export {
   handleInspectReturn,
   handleListReturns,
   handleReceiveReturn,
+  handleRecoverLostReturn,
   handleUpdateReturn,
 } from "./routes/return-api.routes";
 export {

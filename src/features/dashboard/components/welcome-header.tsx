@@ -31,17 +31,19 @@ export const WelcomeHeader = memo(function WelcomeHeader({
   });
 
   return (
-    <header className="space-y-4">
-      <AppBreadcrumb
-        items={[{ label: "Dashboard" }]}
-      />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <Typography variant="h1" as="h1">
+    <header className="space-y-1">
+      <AppBreadcrumb items={[{ label: "Dashboard" }]} />
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-0.5">
+          <Typography variant="h1" as="h1" className="font-sans tracking-tight">
             {getGreeting()}, {userName}
           </Typography>
-          <Typography variant="body" tone="muted">
-            {organizationName} · {today}
+          <Typography variant="body" tone="muted" className="font-sans">
+            {organizationName}
+            <span className="mx-2 text-border" aria-hidden="true">
+              ·
+            </span>
+            <time dateTime={new Date().toISOString().slice(0, 10)}>{today}</time>
           </Typography>
         </div>
       </div>

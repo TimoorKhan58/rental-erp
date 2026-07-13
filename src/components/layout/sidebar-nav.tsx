@@ -37,12 +37,12 @@ export function SidebarNav({
             title={collapsed ? item.label : undefined}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
               isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
               collapsed && "justify-center px-2",
             )}
           >
-            <Icon className="size-4 shrink-0" aria-hidden="true" />
+            <Icon className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             {!collapsed && <span className="truncate">{item.label}</span>}
           </Link>
         );

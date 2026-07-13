@@ -69,6 +69,7 @@ const WORKER_PERMISSIONS: Permission[] = [
   PERMISSIONS.returns.receive,
   PERMISSIONS.returns.inspect,
   PERMISSIONS.returns.complete,
+  PERMISSIONS.returns.recover,
   PERMISSIONS.returns.cancel,
   PERMISSIONS.repairs.read,
   PERMISSIONS.repairs.create,

@@ -20,13 +20,16 @@ export type { RentalOrderListQuery } from "./rental-order-list.query";
 export type { IRentalOrderRepository } from "./rental-order.repository.interface";
 export {
   applyReserveToItems,
+  assertCanApplyLifecycleStatus,
   assertCanCancel,
   assertCanConfirm,
   assertCanReserve,
   assertCanUpdate,
   computeLineTotal,
   computeRentalDays,
+  computeStatusAfterDispatchComplete,
   computeStatusAfterReserve,
+  computeStatusAfterReturnComplete,
   validateRentalOrderItems,
   validateRentalPeriod,
 } from "./rental-order.rules";

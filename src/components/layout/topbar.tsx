@@ -51,7 +51,7 @@ export function Topbar() {
   const userInitials = session?.user.name ? getInitials(session.user.name) : "G";
 
   return (
-    <header className="sticky top-0 z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
+    <header className="sticky top-0 z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-sm supports-backdrop-filter:bg-background/80 md:px-6">
       <Button
         variant="ghost"
         size="icon"

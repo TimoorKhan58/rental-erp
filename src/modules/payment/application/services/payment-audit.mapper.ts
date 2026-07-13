@@ -12,6 +12,7 @@ export function toPaymentAuditValues(
     paymentDate: props.paymentDate.toISOString(),
     paymentMethod: props.paymentMethod,
     amount: props.amount,
+    isRefund: props.isRefund,
     referenceNumber: props.referenceNumber,
     notes: props.notes,
     status: props.status,

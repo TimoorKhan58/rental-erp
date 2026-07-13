@@ -16,6 +16,7 @@ function createFacade() {
   const receiveReturn = { execute: vi.fn() };
   const inspectReturn = { execute: vi.fn() };
   const completeReturn = { execute: vi.fn() };
+  const recoverLostItems = { execute: vi.fn() };
   const cancelReturn = { execute: vi.fn() };
 
   const service = new ReturnService(
@@ -26,6 +27,7 @@ function createFacade() {
     receiveReturn as never,
     inspectReturn as never,
     completeReturn as never,
+    recoverLostItems as never,
     cancelReturn as never,
   );
 
@@ -38,6 +40,7 @@ function createFacade() {
     receiveReturn,
     inspectReturn,
     completeReturn,
+    recoverLostItems,
     cancelReturn,
   };
 }
@@ -113,6 +116,20 @@ describe("ReturnService facade", () => {
     await service.complete({ id: RETURN_ID });
 
     expect(completeReturn.execute).toHaveBeenCalled();
+  });
+
+  it("delegates recoverLost", async () => {
+    const { service, recoverLostItems } = createFacade();
+    const recoverInput = {
+      items: [{ rentalOrderItemId: ITEM_ID, quantity: 1 }],
+    };
+
+    await service.recoverLost({ id: RETURN_ID }, recoverInput);
+
+    expect(recoverLostItems.execute).toHaveBeenCalledWith(
+      { id: RETURN_ID },
+      recoverInput,
+    );
   });
 
   it("delegates cancel", async () => {

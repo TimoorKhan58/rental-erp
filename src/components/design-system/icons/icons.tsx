@@ -61,6 +61,9 @@ const iconSizes = {
   lg: "size-5",
 } as const;
 
+/** Stroke width aligned across Lucide icons in the design system. */
+const ICON_STROKE = 1.75;
+
 export function AppIcon({
   icon: Icon,
   label,
@@ -71,6 +74,7 @@ export function AppIcon({
   return (
     <Icon
       className={cn("shrink-0", iconSizes[size], className)}
+      strokeWidth={ICON_STROKE}
       aria-hidden={decorative || !label}
       aria-label={label}
       role={label && !decorative ? "img" : undefined}

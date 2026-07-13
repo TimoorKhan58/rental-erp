@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assertCanApplyLifecycleStatus,
   assertCanCancel,
   assertCanConfirm,
   assertCanReserve,
   assertCanUpdate,
+  computeStatusAfterDispatchComplete,
+  computeStatusAfterReturnComplete,
 } from "@/modules/rental-order/domain/rental-order.rules";
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 
@@ -67,6 +70,66 @@ describe("status transition guards", () => {
       RentalOrderInvalidStatusError,
     );
   });
+
+  it("assertCanApplyLifecycleStatus allows reserved to on rent", () => {
+    expect(() =>
+      assertCanApplyLifecycleStatus("RESERVED", "ON_RENT"),
+    ).not.toThrow();
+  });
+
+  it("assertCanApplyLifecycleStatus rejects completed source", () => {
+    expect(() =>
+      assertCanApplyLifecycleStatus("COMPLETED", "ON_RENT"),
+    ).toThrow(RentalOrderInvalidStatusError);
+  });
+});
+
+describe("lifecycle status computation", () => {
+  const reservedItems = [
+    {
+      id: ITEM_ID,
+      productId: PRODUCT_ID,
+      quantity: 10,
+      dailyRate: 150,
+      reservedQuantity: 10,
+    },
+  ];
+
+  it("marks order ON_RENT when all reserved qty is dispatched", () => {
+    const status = computeStatusAfterDispatchComplete(
+      "RESERVED",
+      reservedItems,
+      new Map([[ITEM_ID, 10]]),
+    );
+    expect(status).toBe("ON_RENT");
+  });
+
+  it("marks order DISPATCHED when only part of reserved qty is dispatched", () => {
+    const status = computeStatusAfterDispatchComplete(
+      "RESERVED",
+      reservedItems,
+      new Map([[ITEM_ID, 5]]),
+    );
+    expect(status).toBe("DISPATCHED");
+  });
+
+  it("marks order COMPLETED when all reserved qty is returned", () => {
+    const status = computeStatusAfterReturnComplete(
+      "ON_RENT",
+      reservedItems,
+      new Map([[ITEM_ID, 10]]),
+    );
+    expect(status).toBe("COMPLETED");
+  });
+
+  it("marks order PARTIALLY_RETURNED when only part is returned", () => {
+    const status = computeStatusAfterReturnComplete(
+      "ON_RENT",
+      reservedItems,
+      new Map([[ITEM_ID, 4]]),
+    );
+    expect(status).toBe("PARTIALLY_RETURNED");
+  });
 });
 
 describe("rental order entity edge cases", () => {
@@ -104,6 +167,12 @@ describe("rental order entity edge cases", () => {
     expect(() => reserved.withCancelled()).toThrow(
       RentalOrderInvalidStatusError,
     );
+  });
+
+  it("advances lifecycle status on reserved order", () => {
+    const reserved = buildReservedRentalOrderEntity();
+    const onRent = reserved.withLifecycleStatus("ON_RENT");
+    expect(onRent.status).toBe("ON_RENT");
   });
 
   it("normalizes optional remarks to null", () => {

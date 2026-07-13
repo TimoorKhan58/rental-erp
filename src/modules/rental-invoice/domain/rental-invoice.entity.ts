@@ -165,7 +165,7 @@ export class RentalInvoice implements Entity<RentalInvoiceId> {
     let status: RentalInvoiceStatus = this.status;
 
     if (totals.paidAmount <= 0) {
-      status = this.status === "PARTIALLY_PAID" ? "ISSUED" : this.status;
+      status = "ISSUED";
     } else if (totals.balance <= 0) {
       status = "PAID";
     } else {

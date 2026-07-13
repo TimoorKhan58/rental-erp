@@ -23,7 +23,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <header className={cn("mb-6 space-y-4", className)}>
+    <header className={cn("mb-6 space-y-3 md:mb-8", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
@@ -35,13 +35,14 @@ export function PageHeader({
                   {index > 0 && (
                     <ChevronRightIcon
                       className="size-3.5 shrink-0"
+                      strokeWidth={1.75}
                       aria-hidden="true"
                     />
                   )}
                   {item.href && !isLast ? (
                     <a
                       href={item.href}
-                      className="transition-colors hover:text-foreground"
+                      className="transition-colors duration-150 hover:text-foreground"
                     >
                       {item.label}
                     </a>
@@ -62,13 +63,13 @@ export function PageHeader({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
           {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
           )}
         </div>
         {actions && (
-          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
         )}
       </div>
     </header>

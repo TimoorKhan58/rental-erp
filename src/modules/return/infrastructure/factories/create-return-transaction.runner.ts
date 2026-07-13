@@ -1,6 +1,8 @@
 import type { IReturnTransactionRunner } from "@/modules/return/application/services/return-transaction.runner";
 import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
 import { createInventoryRepositoryFromUnitOfWork } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
+import { createPaymentRepositoryFromUnitOfWork } from "@/modules/payment/infrastructure/factories/create-payment.repository";
+import { createRentalInvoiceRepositoryFromUnitOfWork } from "@/modules/rental-invoice/infrastructure/factories/create-rental-invoice.repository";
 import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
 import { createStockMovementRepositoryFromUnitOfWork } from "@/modules/stock-movement/infrastructure/factories/create-stock-movement.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -27,6 +29,9 @@ export function createReturnTransactionRunner(
           stockMovementRepository: createStockMovementRepositoryFromUnitOfWork(
             context,
           ),
+          paymentRepository: createPaymentRepositoryFromUnitOfWork(context),
+          rentalInvoiceRepository:
+            createRentalInvoiceRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           userId: options.userId,
         }),

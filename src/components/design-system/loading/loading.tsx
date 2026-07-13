@@ -48,23 +48,66 @@ export function CardSkeleton() {
   );
 }
 
-/** DashboardSkeleton — dashboard grid loading layout. */
+/** DashboardSkeleton — dashboard grid loading layout matching page structure. */
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-6" role="status" aria-busy="true" aria-label="Loading dashboard">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div
+      className="space-y-4"
+      role="status"
+      aria-busy="true"
+      aria-label="Loading dashboard"
+    >
+      <div className="space-y-1">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-7 w-56" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <CardSkeleton key={index} />
+          <div key={index} className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <Card className="gap-0 rounded-lg border border-border py-0 shadow-none">
+              <CardContent className="space-y-2 p-4">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-3 w-full" />
+              </CardContent>
+            </Card>
+          </div>
         ))}
       </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-48 w-full" />
-        </CardContent>
-      </Card>
+
+      <div className="grid grid-cols-12 gap-4">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div key={index} className="col-span-12 lg:col-span-6">
+            <Card className="gap-0 rounded-lg border border-border py-0 shadow-none">
+              <CardHeader className="border-b border-border/60 px-4 py-2.5">
+                <Skeleton className="h-4 w-36" />
+              </CardHeader>
+              <CardContent className="space-y-2 p-4">
+                {Array.from({ length: 3 }).map((__, row) => (
+                  <Skeleton key={row} className="h-12 w-full rounded-lg" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div key={index} className="col-span-12 lg:col-span-6">
+            <Card className="gap-0 rounded-lg border border-border py-0 shadow-none">
+              <CardHeader className="border-b border-border/60 px-4 py-2.5">
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent className="p-3">
+                <Skeleton className="h-44 w-full rounded-lg" />
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

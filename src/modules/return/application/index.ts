@@ -23,10 +23,12 @@ export {
 export {
   CreateReturnSchema,
   InspectReturnSchema,
+  RecoverLostReturnSchema,
   ReturnIdParamSchema,
   UpdateReturnSchema,
   type CreateReturnInput,
   type InspectReturnInput,
+  type RecoverLostReturnInput,
   type ReturnIdParamInput,
   type UpdateReturnInput,
 } from "./schemas/return.schemas";
@@ -61,5 +63,6 @@ export { GetReturnByIdService } from "./services/get-return-by-id.service";
 export { InspectReturnService } from "./services/inspect-return.service";
 export { ListReturnsService } from "./services/list-returns.service";
 export { ReceiveReturnService } from "./services/receive-return.service";
+export { RecoverLostItemsService } from "./services/recover-lost-items.service";
 export { ReturnService } from "./services/return.service";
 export { UpdateReturnService } from "./services/update-return.service";

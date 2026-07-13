@@ -37,6 +37,7 @@ export function buildCreatePaymentData(
     paymentDate: new Date(VALID_CREATE_INPUT.paymentDate),
     paymentMethod: VALID_CREATE_INPUT.paymentMethod,
     amount: VALID_CREATE_INPUT.amount,
+    isRefund: false,
     referenceNumber: VALID_CREATE_INPUT.referenceNumber,
     notes: VALID_CREATE_INPUT.notes,
     createdById: USER_ID,
@@ -49,6 +50,7 @@ export function buildPaymentEntity(
     id?: PaymentId;
     status?: Payment["status"];
     amount?: number;
+    isRefund?: boolean;
     paymentMethod?: Payment["paymentMethod"];
     referenceNumber?: string | null;
     notes?: string | null;
@@ -69,6 +71,7 @@ export function buildPaymentEntity(
     paymentDate: created.paymentDate,
     paymentMethod: override.paymentMethod ?? created.paymentMethod,
     amount: override.amount ?? created.amount,
+    isRefund: override.isRefund ?? created.isRefund,
     referenceNumber:
       override.referenceNumber !== undefined
         ? override.referenceNumber

@@ -1,5 +1,7 @@
 import type { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
+import type { InMemoryPaymentRepository } from "@/modules/payment/tests/helpers/in-memory-payment.repository";
+import type { InMemoryRentalInvoiceRepository } from "@/modules/rental-invoice/tests/helpers/in-memory-rental-invoice.repository";
 import type { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
 import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
 import type {
@@ -24,6 +26,8 @@ export function createRollbackTransactionRunner(
   rentalOrderRepository: InMemoryRentalOrderRepository,
   inventoryRepository: InMemoryInventoryRepository,
   stockMovementRepository: InMemoryStockMovementRepository,
+  paymentRepository: InMemoryPaymentRepository,
+  rentalInvoiceRepository: InMemoryRentalInvoiceRepository,
   auditLogger: MockAuditLogger,
   userId: string | undefined,
 ): IReturnTransactionRunner {
@@ -34,6 +38,8 @@ export function createRollbackTransactionRunner(
       const rentalOrderSnapshot = rentalOrderRepository.snapshot();
       const inventorySnapshot = inventoryRepository.snapshot();
       const stockMovementSnapshot = stockMovementRepository.snapshot();
+      const paymentSnapshot = paymentRepository.snapshot();
+      const rentalInvoiceSnapshot = rentalInvoiceRepository.snapshot();
       const auditSnapshot = auditLogger.snapshot();
 
       try {
@@ -43,6 +49,8 @@ export function createRollbackTransactionRunner(
           rentalOrderRepository,
           inventoryRepository,
           stockMovementRepository,
+          paymentRepository,
+          rentalInvoiceRepository,
           auditLogger,
           userId,
         });
@@ -52,6 +60,8 @@ export function createRollbackTransactionRunner(
         rentalOrderRepository.restore(rentalOrderSnapshot);
         inventoryRepository.restore(inventorySnapshot);
         stockMovementRepository.restore(stockMovementSnapshot);
+        paymentRepository.restore(paymentSnapshot);
+        rentalInvoiceRepository.restore(rentalInvoiceSnapshot);
         auditLogger.restore(auditSnapshot);
         throw error;
       }

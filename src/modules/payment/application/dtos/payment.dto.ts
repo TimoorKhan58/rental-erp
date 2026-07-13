@@ -8,6 +8,7 @@ export interface PaymentDto {
   paymentDate: string;
   paymentMethod: PaymentMethod;
   amount: number;
+  isRefund: boolean;
   referenceNumber: string | null;
   notes: string | null;
   status: PaymentStatus;
@@ -25,6 +26,7 @@ export interface CreatePaymentDto {
   paymentDate: string;
   paymentMethod: PaymentMethod;
   amount: number;
+  isRefund?: boolean;
   referenceNumber?: string | null;
   notes?: string | null;
 }

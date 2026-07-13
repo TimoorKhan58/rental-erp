@@ -14,13 +14,17 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+/** Matches `scripts/bootstrap-local-admin.mts` defaults for local sign-in. */
+const DEFAULT_LOGIN_EMAIL = "admin@localhost.local";
+const DEFAULT_LOGIN_PASSWORD = "Admin123!Local";
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(DEFAULT_LOGIN_EMAIL);
+  const [password, setPassword] = useState(DEFAULT_LOGIN_PASSWORD);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

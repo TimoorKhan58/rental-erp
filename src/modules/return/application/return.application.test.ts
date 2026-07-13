@@ -12,6 +12,7 @@ import { GetReturnByIdService } from "@/modules/return/application/services/get-
 import { InspectReturnService } from "@/modules/return/application/services/inspect-return.service";
 import { ListReturnsService } from "@/modules/return/application/services/list-returns.service";
 import { ReceiveReturnService } from "@/modules/return/application/services/receive-return.service";
+import { RecoverLostItemsService } from "@/modules/return/application/services/recover-lost-items.service";
 import { UpdateReturnService } from "@/modules/return/application/services/update-return.service";
 import {
   RETURN_ENTITY_NAME,
@@ -28,6 +29,9 @@ import {
   USER_ID,
   WAREHOUSE_ID,
 } from "@/modules/stock-movement/tests/helpers/stock-movement.fixtures";
+import { InMemoryPaymentRepository } from "@/modules/payment/tests/helpers/in-memory-payment.repository";
+import { InMemoryRentalInvoiceRepository } from "@/modules/rental-invoice/tests/helpers/in-memory-rental-invoice.repository";
+import { buildPaidRentalInvoiceEntity } from "@/modules/rental-invoice/tests/helpers/rental-invoice.fixtures";
 import {
   ConflictError,
   NotFoundError,
@@ -43,6 +47,7 @@ import {
   RENTAL_ORDER_ID,
   RETURN_ID,
   VALID_CREATE_INPUT,
+  buildCompletedReturnEntity,
   buildInspectedReturnEntity,
   buildReceivedReturnEntity,
   buildReturnEntity,
@@ -70,6 +75,8 @@ function createWriteScope(
     rentalOrderRepository,
     inventoryRepository,
     stockMovementRepository,
+    paymentRepository: new InMemoryPaymentRepository(),
+    rentalInvoiceRepository: new InMemoryRentalInvoiceRepository(),
     auditLogger,
     userId,
   });
@@ -566,6 +573,9 @@ describe("CompleteReturnService", () => {
 
     const inventory = await inventoryRepository.findById(INVENTORY_ID);
     expect(inventory?.quantityOnHand).toBe(48);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("PARTIALLY_RETURNED");
   });
 
   it("logs RETURN audit for lost items without stock movement", async () => {
@@ -731,6 +741,8 @@ describe("CompleteReturnService", () => {
         rentalOrderRepository,
         inventoryRepository,
         stockMovementRepository,
+        new InMemoryPaymentRepository(),
+        new InMemoryRentalInvoiceRepository(),
         auditLogger,
         USER_ID,
       ),
@@ -744,6 +756,124 @@ describe("CompleteReturnService", () => {
     expect(returnRecord?.status).toBe("INSPECTED");
     expect(stockMovementRepository.count()).toBe(0);
     expect(auditLogger.entries).toHaveLength(0);
+  });
+});
+
+describe("RecoverLostItemsService", () => {
+  it("restocks recovered lost quantity and adjusts return item counts", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildCompletedReturnEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 48,
+        reservedQuantity: 0,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const auditLogger = new MockAuditLogger();
+    const service = new RecoverLostItemsService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        auditLogger,
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute(
+      { id: RETURN_ID },
+      { items: [{ rentalOrderItemId: ITEM_ID, quantity: 1 }] },
+    );
+
+    expect(result.return.items[0]?.lostQuantity).toBe(0);
+    expect(result.return.items[0]?.goodQuantity).toBe(4);
+    expect(result.refund).toBeNull();
+    expect(stockMovementRepository.count()).toBe(1);
+
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(49);
+  });
+
+  it("posts refund payment against paid invoice when requested", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildCompletedReturnEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([buildInventoryEntity()]);
+    const paymentRepository = new InMemoryPaymentRepository();
+    const rentalInvoiceRepository = new InMemoryRentalInvoiceRepository();
+    const paidInvoice = buildPaidRentalInvoiceEntity();
+    rentalInvoiceRepository.seed([paidInvoice]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const auditLogger = new MockAuditLogger();
+
+    const service = new RecoverLostItemsService(
+      createPassThroughTransactionRunner({
+        returnRepository,
+        dispatchRepository: new InMemoryDispatchRepository(),
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        paymentRepository,
+        rentalInvoiceRepository,
+        auditLogger,
+        userId: USER_ID,
+      }),
+    );
+
+    const result = await service.execute(
+      { id: RETURN_ID },
+      {
+        items: [{ rentalOrderItemId: ITEM_ID, quantity: 1 }],
+        refund: {
+          rentalInvoiceId: paidInvoice.id,
+          amount: 100,
+          paymentNumber: "PAY-REFUND-001",
+          paymentMethod: "CASH",
+        },
+      },
+    );
+
+    expect(result.refund?.isRefund).toBe(true);
+    expect(result.refund?.status).toBe("POSTED");
+    expect(result.refund?.amount).toBe(100);
+    expect(paymentRepository.count()).toBe(1);
+
+    const invoice = await rentalInvoiceRepository.findById(paidInvoice.id);
+    expect(invoice?.paidAmount).toBe(paidInvoice.grandTotal - 100);
+  });
+
+  it("rejects recover when return is not completed", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildInspectedReturnEntity()]);
+    const service = new RecoverLostItemsService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        new InMemoryRentalOrderRepository(),
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute(
+        { id: RETURN_ID },
+        { items: [{ rentalOrderItemId: ITEM_ID, quantity: 1 }] },
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableError);
   });
 });
 

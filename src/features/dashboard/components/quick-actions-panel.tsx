@@ -10,10 +10,10 @@ import {
   ShoppingCartIcon,
   UserPlusIcon,
 } from "lucide-react";
-import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { QuickAction } from "../types";
+import { DashboardWidget, DashboardWidgetSkeleton } from "./widgets";
 
 const actionIconMap: Record<string, typeof PlusIcon> = {
   "new-customer": UserPlusIcon,
@@ -35,22 +35,22 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
 }: QuickActionsPanelProps) {
   if (isLoading) {
     return (
-      <SectionCard title="Quick Actions" description="Common workflows">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <DashboardWidgetSkeleton title="Loading quick actions">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-9 w-full" />
+            <Skeleton key={index} className="h-9 w-full rounded-lg" />
           ))}
         </div>
-      </SectionCard>
+      </DashboardWidgetSkeleton>
     );
   }
 
   return (
-    <SectionCard
+    <DashboardWidget
       title="Quick Actions"
-      description="Launch common workflows — routes are placeholders until modules ship."
+      description="Launch common workflows"
     >
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {actions.map((action) => {
           const Icon = actionIconMap[action.id] ?? PlusIcon;
 
@@ -67,6 +67,6 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
           );
         })}
       </div>
-    </SectionCard>
+    </DashboardWidget>
   );
 });

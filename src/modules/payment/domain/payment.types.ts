@@ -14,6 +14,7 @@ export interface CreatePaymentData {
   paymentDate: Date;
   paymentMethod: PaymentMethod;
   amount: number;
+  isRefund?: boolean;
   referenceNumber: string | null;
   notes: string | null;
   createdById: UserId;
@@ -41,6 +42,7 @@ export interface PaymentProps {
   paymentDate: Date;
   paymentMethod: PaymentMethod;
   amount: number;
+  isRefund: boolean;
   referenceNumber: string | null;
   notes: string | null;
   status: PaymentStatus;

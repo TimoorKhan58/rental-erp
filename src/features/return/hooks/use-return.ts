@@ -41,6 +41,7 @@ export function useReturnPermissions() {
     canReceive: permissions.includes(PERMISSIONS.returns.receive),
     canInspect: permissions.includes(PERMISSIONS.returns.inspect),
     canComplete: permissions.includes(PERMISSIONS.returns.complete),
+    canRecover: permissions.includes(PERMISSIONS.returns.recover),
     canCancel: permissions.includes(PERMISSIONS.returns.cancel),
   };
 }

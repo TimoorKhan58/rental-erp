@@ -25,6 +25,7 @@ export class Payment implements Entity<PaymentId> {
   readonly paymentDate: Date;
   readonly paymentMethod: PaymentProps["paymentMethod"];
   readonly amount: number;
+  readonly isRefund: boolean;
   readonly referenceNumber: string | null;
   readonly notes: string | null;
   readonly status: PaymentStatus;
@@ -44,6 +45,7 @@ export class Payment implements Entity<PaymentId> {
     this.paymentDate = normalized.paymentDate;
     this.paymentMethod = normalized.paymentMethod;
     this.amount = normalized.amount;
+    this.isRefund = normalized.isRefund;
     this.referenceNumber = normalized.referenceNumber;
     this.notes = normalized.notes;
     this.status = normalized.status;
@@ -80,6 +82,7 @@ export class Payment implements Entity<PaymentId> {
       paymentDate: this.paymentDate,
       paymentMethod: this.paymentMethod,
       amount: this.amount,
+      isRefund: this.isRefund,
       referenceNumber: this.referenceNumber,
       notes: this.notes,
       status: this.status,

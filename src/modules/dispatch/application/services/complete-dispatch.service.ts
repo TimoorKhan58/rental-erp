@@ -1,4 +1,13 @@
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
+import {
+  computeStatusAfterDispatchComplete,
+  RentalOrderInvalidStatusError,
+} from "@/modules/rental-order/domain";
+import { toRentalOrderAuditValues } from "@/modules/rental-order/application/services/rental-order-audit.mapper";
+import {
+  RENTAL_ORDER_ENTITY_NAME,
+  RENTAL_ORDER_MODULE,
+} from "@/modules/rental-order/application/services/rental-order-service.constants";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { DispatchInvalidStatusError } from "@/modules/dispatch/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -105,6 +114,25 @@ export class CompleteDispatchService {
             });
           }
 
+          // Spec: COMPLETED dispatch → RELEASE reserved, then OUT on-hand.
+          // RELEASE must run first; OUT alone can leave reserved > on-hand.
+          await executeCreateStockMovementInScope(
+            {
+              stockMovementRepository,
+              inventoryRepository,
+              auditLogger,
+              userId,
+            },
+            {
+              inventoryId: inventory.id,
+              movementType: "RELEASE",
+              quantity: item.quantity,
+              referenceType: RENTAL_ORDER_REFERENCE_TYPE,
+              referenceId: rentalOrder.id,
+              remarks: `Released reservation for dispatch of rental order ${rentalOrder.orderNumber}`,
+            },
+          );
+
           await executeCreateStockMovementInScope(
             {
               stockMovementRepository,
@@ -139,6 +167,71 @@ export class CompleteDispatchService {
           oldValues: previousValues,
           newValues: toDispatchAuditValues(updated),
         });
+
+        const completedDispatches = await dispatchRepository.findPaged({
+          page: 1,
+          pageSize: 500,
+          rentalOrderId: rentalOrder.id,
+          status: "COMPLETED",
+        });
+
+        const dispatchedByItemId = new Map<string, number>();
+
+        for (const dispatch of completedDispatches.items) {
+          for (const item of dispatch.items) {
+            if (item.rentalOrderItemId === null) {
+              continue;
+            }
+
+            const previous = dispatchedByItemId.get(item.rentalOrderItemId) ?? 0;
+            dispatchedByItemId.set(
+              item.rentalOrderItemId,
+              previous + item.quantity,
+            );
+          }
+        }
+
+        const nextOrderStatus = computeStatusAfterDispatchComplete(
+          rentalOrder.status,
+          rentalOrder.items,
+          dispatchedByItemId,
+        );
+
+        if (nextOrderStatus !== rentalOrder.status) {
+          let advancedOrder;
+
+          try {
+            advancedOrder = rentalOrder.withLifecycleStatus(nextOrderStatus);
+          } catch (error) {
+            if (error instanceof RentalOrderInvalidStatusError) {
+              throw new UnprocessableError({
+                message: error.message,
+                details: {
+                  currentStatus: error.currentStatus,
+                  action: error.action,
+                },
+              });
+            }
+
+            throw error;
+          }
+
+          const previousOrderValues = toRentalOrderAuditValues(rentalOrder);
+          const updatedOrder = await rentalOrderRepository.updateStatus(
+            rentalOrder.id,
+            advancedOrder.status,
+          );
+
+          await auditLogger.log({
+            module: RENTAL_ORDER_MODULE,
+            entityName: RENTAL_ORDER_ENTITY_NAME,
+            recordId: updatedOrder.id,
+            action: "UPDATE",
+            status: "SUCCESS",
+            oldValues: previousOrderValues,
+            newValues: toRentalOrderAuditValues(updatedOrder),
+          });
+        }
 
         return toDispatchDto(updated);
       },

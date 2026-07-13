@@ -15,7 +15,7 @@ export function Sidebar() {
     <aside
       data-collapsed={collapsed}
       className={cn(
-        "hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-in-out lg:flex",
+        "hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-150 ease-in-out lg:flex",
         collapsed ? "w-16" : "w-64",
       )}
     >

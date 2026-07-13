@@ -223,3 +223,77 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 export function computeRestockQuantity(item: ReturnItemProps): number {
   return item.goodQuantity;
 }
+
+export function assertCanRecoverLost(status: ReturnStatus): void {
+  if (status !== "COMPLETED") {
+    throw new ReturnInvalidStatusError(status, "recover lost items");
+  }
+}
+
+export function applyLostRecoveryToItems(
+  items: ReturnItemProps[],
+  recoverItems: Array<{ rentalOrderItemId: string; quantity: number }>,
+): ReturnItemProps[] {
+  if (recoverItems.length === 0) {
+    throw new ReturnInvalidItemError(
+      "At least one item must be provided for lost recovery",
+    );
+  }
+
+  const recoverMap = new Map(
+    recoverItems.map((item) => [item.rentalOrderItemId, item.quantity]),
+  );
+  const seen = new Set<string>();
+
+  for (const recoverItem of recoverItems) {
+    if (recoverItem.quantity <= 0) {
+      throw new ReturnInvalidItemError(
+        "Recover quantity must be greater than zero",
+        recoverItem.rentalOrderItemId,
+      );
+    }
+
+    if (seen.has(recoverItem.rentalOrderItemId)) {
+      throw new ReturnInvalidItemError(
+        "Duplicate rental order item in recover items",
+        recoverItem.rentalOrderItemId,
+      );
+    }
+
+    seen.add(recoverItem.rentalOrderItemId);
+  }
+
+  const updated = items.map((item) => {
+    const quantity = recoverMap.get(item.rentalOrderItemId);
+
+    if (quantity === undefined) {
+      return item;
+    }
+
+    recoverMap.delete(item.rentalOrderItemId);
+
+    if (quantity > item.lostQuantity) {
+      throw new ReturnInvalidItemError(
+        "Recover quantity exceeds remaining lost quantity",
+        item.rentalOrderItemId,
+      );
+    }
+
+    return {
+      ...item,
+      lostQuantity: item.lostQuantity - quantity,
+      goodQuantity: item.goodQuantity + quantity,
+      notes: item.notes,
+    };
+  });
+
+  if (recoverMap.size > 0) {
+    const [rentalOrderItemId] = recoverMap.keys();
+    throw new ReturnInvalidItemError(
+      "Recover item does not belong to return",
+      rentalOrderItemId,
+    );
+  }
+
+  return updated;
+}

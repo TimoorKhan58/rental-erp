@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { SectionCard } from "@/components/design-system/card";
 import { SemanticBadge } from "@/components/design-system/badge";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState } from "@/components/feedback";
@@ -11,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/config/routes";
 import { formatDateTime } from "@/lib/utils";
 import type { DashboardNotification } from "../types";
+import { DashboardWidget, DashboardWidgetSkeleton } from "./widgets";
 
 const severityToBadge = {
   info: "info",
@@ -32,22 +32,22 @@ export const NotificationsPanel = memo(function NotificationsPanel({
 
   if (isLoading) {
     return (
-      <SectionCard title="Notifications">
-        <div className="space-y-3" aria-busy="true">
+      <DashboardWidgetSkeleton title="Loading operational alerts">
+        <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-14 w-full" />
+            <Skeleton key={index} className="h-16 w-full rounded-lg" />
           ))}
         </div>
-      </SectionCard>
+      </DashboardWidgetSkeleton>
     );
   }
 
   return (
-    <SectionCard
-      title="Notifications"
+    <DashboardWidget
+      title="Operational Alerts"
       description="Latest alerts and system messages"
       actions={
-        <div className="flex items-center gap-2">
+        <>
           {unreadCount > 0 ? (
             <Badge
               variant="destructive"
@@ -63,43 +63,42 @@ export const NotificationsPanel = memo(function NotificationsPanel({
           >
             View all
           </AppButton>
-        </div>
+        </>
       }
     >
       {notifications.length === 0 ? (
         <EmptyState
-          title="No notifications"
-          description="New notifications will appear here when the system delivers them."
+          title="No alerts"
+          description="New operational alerts will appear here when the system delivers them."
+          className="min-h-0 border-0 bg-transparent p-3"
         />
       ) : (
-        <ul className="space-y-3" aria-label="Notification preview">
+        <ul className="space-y-1.5" aria-label="Operational alerts">
           {notifications.map((notification) => (
             <li key={notification.id}>
               <Link
                 href={ROUTES.notificationDetail(notification.id)}
-                className="block rounded-lg border border-border/80 bg-background px-3 py-2.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="block rounded-lg border border-border/80 px-3 py-2 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium">{notification.title}</p>
-                      <SemanticBadge semantic={severityToBadge[notification.severity]}>
-                        {notification.severity}
-                      </SemanticBadge>
-                      {!notification.read ? (
-                        <span
-                          className="size-2 rounded-full bg-primary"
-                          aria-label="Unread"
-                        />
-                      ) : null}
-                    </div>
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {notification.message}
-                    </p>
-                  </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-sans text-sm font-medium text-foreground">
+                    {notification.title}
+                  </p>
+                  <SemanticBadge semantic={severityToBadge[notification.severity]}>
+                    {notification.severity}
+                  </SemanticBadge>
+                  {!notification.read ? (
+                    <span
+                      className="size-2 rounded-full bg-primary"
+                      aria-label="Unread"
+                    />
+                  ) : null}
                 </div>
+                <p className="mt-1 line-clamp-2 font-sans text-sm text-muted-foreground">
+                  {notification.message}
+                </p>
                 <time
-                  className="mt-1 block text-xs text-muted-foreground"
+                  className="mt-1.5 block font-sans text-xs text-muted-foreground"
                   dateTime={notification.timestamp}
                 >
                   {formatDateTime(notification.timestamp)}
@@ -109,6 +108,6 @@ export const NotificationsPanel = memo(function NotificationsPanel({
           ))}
         </ul>
       )}
-    </SectionCard>
+    </DashboardWidget>
   );
 });

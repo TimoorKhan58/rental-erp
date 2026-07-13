@@ -9,6 +9,7 @@ export interface PaymentResponse {
   paymentDate: string;
   paymentMethod: PaymentDto["paymentMethod"];
   amount: number;
+  isRefund: boolean;
   referenceNumber: string | null;
   notes: string | null;
   status: PaymentDto["status"];
@@ -33,6 +34,7 @@ export function toPaymentResponse(dto: PaymentDto): PaymentResponse {
     paymentDate: dto.paymentDate,
     paymentMethod: dto.paymentMethod,
     amount: dto.amount,
+    isRefund: dto.isRefund,
     referenceNumber: dto.referenceNumber,
     notes: dto.notes,
     status: dto.status,

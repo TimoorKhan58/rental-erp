@@ -16,6 +16,7 @@ import {
   handleInspectReturn,
   handleListReturns,
   handleReceiveReturn,
+  handleRecoverLostReturn,
   handleUpdateReturn,
 } from "@/modules/return/presentation/routes/return-api.routes";
 import {
@@ -51,6 +52,7 @@ function createMockServices() {
     receiveReturn: { execute: vi.fn() },
     inspectReturn: { execute: vi.fn() },
     completeReturn: { execute: vi.fn() },
+    recoverLostItems: { execute: vi.fn() },
     cancelReturn: { execute: vi.fn() },
   };
 }
@@ -305,6 +307,39 @@ describe("return route handlers", () => {
     expect(response.status).toBe(200);
   });
 
+  it("handleRecoverLostReturn delegates to service", async () => {
+    const services = createMockServices();
+    services.recoverLostItems.execute.mockResolvedValue({
+      return: {
+        id: RETURN_ID,
+        ...VALID_CREATE_INPUT,
+        status: "COMPLETED",
+        receivedAt: "2026-01-18T10:00:00.000Z",
+        inspectedAt: "2026-01-19T10:00:00.000Z",
+        completedAt: "2026-01-20T10:00:00.000Z",
+        items: [],
+        createdById: "user-1",
+        createdAt: "2026-01-15T10:00:00.000Z",
+        updatedAt: "2026-01-20T10:00:00.000Z",
+      },
+      refund: null,
+    });
+
+    const response = await handleRecoverLostReturn(
+      createMockNextRequest({
+        method: "POST",
+        json: {
+          items: [{ rentalOrderItemId: ITEM_ID, quantity: 1 }],
+        },
+      }),
+      RETURN_ID,
+      () => services as unknown as ReturnApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.recoverLostItems.execute).toHaveBeenCalled();
+  });
+
   it("handleCancelReturn delegates to service", async () => {
     const services = createMockServices();
     services.cancelReturn.execute.mockResolvedValue({
@@ -388,6 +423,21 @@ describe("runReturnApiRoute returns permissions", () => {
       route: "/api/returns/1/complete",
       httpMethod: "POST",
       permission: PERMISSIONS.returns.complete,
+      resolveServices: () => createMockServices() as unknown as ReturnApplicationServices,
+      handler: async () => ({ ok: true }),
+    });
+
+    expect(result.status).toBe(200);
+  });
+
+  it("allows worker role to recover lost items", async () => {
+    mockSession(USER_ROLES.WORKER);
+
+    const result = await runReturnApiRoute({
+      request: createMockNextRequest({ method: "POST" }),
+      route: "/api/returns/1/recover-lost",
+      httpMethod: "POST",
+      permission: PERMISSIONS.returns.recover,
       resolveServices: () => createMockServices() as unknown as ReturnApplicationServices,
       handler: async () => ({ ok: true }),
     });

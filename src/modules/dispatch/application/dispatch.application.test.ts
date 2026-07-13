@@ -318,7 +318,7 @@ describe("UpdateDispatchService", () => {
 });
 
 describe("CompleteDispatchService", () => {
-  it("completes ready dispatch with OUT stock movement", async () => {
+  it("completes ready dispatch with RELEASE then OUT stock movements", async () => {
     const dispatchRepository = new InMemoryDispatchRepository();
     dispatchRepository.seed([buildReadyDispatchEntity()]);
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
@@ -351,21 +351,63 @@ describe("CompleteDispatchService", () => {
     expect(result.status).toBe("COMPLETED");
     expect(result.dispatchedAt).not.toBeNull();
     expect(result.completedAt).not.toBeNull();
-    expect(stockMovementRepository.count()).toBe(1);
+    expect(stockMovementRepository.count()).toBe(2);
 
-    const movement = (
+    const movements = (
       await stockMovementRepository.findPaged({
         page: 1,
         pageSize: 10,
-        sortOrder: "desc",
+        sortOrder: "asc",
       })
-    ).items[0];
-    expect(movement?.movementType).toBe("OUT");
-    expect(movement?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
-    expect(movement?.referenceId).toBe(RENTAL_ORDER_ID);
+    ).items;
+    expect(movements.map((m) => m.movementType)).toEqual(["RELEASE", "OUT"]);
+    expect(movements[0]?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
+    expect(movements[0]?.referenceId).toBe(RENTAL_ORDER_ID);
+    expect(movements[1]?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
+    expect(movements[1]?.referenceId).toBe(RENTAL_ORDER_ID);
 
     const inventory = await inventoryRepository.findById(INVENTORY_ID);
     expect(inventory?.quantityOnHand).toBe(45);
+    expect(inventory?.reservedQuantity).toBe(0);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("DISPATCHED");
+  });
+
+  it("completes when dispatch qty equals reserved and leaves leftover on-hand", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([buildReadyDispatchEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 150,
+        reservedQuantity: 5,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CompleteDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: DISPATCH_ID });
+
+    expect(result.status).toBe("COMPLETED");
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(145);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(stockMovementRepository.count()).toBe(2);
   });
 
   it("rejects complete when not ready", async () => {

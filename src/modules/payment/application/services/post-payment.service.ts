@@ -83,6 +83,7 @@ export class PostPaymentService {
           invoice,
           existing.customerId,
           existing.amount,
+          existing.isRefund,
         );
 
         const previousPaymentValues = toPaymentAuditValues(existing);
@@ -92,7 +93,7 @@ export class PostPaymentService {
           rentalInvoiceRepository,
           invoice,
           existing,
-          "apply",
+          existing.isRefund ? "reverse" : "apply",
         );
 
         const updated = await paymentRepository.updateStatus(existing.id, {

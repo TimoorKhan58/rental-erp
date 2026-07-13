@@ -29,6 +29,7 @@ export function toPaymentDomain(record: {
   paymentDate: Date;
   paymentMethod: Payment["paymentMethod"];
   amount: Prisma.Decimal;
+  isRefund?: boolean;
   referenceNumber: string | null;
   notes: string | null;
   status: PaymentStatus;
@@ -46,6 +47,7 @@ export function toPaymentDomain(record: {
     paymentDate: record.paymentDate,
     paymentMethod: record.paymentMethod,
     amount: decimalToNumber(record.amount),
+    isRefund: record.isRefund === true,
     referenceNumber: record.referenceNumber,
     notes: record.notes,
     status: record.status,
@@ -69,6 +71,7 @@ export function toPaymentCreateInput(
     paymentDate: normalized.paymentDate,
     paymentMethod: normalized.paymentMethod,
     amount: toPrismaDecimal(normalized.amount),
+    isRefund: normalized.isRefund,
     referenceNumber: normalized.referenceNumber,
     notes: normalized.notes,
     status: normalized.status,

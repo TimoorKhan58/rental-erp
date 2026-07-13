@@ -1,5 +1,8 @@
 import type { RentalInvoiceStatus } from "@/modules/rental-invoice/domain/rental-invoice.constants";
-import { ELIGIBLE_INVOICE_PAYMENT_STATUSES } from "./payment.constants";
+import {
+  ELIGIBLE_INVOICE_PAYMENT_STATUSES,
+  ELIGIBLE_INVOICE_REFUND_STATUSES,
+} from "./payment.constants";
 import type { PaymentStatus } from "./payment.constants";
 import {
   PaymentEligibilityError,
@@ -35,6 +38,17 @@ export function assertPaymentAmountWithinBalance(
   }
 }
 
+export function assertRefundAmountWithinPaid(
+  amount: number,
+  invoicePaidAmount: number,
+): void {
+  if (amount > invoicePaidAmount) {
+    throw new PaymentEligibilityError(
+      "Refund amount exceeds invoice paid amount",
+    );
+  }
+}
+
 export function assertInvoiceEligibleForPayment(
   status: RentalInvoiceStatus,
 ): void {
@@ -49,6 +63,24 @@ export function assertInvoiceEligibleForPayment(
   ) {
     throw new PaymentEligibilityError(
       `Invoice must be ISSUED or PARTIALLY_PAID to record payment (current: ${status})`,
+    );
+  }
+}
+
+export function assertInvoiceEligibleForRefund(
+  status: RentalInvoiceStatus,
+): void {
+  if (status === "VOID" || status === "DRAFT") {
+    throw new PaymentEligibilityError(
+      "Cannot record refund against void or draft invoice",
+    );
+  }
+
+  if (
+    !(ELIGIBLE_INVOICE_REFUND_STATUSES as readonly string[]).includes(status)
+  ) {
+    throw new PaymentEligibilityError(
+      `Invoice must be PAID or PARTIALLY_PAID to record refund (current: ${status})`,
     );
   }
 }
@@ -90,7 +122,10 @@ export function assertImmutablePostedPayment(status: PaymentStatus): void {
 
 export function normalizeCreatePaymentData(
   data: CreatePaymentData,
-): Omit<PaymentProps, "id" | "status" | "postedAt" | "voidedAt" | "createdAt" | "updatedAt"> {
+): Omit<
+  PaymentProps,
+  "id" | "status" | "postedAt" | "voidedAt" | "createdAt" | "updatedAt"
+> {
   return {
     paymentNumber: createPaymentNumber(data.paymentNumber),
     rentalInvoiceId: data.rentalInvoiceId,
@@ -98,6 +133,7 @@ export function normalizeCreatePaymentData(
     paymentDate: data.paymentDate,
     paymentMethod: data.paymentMethod,
     amount: validatePaymentAmount(data.amount),
+    isRefund: data.isRefund === true,
     referenceNumber: normalizeOptionalText(data.referenceNumber),
     notes: normalizeOptionalText(data.notes),
     createdById: data.createdById,
@@ -109,6 +145,7 @@ export function normalizePaymentProps(props: PaymentProps): PaymentProps {
     ...props,
     paymentNumber: createPaymentNumber(props.paymentNumber),
     amount: validatePaymentAmount(props.amount),
+    isRefund: props.isRefund === true,
     referenceNumber: normalizeOptionalText(props.referenceNumber),
     notes: normalizeOptionalText(props.notes),
   };

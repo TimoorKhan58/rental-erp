@@ -925,6 +925,7 @@ model Payment {
   paymentDate     DateTime
   paymentMethod   PaymentMethod
   amount          Decimal       @db.Decimal(12, 2)
+  isRefund        Boolean       @default(false)
   referenceNumber String?
   notes           String?
   status          PaymentStatus @default(PENDING)

@@ -1,55 +1,79 @@
 /**
  * Semantic color tokens — light and dark themes.
  * Components must reference these tokens, not raw color values.
+ *
+ * Status text-on-muted convention (unchanged API):
+ * - success / info / error → use the solid token as text
+ * - warning → use warning-foreground as text (amber solids fail AA as text)
  */
 :root {
   --surface: var(--card);
   --surface-foreground: var(--card-foreground);
 
-  --success: oklch(0.62 0.17 145);
-  --success-foreground: oklch(0.98 0.02 145);
-  --success-muted: oklch(0.95 0.04 145);
+  /* Success — deeper solid for AA text-on-muted */
+  --success: oklch(0.48 0.13 145);
+  --success-foreground: oklch(0.985 0.02 145);
+  --success-muted: oklch(0.95 0.035 145);
 
-  --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.28 0.06 75);
-  --warning-muted: oklch(0.96 0.04 75);
+  /* Warning — solid stays vivid; foreground carries muted-surface text */
+  --warning: oklch(0.72 0.14 75);
+  --warning-foreground: oklch(0.36 0.08 75);
+  --warning-muted: oklch(0.96 0.035 75);
 
-  --info: oklch(0.62 0.14 240);
-  --info-foreground: oklch(0.98 0.02 240);
+  /* Info — deeper solid for AA text-on-muted */
+  --info: oklch(0.48 0.11 240);
+  --info-foreground: oklch(0.985 0.02 240);
   --info-muted: oklch(0.95 0.03 240);
 
-  --error: var(--destructive);
-  --error-foreground: oklch(0.98 0.02 25);
-  --error-muted: oklch(0.95 0.04 25);
+  /* Error — text-tuned solid; destructive remains the action color */
+  --error: oklch(0.50 0.19 25);
+  --error-foreground: var(--destructive-foreground);
+  --error-muted: oklch(0.95 0.035 25);
 
+  /* Interactive — light: darken fills toward ink */
   --primary-hover: color-mix(in oklch, var(--primary) 88%, var(--foreground));
   --primary-active: color-mix(in oklch, var(--primary) 78%, var(--foreground));
-  --primary-disabled: color-mix(in oklch, var(--primary) 55%, transparent);
+  --primary-disabled: color-mix(in oklch, var(--primary) 50%, transparent);
 
-  --secondary-hover: color-mix(in oklch, var(--secondary) 92%, var(--foreground));
-  --secondary-active: color-mix(in oklch, var(--secondary) 86%, var(--foreground));
+  --secondary-hover: color-mix(in oklch, var(--secondary) 90%, var(--foreground));
+  --secondary-active: color-mix(in oklch, var(--secondary) 82%, var(--foreground));
 
   --muted-hover: color-mix(in oklch, var(--muted) 92%, var(--foreground));
-  --border-strong: color-mix(in oklch, var(--border) 75%, var(--foreground));
+  --border-strong: color-mix(in oklch, var(--border) 70%, var(--foreground));
 
-  --shadow-color: oklch(0.2 0 0 / 8%);
+  /* Shadow tint follows foreground hue family */
+  --shadow-color: color-mix(in oklch, var(--foreground) 8%, transparent);
 }
 
 .dark {
-  --success: oklch(0.7 0.14 145);
+  /* Success — brighter solid for AA on dark muted */
+  --success: oklch(0.78 0.12 145);
   --success-foreground: oklch(0.18 0.04 145);
-  --success-muted: oklch(0.28 0.06 145);
+  --success-muted: oklch(0.28 0.05 145);
 
-  --warning: oklch(0.78 0.12 75);
-  --warning-foreground: oklch(0.2 0.05 75);
-  --warning-muted: oklch(0.3 0.05 75);
+  --warning: oklch(0.82 0.11 75);
+  --warning-foreground: oklch(0.88 0.08 75);
+  --warning-muted: oklch(0.30 0.05 75);
 
-  --info: oklch(0.72 0.12 240);
+  --info: oklch(0.78 0.10 240);
   --info-foreground: oklch(0.18 0.04 240);
-  --info-muted: oklch(0.28 0.05 240);
+  --info-muted: oklch(0.28 0.045 240);
 
-  --error-foreground: oklch(0.98 0.02 25);
-  --error-muted: oklch(0.32 0.08 25);
+  --error: oklch(0.72 0.16 25);
+  --error-foreground: var(--destructive-foreground);
+  --error-muted: oklch(0.32 0.07 25);
 
-  --shadow-color: oklch(0 0 0 / 35%);
+  /* Interactive — dark: primary is light, press toward on-primary ink */
+  --primary-hover: color-mix(in oklch, var(--primary) 88%, var(--primary-foreground));
+  --primary-active: color-mix(in oklch, var(--primary) 78%, var(--primary-foreground));
+  --primary-disabled: color-mix(in oklch, var(--primary) 40%, transparent);
+
+  /* Secondary fills are dark — lighten toward foreground */
+  --secondary-hover: color-mix(in oklch, var(--secondary) 88%, var(--foreground));
+  --secondary-active: color-mix(in oklch, var(--secondary) 78%, var(--foreground));
+
+  --muted-hover: color-mix(in oklch, var(--muted) 88%, var(--foreground));
+  --border-strong: color-mix(in oklch, var(--border) 55%, var(--foreground));
+
+  --shadow-color: color-mix(in oklch, black 40%, transparent);
 }

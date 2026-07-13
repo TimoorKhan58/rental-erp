@@ -92,11 +92,11 @@ function CreateRepairForm({
   const { data: priorRepairs } = useRepairsByReturn(returnId);
 
   const returnItemOptions = useMemo(() => {
-    if (!returnRecord || !priorRepairs) {
+    if (!returnRecord) {
       return [];
     }
 
-    const priorRepaired = computePriorRepairedByItem(priorRepairs.items);
+    const priorRepaired = computePriorRepairedByItem(priorRepairs?.items ?? []);
     const productByRentalItem = new Map(
       (rentalOrder?.items ?? []).map((item) => [item.id, item.productId]),
     );
@@ -106,17 +106,18 @@ function CreateRepairForm({
       .map((item) => {
         const prior = priorRepaired.get(item.id) ?? 0;
         const remaining = item.damagedQuantity - prior;
+        const productId = productByRentalItem.get(item.rentalOrderItemId) ?? "";
 
         return {
           id: item.id,
-          label: productLabelById.get(productByRentalItem.get(item.id) ?? "") ?? item.id,
+          label: productLabelById.get(productId) ?? item.id,
           remaining,
-          productId: productByRentalItem.get(item.id) ?? "",
+          productId,
           damagedQuantity: item.damagedQuantity,
         };
       })
-      .filter((item) => item.remaining > 0);
-  }, [returnRecord, priorRepairs, rentalOrder?.items, productLabelById]);
+      .filter((item) => item.remaining > 0 && item.productId.length > 0);
+  }, [returnRecord, priorRepairs?.items, rentalOrder?.items, productLabelById]);
 
   useEffect(() => {
     if (!returnRecord) {
@@ -130,6 +131,7 @@ function CreateRepairForm({
       form.setValue("returnItemId", "");
       form.setValue("productId", "");
       form.setValue("warehouseId", "");
+      form.setValue("maxQuantity", undefined);
     }
   }, [returnRecord, returnItemOptions, form]);
 
@@ -140,18 +142,18 @@ function CreateRepairForm({
 
     const selected = returnItemOptions.find((option) => option.id === returnItemId);
 
-    if (!selected) {
+    if (!selected || !selected.productId) {
       return;
     }
 
-    const rentalItem = rentalOrder.items.find((item) => item.id === returnItemId);
-
-    form.setValue("productId", selected.productId);
-    form.setValue("warehouseId", rentalOrder.warehouseId);
-    form.setValue("maxQuantity", selected.remaining);
-    form.setValue("quantity", Math.min(form.getValues("quantity"), selected.remaining));
-
-    void rentalItem;
+    form.setValue("productId", selected.productId, { shouldValidate: true });
+    form.setValue("warehouseId", rentalOrder.warehouseId, { shouldValidate: true });
+    form.setValue("maxQuantity", selected.remaining, { shouldValidate: true });
+    form.setValue(
+      "quantity",
+      Math.min(Math.max(form.getValues("quantity") || 1, 1), selected.remaining),
+      { shouldValidate: true },
+    );
   }, [returnItemId, returnRecord, rentalOrder, returnItemOptions, form]);
 
   return (
@@ -185,6 +187,11 @@ function CreateRepairForm({
               value: option.id,
               label: `${option.label} (${option.remaining} available)`,
             }))}
+            description={
+              returnId && returnRecord && returnItemOptions.length === 0
+                ? "No remaining damaged items on this return are available for repair."
+                : undefined
+            }
           />
           <DatePickerField control={form.control} name="repairDate" label="Repair date" />
           <NumberField

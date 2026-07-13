@@ -32,17 +32,17 @@ export function StatCard({
   const TrendIcon = trendConfig[trend].icon;
 
   return (
-    <Card className={cn("border-border/80", className)}>
+    <Card className={cn("border-border shadow-none", className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {label}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="text-2xl font-semibold tracking-tight">{value}</div>
+        <div className="text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
         {changeLabel ? (
           <div className={cn("flex items-center gap-1 text-xs", trendConfig[trend].className)}>
-            <TrendIcon className="size-3.5" aria-hidden="true" />
+            <TrendIcon className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
             <span>{changeLabel}</span>
           </div>
         ) : null}

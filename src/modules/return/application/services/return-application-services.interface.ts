@@ -4,6 +4,7 @@ import type { ReturnDto } from "../dtos/return.dto";
 import type {
   CreateReturnInput,
   InspectReturnInput,
+  RecoverLostReturnInput,
   ReturnIdParamInput,
   UpdateReturnInput,
 } from "../schemas/return.schemas";
@@ -15,6 +16,10 @@ import type { GetReturnByIdService } from "./get-return-by-id.service";
 import type { InspectReturnService } from "./inspect-return.service";
 import type { ListReturnsService } from "./list-returns.service";
 import type { ReceiveReturnService } from "./receive-return.service";
+import type {
+  RecoverLostItemsService,
+  RecoverLostReturnResult,
+} from "./recover-lost-items.service";
 import type { UpdateReturnService } from "./update-return.service";
 
 export interface ReturnApplicationServices {
@@ -25,6 +30,7 @@ export interface ReturnApplicationServices {
   receiveReturn: ReceiveReturnService;
   inspectReturn: InspectReturnService;
   completeReturn: CompleteReturnService;
+  recoverLostItems: RecoverLostItemsService;
   cancelReturn: CancelReturnService;
 }
 
@@ -42,6 +48,10 @@ export interface IReturnService {
     input: InspectReturnInput,
   ): Promise<ReturnDto>;
   complete(params: ReturnIdParamInput): Promise<ReturnDto>;
+  recoverLost(
+    params: ReturnIdParamInput,
+    input: RecoverLostReturnInput,
+  ): Promise<RecoverLostReturnResult>;
   cancel(params: ReturnIdParamInput): Promise<ReturnDto>;
 }
 

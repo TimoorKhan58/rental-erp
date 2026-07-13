@@ -102,7 +102,7 @@ export function assertRentalOrderEligibleForDispatch(
 ): void {
   if (!(ELIGIBLE_RENTAL_ORDER_STATUSES as readonly string[]).includes(status)) {
     throw new DispatchInvalidItemError(
-      `Rental order must be CONFIRMED or RESERVED to create dispatch (current: ${status})`,
+      `Rental order must be CONFIRMED, RESERVED, DISPATCHED, ON_RENT, or PARTIALLY_RETURNED to create dispatch (current: ${status})`,
     );
   }
 }

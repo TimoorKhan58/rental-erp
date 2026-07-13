@@ -76,6 +76,7 @@ export const PERMISSIONS = {
     receive: "returns:receive",
     inspect: "returns:inspect",
     complete: "returns:complete",
+    recover: "returns:recover",
     cancel: "returns:cancel",
   },
   repairs: {

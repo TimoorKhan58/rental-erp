@@ -46,6 +46,27 @@ export async function completeReturn(id: string): Promise<ReturnResponse> {
   return apiPost<ReturnResponse>(`${BASE}/${id}/complete`);
 }
 
+export async function recoverLostReturn(
+  id: string,
+  payload: {
+    items: Array<{ rentalOrderItemId: string; quantity: number }>;
+    refund?: {
+      rentalInvoiceId: string;
+      amount: number;
+      paymentNumber: string;
+      paymentMethod?: string;
+      paymentDate?: string;
+      referenceNumber?: string | null;
+      notes?: string | null;
+    };
+  },
+): Promise<{ return: ReturnResponse; refund: unknown }> {
+  return apiPost<{ return: ReturnResponse; refund: unknown }>(
+    `${BASE}/${id}/recover-lost`,
+    payload,
+  );
+}
+
 export async function cancelReturn(id: string): Promise<ReturnResponse> {
   return apiPost<ReturnResponse>(`${BASE}/${id}/cancel`);
 }

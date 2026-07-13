@@ -43,8 +43,8 @@ type DataTableShellProps<T> = {
 };
 
 const densityClasses: Record<TableDensity, { head: string; cell: string }> = {
-  comfortable: { head: "h-10 px-3", cell: "px-3 py-3" },
-  compact: { head: "h-8 px-2.5 text-xs", cell: "px-2.5 py-2 text-xs" },
+  comfortable: { head: "h-11 px-4", cell: "px-4 py-3.5" },
+  compact: { head: "h-9 px-3 text-xs", cell: "px-3 py-2.5 text-xs" },
 };
 
 /**
@@ -98,7 +98,7 @@ export function DataTableShell<T>({
     }
 
     return (
-      <div className="overflow-safe rounded-lg border border-border">
+      <div className="overflow-safe rounded-lg border border-border bg-card">
         <Table>
           <TableHeader
             className={cn(stickyHeader && "sticky top-0 z-[var(--z-sticky)] bg-background")}

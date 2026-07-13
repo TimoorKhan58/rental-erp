@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * ChartContainer — responsive wrapper for dashboard charts.
+ * ChartContainer — dense responsive wrapper for dashboard charts.
  */
 type ChartContainerProps = {
   title: string;
@@ -22,18 +22,23 @@ export function ChartContainer({
   return (
     <section
       aria-label={title}
-      className={cn("rounded-xl border border-border bg-card p-4 shadow-token-sm", className)}
+      className={cn(
+        "flex flex-col rounded-lg border border-border bg-card shadow-none",
+        className,
+      )}
     >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5">
+        <div className="min-w-0 space-y-0.5">
+          <h2 className="font-sans text-sm font-semibold tracking-tight text-foreground">
+            {title}
+          </h2>
           {description ? (
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="font-sans text-xs text-muted-foreground">{description}</p>
           ) : null}
         </div>
         {action}
       </div>
-      <div className="h-56 w-full min-w-0 sm:h-64">{children}</div>
+      <div className="h-44 w-full min-w-0 px-3 pb-3 pt-2 sm:h-52">{children}</div>
     </section>
   );
 }

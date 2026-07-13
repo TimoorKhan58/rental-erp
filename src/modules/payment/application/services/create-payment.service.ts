@@ -71,7 +71,12 @@ export class CreatePaymentService {
           });
         }
 
-        validateInvoiceForPayment(invoice, data.customerId, data.amount);
+        validateInvoiceForPayment(
+          invoice,
+          data.customerId,
+          data.amount,
+          data.isRefund === true,
+        );
 
         const existing = await paymentRepository.findByPaymentNumber(
           createData.paymentNumber,

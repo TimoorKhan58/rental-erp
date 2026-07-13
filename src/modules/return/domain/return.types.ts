@@ -66,6 +66,11 @@ export interface InspectReturnItemData {
   notes?: string | null;
 }
 
+export interface RecoverLostItemData {
+  rentalOrderItemId: string;
+  quantity: number;
+}
+
 export interface UpdateReturnInspectData {
   items: InspectReturnItemData[];
 }

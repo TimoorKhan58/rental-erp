@@ -21,7 +21,7 @@ export function ReportChartContainer({
   return (
     <section
       aria-label={title}
-      className={cn("rounded-xl border border-border bg-card p-4 shadow-token-sm", className)}
+      className={cn("rounded-lg border border-border bg-card p-4 shadow-none", className)}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="space-y-1">

@@ -56,7 +56,40 @@ export const InspectReturnSchema = z.object({
     .min(1),
 });
 
+export const RecoverLostReturnSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        rentalOrderItemId: UUIDSchema,
+        quantity: PositiveIntSchema,
+      }),
+    )
+    .min(1),
+  refund: z
+    .object({
+      rentalInvoiceId: UUIDSchema,
+      amount: z.coerce.number().positive(),
+      paymentNumber: NonEmptyStringSchema.max(50),
+      paymentMethod: z
+        .enum([
+          "CASH",
+          "BANK_TRANSFER",
+          "CHEQUE",
+          "CARD",
+          "ONLINE",
+          "OTHER",
+        ])
+        .optional()
+        .default("CASH"),
+      paymentDate: DateSchema.optional(),
+      referenceNumber: TrimmedStringSchema.max(100).optional().nullable(),
+      notes: TrimmedStringSchema.max(500).optional().nullable(),
+    })
+    .optional(),
+});
+
 export type CreateReturnInput = z.infer<typeof CreateReturnSchema>;
 export type UpdateReturnInput = z.infer<typeof UpdateReturnSchema>;
 export type InspectReturnInput = z.infer<typeof InspectReturnSchema>;
+export type RecoverLostReturnInput = z.infer<typeof RecoverLostReturnSchema>;
 export type ReturnIdParamInput = z.infer<typeof ReturnIdParamSchema>;

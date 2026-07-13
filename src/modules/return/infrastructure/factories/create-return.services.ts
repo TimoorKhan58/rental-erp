@@ -7,6 +7,7 @@ import { GetReturnByIdService } from "@/modules/return/application/services/get-
 import { InspectReturnService } from "@/modules/return/application/services/inspect-return.service";
 import { ListReturnsService } from "@/modules/return/application/services/list-returns.service";
 import { ReceiveReturnService } from "@/modules/return/application/services/receive-return.service";
+import { RecoverLostItemsService } from "@/modules/return/application/services/recover-lost-items.service";
 import { ReturnService } from "@/modules/return/application/services/return.service";
 import { UpdateReturnService } from "@/modules/return/application/services/update-return.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -35,6 +36,7 @@ export function createReturnApplicationServices(
   const receiveReturn = new ReceiveReturnService(transactionRunner);
   const inspectReturn = new InspectReturnService(transactionRunner);
   const completeReturn = new CompleteReturnService(transactionRunner);
+  const recoverLostItems = new RecoverLostItemsService(transactionRunner);
   const cancelReturn = new CancelReturnService(transactionRunner);
 
   return {
@@ -45,6 +47,7 @@ export function createReturnApplicationServices(
     receiveReturn,
     inspectReturn,
     completeReturn,
+    recoverLostItems,
     cancelReturn,
     returnService: new ReturnService(
       getReturnById,
@@ -54,6 +57,7 @@ export function createReturnApplicationServices(
       receiveReturn,
       inspectReturn,
       completeReturn,
+      recoverLostItems,
       cancelReturn,
     ),
   };

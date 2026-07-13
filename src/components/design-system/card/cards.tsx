@@ -33,7 +33,7 @@ export function StandardCard({
   size = "default",
 }: StandardCardProps) {
   return (
-    <Card size={size} className={cn("shadow-token-sm", className)}>
+    <Card size={size} className={cn("border-border shadow-none", className)}>
       {(title || description) && (
         <CardHeader>
           {title ? <CardTitle>{title}</CardTitle> : null}
@@ -66,7 +66,7 @@ export function SectionCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("shadow-token-sm", className)}>
+    <Card className={cn("border-border shadow-none", className)}>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div className="space-y-1">
           <CardTitle>{title}</CardTitle>
@@ -96,7 +96,7 @@ export function ActionCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("shadow-token-sm", className)}>
+    <Card className={cn("border-border shadow-none", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}

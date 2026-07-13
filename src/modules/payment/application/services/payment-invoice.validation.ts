@@ -7,7 +7,9 @@ import type { Payment } from "@/modules/payment/domain/payment.entity";
 import {
   assertCustomerMatchesInvoice,
   assertInvoiceEligibleForPayment,
+  assertInvoiceEligibleForRefund,
   assertPaymentAmountWithinBalance,
+  assertRefundAmountWithinPaid,
   PaymentEligibilityError,
 } from "@/modules/payment/domain";
 import { UnprocessableError } from "@/shared/infrastructure/errors";
@@ -16,10 +18,18 @@ export function validateInvoiceForPayment(
   invoice: RentalInvoice,
   customerId: string,
   amount: number,
+  isRefund = false,
 ): void {
   try {
-    assertInvoiceEligibleForPayment(invoice.status);
     assertCustomerMatchesInvoice(customerId, invoice.customerId);
+
+    if (isRefund) {
+      assertInvoiceEligibleForRefund(invoice.status);
+      assertRefundAmountWithinPaid(amount, invoice.paidAmount);
+      return;
+    }
+
+    assertInvoiceEligibleForPayment(invoice.status);
     assertPaymentAmountWithinBalance(amount, invoice.balance);
   } catch (error) {
     if (

@@ -21,6 +21,11 @@ export const ELIGIBLE_INVOICE_PAYMENT_STATUSES = [
   "PARTIALLY_PAID",
 ] as const;
 
+export const ELIGIBLE_INVOICE_REFUND_STATUSES = [
+  "PAID",
+  "PARTIALLY_PAID",
+] as const;
+
 export const PAYMENT_SEARCH_FIELDS = [
   "paymentNumber",
   "referenceNumber",

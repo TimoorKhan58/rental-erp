@@ -4,6 +4,7 @@ import {
   CreateReturnSchema,
   InspectReturnSchema,
   ListReturnsSchema,
+  RecoverLostReturnSchema,
   UpdateReturnSchema,
 } from "@/modules/return/application";
 
@@ -151,6 +152,35 @@ describe("InspectReturnSchema", () => {
         ],
       }),
     ).toThrow();
+  });
+});
+
+describe("RecoverLostReturnSchema", () => {
+  it("accepts recover input without refund", () => {
+    const result = RecoverLostReturnSchema.parse({
+      items: [{ rentalOrderItemId: ITEM_ID, quantity: 1 }],
+    });
+
+    expect(result.items[0]?.quantity).toBe(1);
+    expect(result.refund).toBeUndefined();
+  });
+
+  it("accepts recover input with refund", () => {
+    const result = RecoverLostReturnSchema.parse({
+      items: [{ rentalOrderItemId: ITEM_ID, quantity: 2 }],
+      refund: {
+        rentalInvoiceId: "aa0e8400-e29b-41d4-a716-446655440099",
+        amount: 500,
+        paymentNumber: "PAY-REF-1",
+      },
+    });
+
+    expect(result.refund?.paymentMethod).toBe("CASH");
+    expect(result.refund?.amount).toBe(500);
+  });
+
+  it("rejects empty recover items", () => {
+    expect(() => RecoverLostReturnSchema.parse({ items: [] })).toThrow();
   });
 });
 

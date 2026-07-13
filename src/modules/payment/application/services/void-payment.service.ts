@@ -85,7 +85,7 @@ export class VoidPaymentService {
             rentalInvoiceRepository,
             invoice,
             existing,
-            "reverse",
+            existing.isRefund ? "apply" : "reverse",
           );
 
           await auditLogger.log({

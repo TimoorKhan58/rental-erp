@@ -7,10 +7,12 @@ import {
 } from "./return.errors";
 import {
   applyInspectionToItems,
+  applyLostRecoveryToItems,
   assertCanCancel,
   assertCanComplete,
   assertCanInspect,
   assertCanReceive,
+  assertCanRecoverLost,
   assertCanUpdate,
   normalizeReturnProps,
   validateReturnDate,
@@ -19,6 +21,7 @@ import {
 import type {
   CreateReturnData,
   InspectReturnItemData,
+  RecoverLostItemData,
   ReturnItemProps,
   ReturnProps,
 } from "./return.types";
@@ -148,6 +151,17 @@ export class Return implements Entity<ReturnInspectionId> {
       ...this.toProps(),
       status: "CANCELLED",
       updatedAt: new Date(),
+    });
+  }
+
+  withLostRecovered(recoverItems: RecoverLostItemData[]): Return {
+    assertCanRecoverLost(this.status);
+    const now = new Date();
+
+    return Return.reconstitute({
+      ...this.toProps(),
+      items: applyLostRecoveryToItems(this.items, recoverItems),
+      updatedAt: now,
     });
   }
 }

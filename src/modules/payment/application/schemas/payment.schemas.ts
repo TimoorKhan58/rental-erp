@@ -25,6 +25,7 @@ export const CreatePaymentSchema = z.object({
   paymentDate: DateSchema,
   paymentMethod: z.enum(PAYMENT_METHODS),
   amount: PositiveAmountSchema,
+  isRefund: z.boolean().optional().default(false),
   referenceNumber: TrimmedStringSchema.max(100).optional().nullable(),
   notes: TrimmedStringSchema.max(500).optional().nullable(),
 });

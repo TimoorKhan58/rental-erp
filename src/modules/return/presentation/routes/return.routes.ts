@@ -4,6 +4,7 @@ export const RETURN_ROUTES = {
   receive: (id: string) => `/api/returns/${id}/receive`,
   inspect: (id: string) => `/api/returns/${id}/inspect`,
   complete: (id: string) => `/api/returns/${id}/complete`,
+  recoverLost: (id: string) => `/api/returns/${id}/recover-lost`,
   cancel: (id: string) => `/api/returns/${id}/cancel`,
 } as const;
 

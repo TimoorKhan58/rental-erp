@@ -19,6 +19,7 @@ import {
 import {
   ITEM_ID,
   buildCreateReturnData,
+  buildCompletedReturnEntity,
   buildInspectedReturnEntity,
   buildReceivedReturnEntity,
   buildReturnEntity,
@@ -317,6 +318,35 @@ describe("Return rules", () => {
     }).items[0]!;
 
     expect(computeRestockQuantity(item)).toBe(0);
+  });
+});
+
+describe("lost recovery", () => {
+  it("recovers lost quantity into good on completed return", () => {
+    const completed = buildCompletedReturnEntity();
+    const recovered = completed.withLostRecovered([
+      { rentalOrderItemId: ITEM_ID, quantity: 1 },
+    ]);
+
+    expect(recovered.items[0]?.lostQuantity).toBe(0);
+    expect(recovered.items[0]?.goodQuantity).toBe(4);
+    expect(recovered.status).toBe("COMPLETED");
+  });
+
+  it("rejects recover when return is not completed", () => {
+    expect(() =>
+      buildInspectedReturnEntity().withLostRecovered([
+        { rentalOrderItemId: ITEM_ID, quantity: 1 },
+      ]),
+    ).toThrow(ReturnInvalidStatusError);
+  });
+
+  it("rejects recover quantity above remaining lost", () => {
+    expect(() =>
+      buildCompletedReturnEntity().withLostRecovered([
+        { rentalOrderItemId: ITEM_ID, quantity: 2 },
+      ]),
+    ).toThrow(ReturnInvalidItemError);
   });
 });
 

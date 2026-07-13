@@ -7,6 +7,7 @@ import {
 } from "./rental-order.errors";
 import {
   applyReserveToItems,
+  assertCanApplyLifecycleStatus,
   assertCanCancel,
   assertCanConfirm,
   assertCanReserve,
@@ -125,6 +126,20 @@ export class RentalOrder implements Entity<RentalOrderId> {
       ...this.toProps(),
       status: computeStatusAfterReserve(updatedItems),
       items: updatedItems,
+      updatedAt: new Date(),
+    });
+  }
+
+  withLifecycleStatus(status: RentalOrderStatus): RentalOrder {
+    if (status === this.status) {
+      return this;
+    }
+
+    assertCanApplyLifecycleStatus(this.status, status);
+
+    return RentalOrder.reconstitute({
+      ...this.toProps(),
+      status,
       updatedAt: new Date(),
     });
   }
