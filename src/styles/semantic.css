@@ -1,55 +1,58 @@
 /**
- * Semantic color tokens — light and dark themes.
+ * Semantic color tokens - light and dark themes.
  * Components must reference these tokens, not raw color values.
  */
 :root {
   --surface: var(--card);
   --surface-foreground: var(--card-foreground);
 
-  --success: oklch(0.62 0.17 145);
-  --success-foreground: oklch(0.98 0.02 145);
-  --success-muted: oklch(0.95 0.04 145);
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --success-muted: #dcfce7;
 
-  --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.28 0.06 75);
-  --warning-muted: oklch(0.96 0.04 75);
+  --warning: #c2410c;
+  --warning-foreground: #9a3412;
+  --warning-muted: #ffedd5;
 
-  --info: oklch(0.62 0.14 240);
-  --info-foreground: oklch(0.98 0.02 240);
-  --info-muted: oklch(0.95 0.03 240);
+  --info: #374151;
+  --info-foreground: #ffffff;
+  --info-muted: #f3f4f6;
 
   --error: var(--destructive);
-  --error-foreground: oklch(0.98 0.02 25);
-  --error-muted: oklch(0.95 0.04 25);
+  --error-foreground: #ffffff;
+  --error-muted: #fee2e2;
 
-  --primary-hover: color-mix(in oklch, var(--primary) 88%, var(--foreground));
-  --primary-active: color-mix(in oklch, var(--primary) 78%, var(--foreground));
-  --primary-disabled: color-mix(in oklch, var(--primary) 55%, transparent);
+  --primary-hover: #1f2937;
+  --primary-active: #374151;
+  --primary-disabled: rgba(17, 24, 39, 0.45);
 
-  --secondary-hover: color-mix(in oklch, var(--secondary) 92%, var(--foreground));
-  --secondary-active: color-mix(in oklch, var(--secondary) 86%, var(--foreground));
+  --secondary-hover: #f3f4f6;
+  --secondary-active: #e5e7eb;
 
-  --muted-hover: color-mix(in oklch, var(--muted) 92%, var(--foreground));
-  --border-strong: color-mix(in oklch, var(--border) 75%, var(--foreground));
+  --muted-hover: #e5e7eb;
+  --border-strong: #d1d5db;
 
-  --shadow-color: oklch(0.2 0 0 / 8%);
+  --shadow-color: rgba(17, 24, 39, 0.06);
 }
 
 .dark {
-  --success: oklch(0.7 0.14 145);
-  --success-foreground: oklch(0.18 0.04 145);
-  --success-muted: oklch(0.28 0.06 145);
+  --success: #4ade80;
+  --success-foreground: #052e16;
+  --success-muted: #14532d;
 
-  --warning: oklch(0.78 0.12 75);
-  --warning-foreground: oklch(0.2 0.05 75);
-  --warning-muted: oklch(0.3 0.05 75);
+  --warning: #fb923c;
+  --warning-foreground: #431407;
+  --warning-muted: #7c2d12;
 
-  --info: oklch(0.72 0.12 240);
-  --info-foreground: oklch(0.18 0.04 240);
-  --info-muted: oklch(0.28 0.05 240);
+  --info: #d1d5db;
+  --info-foreground: #111827;
+  --info-muted: #374151;
 
-  --error-foreground: oklch(0.98 0.02 25);
-  --error-muted: oklch(0.32 0.08 25);
+  --error-foreground: #ffffff;
+  --error-muted: #450a0a;
 
-  --shadow-color: oklch(0 0 0 / 35%);
+  --primary-hover: #e5e7eb;
+  --primary-active: #d1d5db;
+
+  --shadow-color: rgba(0, 0, 0, 0.35);
 }

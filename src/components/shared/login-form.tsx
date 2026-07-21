@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
 import { signIn } from "@/lib/auth/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,14 +48,14 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-xl">Sign in</CardTitle>
+    <Card className="w-full border-border/60 shadow-token-md">
+      <CardHeader className="space-y-1 pb-4 lg:hidden">
+        <CardTitle className="font-heading text-xl">Sign in</CardTitle>
         <CardDescription>
-          Enter your credentials to access Rental ERP.
+          Enter your credentials to access the dashboard.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className={cn("space-y-4", "lg:px-6 lg:pb-6 lg:pt-0")}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
@@ -69,6 +70,7 @@ export function LoginForm() {
               onChange={(event) => setEmail(event.target.value)}
               required
               disabled={isSubmitting}
+              className="h-9"
             />
           </div>
           <div className="space-y-2">
@@ -84,14 +86,18 @@ export function LoginForm() {
               required
               disabled={isSubmitting}
               minLength={8}
+              className="h-9"
             />
           </div>
           {error && (
-            <p className="text-sm text-destructive" role="alert">
+            <p
+              className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
               {error}
             </p>
           )}
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="h-9 w-full" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2Icon className="animate-spin" />

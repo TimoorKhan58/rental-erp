@@ -32,7 +32,7 @@ export function StatCard({
   const TrendIcon = trendConfig[trend].icon;
 
   return (
-    <Card className={cn("border-border/80", className)}>
+    <Card className={cn("border-border/60 shadow-token-sm transition-shadow duration-200 hover:shadow-token-md", className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {label}

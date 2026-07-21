@@ -35,6 +35,33 @@ export function useCustomerPermissions() {
   };
 }
 
+export function useCustomerStats() {
+  const totalQuery = useQuery({
+    queryKey: queryKeys.customers.list({ pageSize: 1 }),
+    queryFn: () => getCustomers({ pageSize: 1 }),
+    staleTime: 60_000,
+  });
+
+  const activeQuery = useQuery({
+    queryKey: queryKeys.customers.list({ pageSize: 1, isActive: true }),
+    queryFn: () => getCustomers({ pageSize: 1, isActive: true }),
+    staleTime: 60_000,
+  });
+
+  const inactiveQuery = useQuery({
+    queryKey: queryKeys.customers.list({ pageSize: 1, isActive: false }),
+    queryFn: () => getCustomers({ pageSize: 1, isActive: false }),
+    staleTime: 60_000,
+  });
+
+  return {
+    total: totalQuery.data?.meta.total ?? 0,
+    active: activeQuery.data?.meta.total ?? 0,
+    inactive: inactiveQuery.data?.meta.total ?? 0,
+    isLoading: totalQuery.isLoading || activeQuery.isLoading || inactiveQuery.isLoading,
+  };
+}
+
 export function useCustomers(params: ListCustomersParams) {
   return useQuery({
     queryKey: queryKeys.customers.list(params),

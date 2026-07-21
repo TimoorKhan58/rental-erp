@@ -11,6 +11,7 @@ function createFacade() {
   const getRentalInvoiceById = { execute: vi.fn() };
   const listRentalInvoices = { execute: vi.fn() };
   const createRentalInvoice = { execute: vi.fn() };
+  const generateRentalInvoiceFromOrder = { execute: vi.fn() };
   const updateRentalInvoice = { execute: vi.fn() };
   const issueRentalInvoice = { execute: vi.fn() };
   const voidRentalInvoice = { execute: vi.fn() };
@@ -19,6 +20,7 @@ function createFacade() {
     getRentalInvoiceById as never,
     listRentalInvoices as never,
     createRentalInvoice as never,
+    generateRentalInvoiceFromOrder as never,
     updateRentalInvoice as never,
     issueRentalInvoice as never,
     voidRentalInvoice as never,
@@ -29,6 +31,7 @@ function createFacade() {
     getRentalInvoiceById,
     listRentalInvoices,
     createRentalInvoice,
+    generateRentalInvoiceFromOrder,
     updateRentalInvoice,
     issueRentalInvoice,
     voidRentalInvoice,
@@ -62,6 +65,14 @@ describe("RentalInvoiceService facade", () => {
     await service.create(VALID_CREATE_INPUT as never);
 
     expect(createRentalInvoice.execute).toHaveBeenCalled();
+  });
+
+  it("delegates generateFromOrder", async () => {
+    const { service, generateRentalInvoiceFromOrder } = createFacade();
+
+    await service.generateFromOrder({ rentalOrderId: "cc0e8400-e29b-41d4-a716-446655440000" });
+
+    expect(generateRentalInvoiceFromOrder.execute).toHaveBeenCalled();
   });
 
   it("delegates update", async () => {

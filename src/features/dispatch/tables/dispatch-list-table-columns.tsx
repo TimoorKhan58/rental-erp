@@ -18,8 +18,11 @@ import {
   canCompleteDispatch,
   canEditDispatch,
   canMarkDispatchReady,
+  DELIVERY_METHOD_LABELS,
+  getDispatchTotalQuantity,
 } from "../mappers";
 import { DispatchStatusBadge } from "../components/dispatch-status-badge";
+import { DispatchWorkflowProgressBar } from "../components/dispatch-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { DispatchResponse, DispatchSortField, ListDispatchesParams } from "../types";
 
@@ -29,6 +32,7 @@ type DispatchTableColumnOptions = {
   rentalOrderLabelById: Map<string, string>;
   rentalOrderWarehouseById: Map<string, string>;
   warehouseLabelById: Map<string, string>;
+  warehouseNameById: Map<string, string>;
   canUpdate: boolean;
   canComplete: boolean;
   canCancel: boolean;
@@ -43,6 +47,7 @@ export function getDispatchTableColumns({
   rentalOrderLabelById,
   rentalOrderWarehouseById,
   warehouseLabelById,
+  warehouseNameById,
   canUpdate,
   canComplete,
   canCancel,
@@ -50,11 +55,13 @@ export function getDispatchTableColumns({
   onComplete,
   onCancel,
 }: DispatchTableColumnOptions): Array<DataTableColumn<DispatchResponse>> {
-  const resolveWarehouseLabel = (rentalOrderId: string) => {
+  const resolveWarehouseName = (rentalOrderId: string) => {
     const warehouseId = rentalOrderWarehouseById.get(rentalOrderId);
-    return warehouseId
-      ? (warehouseLabelById.get(warehouseId) ?? warehouseId)
-      : "—";
+    if (!warehouseId) {
+      return "—";
+    }
+
+    return warehouseNameById.get(warehouseId) ?? warehouseLabelById.get(warehouseId) ?? warehouseId;
   };
 
   return [
@@ -62,7 +69,7 @@ export function getDispatchTableColumns({
       id: "dispatchNumber",
       header: (
         <SortableColumnHeader
-          label="Dispatch number"
+          label="Delivery"
           field="dispatchNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -70,49 +77,61 @@ export function getDispatchTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.dispatchDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.dispatchNumber}
+        <Link href={ROUTES.dispatchDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.dispatchNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId}
+          </span>
         </Link>
       ),
     },
     {
-      id: "rentalOrder",
-      header: "Rental order",
-      cell: (row) => rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId,
-    },
-    {
       id: "warehouse",
       header: "Warehouse",
-      cell: (row) => resolveWarehouseLabel(row.rentalOrderId),
+      cell: (row) => (
+        <span className="text-sm">{resolveWarehouseName(row.rentalOrderId)}</span>
+      ),
     },
     {
       id: "dispatchDate",
       header: (
         <SortableColumnHeader
-          label="Dispatch date"
+          label="Schedule"
           field="dispatchDate"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.dispatchDate),
+      cell: (row) => (
+        <div className="min-w-[7rem] text-sm">
+          <p className="font-medium">{formatDate(row.dispatchDate)}</p>
+          <p className="text-xs text-muted-foreground">
+            {DELIVERY_METHOD_LABELS[row.deliveryMethod]}
+          </p>
+        </div>
+      ),
     },
     {
-      id: "status",
-      header: (
-        <SortableColumnHeader
-          label="Status"
-          field="status"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
+      id: "workflow",
+      header: "Progress",
+      cell: (row) => (
+        <div className="min-w-[8rem] space-y-1.5">
+          <DispatchStatusBadge status={row.status} />
+          <DispatchWorkflowProgressBar status={row.status} />
+        </div>
       ),
-      cell: (row) => <DispatchStatusBadge status={row.status} />,
+    },
+    {
+      id: "quantity",
+      header: "Units",
+      cell: (row) => (
+        <span className="tabular-nums font-medium">
+          {getDispatchTotalQuantity(row).toLocaleString()}
+        </span>
+      ),
     },
     {
       id: "createdAt",
@@ -125,7 +144,9 @@ export function getDispatchTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",

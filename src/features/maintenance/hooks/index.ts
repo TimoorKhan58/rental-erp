@@ -6,6 +6,7 @@ export {
   useMaintenance,
   useMaintenanceFilterOptions,
   useMaintenancePermissions,
+  useMaintenanceSummaryStats,
   useMaintenances,
   useStartMaintenance,
   useUpdateMaintenance,

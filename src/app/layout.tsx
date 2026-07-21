@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import { APPLICATION } from "@/constants/application";
 import { AppProviders } from "@/providers";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import "@/styles/tokens.css";
 
-const inter = Inter({
+const hankenGrotesk = Hanken_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
@@ -16,7 +16,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: APPLICATION.name,
-  description: `Enterprise rental management system for ${APPLICATION.client}`,
+  description: "Enterprise rental management system for your business",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("h-full antialiased", inter.variable)}
+      className={cn("h-full antialiased", hankenGrotesk.variable)}
     >
       <body className="min-h-full flex flex-col font-sans">
         <AppProviders>{children}</AppProviders>

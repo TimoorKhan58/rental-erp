@@ -1,4 +1,11 @@
 export {
+  computeOrderStatusCounts,
+  computeRentalOrderSummary,
+  computeReservationStatusCounts,
+  getOrderReservedUnits,
+  type RentalOrderSummaryStats,
+} from "./rental-order-summary.mapper";
+export {
   toCreateRentalOrderPayload,
   toRentalOrderFormValues,
   toUpdateRentalOrderPayload,

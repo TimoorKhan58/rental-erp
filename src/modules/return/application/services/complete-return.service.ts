@@ -1,3 +1,4 @@
+import { syncRentalOrderStatusFromReturns } from "@/modules/rental-order/application/services/sync-rental-order-status-from-returns";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
@@ -35,6 +36,7 @@ export class CompleteReturnService {
     return this.transactionRunner.run(
       async ({
         returnRepository,
+        dispatchRepository,
         rentalOrderRepository,
         inventoryRepository,
         stockMovementRepository,
@@ -164,6 +166,12 @@ export class CompleteReturnService {
           status: "SUCCESS",
           oldValues: previousValues,
           newValues: toReturnAuditValues(updated),
+        });
+
+        await syncRentalOrderStatusFromReturns(existing.rentalOrderId, {
+          dispatchRepository,
+          returnRepository,
+          rentalOrderRepository,
         });
 
         return toReturnDto(updated);

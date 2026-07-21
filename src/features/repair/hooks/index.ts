@@ -6,6 +6,7 @@ export {
   useRepair,
   useRepairFilterOptions,
   useRepairPermissions,
+  useRepairSummaryStats,
   useRepairs,
   useRepairsByReturn,
   useStartRepair,

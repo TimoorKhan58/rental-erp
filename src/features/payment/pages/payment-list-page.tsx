@@ -5,14 +5,16 @@ import { PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { usePaymentPermissions } from "../hooks";
+import { PaymentSummaryCards } from "../components";
+import { usePaymentPermissions, usePaymentSummaryStats } from "../hooks";
 import { PaymentListTable } from "../tables";
 
 export function PaymentListPage() {
   const { canCreate } = usePaymentPermissions();
+  const { stats, statusCounts, methodCounts, isLoading } = usePaymentSummaryStats();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Payments"
         description="Record and manage customer payments against rental invoices."
@@ -32,7 +34,9 @@ export function PaymentListPage() {
         }
       />
 
-      <PaymentListTable />
+      <PaymentSummaryCards stats={stats} isLoading={isLoading} />
+
+      <PaymentListTable statusCounts={statusCounts} methodCounts={methodCounts} />
     </PageContainer>
   );
 }

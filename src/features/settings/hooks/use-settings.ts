@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { APPLICATION } from "@/constants/application";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
 import { useAppMutation } from "@/lib/query/mutations";
@@ -49,6 +50,17 @@ export function useCompanySettings(enabled = true) {
   return {
     ...query,
     data: query.data?.company,
+  };
+}
+
+export function useOrganizationName() {
+  const { data: company, isLoading } = useCompanySettings(true);
+  const companyName = company?.companyName?.trim();
+
+  return {
+    organizationName:
+      companyName && companyName.length > 0 ? companyName : APPLICATION.name,
+    isLoading,
   };
 }
 

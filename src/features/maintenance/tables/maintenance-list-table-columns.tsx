@@ -21,6 +21,7 @@ import {
   SERVICE_TYPE_LABELS,
 } from "../mappers";
 import { MaintenanceStatusBadge } from "../components/maintenance-status-badge";
+import { MaintenanceWorkflowProgressBar } from "../components/maintenance-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type {
   ListMaintenancesParams,
@@ -58,7 +59,7 @@ export function getMaintenanceTableColumns({
       id: "maintenanceNumber",
       header: (
         <SortableColumnHeader
-          label="Maintenance number"
+          label="Maintenance"
           field="maintenanceNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -66,59 +67,68 @@ export function getMaintenanceTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.maintenanceDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.maintenanceNumber}
+        <Link href={ROUTES.maintenanceDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.maintenanceNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {SERVICE_TYPE_LABELS[row.serviceType]}
+          </span>
         </Link>
       ),
     },
     {
       id: "product",
       header: "Product",
-      cell: (row) => productLabelById.get(row.productId) ?? row.productId,
+      cell: (row) => (
+        <span className="text-sm">
+          {productLabelById.get(row.productId) ?? row.productId}
+        </span>
+      ),
     },
     {
-      id: "serviceType",
-      header: "Type",
-      cell: (row) => SERVICE_TYPE_LABELS[row.serviceType],
+      id: "workflow",
+      header: "Progress",
+      cell: (row) => (
+        <div className="min-w-[8rem] space-y-1.5">
+          <MaintenanceStatusBadge status={row.status} />
+          <MaintenanceWorkflowProgressBar status={row.status} />
+        </div>
+      ),
     },
     {
       id: "scheduledDate",
       header: (
         <SortableColumnHeader
-          label="Scheduled date"
+          label="Scheduled"
           field="scheduledDate"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.scheduledDate),
-    },
-    {
-      id: "technician",
-      header: "Technician",
-      cell: (row) => row.technician ?? "—",
+      cell: (row) => (
+        <div className="min-w-[6rem] text-sm">
+          <p className="font-medium">{formatDate(row.scheduledDate)}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.quantity} unit{row.quantity === 1 ? "" : "s"}
+          </p>
+        </div>
+      ),
     },
     {
       id: "estimatedCost",
       header: "Est. cost",
-      cell: (row) => formatCurrency(row.estimatedCost),
+      cell: (row) => (
+        <span className="font-medium tabular-nums">{formatCurrency(row.estimatedCost)}</span>
+      ),
     },
     {
-      id: "status",
-      header: (
-        <SortableColumnHeader
-          label="Status"
-          field="status"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
+      id: "technician",
+      header: "Technician",
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{row.technician ?? "—"}</span>
       ),
-      cell: (row) => <MaintenanceStatusBadge status={row.status} />,
     },
     {
       id: "createdAt",
@@ -131,7 +141,9 @@ export function getMaintenanceTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",

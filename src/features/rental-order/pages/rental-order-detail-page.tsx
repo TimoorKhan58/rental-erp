@@ -4,22 +4,29 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
+  ArrowUpRightIcon,
+  Building2Icon,
+  CalendarRangeIcon,
   CheckIcon,
+  ClockIcon,
+  DollarSignIcon,
   PackageIcon,
   PencilIcon,
+  UsersIcon,
   XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { RentalOrderBillingSection } from "@/features/rental-invoice/components";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
 import {
-  calculateLineSubtotal,
   calculateOrderTotal,
   calculateRentalDays,
   canCancelRentalOrder,
@@ -27,7 +34,7 @@ import {
   canEditRentalOrder,
   canReserveRentalOrder,
   deriveReservationStatus,
-  getRemainingReserveQuantity,
+  getOrderReservedUnits,
 } from "../mappers";
 import {
   useRentalOrder,
@@ -37,6 +44,8 @@ import {
 import { RentalOrderStatusBadge } from "../components/rental-order-status-badge";
 import { RentalOrderStatusTimeline } from "../components/rental-order-status-timeline";
 import { RentalReservationBadge } from "../components/rental-reservation-badge";
+import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
+import { RentalOrderLineItemsTable } from "../components/rental-order-line-items-table";
 import { CancelRentalOrderDialog } from "../dialogs/cancel-rental-order-dialog";
 import { ConfirmRentalOrderDialog } from "../dialogs/confirm-rental-order-dialog";
 import { ReserveRentalOrderDialog } from "../dialogs/reserve-rental-order-dialog";
@@ -67,11 +76,84 @@ function DetailField({
   );
 }
 
+function MetricTile({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {icon}
+      </div>
+      <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function RelatedEntityCard({
+  title,
+  icon,
+  iconClass,
+  fields,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  fields: Array<{ label: string; value: string | null | undefined }>;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <SectionCard title={title}>
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              iconClass,
+            )}
+          >
+            {icon}
+          </div>
+          <dl className="grid flex-1 gap-3 sm:grid-cols-2">
+            {fields.map((field) => (
+              <DetailField key={field.label} label={field.label} value={field.value} />
+            ))}
+          </dl>
+        </div>
+        {href && linkLabel ? (
+          <AppButton
+            variant="outline"
+            size="sm"
+            rightIcon={<ArrowUpRightIcon className="size-3.5" aria-hidden="true" />}
+            render={<Link href={href} />}
+          >
+            {linkLabel}
+          </AppButton>
+        ) : null}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
   const router = useRouter();
   const { data: order, isLoading, isError, error, refetch } = useRentalOrder(orderId);
   const { canUpdate, canConfirm, canReserve, canCancel } = useRentalOrderPermissions();
-  const { productLabelById, customerLabelById, warehouseLabelById } =
+  const { productLabelById, productNameById, customerLabelById, warehouseLabelById } =
     useRentalOrderFilterOptions();
   const { data: customer } = useCustomer(order?.customerId ?? "");
   const { data: warehouse } = useWarehouse(order?.warehouseId ?? "");
@@ -79,6 +161,24 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  const metrics = useMemo(() => {
+    if (!order) {
+      return null;
+    }
+
+    const rentalDays = calculateRentalDays(order.startDate, order.endDate);
+    const orderTotal = calculateOrderTotal(order.items, rentalDays);
+    const { reserved, total } = getOrderReservedUnits(order);
+
+    return {
+      rentalDays,
+      orderTotal,
+      reserved,
+      total,
+      reservationStatus: deriveReservationStatus(order),
+    };
+  }, [order]);
 
   if (isLoading) {
     return (
@@ -88,7 +188,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
     );
   }
 
-  if (isError || !order) {
+  if (isError || !order || !metrics) {
     return (
       <PageContainer>
         <div
@@ -112,17 +212,15 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
     );
   }
 
-  const rentalDays = calculateRentalDays(order.startDate, order.endDate);
-  const orderTotal = calculateOrderTotal(order.items, rentalDays);
-  const totalReserved = order.items.reduce((sum, item) => sum + item.reservedQuantity, 0);
-  const totalOrdered = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const reservationStatus = deriveReservationStatus(order);
+  const customerName = customer?.name ?? customerLabelById.get(order.customerId) ?? order.customerId;
+  const warehouseName =
+    warehouse?.name ?? warehouseLabelById.get(order.warehouseId) ?? order.warehouseId;
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title={order.orderNumber}
-        description={`Customer: ${customerLabelById.get(order.customerId) ?? order.customerId}`}
+        description={customerName}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Orders", href: ROUTES.rentalOrders },
@@ -175,191 +273,180 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Order total" value={formatCurrency(orderTotal)} />
-        <MetricCard
-          label="Rental period"
-          value={`${rentalDays} day${rentalDays === 1 ? "" : "s"}`}
-          hint={`${formatDate(order.startDate)} – ${formatDate(order.endDate)}`}
-        />
-        <MetricCard
-          label="Reserved"
-          value={`${totalReserved} / ${totalOrdered}`}
-          hint="Units reserved vs ordered"
-        />
-        <MetricCard
-          label="Status"
-          value={<RentalOrderStatusBadge status={order.status} />}
-        />
-      </div>
+      <Card className="overflow-hidden border-border/60 shadow-soft">
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <RentalOrderStatusBadge status={order.status} />
+                <RentalReservationBadge status={metrics.reservationStatus} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {formatDate(order.startDate)} – {formatDate(order.endDate)} · Last updated{" "}
+                {formatDateTime(order.updatedAt)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Order value
+              </p>
+              <p className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+                {formatCurrency(metrics.orderTotal)}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricTile
+              label="Rental period"
+              value={`${metrics.rentalDays} day${metrics.rentalDays === 1 ? "" : "s"}`}
+              hint={`${formatDate(order.startDate)} – ${formatDate(order.endDate)}`}
+              icon={<CalendarRangeIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Line items"
+              value={order.items.length.toLocaleString()}
+              hint="Products on this order"
+            />
+            <MetricTile
+              label="Units reserved"
+              value={`${metrics.reserved} / ${metrics.total}`}
+              hint="Inventory allocation progress"
+            />
+            <MetricTile
+              label="Warehouse"
+              value={warehouseName}
+              hint="Fulfillment location"
+              icon={<Building2Icon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+          </div>
+
+          {order.status !== "CANCELLED" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Reservation progress</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {metrics.reserved.toLocaleString()} of {metrics.total.toLocaleString()} units
+                </span>
+              </div>
+              <RentalOrderReservationProgressBar
+                reserved={metrics.reserved}
+                total={metrics.total}
+                size="md"
+              />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Order summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Order number" value={order.orderNumber} />
-              <DetailField label="Rental start" value={formatDate(order.startDate)} />
-              <DetailField label="Rental end" value={formatDate(order.endDate)} />
-              <DetailField label="Remarks" value={order.remarks} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Customer">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Customer" value={customer?.name ?? customerLabelById.get(order.customerId)} />
-              <DetailField label="Customer code" value={customer?.customerCode} />
-              <DetailField label="Phone" value={customer?.phone} />
-              <DetailField label="Address" value={customer?.address} />
-              {customer ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.customerDetail(customer.id)} />}
-                  >
-                    View customer
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Warehouse">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Warehouse" value={warehouse?.name ?? warehouseLabelById.get(order.warehouseId)} />
-              <DetailField label="Warehouse code" value={warehouse?.warehouseCode} />
-              <DetailField label="Address" value={warehouse?.address} />
-              {warehouse ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.warehouseDetail(warehouse.id)} />}
-                  >
-                    View warehouse
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
           <SectionCard title="Line items">
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40 text-left">
-                    <th className="px-3 py-2 font-medium" scope="col">Product</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Quantity</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Reserved</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Remaining</th>
-                    <th className="px-3 py-2 font-medium text-right" scope="col">Daily rate</th>
-                    <th className="px-3 py-2 font-medium text-right" scope="col">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item) => (
-                    <tr key={item.id} className="border-b last:border-b-0">
-                      <td className="px-3 py-2">
-                        {productLabelById.get(item.productId) ?? item.productId}
-                      </td>
-                      <td className="px-3 py-2">{item.quantity}</td>
-                      <td className="px-3 py-2">{item.reservedQuantity}</td>
-                      <td className="px-3 py-2">{getRemainingReserveQuantity(item)}</td>
-                      <td className="px-3 py-2 text-right">{formatCurrency(item.dailyRate)}</td>
-                      <td className="px-3 py-2 text-right font-medium">
-                        {formatCurrency(calculateLineSubtotal(item, rentalDays))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-muted/20">
-                    <td colSpan={5} className="px-3 py-2 text-right font-medium">
-                      Order total ({rentalDays} days)
-                    </td>
-                    <td className="px-3 py-2 text-right font-semibold">
-                      {formatCurrency(orderTotal)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            <RentalOrderLineItemsTable
+              items={order.items}
+              rentalDays={metrics.rentalDays}
+              productLabelById={productLabelById}
+              productNameById={productNameById}
+            />
           </SectionCard>
 
-          <SectionCard title="Pricing summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Rental days" value={rentalDays} />
-              <DetailField label="Order total" value={formatCurrency(orderTotal)} />
-            </dl>
-          </SectionCard>
-
-          <EmptyCard
-            title="Dispatch summary"
-            description="Dispatch records will appear here when the dispatch module is connected."
+          <RelatedEntityCard
+            title="Customer"
+            icon={<UsersIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-primary/12 text-primary"
+            fields={[
+              { label: "Name", value: customerName },
+              { label: "Customer code", value: customer?.customerCode },
+              { label: "Phone", value: customer?.phone },
+              { label: "Address", value: customer?.address },
+            ]}
+            href={customer ? ROUTES.customerDetail(customer.id) : undefined}
+            linkLabel="View customer"
           />
 
-          <EmptyCard
-            title="Return summary"
-            description="Return and inspection records will appear here when the returns module is connected."
+          <RelatedEntityCard
+            title="Warehouse"
+            icon={<Building2Icon className="size-5" aria-hidden="true" />}
+            iconClass="bg-success-muted text-success"
+            fields={[
+              { label: "Name", value: warehouseName },
+              { label: "Warehouse code", value: warehouse?.warehouseCode },
+              { label: "Address", value: warehouse?.address },
+            ]}
+            href={warehouse ? ROUTES.warehouseDetail(warehouse.id) : undefined}
+            linkLabel="View warehouse"
+          />
+
+          {order.remarks ? (
+            <SectionCard title="Remarks">
+              <p className="text-sm text-muted-foreground">{order.remarks}</p>
+            </SectionCard>
+          ) : null}
+
+          <RentalOrderBillingSection
+            rentalOrderId={order.id}
+            canGenerate={order.status === "COMPLETED" || order.status === "RETURNED"}
           />
         </div>
 
         <div className="space-y-6">
           <SectionCard
-            title="Status timeline"
+            title="Order workflow"
             actions={<RentalOrderStatusBadge status={order.status} />}
           >
             <RentalOrderStatusTimeline status={order.status} />
           </SectionCard>
 
           <SectionCard
-            title="Reservation status"
-            actions={<RentalReservationBadge status={reservationStatus} />}
+            title="Pricing summary"
+            actions={
+              <DollarSignIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+            }
+          >
+            <dl className="space-y-4">
+              <DetailField label="Rental days" value={metrics.rentalDays} />
+              <DetailField label="Line items" value={order.items.length} />
+              <DetailField label="Order total" value={formatCurrency(metrics.orderTotal)} />
+            </dl>
+          </SectionCard>
+
+          <SectionCard
+            title="Reservation"
+            actions={<RentalReservationBadge status={metrics.reservationStatus} />}
           >
             <dl className="space-y-4">
               <DetailField
                 label="Units reserved"
-                value={`${totalReserved} of ${totalOrdered}`}
+                value={`${metrics.reserved} of ${metrics.total}`}
               />
               <DetailField label="Order status" value={order.status} />
             </dl>
           </SectionCard>
 
-          <SectionCard title="Account">
-            <dl className="space-y-4">
-              <DetailField label="Created" value={formatDate(order.createdAt)} />
-              <DetailField label="Last updated" value={formatDateTime(order.updatedAt)} />
-            </dl>
+          <SectionCard title="Timeline">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Created</p>
+                  <p className="text-muted-foreground">{formatDateTime(order.createdAt)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Last updated</p>
+                  <p className="text-muted-foreground">{formatDateTime(order.updatedAt)}</p>
+                </div>
+              </div>
+            </div>
           </SectionCard>
-
-          <EmptyCard
-            title="Invoice summary"
-            description="Rental invoice details will appear here when the rental invoice module is connected."
-          />
-
-          <EmptyCard
-            title="Payment summary"
-            description="Payment history will appear here when the payments module is connected."
-          />
-
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
-          />
         </div>
       </div>
 
-      <ConfirmRentalOrderDialog
-        order={order}
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-      />
+      <ConfirmRentalOrderDialog order={order} open={confirmOpen} onOpenChange={setConfirmOpen} />
 
-      <ReserveRentalOrderDialog
-        order={order}
-        open={reserveOpen}
-        onOpenChange={setReserveOpen}
-      />
+      <ReserveRentalOrderDialog order={order} open={reserveOpen} onOpenChange={setReserveOpen} />
 
       <CancelRentalOrderDialog
         order={order}

@@ -1,6 +1,8 @@
 export { ActivityTimeline } from "./activity-timeline";
+export { DashboardHero } from "./dashboard-hero";
 export { DashboardMetricCard, DashboardMetricCardSkeleton, DashboardStatRow, KpiGrid } from "./kpi-grid";
 export { DashboardPage } from "./dashboard-page";
+export { FeaturedKpiRow } from "./featured-kpi-row";
 export { FinancialSummarySection } from "./financial-summary";
 export { InventoryOverviewSection } from "./inventory-overview";
 export { NotificationsPanel } from "./notifications-panel";

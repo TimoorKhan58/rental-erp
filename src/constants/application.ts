@@ -7,7 +7,6 @@ import packageJson from "../../package.json";
 export const APPLICATION = {
   name: "Rental ERP",
   version: packageJson.version,
-  client: "Manyar Tent Service",
   timezone: "Asia/Karachi",
   currency: "PKR",
   country: "Pakistan",

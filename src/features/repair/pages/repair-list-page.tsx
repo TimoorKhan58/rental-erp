@@ -5,14 +5,16 @@ import { PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { useRepairPermissions } from "../hooks";
+import { RepairSummaryCards } from "../components";
+import { useRepairPermissions, useRepairSummaryStats } from "../hooks";
 import { RepairListTable } from "../tables";
 
 export function RepairListPage() {
   const { canCreate } = useRepairPermissions();
+  const { stats, statusCounts, isLoading } = useRepairSummaryStats();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Repairs"
         description="Manage repair jobs for returned rental assets."
@@ -32,7 +34,9 @@ export function RepairListPage() {
         }
       />
 
-      <RepairListTable />
+      <RepairSummaryCards stats={stats} isLoading={isLoading} />
+
+      <RepairListTable statusCounts={statusCounts} />
     </PageContainer>
   );
 }

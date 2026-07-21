@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/shared/stat-card";
+import { cn } from "@/lib/utils";
 import { SparklinePlaceholder } from "../charts";
 import type { DashboardMetric } from "../types";
 
@@ -26,6 +27,17 @@ const iconMap = {
   inventory: PackageIcon,
 } as const;
 
+const iconColorMap: Record<string, string> = {
+  orders: "bg-muted text-foreground",
+  product: "bg-success-muted text-success",
+  users: "bg-muted text-foreground",
+  company: "bg-muted text-foreground",
+  payments: "bg-success-muted text-success",
+  maintenance: "bg-warning-muted text-warning-foreground",
+  repairs: "bg-warning-muted text-warning-foreground",
+  inventory: "bg-muted text-foreground",
+};
+
 type DashboardMetricCardProps = {
   metric: DashboardMetric;
 };
@@ -34,14 +46,22 @@ export const DashboardMetricCard = memo(function DashboardMetricCard({
   metric,
 }: DashboardMetricCardProps) {
   const Icon = iconMap[metric.icon as keyof typeof iconMap] ?? PackageIcon;
+  const iconColor = iconColorMap[metric.icon] ?? "bg-primary/12 text-primary";
 
   return (
-    <Card className="border-border/80 shadow-token-sm">
+    <Card className="group border-border bg-card shadow-soft transition-shadow duration-200 hover:shadow-soft-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {metric.label}
         </CardTitle>
-        <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+        <div
+          className={cn(
+            "flex size-8 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105",
+            iconColor,
+          )}
+        >
+          <Icon className="size-4" aria-hidden="true" />
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-2xl font-semibold tracking-tight">{metric.value}</div>
@@ -91,7 +111,10 @@ export const KpiGrid = memo(function KpiGrid({ metrics, isLoading }: KpiGridProp
   }
 
   return (
-    <section aria-label="Key performance indicators">
+    <section aria-label="Additional key performance indicators">
+      <h2 className="mb-3 font-heading text-sm font-semibold text-muted-foreground">
+        More metrics
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {metrics.map((metric) => (
           <DashboardMetricCard key={metric.id} metric={metric} />

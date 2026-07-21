@@ -2,29 +2,45 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, FileCheckIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import {
+  ArrowLeftIcon,
+  ArrowUpRightIcon,
+  CalendarIcon,
+  ClipboardListIcon,
+  ClockIcon,
+  FileCheckIcon,
+  PrinterIcon,
+  ReceiptIcon,
+  UsersIcon,
+  WalletIcon,
+  XIcon,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { SectionCard, EmptyCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import {
   canIssueRentalInvoice,
   canVoidRentalInvoice,
-  groupLineItemsByCategory,
-  LINE_TYPE_LABELS,
+  getRentalInvoiceLineItemCount,
+  getRentalInvoicePaymentProgress,
 } from "../mappers";
 import {
   useRentalInvoice,
   useRentalInvoiceFilterOptions,
   useRentalInvoicePermissions,
 } from "../hooks";
-import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { PaymentStatusBadge } from "../components/payment-status-badge";
+import { RentalInvoiceLineItemsTable } from "../components/rental-invoice-line-items-table";
+import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-payment-progress-bar";
+import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { RentalInvoiceStatusTimeline } from "../components/rental-invoice-status-timeline";
+import { RentalInvoiceWorkflowProgressBar } from "../components/rental-invoice-workflow-progress-bar";
 import { IssueRentalInvoiceDialog } from "../dialogs/issue-rental-invoice-dialog";
 import { VoidRentalInvoiceDialog } from "../dialogs/void-rental-invoice-dialog";
 
@@ -54,6 +70,79 @@ function DetailField({
   );
 }
 
+function MetricTile({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {icon}
+      </div>
+      <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function RelatedEntityCard({
+  title,
+  icon,
+  iconClass,
+  fields,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  fields: Array<{ label: string; value: string | null | undefined }>;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <SectionCard title={title}>
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              iconClass,
+            )}
+          >
+            {icon}
+          </div>
+          <dl className="grid flex-1 gap-3 sm:grid-cols-2">
+            {fields.map((field) => (
+              <DetailField key={field.label} label={field.label} value={field.value} />
+            ))}
+          </dl>
+        </div>
+        {href && linkLabel ? (
+          <AppButton
+            variant="outline"
+            size="sm"
+            rightIcon={<ArrowUpRightIcon className="size-3.5" aria-hidden="true" />}
+            render={<Link href={href} />}
+          >
+            {linkLabel}
+          </AppButton>
+        ) : null}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPageProps) {
   const router = useRouter();
   const { data: invoice, isLoading, isError, error, refetch } = useRentalInvoice(invoiceId);
@@ -64,6 +153,17 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
   const [issueOpen, setIssueOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
 
+  const metrics = useMemo(() => {
+    if (!invoice) {
+      return null;
+    }
+
+    return {
+      lineItemCount: getRentalInvoiceLineItemCount(invoice),
+      paymentProgress: getRentalInvoicePaymentProgress(invoice),
+    };
+  }, [invoice]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -72,7 +172,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
     );
   }
 
-  if (isError || !invoice) {
+  if (isError || !invoice || !metrics) {
     return (
       <PageContainer>
         <div
@@ -96,14 +196,14 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
     );
   }
 
-  const { charges, discounts, taxes } = groupLineItemsByCategory(invoice.items);
-  const sortedItems = [...invoice.items].sort((a, b) => a.sortOrder - b.sortOrder);
+  const rentalOrderLabel = rentalOrderLabelById.get(invoice.rentalOrderId);
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6 print:space-y-4">
+      <div className="print:hidden">
       <PageHeader
         title={invoice.invoiceNumber}
-        description={`Customer: ${customer?.name ?? invoice.customerId}`}
+        description={customer?.name ?? invoice.customerId}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental invoices", href: ROUTES.rentalInvoices },
@@ -117,6 +217,13 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
               render={<Link href={ROUTES.rentalInvoices} />}
             >
               Back
+            </AppButton>
+            <AppButton
+              variant="outline"
+              leftIcon={<PrinterIcon className="size-4" aria-hidden="true" />}
+              onClick={() => window.print()}
+            >
+              Print
             </AppButton>
             {canIssue && canIssueRentalInvoice(invoice.status) ? (
               <AppButton
@@ -138,107 +245,106 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
           </>
         }
       />
-
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Grand total" value={formatCurrency(invoice.grandTotal)} />
-        <MetricCard label="Paid" value={formatCurrency(invoice.paidAmount)} />
-        <MetricCard label="Outstanding" value={formatCurrency(invoice.balance)} />
-        <MetricCard
-          label="Status"
-          value={<RentalInvoiceStatusBadge status={invoice.status} />}
-        />
       </div>
+
+      <div className="hidden print:block">
+        <div className="space-y-1 border-b border-border pb-4">
+          <h1 className="font-heading text-2xl font-semibold">{invoice.invoiceNumber}</h1>
+          <p className="text-sm text-muted-foreground">{customer?.name ?? invoice.customerId}</p>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden border-border/60 shadow-soft print:border print:shadow-none">
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <RentalInvoiceStatusBadge status={invoice.status} />
+                <PaymentStatusBadge
+                  status={invoice.status}
+                  balance={invoice.balance}
+                  paidAmount={invoice.paidAmount}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Invoiced {formatDate(invoice.invoiceDate)}
+                {invoice.dueDate ? ` · Due ${formatDate(invoice.dueDate)}` : ""} · Last updated{" "}
+                {formatDateTime(invoice.updatedAt)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Grand total
+              </p>
+              <p className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+                {formatCurrency(invoice.grandTotal)}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricTile
+              label="Paid"
+              value={formatCurrency(invoice.paidAmount)}
+              hint={`${metrics.paymentProgress}% collected`}
+              icon={<WalletIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Outstanding"
+              value={formatCurrency(invoice.balance)}
+              hint="Remaining balance"
+              icon={<ReceiptIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Due date"
+              value={invoice.dueDate ? formatDate(invoice.dueDate) : "Not set"}
+              hint="Payment due date"
+              icon={<CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Line items"
+              value={metrics.lineItemCount.toLocaleString()}
+              hint="Charges, discounts, and taxes"
+              icon={<ClipboardListIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+          </div>
+
+          {invoice.status !== "VOID" ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Invoice workflow</span>
+                  <span className="text-muted-foreground">Draft → Issued → Paid</span>
+                </div>
+                <RentalInvoiceWorkflowProgressBar status={invoice.status} size="md" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Payment collection</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {metrics.paymentProgress}%
+                  </span>
+                </div>
+                <RentalInvoicePaymentProgressBar invoice={invoice} size="md" />
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Invoice summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Invoice number" value={invoice.invoiceNumber} />
-              <DetailField label="Invoice date" value={formatDate(invoice.invoiceDate)} />
-              <DetailField
-                label="Due date"
-                value={invoice.dueDate ? formatDate(invoice.dueDate) : null}
-              />
-              <DetailField label="Notes" value={invoice.notes} />
-              <div className="space-y-1">
-                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Payment status
-                </dt>
-                <dd>
-                  <PaymentStatusBadge
-                    status={invoice.status}
-                    balance={invoice.balance}
-                    paidAmount={invoice.paidAmount}
-                  />
-                </dd>
-              </div>
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Customer">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Customer" value={customer?.name} />
-              <DetailField label="Customer code" value={customer?.customerCode} />
-              {customer ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.customerDetail(customer.id)} />}
-                  >
-                    View customer
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Related rental order">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Order number"
-                value={rentalOrderLabelById.get(invoice.rentalOrderId)}
-              />
-              <div className="sm:col-span-2">
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={ROUTES.rentalOrderDetail(invoice.rentalOrderId)} />}
-                >
-                  View rental order
-                </AppButton>
-              </div>
-            </dl>
-          </SectionCard>
-
           <SectionCard title="Invoice items">
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40 text-left">
-                    <th className="px-3 py-2 font-medium" scope="col">Type</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Description</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Qty</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Unit price</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Line total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedItems.map((item) => (
-                    <tr key={item.id} className="border-b last:border-b-0">
-                      <td className="px-3 py-2">{LINE_TYPE_LABELS[item.lineType]}</td>
-                      <td className="px-3 py-2">{item.description}</td>
-                      <td className="px-3 py-2">{item.quantity}</td>
-                      <td className="px-3 py-2">{formatCurrency(item.unitPrice)}</td>
-                      <td className="px-3 py-2">{formatCurrency(item.lineTotal)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <RentalInvoiceLineItemsTable
+              items={invoice.items}
+              subtotal={invoice.subtotal}
+              discount={invoice.discount}
+              tax={invoice.tax}
+              grandTotal={invoice.grandTotal}
+            />
           </SectionCard>
 
-          <SectionCard title="Totals">
+          <SectionCard title="Payment summary">
             <dl className="grid gap-4 sm:grid-cols-2">
               <DetailField label="Subtotal" value={formatCurrency(invoice.subtotal)} />
               <DetailField label="Discount" value={formatCurrency(invoice.discount)} />
@@ -249,30 +355,33 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             </dl>
           </SectionCard>
 
-          {charges.length > 0 ? (
-            <SectionCard title="Rental & additional charges">
-              <p className="text-sm text-muted-foreground">
-                {charges.length} charge line(s) totaling{" "}
-                {formatCurrency(invoice.subtotal)} subtotal from backend.
-              </p>
+          {invoice.notes ? (
+            <SectionCard title="Notes">
+              <p className="text-sm text-muted-foreground">{invoice.notes}</p>
             </SectionCard>
           ) : null}
 
-          {discounts.length > 0 ? (
-            <SectionCard title="Discounts">
-              <p className="text-sm text-muted-foreground">
-                {discounts.length} discount line(s) — {formatCurrency(invoice.discount)} total.
-              </p>
-            </SectionCard>
-          ) : null}
+          <RelatedEntityCard
+            title="Customer"
+            icon={<UsersIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-primary/12 text-primary"
+            fields={[
+              { label: "Name", value: customer?.name },
+              { label: "Customer code", value: customer?.customerCode },
+              { label: "Phone", value: customer?.phone },
+            ]}
+            href={customer ? ROUTES.customerDetail(customer.id) : undefined}
+            linkLabel="View customer"
+          />
 
-          {taxes.length > 0 ? (
-            <SectionCard title="Taxes">
-              <p className="text-sm text-muted-foreground">
-                {taxes.length} tax line(s) — {formatCurrency(invoice.tax)} total.
-              </p>
-            </SectionCard>
-          ) : null}
+          <RelatedEntityCard
+            title="Rental order"
+            icon={<ClipboardListIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-info/12 text-info"
+            fields={[{ label: "Order number", value: rentalOrderLabel }]}
+            href={ROUTES.rentalOrderDetail(invoice.rentalOrderId)}
+            linkLabel="View rental order"
+          />
 
           <EmptyCard
             title="Payment history"
@@ -282,7 +391,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
 
         <div className="space-y-6">
           <SectionCard
-            title="Status timeline"
+            title="Invoice workflow"
             actions={<RentalInvoiceStatusBadge status={invoice.status} />}
           >
             <RentalInvoiceStatusTimeline status={invoice.status} />
@@ -301,21 +410,28 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             </dl>
           </SectionCard>
 
-          <SectionCard title="Account">
-            <dl className="space-y-4">
-              <DetailField label="Created" value={formatDate(invoice.createdAt)} />
-              <DetailField label="Last updated" value={formatDateTime(invoice.updatedAt)} />
-            </dl>
+          <SectionCard title="Timeline">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Created</p>
+                  <p className="text-muted-foreground">{formatDateTime(invoice.createdAt)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Last updated</p>
+                  <p className="text-muted-foreground">{formatDateTime(invoice.updatedAt)}</p>
+                </div>
+              </div>
+            </div>
           </SectionCard>
 
           <EmptyCard
             title="Accounting journal"
             description="Accounting entries will appear here when accounting integration is connected."
-          />
-
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
           />
         </div>
       </div>

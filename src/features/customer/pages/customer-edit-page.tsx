@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PencilIcon } from "lucide-react";
+import { PageContainer } from "@/components/layout";
+import { AppBreadcrumb } from "@/components/design-system/navigation";
 import { LoadingState } from "@/components/feedback";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
@@ -55,21 +57,33 @@ export function CustomerEditPage({ customerId }: CustomerEditPageProps) {
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Edit customer"
-        description={`Update profile for ${customer.name}.`}
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Customers", href: ROUTES.customers },
-          { label: customer.name, href: ROUTES.customerDetail(customer.id) },
-          { label: "Edit" },
-        ]}
-      />
+    <PageContainer className="space-y-6">
+      <header className="space-y-4">
+        <AppBreadcrumb
+          items={[
+            { label: "Dashboard", href: ROUTES.dashboard },
+            { label: "Customers", href: ROUTES.customers },
+            { label: customer.name, href: ROUTES.customerDetail(customer.id) },
+            { label: "Edit" },
+          ]}
+        />
+        <div className="flex items-start gap-4">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <PencilIcon className="size-6" aria-hidden="true" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="font-heading text-2xl font-semibold tracking-tight">Edit customer</h1>
+            <p className="text-sm text-muted-foreground">
+              Update profile for {customer.name}.
+            </p>
+          </div>
+        </div>
+      </header>
 
       <CustomerForm
         mode="edit"
         defaultValues={toCustomerFormValues(customer)}
+        customerCode={customer.customerCode}
         onSubmit={handleSubmit}
         onCancel={() => router.push(ROUTES.customerDetail(customerId))}
         isSubmitting={updateMutation.isPending}

@@ -17,6 +17,12 @@ export async function getRentalInvoice(id: string): Promise<RentalInvoiceRespons
   return apiGet<RentalInvoiceResponse>(`${BASE}/${id}`);
 }
 
+export async function generateRentalInvoiceFromOrder(
+  rentalOrderId: string,
+): Promise<RentalInvoiceResponse> {
+  return apiPost<RentalInvoiceResponse>(`${BASE}/generate`, { rentalOrderId });
+}
+
 export async function issueRentalInvoice(id: string): Promise<RentalInvoiceResponse> {
   return apiPost<RentalInvoiceResponse>(`${BASE}/${id}/issue`);
 }

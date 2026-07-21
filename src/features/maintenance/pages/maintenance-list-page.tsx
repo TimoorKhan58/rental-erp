@@ -5,14 +5,16 @@ import { PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { useMaintenancePermissions } from "../hooks";
+import { MaintenanceSummaryCards } from "../components";
+import { useMaintenancePermissions, useMaintenanceSummaryStats } from "../hooks";
 import { MaintenanceListTable } from "../tables";
 
 export function MaintenanceListPage() {
   const { canCreate } = useMaintenancePermissions();
+  const { stats, statusCounts, serviceTypeCounts, isLoading } = useMaintenanceSummaryStats();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Maintenance"
         description="Manage scheduled and preventive maintenance activities."
@@ -32,7 +34,12 @@ export function MaintenanceListPage() {
         }
       />
 
-      <MaintenanceListTable />
+      <MaintenanceSummaryCards stats={stats} isLoading={isLoading} />
+
+      <MaintenanceListTable
+        statusCounts={statusCounts}
+        serviceTypeCounts={serviceTypeCounts}
+      />
     </PageContainer>
   );
 }

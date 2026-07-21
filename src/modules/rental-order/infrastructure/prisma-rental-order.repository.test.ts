@@ -10,6 +10,7 @@ import {
   buildCreateRentalOrderData,
   buildRentalOrderEntity,
 } from "../tests/helpers/rental-order.fixtures";
+import type { RentalOrderStatus } from "@/modules/rental-order/domain/rental-order.constants";
 
 interface RentalOrderItemRecord {
   id: string;
@@ -27,7 +28,7 @@ interface RentalOrderRecord {
   orderNumber: string;
   customerId: string;
   warehouseId: string;
-  status: "DRAFT" | "CONFIRMED" | "RESERVED" | "CANCELLED";
+  status: RentalOrderStatus;
   eventStartDate: Date;
   eventEndDate: Date;
   notes: string | null;

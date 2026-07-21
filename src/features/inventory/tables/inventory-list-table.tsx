@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query";
 import { matchesStockStatusFilter } from "../mappers";
+import { InventoryStockFilterChips } from "../components";
 import {
   useInventoryFilterOptions,
   useInventoryList,
   useInventoryListParams,
   useInventoryPermissions,
+  useInventoryRecoveryMaps,
 } from "../hooks";
 import { getInventoryTableColumns } from "./inventory-table-columns";
 import { CreateInventoryDialog } from "../dialogs/create-inventory-dialog";
@@ -31,7 +33,19 @@ import { DeleteInventoryDialog } from "../dialogs/delete-inventory-dialog";
 import { ToggleInventoryStatusDialog } from "../dialogs/toggle-inventory-status-dialog";
 import type { InventoryResponse } from "../types";
 
-export function InventoryListTable() {
+type InventoryListTableProps = {
+  createOpen?: boolean;
+  onCreateOpenChange?: (open: boolean) => void;
+  stockStatusCounts?: Partial<
+    Record<"all" | "in-stock" | "low-stock" | "out-of-stock" | "overstock", number>
+  >;
+};
+
+export function InventoryListTable({
+  createOpen: createOpenProp,
+  onCreateOpenChange,
+  stockStatusCounts,
+}: InventoryListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -47,11 +61,15 @@ export function InventoryListTable() {
     setSorting,
   } = useInventoryListParams();
   const { canCreate, canUpdate, canDelete } = useInventoryPermissions();
-  const { productOptions, warehouseOptions, productLabelById, warehouseLabelById } =
+  const { productOptions, warehouseOptions, productLabelById, warehouseLabelById, productNameById, warehouseNameById } =
     useInventoryFilterOptions();
+  const { productPricingById, productRecoveryById } = useInventoryRecoveryMaps();
   const { data, isLoading, isError, error, refetch, isFetching } = useInventoryList(params);
 
-  const [createOpen, setCreateOpen] = useState(false);
+  const [internalCreateOpen, setInternalCreateOpen] = useState(false);
+  const createOpen = createOpenProp ?? internalCreateOpen;
+  const setCreateOpen = onCreateOpenChange ?? setInternalCreateOpen;
+
   const [editTarget, setEditTarget] = useState<InventoryResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<InventoryResponse | null>(null);
   const [statusTarget, setStatusTarget] = useState<InventoryResponse | null>(null);
@@ -76,6 +94,10 @@ export function InventoryListTable() {
     onSort: setSorting,
     productLabelById,
     warehouseLabelById,
+    productNameById,
+    warehouseNameById,
+    productPricingById,
+    productRecoveryById,
     canUpdate,
     canDelete,
     onEdit: setEditTarget,
@@ -117,11 +139,18 @@ export function InventoryListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <InventoryStockFilterChips
+            value={stockStatus}
+            onChange={setStockStatusFilter}
+            counts={stockStatusCounts}
+          />
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by product or warehouse ID..."
+            placeholder="Search products or warehouses..."
             className="w-full sm:max-w-xs"
             aria-label="Search inventory"
           />
@@ -177,29 +206,6 @@ export function InventoryListTable() {
             </Select>
 
             <Select
-              value={stockStatus}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStockStatusFilter("all");
-                  return;
-                }
-
-                setStockStatusFilter(value);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by stock status">
-                <SelectValue placeholder="Stock status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All stock levels</SelectItem>
-                <SelectItem value="in-stock">In stock</SelectItem>
-                <SelectItem value="low-stock">Low stock</SelectItem>
-                <SelectItem value="out-of-stock">Out of stock</SelectItem>
-                <SelectItem value="overstock">Overstock</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
               value={
                 params.isActive === undefined
                   ? "all"
@@ -228,23 +234,16 @@ export function InventoryListTable() {
           </>
         }
         actions={
-          <>
-            {canCreate ? (
-              <AppButton size="sm" onClick={() => setCreateOpen(true)}>
-                New record
-              </AppButton>
-            ) : null}
-            <AppButton
-              variant="outline"
-              size="sm"
-              leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
-              onClick={handleRefresh}
-              loading={isFetching && !isLoading}
-              aria-label="Refresh inventory list"
-            >
-              Refresh
-            </AppButton>
-          </>
+          <AppButton
+            variant="outline"
+            size="sm"
+            leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
+            onClick={handleRefresh}
+            loading={isFetching && !isLoading}
+            aria-label="Refresh inventory list"
+          >
+            Refresh
+          </AppButton>
         }
         emptyState={
           <EmptyState

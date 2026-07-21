@@ -6,6 +6,7 @@ export {
   useRentalOrder,
   useRentalOrderFilterOptions,
   useRentalOrderPermissions,
+  useRentalOrderSummaryStats,
   useRentalOrders,
   useReserveRentalOrder,
   useUpdateRentalOrder,

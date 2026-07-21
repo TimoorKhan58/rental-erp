@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,6 +9,11 @@ import { getCustomers } from "@/features/customer/services";
 import { getProducts } from "@/features/product/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListRentalOrdersParams } from "../types";
+import {
+  computeOrderStatusCounts,
+  computeRentalOrderSummary,
+  computeReservationStatusCounts,
+} from "../mappers/rental-order-summary.mapper";
 import {
   cancelRentalOrder,
   confirmRentalOrder,
@@ -80,6 +86,15 @@ export function useRentalOrderFilterOptions() {
   const customerLabelById = new Map(customerOptions.map((item) => [item.id, item.label]));
   const warehouseLabelById = new Map(warehouseOptions.map((item) => [item.id, item.label]));
   const productLabelById = new Map(productOptions.map((item) => [item.id, item.label]));
+  const customerNameById = new Map(
+    (customers.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
+  const warehouseNameById = new Map(
+    (warehouses.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
+  const productNameById = new Map(
+    (products.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
 
   return {
     customerOptions,
@@ -88,6 +103,9 @@ export function useRentalOrderFilterOptions() {
     customerLabelById,
     warehouseLabelById,
     productLabelById,
+    customerNameById,
+    warehouseNameById,
+    productNameById,
     isLoading: customers.isLoading || warehouses.isLoading || products.isLoading,
   };
 }
@@ -97,6 +115,45 @@ export function useRentalOrders(params: ListRentalOrdersParams) {
     queryKey: queryKeys.rentalOrders.list(params),
     queryFn: () => getRentalOrders(params),
   });
+}
+
+export function useRentalOrderSummaryStats() {
+  const listQuery = useQuery({
+    queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
+    queryFn: () => getRentalOrders({ pageSize: 100 }),
+    staleTime: 60_000,
+  });
+
+  const stats = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeRentalOrderSummary(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const orderStatusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeOrderStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const reservationStatusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeReservationStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  return {
+    stats,
+    orderStatusCounts,
+    reservationStatusCounts,
+    isLoading: listQuery.isLoading,
+  };
 }
 
 export function useRentalOrder(id: string) {

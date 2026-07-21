@@ -4,17 +4,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
+  ArrowUpRightIcon,
+  CalendarIcon,
+  ClockIcon,
+  CreditCardIcon,
   FileCheckIcon,
+  FileTextIcon,
+  HashIcon,
   PencilIcon,
+  UsersIcon,
   XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { SectionCard, EmptyCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import {
   canEditPayment,
@@ -27,8 +35,10 @@ import {
   usePaymentFilterOptions,
   usePaymentPermissions,
 } from "../hooks";
+import { PaymentDetailsTable } from "../components/payment-details-table";
 import { PaymentRecordStatusBadge } from "../components/payment-status-badge";
 import { PaymentStatusTimeline } from "../components/payment-status-timeline";
+import { PaymentWorkflowProgressBar } from "../components/payment-workflow-progress-bar";
 import { PostPaymentDialog } from "../dialogs/post-payment-dialog";
 import { VoidPaymentDialog } from "../dialogs/void-payment-dialog";
 
@@ -58,6 +68,79 @@ function DetailField({
   );
 }
 
+function MetricTile({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {icon}
+      </div>
+      <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function RelatedEntityCard({
+  title,
+  icon,
+  iconClass,
+  fields,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  fields: Array<{ label: string; value: string | null | undefined }>;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <SectionCard title={title}>
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              iconClass,
+            )}
+          >
+            {icon}
+          </div>
+          <dl className="grid flex-1 gap-3 sm:grid-cols-2">
+            {fields.map((field) => (
+              <DetailField key={field.label} label={field.label} value={field.value} />
+            ))}
+          </dl>
+        </div>
+        {href && linkLabel ? (
+          <AppButton
+            variant="outline"
+            size="sm"
+            rightIcon={<ArrowUpRightIcon className="size-3.5" aria-hidden="true" />}
+            render={<Link href={href} />}
+          >
+            {linkLabel}
+          </AppButton>
+        ) : null}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
   const router = useRouter();
   const { data: payment, isLoading, isError, error, refetch } = usePayment(paymentId);
@@ -68,6 +151,18 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
   const [postOpen, setPostOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
 
+  const labels = useMemo(() => {
+    if (!payment) {
+      return null;
+    }
+
+    return {
+      customerLabel:
+        customer?.name ?? customerLabelById.get(payment.customerId) ?? payment.customerId,
+      invoiceLabel: invoiceLabelById.get(payment.rentalInvoiceId) ?? payment.rentalInvoiceId,
+    };
+  }, [payment, customer, customerLabelById, invoiceLabelById]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -76,7 +171,7 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
     );
   }
 
-  if (isError || !payment) {
+  if (isError || !payment || !labels) {
     return (
       <PageContainer>
         <div
@@ -101,12 +196,10 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
   }
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title={payment.paymentNumber}
-        description={`${METHOD_LABELS[payment.paymentMethod]} payment for ${
-          customer?.name ?? customerLabelById.get(payment.customerId) ?? payment.customerId
-        }`}
+        description={`${METHOD_LABELS[payment.paymentMethod]} · ${labels.customerLabel}`}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Payments", href: ROUTES.payments },
@@ -150,69 +243,109 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Amount" value={formatCurrency(payment.amount)} />
-        <MetricCard label="Payment date" value={formatDate(payment.paymentDate)} />
-        <MetricCard label="Method" value={METHOD_LABELS[payment.paymentMethod]} />
-        <MetricCard
-          label="Status"
-          value={<PaymentRecordStatusBadge status={payment.status} />}
-        />
-      </div>
+      <Card className="overflow-hidden border-border/60 shadow-soft">
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <PaymentRecordStatusBadge status={payment.status} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Paid {formatDate(payment.paymentDate)} · Last updated{" "}
+                {formatDateTime(payment.updatedAt)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Payment amount
+              </p>
+              <p className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+                {formatCurrency(payment.amount)}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricTile
+              label="Payment date"
+              value={formatDate(payment.paymentDate)}
+              hint="Date payment was received"
+              icon={<CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Method"
+              value={METHOD_LABELS[payment.paymentMethod]}
+              hint="Payment channel"
+              icon={<CreditCardIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Reference"
+              value={payment.referenceNumber ?? "—"}
+              hint="External reference number"
+              icon={<HashIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Invoice"
+              value={labels.invoiceLabel}
+              hint="Linked rental invoice"
+              icon={<FileTextIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+          </div>
+
+          {payment.status !== "VOID" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Payment workflow</span>
+                <span className="text-muted-foreground">Pending → Posted</span>
+              </div>
+              <PaymentWorkflowProgressBar status={payment.status} size="md" />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Payment summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Payment number" value={payment.paymentNumber} />
-              <DetailField label="Payment date" value={formatDate(payment.paymentDate)} />
-              <DetailField label="Payment method" value={METHOD_LABELS[payment.paymentMethod]} />
-              <DetailField label="Amount" value={formatCurrency(payment.amount)} />
-              <DetailField label="Reference number" value={payment.referenceNumber} />
-              <DetailField label="Notes" value={payment.notes} />
-            </dl>
+          <SectionCard title="Payment details">
+            <PaymentDetailsTable
+              payment={payment}
+              customerLabel={labels.customerLabel}
+              invoiceLabel={labels.invoiceLabel}
+            />
           </SectionCard>
 
-          <SectionCard title="Customer">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Customer" value={customer?.name} />
-              <DetailField label="Customer code" value={customer?.customerCode} />
-              {customer ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.customerDetail(customer.id)} />}
-                  >
-                    View customer
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
+          {payment.notes ? (
+            <SectionCard title="Notes">
+              <p className="text-sm text-muted-foreground">{payment.notes}</p>
+            </SectionCard>
+          ) : null}
 
-          <SectionCard title="Related invoice">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Invoice"
-                value={invoiceLabelById.get(payment.rentalInvoiceId)}
-              />
-              <div className="sm:col-span-2">
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={ROUTES.rentalInvoiceDetail(payment.rentalInvoiceId)} />}
-                >
-                  View invoice
-                </AppButton>
-              </div>
-            </dl>
-          </SectionCard>
+          <RelatedEntityCard
+            title="Customer"
+            icon={<UsersIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-primary/12 text-primary"
+            fields={[
+              { label: "Name", value: customer?.name },
+              { label: "Customer code", value: customer?.customerCode },
+              { label: "Phone", value: customer?.phone },
+            ]}
+            href={customer ? ROUTES.customerDetail(customer.id) : undefined}
+            linkLabel="View customer"
+          />
+
+          <RelatedEntityCard
+            title="Rental invoice"
+            icon={<FileTextIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-info/12 text-info"
+            fields={[{ label: "Invoice number", value: labels.invoiceLabel }]}
+            href={ROUTES.rentalInvoiceDetail(payment.rentalInvoiceId)}
+            linkLabel="View invoice"
+          />
         </div>
 
         <div className="space-y-6">
           <SectionCard
-            title="Status timeline"
+            title="Payment workflow"
             actions={<PaymentRecordStatusBadge status={payment.status} />}
           >
             <PaymentStatusTimeline status={payment.status} />
@@ -231,21 +364,28 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <SectionCard title="Account">
-            <dl className="space-y-4">
-              <DetailField label="Created" value={formatDate(payment.createdAt)} />
-              <DetailField label="Last updated" value={formatDateTime(payment.updatedAt)} />
-            </dl>
+          <SectionCard title="Timeline">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Created</p>
+                  <p className="text-muted-foreground">{formatDateTime(payment.createdAt)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Last updated</p>
+                  <p className="text-muted-foreground">{formatDateTime(payment.updatedAt)}</p>
+                </div>
+              </div>
+            </div>
           </SectionCard>
 
           <EmptyCard
             title="Accounting journal"
             description="Accounting entries will appear here when accounting integration is connected."
-          />
-
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
           />
         </div>
       </div>

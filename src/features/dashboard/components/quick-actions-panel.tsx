@@ -10,63 +10,84 @@ import {
   ShoppingCartIcon,
   UserPlusIcon,
 } from "lucide-react";
-import { SectionCard } from "@/components/design-system/card";
-import { AppButton } from "@/components/design-system/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import type { QuickAction } from "../types";
 
-const actionIconMap: Record<string, typeof PlusIcon> = {
-  "new-customer": UserPlusIcon,
-  "new-rental": FileTextIcon,
-  "new-invoice": FileTextIcon,
-  "receive-payment": CreditCardIcon,
-  "purchase-order": ShoppingCartIcon,
-  "add-product": PackageIcon,
+const actionConfig: Record<
+  string,
+  { icon: typeof PlusIcon; className: string }
+> = {
+  "new-customer": { icon: UserPlusIcon, className: "bg-chart-1/12 text-chart-1" },
+  "new-rental": { icon: FileTextIcon, className: "bg-primary/12 text-primary" },
+  "new-invoice": { icon: FileTextIcon, className: "bg-chart-4/12 text-chart-4" },
+  "receive-payment": { icon: CreditCardIcon, className: "bg-chart-2/12 text-chart-2" },
+  "purchase-order": { icon: ShoppingCartIcon, className: "bg-chart-3/12 text-chart-3" },
+  "add-product": { icon: PackageIcon, className: "bg-chart-5/12 text-chart-5" },
 };
 
 type QuickActionsPanelProps = {
   actions: QuickAction[];
   isLoading?: boolean;
+  compact?: boolean;
 };
 
 export const QuickActionsPanel = memo(function QuickActionsPanel({
   actions,
   isLoading,
+  compact = false,
 }: QuickActionsPanelProps) {
   if (isLoading) {
     return (
-      <SectionCard title="Quick Actions" description="Common workflows">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-9 w-full" />
+      <Card className="border-border/60 shadow-token-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-heading text-base">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2">
+          {Array.from({ length: compact ? 4 : 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-12 w-full rounded-xl" />
           ))}
-        </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
     );
   }
 
+  const visibleActions = compact ? actions.slice(0, 4) : actions;
+
   return (
-    <SectionCard
-      title="Quick Actions"
-      description="Launch common workflows — routes are placeholders until modules ship."
-    >
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {actions.map((action) => {
-          const Icon = actionIconMap[action.id] ?? PlusIcon;
+    <Card className="border-border/60 shadow-token-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="font-heading text-base">Quick Actions</CardTitle>
+        <p className="text-sm text-muted-foreground">Launch common workflows</p>
+      </CardHeader>
+      <CardContent className="grid gap-2">
+        {visibleActions.map((action) => {
+          const config = actionConfig[action.id] ?? {
+            icon: PlusIcon,
+            className: "bg-primary/12 text-primary",
+          };
+          const Icon = config.icon;
 
           return (
-            <AppButton
+            <Link
               key={action.id}
-              variant="outline"
-              className="justify-start"
-              leftIcon={<Icon className="size-4" aria-hidden="true" />}
-              render={<Link href={action.href} />}
+              href={action.href}
+              className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card px-3 py-2.5 transition-all hover:border-primary/30 hover:bg-accent/40 hover:shadow-token-xs"
             >
-              {action.label}
-            </AppButton>
+              <div
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
+                  config.className,
+                )}
+              >
+                <Icon className="size-4" aria-hidden="true" />
+              </div>
+              <span className="text-sm font-medium">{action.label}</span>
+            </Link>
           );
         })}
-      </div>
-    </SectionCard>
+      </CardContent>
+    </Card>
   );
 });

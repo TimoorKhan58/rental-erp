@@ -1,4 +1,12 @@
 export {
+  computeDispatchStatusCounts,
+  computeDispatchSummary,
+  getDispatchTotalQuantity,
+  getDispatchWorkflowProgress,
+  getDispatchWorkflowStep,
+  type DispatchSummaryStats,
+} from "./dispatch-summary.mapper";
+export {
   toCreateDispatchPayload,
   toDispatchFormValues,
   toUpdateDispatchPayload,

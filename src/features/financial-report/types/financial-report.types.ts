@@ -235,3 +235,42 @@ export type ReportHubCard = {
   href: string;
   category: "financial" | "operational";
 };
+
+export type ProductReportSortField =
+  | "productCode"
+  | "productName"
+  | "rentalCount"
+  | "rentedQuantity"
+  | "revenue"
+  | "quantityOnHand";
+
+export type ProductReportParams = {
+  page?: number;
+  pageSize?: number;
+  sortBy?: ProductReportSortField;
+  sortOrder?: "asc" | "desc";
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ProductReportLine = {
+  productId: string;
+  productCode: string;
+  productName: string;
+  rentalCount: number;
+  rentedQuantity: number;
+  revenue: number;
+  quantityOnHand: number;
+  isRentable: boolean;
+};
+
+export type ProductReportResponse = {
+  lines: ProductReportLine[];
+  mostRented: ProductReportLine[];
+  leastRented: ProductReportLine[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};

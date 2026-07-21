@@ -18,7 +18,7 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   return (
-    <Card className={cn("border-border/80", className)}>
+    <Card className={cn("border-border/60 shadow-token-sm", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {label}

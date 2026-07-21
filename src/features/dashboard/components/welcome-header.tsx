@@ -32,13 +32,12 @@ export const WelcomeHeader = memo(function WelcomeHeader({
 
   return (
     <header className="space-y-4">
-      <AppBreadcrumb
-        items={[{ label: "Dashboard" }]}
-      />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <Typography variant="h1" as="h1">
-            {getGreeting()}, {userName}
+      <AppBreadcrumb items={[{ label: "Dashboard" }]} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1.5">
+          <Typography variant="h1" as="h1" className="font-heading">
+            {getGreeting()},{" "}
+            <span className="text-primary">{userName}</span>
           </Typography>
           <Typography variant="body" tone="muted">
             {organizationName} · {today}

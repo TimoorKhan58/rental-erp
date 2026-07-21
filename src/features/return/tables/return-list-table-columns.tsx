@@ -19,8 +19,10 @@ import {
   canEditReturn,
   canInspectReturn,
   canReceiveReturn,
+  getReturnTotalQuantity,
 } from "../mappers";
 import { ReturnStatusBadge } from "../components/return-status-badge";
+import { ReturnWorkflowProgressBar } from "../components/return-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { ListReturnsParams, ReturnResponse, ReturnSortField } from "../types";
 
@@ -60,7 +62,7 @@ export function getReturnTableColumns({
       id: "returnNumber",
       header: (
         <SortableColumnHeader
-          label="Return number"
+          label="Return"
           field="returnNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -68,23 +70,24 @@ export function getReturnTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.returnDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.returnNumber}
+        <Link href={ROUTES.returnDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.returnNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId}
+          </span>
         </Link>
       ),
     },
     {
-      id: "rentalOrder",
-      header: "Rental order",
-      cell: (row) => rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId,
-    },
-    {
       id: "dispatch",
       header: "Dispatch",
-      cell: (row) => dispatchLabelById.get(row.dispatchId) ?? row.dispatchId,
+      cell: (row) => (
+        <span className="text-sm">
+          {dispatchLabelById.get(row.dispatchId) ?? row.dispatchId}
+        </span>
+      ),
     },
     {
       id: "returnDate",
@@ -97,20 +100,33 @@ export function getReturnTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.returnDate),
+      cell: (row) => (
+        <div className="min-w-[6rem] text-sm">
+          <p className="font-medium">{formatDate(row.returnDate)}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.items.length} item{row.items.length === 1 ? "" : "s"}
+          </p>
+        </div>
+      ),
     },
     {
-      id: "status",
-      header: (
-        <SortableColumnHeader
-          label="Status"
-          field="status"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
+      id: "workflow",
+      header: "Progress",
+      cell: (row) => (
+        <div className="min-w-[8rem] space-y-1.5">
+          <ReturnStatusBadge status={row.status} />
+          <ReturnWorkflowProgressBar status={row.status} />
+        </div>
       ),
-      cell: (row) => <ReturnStatusBadge status={row.status} />,
+    },
+    {
+      id: "quantity",
+      header: "Units",
+      cell: (row) => (
+        <span className="font-medium tabular-nums">
+          {getReturnTotalQuantity(row).toLocaleString()}
+        </span>
+      ),
     },
     {
       id: "createdAt",
@@ -123,7 +139,9 @@ export function getReturnTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",

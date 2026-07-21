@@ -4,19 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
+  ArrowUpRightIcon,
+  CalendarIcon,
   CheckIcon,
   ClipboardCheckIcon,
-  PencilIcon,
+  ClipboardListIcon,
+  ClockIcon,
   PackageIcon,
+  PencilIcon,
+  TruckIcon,
+  UsersIcon,
   XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { RentalOrderBillingSection } from "@/features/rental-invoice/components";
+import { SectionCard, EmptyCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
 import {
@@ -25,6 +33,9 @@ import {
   canEditReturn,
   canInspectReturn,
   canReceiveReturn,
+  getReturnDamageTotals,
+  getReturnTotalQuantity,
+  hasReturnInspection,
 } from "../mappers";
 import {
   useReturn,
@@ -33,6 +44,8 @@ import {
 } from "../hooks";
 import { ReturnStatusBadge } from "../components/return-status-badge";
 import { ReturnStatusTimeline } from "../components/return-status-timeline";
+import { ReturnWorkflowProgressBar } from "../components/return-workflow-progress-bar";
+import { ReturnLineItemsTable } from "../components/return-line-items-table";
 import { CancelReturnDialog } from "../dialogs/cancel-return-dialog";
 import { CompleteReturnDialog } from "../dialogs/complete-return-dialog";
 import { InspectReturnDialog } from "../dialogs/inspect-return-dialog";
@@ -64,6 +77,79 @@ function DetailField({
   );
 }
 
+function MetricTile({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {icon}
+      </div>
+      <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function RelatedEntityCard({
+  title,
+  icon,
+  iconClass,
+  fields,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  fields: Array<{ label: string; value: string | null | undefined }>;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <SectionCard title={title}>
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              iconClass,
+            )}
+          >
+            {icon}
+          </div>
+          <dl className="grid flex-1 gap-3 sm:grid-cols-2">
+            {fields.map((field) => (
+              <DetailField key={field.label} label={field.label} value={field.value} />
+            ))}
+          </dl>
+        </div>
+        {href && linkLabel ? (
+          <AppButton
+            variant="outline"
+            size="sm"
+            rightIcon={<ArrowUpRightIcon className="size-3.5" aria-hidden="true" />}
+            render={<Link href={href} />}
+          >
+            {linkLabel}
+          </AppButton>
+        ) : null}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
   const router = useRouter();
   const { data: returnRecord, isLoading, isError, error, refetch } = useReturn(returnId);
@@ -78,6 +164,22 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
   const [completeOpen, setCompleteOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
+  const metrics = useMemo(() => {
+    if (!returnRecord) {
+      return null;
+    }
+
+    const totalReturned = getReturnTotalQuantity(returnRecord);
+    const damageTotals = getReturnDamageTotals(returnRecord);
+    const showInspection = hasReturnInspection(returnRecord);
+
+    return {
+      totalReturned,
+      damageTotals,
+      showInspection,
+    };
+  }, [returnRecord]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -86,7 +188,7 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
     );
   }
 
-  if (isError || !returnRecord) {
+  if (isError || !returnRecord || !metrics) {
     return (
       <PageContainer>
         <div
@@ -110,25 +212,15 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
     );
   }
 
-  const totalReturned = returnRecord.items.reduce(
-    (sum, item) => sum + item.returnedQuantity,
-    0,
-  );
-  const totalDamaged = returnRecord.items.reduce(
-    (sum, item) => sum + item.damagedQuantity,
-    0,
-  );
-  const totalLost = returnRecord.items.reduce((sum, item) => sum + item.lostQuantity, 0);
-  const hasInspection =
-    returnRecord.status === "INSPECTED" ||
-    returnRecord.status === "COMPLETED" ||
-    returnRecord.inspectedAt !== null;
+  const rentalOrderLabel =
+    rentalOrder?.orderNumber ?? rentalOrderLabelById.get(returnRecord.rentalOrderId);
+  const dispatchLabel = dispatchLabelById.get(returnRecord.dispatchId);
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title={returnRecord.returnNumber}
-        description={`Rental order: ${rentalOrderLabelById.get(returnRecord.rentalOrderId) ?? returnRecord.rentalOrderId}`}
+        description={rentalOrderLabel ?? returnRecord.rentalOrderId}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Returns", href: ROUTES.returns },
@@ -190,164 +282,150 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Returned items" value={returnRecord.items.length} />
-        <MetricCard label="Total returned qty" value={totalReturned} />
-        <MetricCard label="Return date" value={formatDate(returnRecord.returnDate)} />
-        <MetricCard
-          label="Status"
-          value={<ReturnStatusBadge status={returnRecord.status} />}
-        />
-      </div>
+      <Card className="overflow-hidden border-border/60 shadow-soft">
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <ReturnStatusBadge status={returnRecord.status} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Returned {formatDate(returnRecord.returnDate)} · Last updated{" "}
+                {formatDateTime(returnRecord.updatedAt)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Total returned
+              </p>
+              <p className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+                {metrics.totalReturned.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricTile
+              label="Line items"
+              value={returnRecord.items.length.toLocaleString()}
+              hint="Products on this return"
+              icon={<ClipboardListIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Return date"
+              value={formatDate(returnRecord.returnDate)}
+              hint="Date assets were returned"
+              icon={<CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Dispatch"
+              value={dispatchLabel ?? "—"}
+              hint="Source delivery"
+              icon={<TruckIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Inspection"
+              value={
+                metrics.showInspection
+                  ? `${metrics.damageTotals.damaged + metrics.damageTotals.lost} issues`
+                  : "Pending"
+              }
+              hint={
+                metrics.showInspection
+                  ? `${metrics.damageTotals.good} good units`
+                  : "Not yet inspected"
+              }
+            />
+          </div>
+
+          {returnRecord.status !== "CANCELLED" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Return workflow</span>
+                <span className="text-muted-foreground">
+                  Draft → Received → Inspected → Completed
+                </span>
+              </div>
+              <ReturnWorkflowProgressBar status={returnRecord.status} size="md" />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Return summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Return number" value={returnRecord.returnNumber} />
-              <DetailField label="Return date" value={formatDate(returnRecord.returnDate)} />
-              <DetailField label="Remarks" value={returnRecord.remarks} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Related rental order">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Order number"
-                value={
-                  rentalOrder?.orderNumber ??
-                  rentalOrderLabelById.get(returnRecord.rentalOrderId)
-                }
-              />
-              <DetailField
-                label="Rental period"
-                value={
-                  rentalOrder
-                    ? `${formatDate(rentalOrder.startDate)} – ${formatDate(rentalOrder.endDate)}`
-                    : null
-                }
-              />
-              {rentalOrder ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.rentalOrderDetail(rentalOrder.id)} />}
-                  >
-                    View rental order
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Related dispatch">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Dispatch number"
-                value={dispatchLabelById.get(returnRecord.dispatchId)}
-              />
-              <div className="sm:col-span-2">
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={ROUTES.dispatchDetail(returnRecord.dispatchId)} />}
-                >
-                  View dispatch
-                </AppButton>
-              </div>
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Customer">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Customer" value={customer?.name} />
-              <DetailField label="Customer code" value={customer?.customerCode} />
-              <DetailField label="Phone" value={customer?.phone} />
-              {customer ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.customerDetail(customer.id)} />}
-                  >
-                    View customer
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
           <SectionCard title="Returned items">
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40 text-left">
-                    <th className="px-3 py-2 font-medium" scope="col">Item</th>
-                    <th className="px-3 py-2 font-medium" scope="col">Returned</th>
-                    {hasInspection ? (
-                      <>
-                        <th className="px-3 py-2 font-medium" scope="col">Good</th>
-                        <th className="px-3 py-2 font-medium" scope="col">Damaged</th>
-                        <th className="px-3 py-2 font-medium" scope="col">Lost</th>
-                      </>
-                    ) : null}
-                    <th className="px-3 py-2 font-medium" scope="col">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {returnRecord.items.map((item) => (
-                    <tr key={item.id} className="border-b last:border-b-0">
-                      <td className="px-3 py-2">
-                        {rentalOrderItemLabelById.get(item.rentalOrderItemId) ??
-                          item.rentalOrderItemId}
-                      </td>
-                      <td className="px-3 py-2">{item.returnedQuantity}</td>
-                      {hasInspection ? (
-                        <>
-                          <td className="px-3 py-2">{item.goodQuantity}</td>
-                          <td className="px-3 py-2">{item.damagedQuantity}</td>
-                          <td className="px-3 py-2">{item.lostQuantity}</td>
-                        </>
-                      ) : null}
-                      <td className="px-3 py-2">{item.notes ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ReturnLineItemsTable
+              items={returnRecord.items}
+              itemLabelById={rentalOrderItemLabelById}
+              showInspection={metrics.showInspection}
+            />
           </SectionCard>
 
-          {hasInspection ? (
+          {metrics.showInspection ? (
             <SectionCard title="Damage assessment">
               <dl className="grid gap-4 sm:grid-cols-3">
-                <DetailField
-                  label="Total damaged"
-                  value={totalDamaged}
-                />
-                <DetailField label="Total lost" value={totalLost} />
-                <DetailField
-                  label="Total good"
-                  value={returnRecord.items.reduce((sum, item) => sum + item.goodQuantity, 0)}
-                />
+                <DetailField label="Good condition" value={metrics.damageTotals.good} />
+                <DetailField label="Damaged" value={metrics.damageTotals.damaged} />
+                <DetailField label="Lost" value={metrics.damageTotals.lost} />
               </dl>
             </SectionCard>
           ) : null}
 
-          <EmptyCard
-            title="Repair workflow"
-            description="Repair requests will appear here when the repair module is connected."
+          {returnRecord.remarks ? (
+            <SectionCard title="Remarks">
+              <p className="text-sm text-muted-foreground">{returnRecord.remarks}</p>
+            </SectionCard>
+          ) : null}
+
+          <RelatedEntityCard
+            title="Rental order"
+            icon={<ClipboardListIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-primary/12 text-primary"
+            fields={[
+              { label: "Order number", value: rentalOrderLabel },
+              {
+                label: "Rental period",
+                value: rentalOrder
+                  ? `${formatDate(rentalOrder.startDate)} – ${formatDate(rentalOrder.endDate)}`
+                  : null,
+              },
+            ]}
+            href={rentalOrder ? ROUTES.rentalOrderDetail(rentalOrder.id) : undefined}
+            linkLabel="View rental order"
+          />
+
+          <RelatedEntityCard
+            title="Dispatch"
+            icon={<TruckIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-info/12 text-info"
+            fields={[{ label: "Dispatch number", value: dispatchLabel }]}
+            href={ROUTES.dispatchDetail(returnRecord.dispatchId)}
+            linkLabel="View dispatch"
+          />
+
+          <RelatedEntityCard
+            title="Customer"
+            icon={<UsersIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-success-muted text-success"
+            fields={[
+              { label: "Name", value: customer?.name },
+              { label: "Customer code", value: customer?.customerCode },
+              { label: "Phone", value: customer?.phone },
+            ]}
+            href={customer ? ROUTES.customerDetail(customer.id) : undefined}
+            linkLabel="View customer"
           />
 
           <EmptyCard
-            title="Maintenance workflow"
-            description="Maintenance records will appear here when the maintenance module is connected."
+            title="Follow-up workflows"
+            description="Repair requests and maintenance records will appear here when those modules are connected."
           />
         </div>
 
         <div className="space-y-6">
           <SectionCard
-            title="Status timeline"
+            title="Return workflow"
             actions={<ReturnStatusBadge status={returnRecord.status} />}
           >
             <ReturnStatusTimeline status={returnRecord.status} />
@@ -370,26 +448,28 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <SectionCard title="Account">
-            <dl className="space-y-4">
-              <DetailField label="Created" value={formatDate(returnRecord.createdAt)} />
-              <DetailField label="Last updated" value={formatDateTime(returnRecord.updatedAt)} />
-            </dl>
+          <SectionCard title="Timeline">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Created</p>
+                  <p className="text-muted-foreground">{formatDateTime(returnRecord.createdAt)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Last updated</p>
+                  <p className="text-muted-foreground">{formatDateTime(returnRecord.updatedAt)}</p>
+                </div>
+              </div>
+            </div>
           </SectionCard>
 
-          <EmptyCard
-            title="Invoice adjustments"
-            description="Rental invoice adjustments will appear here when billing integration is connected."
-          />
-
-          <EmptyCard
-            title="Payment adjustments"
-            description="Payment adjustments will appear here when payments integration is connected."
-          />
-
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
+          <RentalOrderBillingSection
+            rentalOrderId={returnRecord.rentalOrderId}
+            canGenerate={returnRecord.status === "COMPLETED"}
           />
         </div>
       </div>

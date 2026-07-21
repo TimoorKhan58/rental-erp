@@ -6,6 +6,7 @@ export {
   useDispatch,
   useDispatchFilterOptions,
   useDispatchPermissions,
+  useDispatchSummaryStats,
   useDispatches,
   useMarkDispatchReady,
   useUpdateDispatch,

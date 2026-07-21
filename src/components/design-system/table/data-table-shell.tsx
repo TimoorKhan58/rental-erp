@@ -98,7 +98,7 @@ export function DataTableShell<T>({
     }
 
     return (
-      <div className="overflow-safe rounded-lg border border-border">
+      <div className="overflow-safe rounded-xl border border-border bg-card shadow-soft">
         <Table>
           <TableHeader
             className={cn(stickyHeader && "sticky top-0 z-[var(--z-sticky)] bg-background")}

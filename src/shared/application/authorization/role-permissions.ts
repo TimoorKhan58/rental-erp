@@ -93,6 +93,7 @@ const WORKER_PERMISSIONS: Permission[] = [
   PERMISSIONS.payments.post,
   PERMISSIONS.payments.void,
   PERMISSIONS.notifications.read,
+  PERMISSIONS.settings.read,
   PERMISSIONS.dashboard.read,
   PERMISSIONS.dashboard.update,
   PERMISSIONS.assets.read,

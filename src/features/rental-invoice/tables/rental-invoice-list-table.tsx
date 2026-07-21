@@ -20,11 +20,11 @@ import { queryKeys } from "@/lib/query";
 import {
   matchesInvoiceDateRange,
   matchesPaymentStatusFilter,
-  PAYMENT_STATUS_LABELS,
-  STATUS_LABELS,
 } from "../mappers";
-import { RENTAL_INVOICE_STATUSES } from "../types";
-import type { PaymentStatusFilter } from "../types";
+import {
+  RentalInvoicePaymentStatusFilterChips,
+  RentalInvoiceStatusFilterChips,
+} from "../components";
 import {
   useRentalInvoiceFilterOptions,
   useRentalInvoiceListParams,
@@ -34,16 +34,17 @@ import {
 import { getRentalInvoiceTableColumns } from "./rental-invoice-list-table-columns";
 import { IssueRentalInvoiceDialog } from "../dialogs/issue-rental-invoice-dialog";
 import { VoidRentalInvoiceDialog } from "../dialogs/void-rental-invoice-dialog";
-import type { RentalInvoiceResponse } from "../types";
+import type { PaymentStatusFilter, RentalInvoiceResponse, RentalInvoiceStatus } from "../types";
 
-const PAYMENT_STATUS_FILTERS: PaymentStatusFilter[] = [
-  "unpaid",
-  "partial",
-  "paid",
-  "void",
-];
+type RentalInvoiceListTableProps = {
+  statusCounts?: Partial<Record<"all" | RentalInvoiceStatus, number>>;
+  paymentStatusCounts?: Partial<Record<"all" | PaymentStatusFilter, number>>;
+};
 
-export function RentalInvoiceListTable() {
+export function RentalInvoiceListTable({
+  statusCounts,
+  paymentStatusCounts,
+}: RentalInvoiceListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -88,6 +89,9 @@ export function RentalInvoiceListTable() {
         matchesPaymentStatusFilter(item, paymentStatus),
     );
   }, [data?.items, invoiceDateFrom, invoiceDateTo, paymentStatus]);
+
+  const statusFilterValue = params.status ?? "all";
+  const paymentStatusFilterValue = paymentStatus ?? "all";
 
   const columns = getRentalInvoiceTableColumns({
     params,
@@ -136,11 +140,27 @@ export function RentalInvoiceListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <div className="space-y-3">
+            <RentalInvoiceStatusFilterChips
+              value={statusFilterValue}
+              onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+              counts={statusCounts}
+            />
+            <RentalInvoicePaymentStatusFilterChips
+              value={paymentStatusFilterValue}
+              onChange={(value) =>
+                setPaymentStatusFilter(value === "all" ? undefined : value)
+              }
+              counts={paymentStatusCounts}
+            />
+          </div>
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by invoice number or notes..."
+            placeholder="Search invoices..."
             className="w-full sm:max-w-xs"
             aria-label="Search rental invoices"
           />
@@ -190,54 +210,6 @@ export function RentalInvoiceListTable() {
                 {rentalOrderOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as RentalInvoiceResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {RENTAL_INVOICE_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={paymentStatus ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setPaymentStatusFilter(undefined);
-                  return;
-                }
-
-                setPaymentStatusFilter(value as PaymentStatusFilter);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by payment status">
-                <SelectValue placeholder="Payment status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All payment statuses</SelectItem>
-                {PAYMENT_STATUS_FILTERS.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {PAYMENT_STATUS_LABELS[status]}
                   </SelectItem>
                 ))}
               </SelectContent>

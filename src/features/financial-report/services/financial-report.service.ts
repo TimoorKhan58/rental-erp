@@ -8,6 +8,8 @@ import type {
   ExpenseSummaryResponse,
   InventoryReportParams,
   InventoryReportResponse,
+  ProductReportParams,
+  ProductReportResponse,
   ProfitLossResponse,
   RentalReportParams,
   RentalReportResponse,
@@ -64,4 +66,10 @@ export async function getCustomerReport(
   params: CustomerReportParams = {},
 ): Promise<CustomerReportResponse> {
   return apiGet<CustomerReportResponse>(`${REPORTS_BASE}/customers`, { params });
+}
+
+export async function getProductReport(
+  params: ProductReportParams = {},
+): Promise<ProductReportResponse> {
+  return apiGet<ProductReportResponse>(`${REPORTS_BASE}/products`, { params });
 }

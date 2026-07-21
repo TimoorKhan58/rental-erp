@@ -1,6 +1,11 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
+import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
 import { useAppMutation } from "@/lib/query";
 import { getCurrentUserPermissions } from "@/features/customer/services";
@@ -8,6 +13,12 @@ import { getCustomers } from "@/features/customer/services";
 import { getRentalOrders } from "@/features/rental-order/services";
 import type { ListRentalInvoicesParams } from "../types";
 import {
+  computeRentalInvoicePaymentStatusCounts,
+  computeRentalInvoiceStatusCounts,
+  computeRentalInvoiceSummary,
+} from "../mappers/rental-invoice-summary.mapper";
+import {
+  generateRentalInvoiceFromOrder,
   getRentalInvoice,
   getRentalInvoices,
   issueRentalInvoice,
@@ -73,6 +84,45 @@ export function useRentalInvoiceFilterOptions() {
   };
 }
 
+export function useRentalInvoiceSummaryStats() {
+  const listQuery = useQuery({
+    queryKey: queryKeys.rentalInvoices.list({ pageSize: 100 }),
+    queryFn: () => getRentalInvoices({ pageSize: 100 }),
+    staleTime: 60_000,
+  });
+
+  const stats = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeRentalInvoiceSummary(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const statusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeRentalInvoiceStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const paymentStatusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeRentalInvoicePaymentStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  return {
+    stats,
+    statusCounts,
+    paymentStatusCounts,
+    isLoading: listQuery.isLoading,
+  };
+}
+
 export function useRentalInvoices(params: ListRentalInvoicesParams) {
   return useQuery({
     queryKey: queryKeys.rentalInvoices.list(params),
@@ -85,6 +135,24 @@ export function useRentalInvoice(id: string) {
     queryKey: queryKeys.rentalInvoices.detail(id),
     queryFn: () => getRentalInvoice(id),
     enabled: Boolean(id),
+  });
+}
+
+export function useGenerateRentalInvoiceFromOrder() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useAppMutation({
+    mutationFn: generateRentalInvoiceFromOrder,
+    showSuccessToast: true,
+    successMessage: "Customer invoice generated successfully.",
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.all }),
+      ]);
+      router.push(ROUTES.rentalInvoiceDetail(data.id));
+    },
   });
 }
 

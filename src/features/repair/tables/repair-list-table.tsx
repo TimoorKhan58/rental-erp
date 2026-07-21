@@ -22,9 +22,8 @@ import { queryKeys } from "@/lib/query";
 import {
   matchesRepairDateRange,
   matchesTechnicianFilter,
-  STATUS_LABELS,
 } from "../mappers";
-import { REPAIR_STATUSES } from "../types";
+import { RepairStatusFilterChips } from "../components";
 import {
   useRepairFilterOptions,
   useRepairListParams,
@@ -35,9 +34,13 @@ import { getRepairTableColumns } from "./repair-list-table-columns";
 import { CancelRepairDialog } from "../dialogs/cancel-repair-dialog";
 import { CompleteRepairDialog } from "../dialogs/complete-repair-dialog";
 import { StartRepairDialog } from "../dialogs/start-repair-dialog";
-import type { RepairResponse } from "../types";
+import type { RepairResponse, RepairStatus } from "../types";
 
-export function RepairListTable() {
+type RepairListTableProps = {
+  statusCounts?: Partial<Record<"all" | RepairStatus, number>>;
+};
+
+export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -101,6 +104,8 @@ export function RepairListTable() {
     );
   }, [data?.items, repairDateFrom, repairDateTo, technician]);
 
+  const statusFilterValue = params.status ?? "all";
+
   const columns = getRepairTableColumns({
     params,
     onSort: setSorting,
@@ -152,11 +157,18 @@ export function RepairListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <RepairStatusFilterChips
+            value={statusFilterValue}
+            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+            counts={statusCounts}
+          />
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by repair number, notes, or technician..."
+            placeholder="Search repairs..."
             className="w-full sm:max-w-xs"
             aria-label="Search repairs"
           />
@@ -230,30 +242,6 @@ export function RepairListTable() {
                 {warehouseOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as RepairResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {REPAIR_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
                   </SelectItem>
                 ))}
               </SelectContent>

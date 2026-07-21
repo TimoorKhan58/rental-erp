@@ -4,18 +4,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
+  ArrowUpRightIcon,
+  CalendarIcon,
   CheckIcon,
+  ClockIcon,
+  PackageIcon,
   PencilIcon,
   PlayIcon,
+  UserIcon,
+  WrenchIcon,
   XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { SectionCard, EmptyCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useReturn } from "@/features/return/hooks";
 import {
   canCancelRepair,
@@ -28,8 +35,10 @@ import {
   useRepairFilterOptions,
   useRepairPermissions,
 } from "../hooks";
+import { RepairAssetDetailsTable } from "../components/repair-asset-details-table";
 import { RepairStatusBadge } from "../components/repair-status-badge";
 import { RepairStatusTimeline } from "../components/repair-status-timeline";
+import { RepairWorkflowProgressBar } from "../components/repair-workflow-progress-bar";
 import { CancelRepairDialog } from "../dialogs/cancel-repair-dialog";
 import { CompleteRepairDialog } from "../dialogs/complete-repair-dialog";
 import { StartRepairDialog } from "../dialogs/start-repair-dialog";
@@ -60,6 +69,79 @@ function DetailField({
   );
 }
 
+function MetricTile({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {icon}
+      </div>
+      <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function RelatedEntityCard({
+  title,
+  icon,
+  iconClass,
+  fields,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  fields: Array<{ label: string; value: string | null | undefined }>;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <SectionCard title={title}>
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              iconClass,
+            )}
+          >
+            {icon}
+          </div>
+          <dl className="grid flex-1 gap-3 sm:grid-cols-2">
+            {fields.map((field) => (
+              <DetailField key={field.label} label={field.label} value={field.value} />
+            ))}
+          </dl>
+        </div>
+        {href && linkLabel ? (
+          <AppButton
+            variant="outline"
+            size="sm"
+            rightIcon={<ArrowUpRightIcon className="size-3.5" aria-hidden="true" />}
+            render={<Link href={href} />}
+          >
+            {linkLabel}
+          </AppButton>
+        ) : null}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
   const router = useRouter();
   const { data: repair, isLoading, isError, error, refetch } = useRepair(repairId);
@@ -73,6 +155,18 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
   const [completeOpen, setCompleteOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
+  const labels = useMemo(() => {
+    if (!repair) {
+      return null;
+    }
+
+    return {
+      returnLabel: returnRecord?.returnNumber ?? returnLabelById.get(repair.returnId),
+      productLabel: productLabelById.get(repair.productId) ?? repair.productId,
+      warehouseLabel: warehouseLabelById.get(repair.warehouseId) ?? repair.warehouseId,
+    };
+  }, [repair, returnRecord, returnLabelById, productLabelById, warehouseLabelById]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -81,7 +175,7 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
     );
   }
 
-  if (isError || !repair) {
+  if (isError || !repair || !labels) {
     return (
       <PageContainer>
         <div
@@ -106,10 +200,10 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
   }
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title={repair.repairNumber}
-        description={`Return: ${returnLabelById.get(repair.returnId) ?? repair.returnId}`}
+        description={labels.returnLabel ?? repair.returnId}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Repairs", href: ROUTES.repairs },
@@ -162,71 +256,75 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Quantity" value={repair.quantity} />
-        <MetricCard label="Repair cost" value={formatCurrency(repair.repairCost)} />
-        <MetricCard label="Repair date" value={formatDate(repair.repairDate)} />
-        <MetricCard
-          label="Status"
-          value={<RepairStatusBadge status={repair.status} />}
-        />
-      </div>
+      <Card className="overflow-hidden border-border/60 shadow-soft">
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <RepairStatusBadge status={repair.status} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Scheduled {formatDate(repair.repairDate)} · Last updated{" "}
+                {formatDateTime(repair.updatedAt)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Repair cost
+              </p>
+              <p className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+                {formatCurrency(repair.repairCost)}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricTile
+              label="Quantity"
+              value={repair.quantity.toLocaleString()}
+              hint="Units being repaired"
+              icon={<PackageIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Repair date"
+              value={formatDate(repair.repairDate)}
+              hint="Scheduled repair date"
+              icon={<CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Technician"
+              value={repair.technician ?? "Unassigned"}
+              hint="Assigned repair technician"
+              icon={<UserIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+            <MetricTile
+              label="Product"
+              value={labels.productLabel}
+              hint="Asset under repair"
+              icon={<WrenchIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
+            />
+          </div>
+
+          {repair.status !== "CANCELLED" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Repair workflow</span>
+                <span className="text-muted-foreground">Pending → In progress → Completed</span>
+              </div>
+              <RepairWorkflowProgressBar status={repair.status} size="md" />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Repair summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Repair number" value={repair.repairNumber} />
-              <DetailField label="Repair date" value={formatDate(repair.repairDate)} />
-              <DetailField label="Quantity" value={repair.quantity} />
-              <DetailField label="Repair cost" value={formatCurrency(repair.repairCost)} />
-              <DetailField label="Technician" value={repair.technician} />
-              <DetailField label="Repair notes" value={repair.repairNotes} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Related return">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Return number"
-                value={returnRecord?.returnNumber ?? returnLabelById.get(repair.returnId)}
-              />
-              <DetailField
-                label="Return date"
-                value={returnRecord ? formatDate(returnRecord.returnDate) : null}
-              />
-              <div className="sm:col-span-2">
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={ROUTES.returnDetail(repair.returnId)} />}
-                >
-                  View return
-                </AppButton>
-              </div>
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Asset / product">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Product"
-                value={productLabelById.get(repair.productId) ?? repair.productId}
-              />
-              <DetailField
-                label="Warehouse"
-                value={warehouseLabelById.get(repair.warehouseId) ?? repair.warehouseId}
-              />
-              <div className="sm:col-span-2">
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={ROUTES.productDetail(repair.productId)} />}
-                >
-                  View product
-                </AppButton>
-              </div>
-            </dl>
+          <SectionCard title="Repair asset">
+            <RepairAssetDetailsTable
+              repair={repair}
+              productLabel={labels.productLabel}
+              warehouseLabel={labels.warehouseLabel}
+            />
           </SectionCard>
 
           {returnItem ? (
@@ -240,6 +338,39 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
             </SectionCard>
           ) : null}
 
+          {repair.repairNotes ? (
+            <SectionCard title="Repair notes">
+              <p className="text-sm text-muted-foreground">{repair.repairNotes}</p>
+            </SectionCard>
+          ) : null}
+
+          <RelatedEntityCard
+            title="Related return"
+            icon={<PackageIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-primary/12 text-primary"
+            fields={[
+              { label: "Return number", value: labels.returnLabel },
+              {
+                label: "Return date",
+                value: returnRecord ? formatDate(returnRecord.returnDate) : null,
+              },
+            ]}
+            href={ROUTES.returnDetail(repair.returnId)}
+            linkLabel="View return"
+          />
+
+          <RelatedEntityCard
+            title="Product"
+            icon={<WrenchIcon className="size-5" aria-hidden="true" />}
+            iconClass="bg-info/12 text-info"
+            fields={[
+              { label: "Product", value: labels.productLabel },
+              { label: "Warehouse", value: labels.warehouseLabel },
+            ]}
+            href={ROUTES.productDetail(repair.productId)}
+            linkLabel="View product"
+          />
+
           <EmptyCard
             title="Maintenance linkage"
             description="Maintenance records will appear here when the maintenance module is connected."
@@ -248,7 +379,7 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
 
         <div className="space-y-6">
           <SectionCard
-            title="Status timeline"
+            title="Repair workflow"
             actions={<RepairStatusBadge status={repair.status} />}
           >
             <RepairStatusTimeline status={repair.status} />
@@ -267,11 +398,23 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <SectionCard title="Account">
-            <dl className="space-y-4">
-              <DetailField label="Created" value={formatDate(repair.createdAt)} />
-              <DetailField label="Last updated" value={formatDateTime(repair.updatedAt)} />
-            </dl>
+          <SectionCard title="Timeline">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Created</p>
+                  <p className="text-muted-foreground">{formatDateTime(repair.createdAt)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Last updated</p>
+                  <p className="text-muted-foreground">{formatDateTime(repair.updatedAt)}</p>
+                </div>
+              </div>
+            </div>
           </SectionCard>
 
           <EmptyCard
@@ -282,11 +425,6 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
           <EmptyCard
             title="Accounting entries"
             description="Accounting impact will appear here when accounting integration is connected."
-          />
-
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
           />
         </div>
       </div>

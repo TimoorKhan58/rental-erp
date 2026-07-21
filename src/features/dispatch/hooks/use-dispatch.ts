@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,6 +9,10 @@ import { getProducts } from "@/features/product/services";
 import { getRentalOrders } from "@/features/rental-order/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListDispatchesParams } from "../types";
+import {
+  computeDispatchStatusCounts,
+  computeDispatchSummary,
+} from "../mappers/dispatch-summary.mapper";
 import {
   cancelDispatch,
   completeDispatch,
@@ -92,6 +97,12 @@ export function useDispatchFilterOptions() {
   );
   const warehouseLabelById = new Map(warehouseOptions.map((item) => [item.id, item.label]));
   const productLabelById = new Map(productOptions.map((item) => [item.id, item.label]));
+  const warehouseNameById = new Map(
+    (warehouses.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
+  const productNameById = new Map(
+    (products.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
 
   return {
     rentalOrderOptions,
@@ -101,6 +112,8 @@ export function useDispatchFilterOptions() {
     rentalOrderWarehouseById,
     warehouseLabelById,
     productLabelById,
+    warehouseNameById,
+    productNameById,
     isLoading:
       rentalOrders.isLoading ||
       reservedOrders.isLoading ||
@@ -114,6 +127,36 @@ export function useDispatches(params: ListDispatchesParams) {
     queryKey: queryKeys.dispatches.list(params),
     queryFn: () => getDispatches(params),
   });
+}
+
+export function useDispatchSummaryStats() {
+  const listQuery = useQuery({
+    queryKey: queryKeys.dispatches.list({ pageSize: 100 }),
+    queryFn: () => getDispatches({ pageSize: 100 }),
+    staleTime: 60_000,
+  });
+
+  const stats = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeDispatchSummary(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const statusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeDispatchStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  return {
+    stats,
+    statusCounts,
+    isLoading: listQuery.isLoading,
+  };
 }
 
 export function useDispatch(id: string) {

@@ -20,6 +20,10 @@ export {
   type UpdateRentalInvoiceInput,
 } from "./schemas/rental-invoice.schemas";
 export {
+  GenerateRentalInvoiceFromOrderSchema,
+  type GenerateRentalInvoiceFromOrderInput,
+} from "./schemas/generate-rental-invoice.schema";
+export {
   ListRentalInvoicesSchema,
   type ListRentalInvoicesInput,
 } from "./schemas/list-rental-invoices.schema";
@@ -36,6 +40,7 @@ export type {
   RentalInvoiceServiceResolver,
 } from "./services/rental-invoice-application-services.interface";
 export type { IRentalInvoiceTransactionRunner } from "./services/rental-invoice-transaction.runner";
+export { GenerateRentalInvoiceFromOrderService } from "./services/generate-rental-invoice-from-order.service";
 export { CreateRentalInvoiceService } from "./services/create-rental-invoice.service";
 export { GetRentalInvoiceByIdService } from "./services/get-rental-invoice-by-id.service";
 export { IssueRentalInvoiceService } from "./services/issue-rental-invoice.service";

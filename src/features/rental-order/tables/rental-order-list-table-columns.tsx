@@ -20,10 +20,12 @@ import {
   canConfirmRentalOrder,
   canEditRentalOrder,
   canReserveRentalOrder,
+  deriveReservationStatus,
+  getOrderReservedUnits,
 } from "../mappers";
 import { RentalOrderStatusBadge } from "../components/rental-order-status-badge";
 import { RentalReservationBadge } from "../components/rental-reservation-badge";
-import { deriveReservationStatus } from "../mappers";
+import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { ListRentalOrdersParams, RentalOrderResponse, RentalOrderSortField } from "../types";
 
@@ -32,6 +34,8 @@ type RentalOrderTableColumnOptions = {
   onSort: (field: RentalOrderSortField, order: ListRentalOrdersParams["sortOrder"]) => void;
   customerLabelById: Map<string, string>;
   warehouseLabelById: Map<string, string>;
+  customerNameById: Map<string, string>;
+  warehouseNameById: Map<string, string>;
   canUpdate: boolean;
   canConfirm: boolean;
   canReserve: boolean;
@@ -46,6 +50,8 @@ export function getRentalOrderTableColumns({
   onSort,
   customerLabelById,
   warehouseLabelById,
+  customerNameById,
+  warehouseNameById,
   canUpdate,
   canConfirm,
   canReserve,
@@ -54,12 +60,18 @@ export function getRentalOrderTableColumns({
   onReserve,
   onCancel,
 }: RentalOrderTableColumnOptions): Array<DataTableColumn<RentalOrderResponse>> {
+  const resolveCustomerName = (customerId: string) =>
+    customerNameById.get(customerId) ?? customerLabelById.get(customerId) ?? customerId;
+
+  const resolveWarehouseName = (warehouseId: string) =>
+    warehouseNameById.get(warehouseId) ?? warehouseLabelById.get(warehouseId) ?? warehouseId;
+
   return [
     {
       id: "orderNumber",
       header: (
         <SortableColumnHeader
-          label="Order number"
+          label="Order"
           field="orderNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -67,49 +79,64 @@ export function getRentalOrderTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.rentalOrderDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.orderNumber}
+        <Link href={ROUTES.rentalOrderDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.orderNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {resolveCustomerName(row.customerId)}
+          </span>
         </Link>
       ),
     },
     {
-      id: "customer",
-      header: "Customer",
-      cell: (row) => customerLabelById.get(row.customerId) ?? row.customerId,
-    },
-    {
       id: "warehouse",
       header: "Warehouse",
-      cell: (row) => warehouseLabelById.get(row.warehouseId) ?? row.warehouseId,
+      cell: (row) => (
+        <span className="text-sm">{resolveWarehouseName(row.warehouseId)}</span>
+      ),
     },
     {
-      id: "startDate",
+      id: "rentalPeriod",
       header: (
         <SortableColumnHeader
-          label="Rental start"
+          label="Rental period"
           field="eventStartDate"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.startDate),
+      cell: (row) => {
+        const days = calculateRentalDays(row.startDate, row.endDate);
+
+        return (
+          <div className="min-w-[7rem] text-sm">
+            <p className="font-medium tabular-nums">
+              {days} day{days === 1 ? "" : "s"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {formatDate(row.startDate)} – {formatDate(row.endDate)}
+            </p>
+          </div>
+        );
+      },
     },
     {
-      id: "endDate",
-      header: (
-        <SortableColumnHeader
-          label="Rental end"
-          field="eventEndDate"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => formatDate(row.endDate),
+      id: "reservation",
+      header: "Reservation",
+      cell: (row) => {
+        const { reserved, total } = getOrderReservedUnits(row);
+
+        return (
+          <div className="min-w-[8rem] space-y-1.5">
+            <RentalReservationBadge status={deriveReservationStatus(row)} />
+            {row.status !== "CANCELLED" ? (
+              <RentalOrderReservationProgressBar reserved={reserved} total={total} />
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       id: "status",
@@ -125,19 +152,15 @@ export function getRentalOrderTableColumns({
       cell: (row) => <RentalOrderStatusBadge status={row.status} />,
     },
     {
-      id: "reservation",
-      header: "Reservation",
-      cell: (row) => (
-        <RentalReservationBadge status={deriveReservationStatus(row)} />
-      ),
-    },
-    {
       id: "total",
-      header: "Total",
-      cell: (row) =>
-        formatCurrency(
-          calculateOrderTotal(row.items, calculateRentalDays(row.startDate, row.endDate)),
-        ),
+      header: "Value",
+      cell: (row) => (
+        <span className="font-medium tabular-nums">
+          {formatCurrency(
+            calculateOrderTotal(row.items, calculateRentalDays(row.startDate, row.endDate)),
+          )}
+        </span>
+      ),
     },
     {
       id: "createdAt",
@@ -150,7 +173,9 @@ export function getRentalOrderTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",

@@ -3,6 +3,7 @@ export type {
   InventoryListResponse,
   InventoryResponse,
   InventorySortField,
+  InventorySummaryStats,
   ListInventoryParams,
   StockStatusFilter,
   UpdateInventoryPayload,

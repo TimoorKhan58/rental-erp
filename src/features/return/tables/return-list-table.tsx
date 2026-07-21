@@ -19,8 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesReturnDateRange, STATUS_LABELS } from "../mappers";
-import { RETURN_STATUSES } from "../types";
+import { matchesReturnDateRange } from "../mappers";
+import { ReturnStatusFilterChips } from "../components";
 import {
   useReturnFilterOptions,
   useReturnListParams,
@@ -32,9 +32,13 @@ import { CancelReturnDialog } from "../dialogs/cancel-return-dialog";
 import { CompleteReturnDialog } from "../dialogs/complete-return-dialog";
 import { InspectReturnDialog } from "../dialogs/inspect-return-dialog";
 import { ReceiveReturnDialog } from "../dialogs/receive-return-dialog";
-import type { ReturnResponse } from "../types";
+import type { ReturnResponse, ReturnStatus } from "../types";
 
-export function ReturnListTable() {
+type ReturnListTableProps = {
+  statusCounts?: Partial<Record<"all" | ReturnStatus, number>>;
+};
+
+export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -78,6 +82,8 @@ export function ReturnListTable() {
       matchesReturnDateRange(item.returnDate, returnDateFrom, returnDateTo),
     );
   }, [data?.items, returnDateFrom, returnDateTo]);
+
+  const statusFilterValue = params.status ?? "all";
 
   const columns = getReturnTableColumns({
     params,
@@ -130,11 +136,18 @@ export function ReturnListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <ReturnStatusFilterChips
+            value={statusFilterValue}
+            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+            counts={statusCounts}
+          />
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by return number or remarks..."
+            placeholder="Search returns..."
             className="w-full sm:max-w-xs"
             aria-label="Search returns"
           />
@@ -184,30 +197,6 @@ export function ReturnListTable() {
                 {dispatchOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as ReturnResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {RETURN_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
                   </SelectItem>
                 ))}
               </SelectContent>

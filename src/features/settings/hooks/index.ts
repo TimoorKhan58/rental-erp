@@ -1,5 +1,6 @@
 export {
   useCompanySettings,
+  useOrganizationName,
   useProfile,
   useSecuritySettings,
   useSettings,

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,6 +9,10 @@ import { getDispatches } from "@/features/dispatch/services";
 import { getProducts } from "@/features/product/services";
 import { getRentalOrders } from "@/features/rental-order/services";
 import type { ListReturnsParams } from "../types";
+import {
+  computeReturnStatusCounts,
+  computeReturnSummary,
+} from "../mappers/return-summary.mapper";
 import {
   cancelReturn,
   completeReturn,
@@ -128,6 +133,36 @@ export function useReturns(params: ListReturnsParams) {
     queryKey: queryKeys.returns.list(params),
     queryFn: () => getReturns(params),
   });
+}
+
+export function useReturnSummaryStats() {
+  const listQuery = useQuery({
+    queryKey: queryKeys.returns.list({ pageSize: 100 }),
+    queryFn: () => getReturns({ pageSize: 100 }),
+    staleTime: 60_000,
+  });
+
+  const stats = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeReturnSummary(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const statusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeReturnStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  return {
+    stats,
+    statusCounts,
+    isLoading: listQuery.isLoading,
+  };
 }
 
 export function useReturn(id: string) {

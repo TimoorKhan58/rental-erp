@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontalIcon } from "lucide-react";
+import { MoreHorizontalIcon, PhoneIcon } from "lucide-react";
 import type { DataTableColumn } from "@/components/shared";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,6 +14,8 @@ import {
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
 import { formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { CustomerAvatar } from "../components/customer-avatar";
 import { CustomerStatusBadge } from "../components/customer-status-badge";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { CustomerResponse, CustomerSortField, ListCustomersParams } from "../types";
@@ -66,11 +68,11 @@ export function getCustomerTableColumns({
       headerClassName: "w-10",
     },
     {
-      id: "customerCode",
+      id: "customer",
       header: (
         <SortableColumnHeader
-          label="Code"
-          field="customerCode"
+          label="Customer"
+          field="name"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
           onSort={onSort}
@@ -79,24 +81,17 @@ export function getCustomerTableColumns({
       cell: (row) => (
         <Link
           href={ROUTES.customerDetail(row.id)}
-          className="font-medium text-primary hover:underline"
+          className="group flex items-center gap-3 rounded-lg py-0.5 transition-colors hover:opacity-90"
         >
-          {row.customerCode}
+          <CustomerAvatar name={row.name} size="sm" />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-foreground group-hover:text-primary">
+              {row.name}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{row.customerCode}</p>
+          </div>
         </Link>
       ),
-    },
-    {
-      id: "name",
-      header: (
-        <SortableColumnHeader
-          label="Name"
-          field="name"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => row.name,
     },
     {
       id: "phone",
@@ -109,7 +104,21 @@ export function getCustomerTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => row.phone,
+      cell: (row) => (
+        <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <PhoneIcon className="size-3.5 shrink-0 text-primary/60" aria-hidden="true" />
+          {row.phone}
+        </span>
+      ),
+    },
+    {
+      id: "address",
+      header: "Address",
+      cell: (row) => (
+        <span className="line-clamp-1 max-w-xs text-sm text-muted-foreground">
+          {row.address?.trim() ? row.address : "—"}
+        </span>
+      ),
     },
     {
       id: "isActive",
@@ -135,7 +144,9 @@ export function getCustomerTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",
@@ -170,10 +181,7 @@ export function getCustomerTableColumns({
             {canDelete ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => onDelete(row)}
-                >
+                <DropdownMenuItem variant="destructive" onClick={() => onDelete(row)}>
                   Delete
                 </DropdownMenuItem>
               </>
@@ -181,7 +189,7 @@ export function getCustomerTableColumns({
           </DropdownMenuContent>
         </DropdownMenu>
       ),
-      className: "w-12 text-right",
+      className: cn("w-12 text-right"),
       headerClassName: "w-12",
     },
   ];

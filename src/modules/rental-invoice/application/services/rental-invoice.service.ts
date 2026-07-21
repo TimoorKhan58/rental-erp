@@ -9,6 +9,8 @@ import type {
 import type { ListRentalInvoicesInput } from "../schemas/list-rental-invoices.schema";
 import type { IRentalInvoiceService } from "./rental-invoice-application-services.interface";
 import type { CreateRentalInvoiceService } from "./create-rental-invoice.service";
+import type { GenerateRentalInvoiceFromOrderService } from "./generate-rental-invoice-from-order.service";
+import type { GenerateRentalInvoiceFromOrderInput } from "../schemas/generate-rental-invoice.schema";
 import type { GetRentalInvoiceByIdService } from "./get-rental-invoice-by-id.service";
 import type { IssueRentalInvoiceService } from "./issue-rental-invoice.service";
 import type { ListRentalInvoicesService } from "./list-rental-invoices.service";
@@ -20,6 +22,7 @@ export class RentalInvoiceService implements IRentalInvoiceService {
     private readonly getRentalInvoiceById: GetRentalInvoiceByIdService,
     private readonly listRentalInvoices: ListRentalInvoicesService,
     private readonly createRentalInvoice: CreateRentalInvoiceService,
+    private readonly generateRentalInvoiceFromOrder: GenerateRentalInvoiceFromOrderService,
     private readonly updateRentalInvoice: UpdateRentalInvoiceService,
     private readonly issueRentalInvoice: IssueRentalInvoiceService,
     private readonly voidRentalInvoice: VoidRentalInvoiceService,
@@ -35,6 +38,12 @@ export class RentalInvoiceService implements IRentalInvoiceService {
 
   create(input: CreateRentalInvoiceInput): Promise<RentalInvoiceDto> {
     return this.createRentalInvoice.execute(input);
+  }
+
+  generateFromOrder(
+    input: GenerateRentalInvoiceFromOrderInput,
+  ): Promise<RentalInvoiceDto> {
+    return this.generateRentalInvoiceFromOrder.execute(input);
   }
 
   update(

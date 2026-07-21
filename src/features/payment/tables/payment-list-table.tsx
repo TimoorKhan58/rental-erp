@@ -17,14 +17,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { queryKeys } from "@/lib/query";
-import {
-  matchesPaymentDateRange,
-  matchesPaymentMethodFilter,
-  METHOD_LABELS,
-  STATUS_LABELS,
-} from "../mappers";
-import { PAYMENT_METHODS, PAYMENT_STATUSES } from "../types";
-import type { PaymentMethod, PaymentResponse } from "../types";
+import { matchesPaymentDateRange, matchesPaymentMethodFilter } from "../mappers";
+import { PaymentMethodFilterChips, PaymentStatusFilterChips } from "../components";
 import {
   usePaymentFilterOptions,
   usePaymentListParams,
@@ -34,8 +28,17 @@ import {
 import { getPaymentTableColumns } from "./payment-list-table-columns";
 import { PostPaymentDialog } from "../dialogs/post-payment-dialog";
 import { VoidPaymentDialog } from "../dialogs/void-payment-dialog";
+import type { PaymentMethod, PaymentResponse, PaymentStatus } from "../types";
 
-export function PaymentListTable() {
+type PaymentListTableProps = {
+  statusCounts?: Partial<Record<"all" | PaymentStatus, number>>;
+  methodCounts?: Partial<Record<"all" | PaymentMethod, number>>;
+};
+
+export function PaymentListTable({
+  statusCounts,
+  methodCounts,
+}: PaymentListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -80,6 +83,9 @@ export function PaymentListTable() {
         matchesPaymentMethodFilter(item, paymentMethod),
     );
   }, [data?.items, paymentDateFrom, paymentDateTo, paymentMethod]);
+
+  const statusFilterValue = params.status ?? "all";
+  const methodFilterValue = paymentMethod ?? "all";
 
   const columns = getPaymentTableColumns({
     params,
@@ -129,11 +135,27 @@ export function PaymentListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <div className="space-y-3">
+            <PaymentStatusFilterChips
+              value={statusFilterValue}
+              onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+              counts={statusCounts}
+            />
+            <PaymentMethodFilterChips
+              value={methodFilterValue}
+              onChange={(value) =>
+                setPaymentMethodFilter(value === "all" ? undefined : value)
+              }
+              counts={methodCounts}
+            />
+          </div>
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by payment number, reference, or notes..."
+            placeholder="Search payments..."
             className="w-full sm:max-w-xs"
             aria-label="Search payments"
           />
@@ -183,54 +205,6 @@ export function PaymentListTable() {
                 {invoiceOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as PaymentResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {PAYMENT_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={paymentMethod ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setPaymentMethodFilter(undefined);
-                  return;
-                }
-
-                setPaymentMethodFilter(value as PaymentMethod);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by payment method">
-                <SelectValue placeholder="Method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All methods</SelectItem>
-                {PAYMENT_METHODS.map((method) => (
-                  <SelectItem key={method} value={method}>
-                    {METHOD_LABELS[method]}
                   </SelectItem>
                 ))}
               </SelectContent>

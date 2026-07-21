@@ -1,7 +1,16 @@
 import type { RentalOrderStatus } from "../types";
 import { STATUS_LABELS } from "../mappers";
 
-const STATUS_FLOW: RentalOrderStatus[] = ["DRAFT", "CONFIRMED", "RESERVED"];
+const STATUS_FLOW: RentalOrderStatus[] = [
+  "DRAFT",
+  "CONFIRMED",
+  "RESERVED",
+  "DISPATCHED",
+  "ON_RENT",
+  "PARTIALLY_RETURNED",
+  "RETURNED",
+  "COMPLETED",
+];
 
 type RentalOrderStatusTimelineProps = {
   status: RentalOrderStatus;

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/shared/config/env", async () => {
+  const { testEnvFixture } = await import("@/shared/config/env.test-fixture");
+  return { env: testEnvFixture };
+});
+
 import { PERMISSIONS } from "@/shared/application/authorization";
 import { USER_ROLES, type UserRole } from "@/constants/roles";
 import { createMockAuthSession } from "@/shared/infrastructure/auth/test-session.factory";
@@ -424,4 +429,77 @@ describe("runReturnApiRoute returns permissions", () => {
 
     expect(result.status).toBe(403);
   });
+});
+
+describe("OWNER daily return workflow permissions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSession(USER_ROLES.OWNER);
+  });
+
+  it.each([
+    {
+      phase: "list returns",
+      route: "/api/returns",
+      httpMethod: "GET",
+      permission: PERMISSIONS.returns.read,
+    },
+    {
+      phase: "create return draft",
+      route: "/api/returns",
+      httpMethod: "POST",
+      permission: PERMISSIONS.returns.create,
+    },
+    {
+      phase: "view return detail",
+      route: "/api/returns/1",
+      httpMethod: "GET",
+      permission: PERMISSIONS.returns.read,
+    },
+    {
+      phase: "update draft return",
+      route: "/api/returns/1",
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.returns.update,
+    },
+    {
+      phase: "receive return",
+      route: "/api/returns/1/receive",
+      httpMethod: "POST",
+      permission: PERMISSIONS.returns.receive,
+    },
+    {
+      phase: "inspect return",
+      route: "/api/returns/1/inspect",
+      httpMethod: "POST",
+      permission: PERMISSIONS.returns.inspect,
+    },
+    {
+      phase: "complete return",
+      route: "/api/returns/1/complete",
+      httpMethod: "POST",
+      permission: PERMISSIONS.returns.complete,
+    },
+    {
+      phase: "cancel return",
+      route: "/api/returns/1/cancel",
+      httpMethod: "POST",
+      permission: PERMISSIONS.returns.cancel,
+    },
+  ] as const)(
+    "allows owner to $phase",
+    async ({ route, httpMethod, permission }) => {
+      const result = await runReturnApiRoute({
+        request: createMockNextRequest({ method: httpMethod }),
+        route,
+        httpMethod,
+        permission,
+        resolveServices: () =>
+          createMockServices() as unknown as ReturnApplicationServices,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(result.status).toBe(200);
+    },
+  );
 });

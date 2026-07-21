@@ -5,14 +5,16 @@ import { PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { useDispatchPermissions } from "../hooks";
+import { DispatchSummaryCards } from "../components";
+import { useDispatchPermissions, useDispatchSummaryStats } from "../hooks";
 import { DispatchListTable } from "../tables";
 
 export function DispatchListPage() {
   const { canCreate } = useDispatchPermissions();
+  const { stats, statusCounts, isLoading } = useDispatchSummaryStats();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Deliveries"
         description="Manage rental order fulfillment and deliveries."
@@ -32,7 +34,9 @@ export function DispatchListPage() {
         }
       />
 
-      <DispatchListTable />
+      <DispatchSummaryCards stats={stats} isLoading={isLoading} />
+
+      <DispatchListTable statusCounts={statusCounts} />
     </PageContainer>
   );
 }

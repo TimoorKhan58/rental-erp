@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { PlusIcon } from "lucide-react";
+import { BarChart3Icon, PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { useRentalOrderPermissions } from "../hooks";
+import { RentalOrderSummaryCards } from "../components";
+import { useRentalOrderPermissions, useRentalOrderSummaryStats } from "../hooks";
 import { RentalOrderListTable } from "../tables";
 
 export function RentalOrderListPage() {
   const { canCreate } = useRentalOrderPermissions();
+  const { stats, orderStatusCounts, reservationStatusCounts, isLoading } =
+    useRentalOrderSummaryStats();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Rental Orders"
         description="Manage rental bookings, confirmations, and inventory reservations."
@@ -21,18 +24,32 @@ export function RentalOrderListPage() {
           { label: "Rental Orders" },
         ]}
         actions={
-          canCreate ? (
+          <>
             <AppButton
-              leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
-              render={<Link href={ROUTES.rentalOrdersNew} />}
+              variant="outline"
+              leftIcon={<BarChart3Icon className="size-4" aria-hidden="true" />}
+              render={<Link href={ROUTES.reportsRental} />}
             >
-              New rental order
+              View report
             </AppButton>
-          ) : undefined
+            {canCreate ? (
+              <AppButton
+                leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+                render={<Link href={ROUTES.rentalOrdersNew} />}
+              >
+                New rental order
+              </AppButton>
+            ) : null}
+          </>
         }
       />
 
-      <RentalOrderListTable />
+      <RentalOrderSummaryCards stats={stats} isLoading={isLoading} />
+
+      <RentalOrderListTable
+        orderStatusCounts={orderStatusCounts}
+        reservationStatusCounts={reservationStatusCounts}
+      />
     </PageContainer>
   );
 }

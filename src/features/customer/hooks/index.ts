@@ -3,6 +3,7 @@ export {
   useCustomer,
   useCustomerPermissions,
   useCustomers,
+  useCustomerStats,
   useDeleteCustomer,
   useToggleCustomerStatus,
   useUpdateCustomer,

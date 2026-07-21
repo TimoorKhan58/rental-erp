@@ -20,6 +20,7 @@ import {
   METHOD_LABELS,
 } from "../mappers";
 import { PaymentRecordStatusBadge } from "../components/payment-status-badge";
+import { PaymentWorkflowProgressBar } from "../components/payment-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { ListPaymentsParams, PaymentResponse, PaymentSortField } from "../types";
 
@@ -51,7 +52,7 @@ export function getPaymentTableColumns({
       id: "paymentNumber",
       header: (
         <SortableColumnHeader
-          label="Payment number"
+          label="Payment"
           field="paymentNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -59,23 +60,34 @@ export function getPaymentTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.paymentDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.paymentNumber}
+        <Link href={ROUTES.paymentDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.paymentNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {customerLabelById.get(row.customerId) ?? row.customerId}
+          </span>
         </Link>
       ),
     },
     {
-      id: "customer",
-      header: "Customer",
-      cell: (row) => customerLabelById.get(row.customerId) ?? row.customerId,
-    },
-    {
       id: "invoice",
       header: "Invoice",
-      cell: (row) => invoiceLabelById.get(row.rentalInvoiceId) ?? row.rentalInvoiceId,
+      cell: (row) => (
+        <span className="text-sm">
+          {invoiceLabelById.get(row.rentalInvoiceId) ?? row.rentalInvoiceId}
+        </span>
+      ),
+    },
+    {
+      id: "workflow",
+      header: "Progress",
+      cell: (row) => (
+        <div className="min-w-[8rem] space-y-1.5">
+          <PaymentRecordStatusBadge status={row.status} />
+          <PaymentWorkflowProgressBar status={row.status} />
+        </div>
+      ),
     },
     {
       id: "paymentDate",
@@ -88,25 +100,12 @@ export function getPaymentTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.paymentDate),
-    },
-    {
-      id: "paymentMethod",
-      header: "Method",
-      cell: (row) => METHOD_LABELS[row.paymentMethod],
-    },
-    {
-      id: "status",
-      header: (
-        <SortableColumnHeader
-          label="Status"
-          field="status"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
+      cell: (row) => (
+        <div className="min-w-[6rem] text-sm">
+          <p className="font-medium">{formatDate(row.paymentDate)}</p>
+          <p className="text-xs text-muted-foreground">{METHOD_LABELS[row.paymentMethod]}</p>
+        </div>
       ),
-      cell: (row) => <PaymentRecordStatusBadge status={row.status} />,
     },
     {
       id: "amount",
@@ -119,7 +118,16 @@ export function getPaymentTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatCurrency(row.amount),
+      cell: (row) => (
+        <span className="font-medium tabular-nums">{formatCurrency(row.amount)}</span>
+      ),
+    },
+    {
+      id: "referenceNumber",
+      header: "Reference",
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{row.referenceNumber ?? "—"}</span>
+      ),
     },
     {
       id: "createdAt",
@@ -132,7 +140,9 @@ export function getPaymentTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",
@@ -159,7 +169,7 @@ export function getPaymentTableColumns({
               }
             >
               <MoreHorizontalIcon className="size-4" />
-          </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem render={<Link href={ROUTES.paymentDetail(row.id)} />}>
                 View details
@@ -175,10 +185,7 @@ export function getPaymentTableColumns({
               {showVoid ? (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onVoid(row)}
-                  >
+                  <DropdownMenuItem variant="destructive" onClick={() => onVoid(row)}>
                     Void payment
                   </DropdownMenuItem>
                 </>

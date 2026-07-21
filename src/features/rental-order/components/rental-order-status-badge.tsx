@@ -8,11 +8,16 @@ type RentalOrderStatusBadgeProps = {
 
 const statusSemantic: Record<
   RentalOrderStatus,
-  "draft" | "pending" | "success" | "inactive"
+  "draft" | "pending" | "success" | "warning" | "inactive"
 > = {
   DRAFT: "draft",
   CONFIRMED: "pending",
   RESERVED: "success",
+  DISPATCHED: "warning",
+  ON_RENT: "warning",
+  PARTIALLY_RETURNED: "pending",
+  RETURNED: "success",
+  COMPLETED: "success",
   CANCELLED: "inactive",
 };
 

@@ -6,6 +6,8 @@ export {
   useInventoryFilterOptions,
   useInventoryList,
   useInventoryPermissions,
+  useInventoryRecoveryMaps,
+  useInventorySummaryStats,
   useToggleInventoryStatus,
   useUpdateInventory,
 } from "./use-inventory";

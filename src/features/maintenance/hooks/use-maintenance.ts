@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,6 +9,11 @@ import { getInventoryList } from "@/features/inventory/services";
 import { getProducts } from "@/features/product/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListMaintenancesParams } from "../types";
+import {
+  computeMaintenanceServiceTypeCounts,
+  computeMaintenanceStatusCounts,
+  computeMaintenanceSummary,
+} from "../mappers/maintenance-summary.mapper";
 import {
   cancelMaintenance,
   completeMaintenance,
@@ -74,6 +80,12 @@ export function useMaintenanceFilterOptions() {
 
   const productLabelById = new Map(productOptions.map((item) => [item.id, item.label]));
   const warehouseLabelById = new Map(warehouseOptions.map((item) => [item.id, item.label]));
+  const productNameById = new Map(
+    (products.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
+  const warehouseNameById = new Map(
+    (warehouses.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
 
   const inventoryOptions = (inventory.data?.items ?? [])
     .filter((item) => item.isActive && item.availableQuantity > 0)
@@ -93,7 +105,48 @@ export function useMaintenanceFilterOptions() {
     inventoryOptions,
     productLabelById,
     warehouseLabelById,
+    productNameById,
+    warehouseNameById,
     isLoading: products.isLoading || warehouses.isLoading || inventory.isLoading,
+  };
+}
+
+export function useMaintenanceSummaryStats() {
+  const listQuery = useQuery({
+    queryKey: queryKeys.maintenances.list({ pageSize: 100 }),
+    queryFn: () => getMaintenances({ pageSize: 100 }),
+    staleTime: 60_000,
+  });
+
+  const stats = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeMaintenanceSummary(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const statusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeMaintenanceStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const serviceTypeCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeMaintenanceServiceTypeCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  return {
+    stats,
+    statusCounts,
+    serviceTypeCounts,
+    isLoading: listQuery.isLoading,
   };
 }
 

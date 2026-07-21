@@ -6,6 +6,7 @@ export {
   usePayment,
   usePaymentFilterOptions,
   usePaymentPermissions,
+  usePaymentSummaryStats,
   usePayments,
   usePostPayment,
   useUpdatePayment,

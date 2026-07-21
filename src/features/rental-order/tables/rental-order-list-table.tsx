@@ -19,8 +19,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesReservationFilter, matchesStartDateRange, RESERVATION_LABELS, STATUS_LABELS } from "../mappers";
-import { RENTAL_ORDER_STATUSES } from "../types";
+import { matchesReservationFilter, matchesStartDateRange } from "../mappers";
+import {
+  RentalOrderReservationFilterChips,
+  RentalOrderStatusFilterChips,
+} from "../components";
 import {
   useRentalOrderFilterOptions,
   useRentalOrderListParams,
@@ -31,9 +34,19 @@ import { getRentalOrderTableColumns } from "./rental-order-list-table-columns";
 import { CancelRentalOrderDialog } from "../dialogs/cancel-rental-order-dialog";
 import { ConfirmRentalOrderDialog } from "../dialogs/confirm-rental-order-dialog";
 import { ReserveRentalOrderDialog } from "../dialogs/reserve-rental-order-dialog";
-import type { RentalOrderResponse } from "../types";
+import type { RentalOrderResponse, RentalOrderStatus } from "../types";
 
-export function RentalOrderListTable() {
+type RentalOrderListTableProps = {
+  orderStatusCounts?: Partial<Record<"all" | RentalOrderStatus, number>>;
+  reservationStatusCounts?: Partial<
+    Record<"all" | "not-started" | "partial" | "complete", number>
+  >;
+};
+
+export function RentalOrderListTable({
+  orderStatusCounts,
+  reservationStatusCounts,
+}: RentalOrderListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -53,8 +66,14 @@ export function RentalOrderListTable() {
   } = useRentalOrderListParams();
   const { canCreate, canUpdate, canConfirm, canReserve, canCancel } =
     useRentalOrderPermissions();
-  const { customerOptions, warehouseOptions, customerLabelById, warehouseLabelById } =
-    useRentalOrderFilterOptions();
+  const {
+    customerOptions,
+    warehouseOptions,
+    customerLabelById,
+    warehouseLabelById,
+    customerNameById,
+    warehouseNameById,
+  } = useRentalOrderFilterOptions();
   const { data, isLoading, isError, error, refetch, isFetching } = useRentalOrders(params);
 
   const [confirmTarget, setConfirmTarget] = useState<RentalOrderResponse | null>(null);
@@ -80,11 +99,15 @@ export function RentalOrderListTable() {
     );
   }, [data?.items, reservationStatus, startDateFrom, startDateTo]);
 
+  const statusFilterValue = params.status ?? "all";
+
   const columns = getRentalOrderTableColumns({
     params,
     onSort: setSorting,
     customerLabelById,
     warehouseLabelById,
+    customerNameById,
+    warehouseNameById,
     canUpdate,
     canConfirm,
     canReserve,
@@ -130,11 +153,27 @@ export function RentalOrderListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <div className="space-y-3">
+            <RentalOrderStatusFilterChips
+              value={statusFilterValue}
+              onChange={(value) =>
+                setStatusFilter(value === "all" ? undefined : value)
+              }
+              counts={orderStatusCounts}
+            />
+            <RentalOrderReservationFilterChips
+              value={reservationStatus}
+              onChange={setReservationFilter}
+              counts={reservationStatusCounts}
+            />
+          </div>
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by order number or remarks..."
+            placeholder="Search orders..."
             className="w-full sm:max-w-xs"
             aria-label="Search rental orders"
           />
@@ -186,52 +225,6 @@ export function RentalOrderListTable() {
                     {option.label}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as RentalOrderResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by order status">
-                <SelectValue placeholder="Order status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {RENTAL_ORDER_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={reservationStatus}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setReservationFilter("all");
-                  return;
-                }
-
-                setReservationFilter(value as "not-started" | "partial" | "complete");
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-44" aria-label="Filter by reservation status">
-                <SelectValue placeholder="Reservation status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All reservations</SelectItem>
-                <SelectItem value="not-started">{RESERVATION_LABELS["not-started"]}</SelectItem>
-                <SelectItem value="partial">{RESERVATION_LABELS.partial}</SelectItem>
-                <SelectItem value="complete">{RESERVATION_LABELS.complete}</SelectItem>
               </SelectContent>
             </Select>
 

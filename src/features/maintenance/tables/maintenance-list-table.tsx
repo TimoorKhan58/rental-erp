@@ -23,10 +23,11 @@ import {
   matchesScheduledDateRange,
   matchesServiceTypeFilter,
   matchesTechnicianFilter,
-  SERVICE_TYPE_LABELS,
-  STATUS_LABELS,
 } from "../mappers";
-import { MAINTENANCE_SERVICE_TYPES, MAINTENANCE_STATUSES } from "../types";
+import {
+  MaintenanceServiceTypeFilterChips,
+  MaintenanceStatusFilterChips,
+} from "../components";
 import {
   useMaintenanceFilterOptions,
   useMaintenanceListParams,
@@ -37,9 +38,17 @@ import { getMaintenanceTableColumns } from "./maintenance-list-table-columns";
 import { CancelMaintenanceDialog } from "../dialogs/cancel-maintenance-dialog";
 import { CompleteMaintenanceDialog } from "../dialogs/complete-maintenance-dialog";
 import { StartMaintenanceDialog } from "../dialogs/start-maintenance-dialog";
-import type { MaintenanceResponse } from "../types";
+import type { MaintenanceResponse, MaintenanceServiceType, MaintenanceStatus } from "../types";
 
-export function MaintenanceListTable() {
+type MaintenanceListTableProps = {
+  statusCounts?: Partial<Record<"all" | MaintenanceStatus, number>>;
+  serviceTypeCounts?: Partial<Record<"all" | MaintenanceServiceType, number>>;
+};
+
+export function MaintenanceListTable({
+  statusCounts,
+  serviceTypeCounts,
+}: MaintenanceListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -101,6 +110,9 @@ export function MaintenanceListTable() {
     );
   }, [data?.items, scheduledDateFrom, scheduledDateTo, technician, serviceType]);
 
+  const statusFilterValue = params.status ?? "all";
+  const serviceTypeFilterValue = serviceType ?? "all";
+
   const columns = getMaintenanceTableColumns({
     params,
     onSort: setSorting,
@@ -151,11 +163,27 @@ export function MaintenanceListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <div className="space-y-3">
+            <MaintenanceStatusFilterChips
+              value={statusFilterValue}
+              onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+              counts={statusCounts}
+            />
+            <MaintenanceServiceTypeFilterChips
+              value={serviceTypeFilterValue}
+              onChange={(value) =>
+                setServiceTypeFilter(value === "all" ? undefined : value)
+              }
+              counts={serviceTypeCounts}
+            />
+          </div>
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by number, notes, technician, or vendor..."
+            placeholder="Search maintenance..."
             className="w-full sm:max-w-xs"
             aria-label="Search maintenance records"
           />
@@ -205,54 +233,6 @@ export function MaintenanceListTable() {
                 {warehouseOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as MaintenanceResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {MAINTENANCE_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={serviceType ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setServiceTypeFilter(undefined);
-                  return;
-                }
-
-                setServiceTypeFilter(value as MaintenanceResponse["serviceType"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by service type">
-                <SelectValue placeholder="Service type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                {MAINTENANCE_SERVICE_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {SERVICE_TYPE_LABELS[type]}
                   </SelectItem>
                 ))}
               </SelectContent>

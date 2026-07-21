@@ -8,6 +8,7 @@ export {
   useReturn,
   useReturnFilterOptions,
   useReturnPermissions,
+  useReturnSummaryStats,
   useReturns,
   useReturnsByDispatch,
   useUpdateReturn,

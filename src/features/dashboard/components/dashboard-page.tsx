@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ContentContainer } from "@/components/design-system/page";
 import { PageContainer } from "@/components/layout";
 import { DashboardSkeleton } from "@/components/design-system/loading";
 import {
@@ -17,7 +16,9 @@ import {
   useSystemStatus,
   useUpcomingTasks,
 } from "../hooks";
-import { WelcomeHeader } from "./welcome-header";
+import { useOrganizationName } from "@/features/settings/hooks";
+import { DashboardHero } from "./dashboard-hero";
+import { FeaturedKpiRow } from "./featured-kpi-row";
 import { KpiGrid } from "./kpi-grid";
 import { QuickActionsPanel } from "./quick-actions-panel";
 import { ActivityTimeline } from "./activity-timeline";
@@ -42,6 +43,7 @@ const RentalTrendsChart = dynamic(
  */
 export function DashboardPage() {
   const summary = useDashboardSummary();
+  const { organizationName } = useOrganizationName();
   const metrics = useDashboardMetrics();
   const quickActions = useQuickActions();
   const activity = useRecentActivity();
@@ -59,6 +61,9 @@ export function DashboardPage() {
     !summary.data &&
     !metrics.data;
 
+  const allMetrics = metrics.data ?? [];
+  const secondaryMetrics = allMetrics.slice(4);
+
   if (isInitialLoading) {
     return (
       <PageContainer>
@@ -69,61 +74,60 @@ export function DashboardPage() {
 
   return (
     <PageContainer className="space-y-6">
-      <WelcomeHeader
-        organizationName={summary.data?.organizationName ?? "Organization"}
-      />
+      <DashboardHero organizationName={organizationName} />
 
-      <ContentContainer>
-        <KpiGrid
-          metrics={metrics.data ?? []}
-          isLoading={metrics.isLoading}
-        />
+      <FeaturedKpiRow metrics={allMetrics} isLoading={metrics.isLoading} />
 
-        <QuickActionsPanel
-          actions={quickActions.data ?? []}
-          isLoading={quickActions.isLoading}
-        />
+      {secondaryMetrics.length > 0 ? (
+        <KpiGrid metrics={secondaryMetrics} isLoading={metrics.isLoading} />
+      ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <RevenueChart data={revenue.data} isLoading={revenue.isLoading} />
-          <RentalTrendsChart
-            data={rentalTrends.data}
-            isLoading={rentalTrends.isLoading}
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <RevenueChart data={revenue.data} isLoading={revenue.isLoading} />
+            <RentalTrendsChart
+              data={rentalTrends.data}
+              isLoading={rentalTrends.isLoading}
+            />
+          </div>
+
+          <FinancialSummarySection
+            items={financial.data ?? []}
+            isLoading={financial.isLoading}
           />
-        </div>
 
-        <InventoryOverviewSection
-          items={inventory.data ?? []}
-          isLoading={inventory.isLoading}
-        />
+          <InventoryOverviewSection
+            items={inventory.data ?? []}
+            isLoading={inventory.isLoading}
+          />
 
-        <FinancialSummarySection
-          items={financial.data ?? []}
-          isLoading={financial.isLoading}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-2">
           <ActivityTimeline
             items={activity.data ?? []}
             isLoading={activity.isLoading}
           />
+        </div>
+
+        <aside className="space-y-6">
+          <QuickActionsPanel
+            actions={quickActions.data ?? []}
+            isLoading={quickActions.isLoading}
+            compact
+          />
+
           <NotificationsPanel
             notifications={notifications.data ?? []}
             isLoading={notifications.isLoading}
           />
-        </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <UpcomingTasksList
-            tasks={tasks.data ?? []}
-            isLoading={tasks.isLoading}
-          />
+          <UpcomingTasksList tasks={tasks.data ?? []} isLoading={tasks.isLoading} />
+
           <SystemStatusSection
             items={systemStatus.data ?? []}
             isLoading={systemStatus.isLoading}
           />
-        </div>
-      </ContentContainer>
+        </aside>
+      </div>
     </PageContainer>
   );
 }

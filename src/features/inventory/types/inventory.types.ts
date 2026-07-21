@@ -62,3 +62,12 @@ export type UpdateInventoryPayload = {
   maximumStock?: number | null;
   isActive?: boolean;
 };
+
+export type InventorySummaryStats = {
+  totalRecords: number;
+  totalOnHand: number;
+  totalAvailable: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  overstockCount: number;
+};

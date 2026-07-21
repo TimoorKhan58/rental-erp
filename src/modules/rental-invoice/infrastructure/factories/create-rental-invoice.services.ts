@@ -1,5 +1,6 @@
 import type { RentalInvoiceApplicationServices as RentalInvoiceApplicationServicesBase } from "@/modules/rental-invoice/application/services/rental-invoice-application-services.interface";
 import { CreateRentalInvoiceService } from "@/modules/rental-invoice/application/services/create-rental-invoice.service";
+import { GenerateRentalInvoiceFromOrderService } from "@/modules/rental-invoice/application/services/generate-rental-invoice-from-order.service";
 import { GetRentalInvoiceByIdService } from "@/modules/rental-invoice/application/services/get-rental-invoice-by-id.service";
 import { IssueRentalInvoiceService } from "@/modules/rental-invoice/application/services/issue-rental-invoice.service";
 import { ListRentalInvoicesService } from "@/modules/rental-invoice/application/services/list-rental-invoices.service";
@@ -33,6 +34,10 @@ export function createRentalInvoiceApplicationServices(
   const getRentalInvoiceById = new GetRentalInvoiceByIdService(repository);
   const listRentalInvoices = new ListRentalInvoicesService(repository);
   const createRentalInvoice = new CreateRentalInvoiceService(transactionRunner);
+  const generateRentalInvoiceFromOrder = new GenerateRentalInvoiceFromOrderService(
+    deps,
+    createRentalInvoice,
+  );
   const updateRentalInvoice = new UpdateRentalInvoiceService(transactionRunner);
   const issueRentalInvoice = new IssueRentalInvoiceService(transactionRunner);
   const voidRentalInvoice = new VoidRentalInvoiceService(transactionRunner);
@@ -41,6 +46,7 @@ export function createRentalInvoiceApplicationServices(
     getRentalInvoiceById,
     listRentalInvoices,
     createRentalInvoice,
+    generateRentalInvoiceFromOrder,
     updateRentalInvoice,
     issueRentalInvoice,
     voidRentalInvoice,
@@ -48,6 +54,7 @@ export function createRentalInvoiceApplicationServices(
       getRentalInvoiceById,
       listRentalInvoices,
       createRentalInvoice,
+      generateRentalInvoiceFromOrder,
       updateRentalInvoice,
       issueRentalInvoice,
       voidRentalInvoice,

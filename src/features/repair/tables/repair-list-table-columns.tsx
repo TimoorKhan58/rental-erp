@@ -20,6 +20,7 @@ import {
   canStartRepair,
 } from "../mappers";
 import { RepairStatusBadge } from "../components/repair-status-badge";
+import { RepairWorkflowProgressBar } from "../components/repair-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { ListRepairsParams, RepairResponse, RepairSortField } from "../types";
 
@@ -55,7 +56,7 @@ export function getRepairTableColumns({
       id: "repairNumber",
       header: (
         <SortableColumnHeader
-          label="Repair number"
+          label="Repair"
           field="repairNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -63,28 +64,34 @@ export function getRepairTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.repairDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.repairNumber}
+        <Link href={ROUTES.repairDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.repairNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {returnLabelById.get(row.returnId) ?? row.returnId}
+          </span>
         </Link>
       ),
     },
     {
-      id: "return",
-      header: "Return",
-      cell: (row) => returnLabelById.get(row.returnId) ?? row.returnId,
-    },
-    {
       id: "product",
       header: "Product",
-      cell: (row) => productLabelById.get(row.productId) ?? row.productId,
+      cell: (row) => (
+        <span className="text-sm">
+          {productLabelById.get(row.productId) ?? row.productId}
+        </span>
+      ),
     },
     {
-      id: "technician",
-      header: "Technician",
-      cell: (row) => row.technician ?? "—",
+      id: "workflow",
+      header: "Progress",
+      cell: (row) => (
+        <div className="min-w-[8rem] space-y-1.5">
+          <RepairStatusBadge status={row.status} />
+          <RepairWorkflowProgressBar status={row.status} />
+        </div>
+      ),
     },
     {
       id: "repairDate",
@@ -97,25 +104,28 @@ export function getRepairTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.repairDate),
+      cell: (row) => (
+        <div className="min-w-[6rem] text-sm">
+          <p className="font-medium">{formatDate(row.repairDate)}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.quantity} unit{row.quantity === 1 ? "" : "s"}
+          </p>
+        </div>
+      ),
     },
     {
       id: "repairCost",
-      header: "Repair cost",
-      cell: (row) => formatCurrency(row.repairCost),
+      header: "Cost",
+      cell: (row) => (
+        <span className="font-medium tabular-nums">{formatCurrency(row.repairCost)}</span>
+      ),
     },
     {
-      id: "status",
-      header: (
-        <SortableColumnHeader
-          label="Status"
-          field="status"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
+      id: "technician",
+      header: "Technician",
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{row.technician ?? "—"}</span>
       ),
-      cell: (row) => <RepairStatusBadge status={row.status} />,
     },
     {
       id: "createdAt",
@@ -128,7 +138,9 @@ export function getRepairTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.createdAt),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
+      ),
     },
     {
       id: "actions",

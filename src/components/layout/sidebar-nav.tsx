@@ -21,7 +21,7 @@ export function SidebarNav({
   return (
     <nav
       aria-label="Main navigation"
-      className={cn("flex flex-1 flex-col gap-1 px-2 py-2", className)}
+      className={cn("flex flex-1 flex-col gap-0.5 px-2 py-2", className)}
     >
       {NAVIGATION_ITEMS.map((item) => {
         const Icon = item.icon;
@@ -37,8 +37,10 @@ export function SidebarNav({
             title={collapsed ? item.label : undefined}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-              isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              isActive
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-soft"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
               collapsed && "justify-center px-2",
             )}
           >

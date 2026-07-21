@@ -1,5 +1,6 @@
 "use client";
 
+import { TentIcon } from "lucide-react";
 import { APPLICATION } from "@/constants/application";
 import {
   Sheet,
@@ -21,9 +22,14 @@ export function MobileSidebar() {
         className="w-72 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
       >
         <SheetHeader className="border-b border-sidebar-border px-4 py-4 text-left">
-          <SheetTitle className="text-sidebar-foreground">
-            {APPLICATION.name}
-          </SheetTitle>
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-foreground text-background">
+              <TentIcon className="size-4" aria-hidden="true" />
+            </div>
+            <SheetTitle className="font-heading text-sidebar-foreground">
+              {APPLICATION.name}
+            </SheetTitle>
+          </div>
           <SheetDescription className="sr-only">
             Main application navigation
           </SheetDescription>

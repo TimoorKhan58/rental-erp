@@ -19,8 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesDispatchDateRange, STATUS_LABELS } from "../mappers";
-import { DISPATCH_STATUSES } from "../types";
+import { matchesDispatchDateRange } from "../mappers";
+import { DispatchStatusFilterChips } from "../components";
 import {
   useDispatchFilterOptions,
   useDispatchListParams,
@@ -31,9 +31,13 @@ import { getDispatchTableColumns } from "./dispatch-list-table-columns";
 import { CancelDispatchDialog } from "../dialogs/cancel-dispatch-dialog";
 import { CompleteDispatchDialog } from "../dialogs/complete-dispatch-dialog";
 import { MarkReadyDispatchDialog } from "../dialogs/mark-ready-dispatch-dialog";
-import type { DispatchResponse } from "../types";
+import type { DispatchResponse, DispatchStatus } from "../types";
 
-export function DispatchListTable() {
+type DispatchListTableProps = {
+  statusCounts?: Partial<Record<"all" | DispatchStatus, number>>;
+};
+
+export function DispatchListTable({ statusCounts }: DispatchListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
     params,
@@ -57,6 +61,7 @@ export function DispatchListTable() {
     rentalOrderLabelById,
     rentalOrderWarehouseById,
     warehouseLabelById,
+    warehouseNameById,
   } = useDispatchFilterOptions();
   const { data, isLoading, isError, error, refetch, isFetching } = useDispatches(params);
 
@@ -94,12 +99,15 @@ export function DispatchListTable() {
     rentalOrderWarehouseById,
   ]);
 
+  const statusFilterValue = params.status ?? "all";
+
   const columns = getDispatchTableColumns({
     params,
     onSort: setSorting,
     rentalOrderLabelById,
     rentalOrderWarehouseById,
     warehouseLabelById,
+    warehouseNameById,
     canUpdate,
     canComplete,
     canCancel,
@@ -143,11 +151,18 @@ export function DispatchListTable() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        toolbar={
+          <DispatchStatusFilterChips
+            value={statusFilterValue}
+            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+            counts={statusCounts}
+          />
+        }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search by dispatch number or address..."
+            placeholder="Search deliveries..."
             className="w-full sm:max-w-xs"
             aria-label="Search dispatches"
           />
@@ -197,30 +212,6 @@ export function DispatchListTable() {
                 {warehouseOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={params.status ?? "all"}
-              onValueChange={(value) => {
-                if (!value || value === "all") {
-                  setStatusFilter(undefined);
-                  return;
-                }
-
-                setStatusFilter(value as DispatchResponse["status"]);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {DISPATCH_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
                   </SelectItem>
                 ))}
               </SelectContent>

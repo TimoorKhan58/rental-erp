@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,6 +9,10 @@ import { getProducts } from "@/features/product/services";
 import { getReturns } from "@/features/return/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListRepairsParams } from "../types";
+import {
+  computeRepairStatusCounts,
+  computeRepairSummary,
+} from "../mappers/repair-summary.mapper";
 import {
   cancelRepair,
   completeRepair,
@@ -80,6 +85,12 @@ export function useRepairFilterOptions() {
   const returnLabelById = new Map(returnOptions.map((item) => [item.id, item.label]));
   const productLabelById = new Map(productOptions.map((item) => [item.id, item.label]));
   const warehouseLabelById = new Map(warehouseOptions.map((item) => [item.id, item.label]));
+  const productNameById = new Map(
+    (products.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
+  const warehouseNameById = new Map(
+    (warehouses.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
 
   return {
     returnOptions,
@@ -88,7 +99,39 @@ export function useRepairFilterOptions() {
     returnLabelById,
     productLabelById,
     warehouseLabelById,
+    productNameById,
+    warehouseNameById,
     isLoading: completedReturns.isLoading || products.isLoading || warehouses.isLoading,
+  };
+}
+
+export function useRepairSummaryStats() {
+  const listQuery = useQuery({
+    queryKey: queryKeys.repairs.list({ pageSize: 100 }),
+    queryFn: () => getRepairs({ pageSize: 100 }),
+    staleTime: 60_000,
+  });
+
+  const stats = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeRepairSummary(listQuery.data.items);
+  }, [listQuery.data]);
+
+  const statusCounts = useMemo(() => {
+    if (!listQuery.data) {
+      return undefined;
+    }
+
+    return computeRepairStatusCounts(listQuery.data.items);
+  }, [listQuery.data]);
+
+  return {
+    stats,
+    statusCounts,
+    isLoading: listQuery.isLoading,
   };
 }
 

@@ -14,8 +14,10 @@ import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { canIssueRentalInvoice, canVoidRentalInvoice } from "../mappers";
-import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { PaymentStatusBadge } from "../components/payment-status-badge";
+import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
+import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-payment-progress-bar";
+import { RentalInvoiceWorkflowProgressBar } from "../components/rental-invoice-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type {
   ListRentalInvoicesParams,
@@ -49,7 +51,7 @@ export function getRentalInvoiceTableColumns({
       id: "invoiceNumber",
       header: (
         <SortableColumnHeader
-          label="Invoice number"
+          label="Invoice"
           field="invoiceNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -57,23 +59,34 @@ export function getRentalInvoiceTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.rentalInvoiceDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.invoiceNumber}
+        <Link href={ROUTES.rentalInvoiceDetail(row.id)} className="group block min-w-[8rem]">
+          <span className="font-medium text-primary group-hover:underline">
+            {row.invoiceNumber}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {customerLabelById.get(row.customerId) ?? row.customerId}
+          </span>
         </Link>
       ),
     },
     {
-      id: "customer",
-      header: "Customer",
-      cell: (row) => customerLabelById.get(row.customerId) ?? row.customerId,
-    },
-    {
       id: "rentalOrder",
       header: "Rental order",
-      cell: (row) => rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId,
+      cell: (row) => (
+        <span className="text-sm">
+          {rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId}
+        </span>
+      ),
+    },
+    {
+      id: "workflow",
+      header: "Progress",
+      cell: (row) => (
+        <div className="min-w-[8rem] space-y-1.5">
+          <RentalInvoiceStatusBadge status={row.status} />
+          <RentalInvoiceWorkflowProgressBar status={row.status} />
+        </div>
+      ),
     },
     {
       id: "invoiceDate",
@@ -86,61 +99,66 @@ export function getRentalInvoiceTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => formatDate(row.invoiceDate),
-    },
-    {
-      id: "dueDate",
-      header: (
-        <SortableColumnHeader
-          label="Due date"
-          field="dueDate"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
+      cell: (row) => (
+        <div className="min-w-[6rem] text-sm">
+          <p className="font-medium">{formatDate(row.invoiceDate)}</p>
+          <p className="text-xs text-muted-foreground">
+            Due {row.dueDate ? formatDate(row.dueDate) : "—"}
+          </p>
+        </div>
       ),
-      cell: (row) => (row.dueDate ? formatDate(row.dueDate) : "—"),
     },
     {
-      id: "status",
+      id: "amount",
       header: (
         <SortableColumnHeader
-          label="Status"
-          field="status"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => <RentalInvoiceStatusBadge status={row.status} />,
-    },
-    {
-      id: "grandTotal",
-      header: (
-        <SortableColumnHeader
-          label="Total"
+          label="Amount"
           field="grandTotal"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
           onSort={onSort}
         />
       ),
-      cell: (row) => formatCurrency(row.grandTotal),
-    },
-    {
-      id: "balance",
-      header: "Outstanding",
-      cell: (row) => formatCurrency(row.balance),
-    },
-    {
-      id: "paymentStatus",
-      header: "Payment",
       cell: (row) => (
-        <PaymentStatusBadge
-          status={row.status}
-          balance={row.balance}
-          paidAmount={row.paidAmount}
+        <div className="min-w-[6rem] text-sm">
+          <p className="font-medium tabular-nums">{formatCurrency(row.grandTotal)}</p>
+          {row.balance > 0 && row.status !== "VOID" ? (
+            <p className="text-xs text-warning-foreground tabular-nums">
+              {formatCurrency(row.balance)} due
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Paid in full</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "payment",
+      header: "Collection",
+      cell: (row) => (
+        <div className="min-w-[7rem] space-y-1.5">
+          <PaymentStatusBadge
+            status={row.status}
+            balance={row.balance}
+            paidAmount={row.paidAmount}
+          />
+          <RentalInvoicePaymentProgressBar invoice={row} />
+        </div>
+      ),
+    },
+    {
+      id: "createdAt",
+      header: (
+        <SortableColumnHeader
+          label="Created"
+          field="createdAt"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
         />
+      ),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</span>
       ),
     },
     {

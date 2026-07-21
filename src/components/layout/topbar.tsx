@@ -8,8 +8,8 @@ import {
   SettingsIcon,
   UserIcon,
 } from "lucide-react";
-import { APPLICATION } from "@/constants/application";
 import { ROUTES } from "@/config/routes";
+import { useOrganizationName } from "@/features/settings/hooks";
 import { useSession } from "@/lib/auth/client";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { SearchInput } from "@/components/design-system/form";
@@ -45,13 +45,14 @@ const QUICK_ACTION_LINKS = [
 export function Topbar() {
   const { openMobile } = useSidebar();
   const { data: session } = useSession();
+  const { organizationName } = useOrganizationName();
   const [search, setSearch] = useState("");
 
   const userName = session?.user.name ?? "Guest";
   const userInitials = session?.user.name ? getInitials(session.user.name) : "G";
 
   return (
-    <header className="sticky top-0 z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
+    <header className="z-[var(--z-sticky)] flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
       <Button
         variant="ghost"
         size="icon"
@@ -63,7 +64,7 @@ export function Topbar() {
       </Button>
 
       <div className="hidden min-w-0 flex-1 items-center gap-3 md:flex">
-        <span className="truncate text-sm font-semibold">{APPLICATION.client}</span>
+        <span className="truncate text-sm font-semibold">{organizationName}</span>
         <div className="hidden max-w-sm flex-1 lg:block">
           <SearchInput
             value={search}
@@ -115,7 +116,7 @@ export function Topbar() {
               />
             }
           >
-            <span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
               {userInitials}
             </span>
             <span className="hidden max-w-32 truncate text-sm sm:inline">

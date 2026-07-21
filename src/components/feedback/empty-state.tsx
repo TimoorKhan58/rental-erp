@@ -21,15 +21,15 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center",
+        "flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/30 p-8 text-center",
         className,
       )}
       role="status"
     >
-      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
         {icon ?? <InboxIcon className="size-5" aria-hidden="true" />}
       </div>
-      <h3 className="text-sm font-medium">{title}</h3>
+      <h3 className="font-heading text-sm font-medium">{title}</h3>
       {description ? (
         <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
       ) : null}

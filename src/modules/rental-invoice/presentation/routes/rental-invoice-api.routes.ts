@@ -4,6 +4,7 @@ import type { RentalInvoiceServiceResolver } from "@/modules/rental-invoice/appl
 import type { RentalInvoiceDto } from "@/modules/rental-invoice/application/dtos/rental-invoice.dto";
 import {
   CreateRentalInvoiceSchema,
+  GenerateRentalInvoiceFromOrderSchema,
   RentalInvoiceIdParamSchema,
   UpdateRentalInvoiceSchema,
 } from "@/modules/rental-invoice/application";
@@ -68,6 +69,36 @@ export async function handleCreateRentalInvoice(
     resolveServices,
     handler: async (_ctx, services) =>
       services.createRentalInvoice.execute(createInput),
+  });
+
+  if (result.status === 200 && "data" in result.body) {
+    return toJsonResponse({
+      ...result,
+      body: {
+        ...result.body,
+        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+      },
+    });
+  }
+
+  return toJsonResponse(result);
+}
+
+export async function handleGenerateRentalInvoiceFromOrder(
+  request: NextRequest,
+  resolveServices: RentalInvoiceServiceResolver,
+): Promise<Response> {
+  const body = await request.json();
+  const generateInput = parseRequest(GenerateRentalInvoiceFromOrderSchema, body);
+
+  const result = await runRentalInvoiceApiRoute({
+    request,
+    route: RENTAL_INVOICE_ROUTES.generate,
+    httpMethod: "POST",
+    permission: PERMISSIONS.rentalInvoices.create,
+    resolveServices,
+    handler: async (_ctx, services) =>
+      services.generateRentalInvoiceFromOrder.execute(generateInput),
   });
 
   if (result.status === 200 && "data" in result.body) {
