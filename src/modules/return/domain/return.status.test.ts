@@ -89,6 +89,7 @@ describe("return entity edge cases", () => {
         goodQuantity: 3,
         damagedQuantity: 1,
         lostQuantity: 1,
+      missingQuantity: 0,
       },
     ]);
     const completed = inspected.withCompleted();

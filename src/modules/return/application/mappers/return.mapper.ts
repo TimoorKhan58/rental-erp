@@ -80,6 +80,7 @@ export function toInspectReturnItems(
     goodQuantity: item.goodQuantity,
     damagedQuantity: item.damagedQuantity,
     lostQuantity: item.lostQuantity,
+    missingQuantity: item.missingQuantity,
     notes: item.notes,
   }));
 }
@@ -106,6 +107,7 @@ export function toReturnDto(returnRecord: Return): ReturnDto {
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.damagedQuantity,
       lostQuantity: item.lostQuantity,
+      missingQuantity: item.missingQuantity,
       notes: item.notes,
     })),
     createdById: props.createdById,

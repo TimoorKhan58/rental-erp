@@ -8,6 +8,73 @@ export type DashboardMetric = {
   trend: DashboardTrend;
   changeLabel: string;
   icon: string;
+  href?: string;
+};
+
+/** Live payload from GET /api/reports/dashboard */
+export type LiveDashboardSummary = {
+  totalCustomers: number;
+  totalSuppliers: number;
+  totalProducts: number;
+  totalWarehouses: number;
+  inventoryValue: number;
+  inventoryQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  rentalOrders: number;
+  confirmedOrders: number;
+  reservedOrders: number;
+  completedRentals: number;
+  dispatchesReady: number;
+  dispatchesInProgress: number;
+  pendingReturns: number;
+  repairsPending: number;
+  repairsInProgress: number;
+  maintenanceScheduled: number;
+  maintenanceInProgress: number;
+  openPurchaseOrders: number;
+  completedPurchaseOrders: number;
+  outstandingInvoices: number;
+  paidInvoices: number;
+  revenueThisMonth: number;
+  paymentsThisMonth: number;
+  averageRentalDuration: number;
+};
+
+export type AttentionSeverity = "critical" | "warning" | "info";
+
+export type AttentionItem = {
+  id: string;
+  severity: AttentionSeverity;
+  title: string;
+  detail: string;
+  href: string;
+  cta: string;
+};
+
+export type OpsHealthTone = "ok" | "neutral" | "warning" | "critical";
+
+export type OpsHealthItem = {
+  id: string;
+  label: string;
+  value: string;
+  hint: string;
+  tone: OpsHealthTone;
+  href: string;
+};
+
+export type BusinessPulse = {
+  headline: string;
+  attentionCount: number;
+  pulseMetrics: DashboardMetric[];
+  attention: AttentionItem[];
+  opsHealth: OpsHealthItem[];
+  catalog: {
+    customers: number;
+    products: number;
+    suppliers: number;
+    warehouses: number;
+  };
 };
 
 export type DashboardSummary = {

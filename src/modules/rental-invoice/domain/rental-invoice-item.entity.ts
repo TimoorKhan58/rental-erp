@@ -11,6 +11,13 @@ export class RentalInvoiceItem {
   readonly unitPrice: number;
   readonly lineTotal: number;
   readonly sortOrder: number;
+  readonly productName: string | null;
+  readonly dailyRate: number | null;
+  readonly numberOfDays: number | null;
+  readonly damagedQuantity: number;
+  readonly lostQuantity: number;
+  readonly missingQuantity: number;
+  readonly notes: string | null;
 
   private constructor(props: RentalInvoiceItemProps) {
     this.id = props.id;
@@ -20,9 +27,20 @@ export class RentalInvoiceItem {
     this.unitPrice = props.unitPrice;
     this.lineTotal = props.lineTotal;
     this.sortOrder = props.sortOrder;
+    this.productName = props.productName;
+    this.dailyRate = props.dailyRate;
+    this.numberOfDays = props.numberOfDays;
+    this.damagedQuantity = props.damagedQuantity;
+    this.lostQuantity = props.lostQuantity;
+    this.missingQuantity = props.missingQuantity;
+    this.notes = props.notes;
   }
 
-  static create(props: Omit<RentalInvoiceItemProps, "id" | "lineTotal">): RentalInvoiceItemProps {
+  static create(
+    props: Omit<RentalInvoiceItemProps, "id" | "lineTotal"> & {
+      lineTotal?: number;
+    },
+  ): RentalInvoiceItemProps {
     if (props.quantity <= 0) {
       throw new RentalInvoiceInvariantError(
         "Item quantity must be greater than zero",
@@ -46,17 +64,33 @@ export class RentalInvoiceItem {
       );
     }
 
+    const lineTotal =
+      props.lineTotal !== undefined
+        ? props.lineTotal
+        : computeLineTotalAmount(props.quantity, props.unitPrice);
+
+    if (lineTotal < 0) {
+      throw new RentalInvoiceInvariantError(
+        "Item line total must be zero or greater",
+        "lineTotal",
+      );
+    }
+
     return {
       id: "",
       lineType: props.lineType,
       description,
       quantity: props.quantity,
       unitPrice: props.unitPrice,
-      lineTotal: computeLineTotalAmount(
-        props.quantity,
-        props.unitPrice,
-      ),
+      lineTotal,
       sortOrder: props.sortOrder,
+      productName: props.productName?.trim() ? props.productName.trim() : null,
+      dailyRate: props.dailyRate ?? null,
+      numberOfDays: props.numberOfDays ?? null,
+      damagedQuantity: props.damagedQuantity ?? 0,
+      lostQuantity: props.lostQuantity ?? 0,
+      missingQuantity: props.missingQuantity ?? 0,
+      notes: props.notes?.trim() ? props.notes.trim() : null,
     };
   }
 
@@ -73,6 +107,13 @@ export class RentalInvoiceItem {
       unitPrice: this.unitPrice,
       lineTotal: this.lineTotal,
       sortOrder: this.sortOrder,
+      productName: this.productName,
+      dailyRate: this.dailyRate,
+      numberOfDays: this.numberOfDays,
+      damagedQuantity: this.damagedQuantity,
+      lostQuantity: this.lostQuantity,
+      missingQuantity: this.missingQuantity,
+      notes: this.notes,
     };
   }
 }

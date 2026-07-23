@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { TentIcon } from "lucide-react";
-import { APPLICATION } from "@/constants/application";
+import { ClipboardListIcon, PackageIcon, TrendingUpIcon } from "lucide-react";
+import { BrandLogoWithName } from "@/components/shared/brand-logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 type AuthLayoutProps = {
@@ -8,50 +8,68 @@ type AuthLayoutProps = {
   organizationName: string;
 };
 
+const FEATURES = [
+  {
+    icon: ClipboardListIcon,
+    value: "360°",
+    label: "Operations view",
+  },
+  {
+    icon: PackageIcon,
+    value: "Real-time",
+    label: "Inventory tracking",
+  },
+  {
+    icon: TrendingUpIcon,
+    value: "PKR",
+    label: "Financial reports",
+  },
+] as const;
+
 export function AuthLayout({ children, organizationName }: AuthLayoutProps) {
   return (
     <main className="flex min-h-screen bg-background">
       <aside
         aria-hidden="true"
-        className="bg-brand-panel relative hidden w-[45%] max-w-xl flex-col justify-between overflow-hidden border-r border-border p-10 lg:flex xl:max-w-2xl"
+        className="bg-brand-panel bg-brand-pattern relative hidden w-[46%] max-w-xl flex-col justify-between overflow-hidden border-r border-white/10 p-10 lg:flex xl:max-w-2xl"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-foreground text-background">
-            <TentIcon className="size-5" aria-hidden="true" />
-          </div>
-          <span className="font-heading text-lg font-semibold text-foreground">
-            {APPLICATION.name}
-          </span>
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20" />
+
+        <div className="relative z-10">
+          <BrandLogoWithName />
         </div>
 
-        <div className="space-y-6">
-          <blockquote className="space-y-4">
-            <p className="font-heading text-3xl leading-snug font-semibold tracking-tight text-foreground">
+        <div className="relative z-10 space-y-8">
+          <blockquote className="space-y-5">
+            <p className="font-heading text-[2rem] leading-[1.2] font-semibold tracking-tight text-white xl:text-[2.25rem]">
               Manage rentals, inventory &amp; finances in one place.
             </p>
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+            <p className="max-w-md text-sm leading-relaxed text-white/65">
               Streamline orders, dispatch, payments, and reporting for{" "}
-              {organizationName}.
+              <span className="font-medium text-white/90">{organizationName}</span>.
             </p>
           </blockquote>
 
-          <div className="flex gap-6 text-xs text-muted-foreground">
-            <div>
-              <p className="font-heading text-lg font-semibold text-chart-2">360°</p>
-              <p>Operations view</p>
-            </div>
-            <div>
-              <p className="font-heading text-lg font-semibold text-chart-2">Real-time</p>
-              <p>Inventory tracking</p>
-            </div>
-            <div>
-              <p className="font-heading text-lg font-semibold text-chart-2">PKR</p>
-              <p>Financial reports</p>
-            </div>
+          <div className="grid grid-cols-3 gap-4">
+            {FEATURES.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.label}
+                  className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
+                >
+                  <Icon className="mb-2 size-4 text-brand" aria-hidden="true" />
+                  <p className="font-heading text-base font-semibold text-white">
+                    {feature.value}
+                  </p>
+                  <p className="mt-0.5 text-xs text-white/55">{feature.label}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="relative z-10 text-xs text-white/40">
           &copy; {new Date().getFullYear()} {organizationName}
         </p>
       </aside>
@@ -60,7 +78,7 @@ export function AuthLayout({ children, organizationName }: AuthLayoutProps) {
         <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
           <ThemeToggle />
         </div>
-        <div className="w-full max-w-md">{children}</div>
+        <div className="w-full max-w-[420px]">{children}</div>
       </div>
     </main>
   );

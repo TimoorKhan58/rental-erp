@@ -10,6 +10,7 @@ import {
 import {
   applyInspectionToItems,
   assertDispatchEligibleForReturn,
+  computeReleaseQuantity,
   computeRestockQuantity,
   validateReturnDate,
   validateReturnItems,
@@ -103,6 +104,7 @@ describe("Return entity", () => {
         goodQuantity: 3,
         damagedQuantity: 1,
         lostQuantity: 1,
+      missingQuantity: 0,
       },
     ]);
 
@@ -123,6 +125,7 @@ describe("Return entity", () => {
           goodQuantity: 5,
           damagedQuantity: 0,
           lostQuantity: 0,
+        missingQuantity: 0,
         },
       ]),
     ).toThrow(ReturnInvalidStatusError);
@@ -277,6 +280,7 @@ describe("Return rules", () => {
             goodQuantity: 3,
             damagedQuantity: 1,
             lostQuantity: 0,
+          missingQuantity: 0,
           },
         ],
       ),
@@ -293,6 +297,7 @@ describe("Return rules", () => {
             goodQuantity: -1,
             damagedQuantity: 3,
             lostQuantity: 3,
+          missingQuantity: 0,
           },
         ],
       ),
@@ -317,6 +322,16 @@ describe("Return rules", () => {
     }).items[0]!;
 
     expect(computeRestockQuantity(item)).toBe(0);
+  });
+
+  it("computes release quantity from full returned quantity", () => {
+    const item = buildInspectedReturnEntity({
+      goodQuantity: 3,
+      damagedQuantity: 1,
+      lostQuantity: 1,
+    }).items[0]!;
+
+    expect(computeReleaseQuantity(item)).toBe(item.returnedQuantity);
   });
 });
 

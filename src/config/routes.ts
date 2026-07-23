@@ -32,6 +32,7 @@ export const ROUTES = {
   procurementDetail: (id: string) => `/procurements/${id}`,
   procurementEdit: (id: string) => `/procurements/${id}/edit`,
   rentalOrders: "/rental-orders",
+  rentalOrdersCalendar: "/rental-orders/calendar",
   rentalOrdersNew: "/rental-orders/new",
   rentalOrderDetail: (id: string) => `/rental-orders/${id}`,
   rentalOrderEdit: (id: string) => `/rental-orders/${id}/edit`,

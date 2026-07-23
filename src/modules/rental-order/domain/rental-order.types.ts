@@ -14,12 +14,17 @@ export interface RentalOrderItemProps {
   quantity: number;
   dailyRate: number;
   reservedQuantity: number;
+  startDate: Date;
+  endDate: Date;
+  numberOfDays: number;
 }
 
 export interface CreateRentalOrderItemData {
   productId: ProductId;
   quantity: number;
   dailyRate: number;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface CreateRentalOrderData {

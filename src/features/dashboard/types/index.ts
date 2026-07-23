@@ -1,5 +1,8 @@
 export type {
   ActivityItem,
+  AttentionItem,
+  AttentionSeverity,
+  BusinessPulse,
   ChartDataPoint,
   DashboardData,
   DashboardMetric,
@@ -8,6 +11,9 @@ export type {
   DashboardTrend,
   FinancialSummaryItem,
   InventoryOverviewItem,
+  LiveDashboardSummary,
+  OpsHealthItem,
+  OpsHealthTone,
   QuickAction,
   RentalTrendPoint,
   RevenueOverview,

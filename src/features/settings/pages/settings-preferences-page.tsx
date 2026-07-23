@@ -11,7 +11,7 @@ import { ROUTES } from "@/config/routes";
 import {
   DEFAULT_COMPANY_SETTINGS,
   DEFAULT_SYSTEM_SETTINGS,
-} from "@/modules/settings/domain/settings.constants";
+} from "../constants/defaults";
 import { SettingsSubNav } from "../components";
 import { ResetPreferencesDialog } from "../dialogs";
 import { PreferencesForm } from "../forms";

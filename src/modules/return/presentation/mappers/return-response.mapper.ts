@@ -9,6 +9,7 @@ export interface ReturnItemResponse {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes: string | null;
 }
 
@@ -54,6 +55,7 @@ export function toReturnResponse(dto: ReturnDto): ReturnResponse {
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.damagedQuantity,
       lostQuantity: item.lostQuantity,
+      missingQuantity: item.missingQuantity,
       notes: item.notes,
     })),
     createdById: dto.createdById,

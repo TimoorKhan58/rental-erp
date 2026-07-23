@@ -9,6 +9,7 @@ import {
   ClipboardListIcon,
   ClockIcon,
   FileCheckIcon,
+  PencilIcon,
   PrinterIcon,
   ReceiptIcon,
   UsersIcon,
@@ -31,6 +32,7 @@ import {
   getRentalInvoicePaymentProgress,
 } from "../mappers";
 import {
+  useConvertMissingToLoss,
   useRentalInvoice,
   useRentalInvoiceFilterOptions,
   useRentalInvoicePermissions,
@@ -41,8 +43,10 @@ import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-pa
 import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { RentalInvoiceStatusTimeline } from "../components/rental-invoice-status-timeline";
 import { RentalInvoiceWorkflowProgressBar } from "../components/rental-invoice-workflow-progress-bar";
+import { EditInvoiceAdditionalChargesDialog } from "../dialogs/edit-invoice-additional-charges-dialog";
 import { IssueRentalInvoiceDialog } from "../dialogs/issue-rental-invoice-dialog";
 import { VoidRentalInvoiceDialog } from "../dialogs/void-rental-invoice-dialog";
+import { RentalInvoicePrintPreviewDialog } from "../dialogs/rental-invoice-print-preview-dialog";
 
 type RentalInvoiceDetailPageProps = {
   invoiceId: string;
@@ -146,12 +150,15 @@ function RelatedEntityCard({
 export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPageProps) {
   const router = useRouter();
   const { data: invoice, isLoading, isError, error, refetch } = useRentalInvoice(invoiceId);
-  const { canIssue, canVoid } = useRentalInvoicePermissions();
+  const { canIssue, canVoid, canUpdate } = useRentalInvoicePermissions();
   const { rentalOrderLabelById } = useRentalInvoiceFilterOptions();
   const { data: customer } = useCustomer(invoice?.customerId ?? "");
+  const convertMissingToLoss = useConvertMissingToLoss();
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [chargesOpen, setChargesOpen] = useState(false);
 
   const metrics = useMemo(() => {
     if (!invoice) {
@@ -161,6 +168,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
     return {
       lineItemCount: getRentalInvoiceLineItemCount(invoice),
       paymentProgress: getRentalInvoicePaymentProgress(invoice),
+      hasMissing: invoice.items.some((item) => item.missingQuantity > 0),
     };
   }, [invoice]);
 
@@ -221,10 +229,29 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             <AppButton
               variant="outline"
               leftIcon={<PrinterIcon className="size-4" aria-hidden="true" />}
-              onClick={() => window.print()}
+              onClick={() => setPrintPreviewOpen(true)}
             >
-              Print
+              Print preview
             </AppButton>
+            {canUpdate && invoice.status === "DRAFT" ? (
+              <AppButton
+                variant="outline"
+                leftIcon={<PencilIcon className="size-4" aria-hidden="true" />}
+                onClick={() => setChargesOpen(true)}
+              >
+                Additional charges
+              </AppButton>
+            ) : null}
+            {canUpdate && invoice.status === "DRAFT" && metrics.hasMissing ? (
+              <AppButton
+                variant="outline"
+                leftIcon={<ClipboardListIcon className="size-4" aria-hidden="true" />}
+                loading={convertMissingToLoss.isPending}
+                onClick={() => void convertMissingToLoss.mutateAsync(invoice.id)}
+              >
+                Convert missing to loss
+              </AppButton>
+            ) : null}
             {canIssue && canIssueRentalInvoice(invoice.status) ? (
               <AppButton
                 leftIcon={<FileCheckIcon className="size-4" aria-hidden="true" />}
@@ -247,14 +274,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
       />
       </div>
 
-      <div className="hidden print:block">
-        <div className="space-y-1 border-b border-border pb-4">
-          <h1 className="font-heading text-2xl font-semibold">{invoice.invoiceNumber}</h1>
-          <p className="text-sm text-muted-foreground">{customer?.name ?? invoice.customerId}</p>
-        </div>
-      </div>
-
-      <Card className="overflow-hidden border-border/60 shadow-soft print:border print:shadow-none">
+      <Card className="overflow-hidden border-border/60 shadow-soft print:hidden">
         <CardContent className="space-y-6 p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
@@ -332,9 +352,9 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 print:hidden">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Invoice items">
+          <SectionCard title="Customer bill">
             <RentalInvoiceLineItemsTable
               items={invoice.items}
               subtotal={invoice.subtotal}
@@ -447,6 +467,20 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
         open={voidOpen}
         onOpenChange={setVoidOpen}
         onVoided={() => router.push(ROUTES.rentalInvoices)}
+      />
+
+      <RentalInvoicePrintPreviewDialog
+        invoice={invoice}
+        customer={customer}
+        orderNumber={rentalOrderLabel}
+        open={printPreviewOpen}
+        onOpenChange={setPrintPreviewOpen}
+      />
+
+      <EditInvoiceAdditionalChargesDialog
+        invoice={invoice}
+        open={chargesOpen}
+        onOpenChange={setChargesOpen}
       />
     </PageContainer>
   );

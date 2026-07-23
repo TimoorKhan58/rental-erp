@@ -1,6 +1,7 @@
 export * from "./rental-order-billing-section";
 export * from "./payment-status-badge";
 export * from "./rental-invoice-line-items-table";
+export * from "./rental-invoice-print-bill";
 export * from "./rental-invoice-payment-progress-bar";
 export * from "./rental-invoice-payment-status-filter-chips";
 export * from "./rental-invoice-status-badge";

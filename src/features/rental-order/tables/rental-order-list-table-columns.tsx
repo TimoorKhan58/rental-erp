@@ -14,7 +14,7 @@ import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  calculateOrderTotal,
+  calculateOrderTotalFromItems,
   calculateRentalDays,
   canCancelRentalOrder,
   canConfirmRentalOrder,
@@ -156,9 +156,7 @@ export function getRentalOrderTableColumns({
       header: "Value",
       cell: (row) => (
         <span className="font-medium tabular-nums">
-          {formatCurrency(
-            calculateOrderTotal(row.items, calculateRentalDays(row.startDate, row.endDate)),
-          )}
+          {formatCurrency(calculateOrderTotalFromItems(row.items))}
         </span>
       ),
     },

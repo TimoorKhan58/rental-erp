@@ -1,8 +1,8 @@
 "use client";
 
-import { PanelLeftCloseIcon, PanelLeftOpenIcon, TentIcon } from "lucide-react";
-import { APPLICATION } from "@/constants/application";
+import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import { useSession } from "@/lib/auth/client";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -29,50 +29,54 @@ export function Sidebar() {
     <aside
       data-collapsed={collapsed}
       className={cn(
-        "hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-in-out lg:flex",
-        collapsed ? "w-16" : "w-60",
+        "hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-soft transition-[width] duration-200 ease-in-out lg:flex",
+        collapsed ? "w-[4.5rem]" : "w-64",
       )}
     >
       <div
         className={cn(
-          "flex h-14 items-center px-3",
+          "flex h-[3.75rem] items-center border-b border-sidebar-border/60 px-3",
           collapsed ? "justify-center" : "justify-between gap-2",
         )}
       >
+        {!collapsed && <BrandLogo size="sm" showTagline />}
+        {collapsed && <BrandLogo size="icon" />}
         {!collapsed && (
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-background">
-              <TentIcon className="size-4" aria-hidden="true" />
-            </div>
-            <span className="truncate font-heading text-sm font-semibold text-foreground">
-              {APPLICATION.name}
-            </span>
-          </div>
-        )}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="shrink-0 text-sidebar-foreground hover:bg-sidebar-accent/60"
-        >
-          {collapsed ? (
-            <PanelLeftOpenIcon className="size-4" aria-hidden="true" />
-          ) : (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={toggleCollapsed}
+            aria-label="Collapse sidebar"
+            className="shrink-0 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
             <PanelLeftCloseIcon className="size-4" aria-hidden="true" />
-          )}
-        </Button>
+          </Button>
+        )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-1 py-1">
+      {collapsed && (
+        <div className="flex justify-center border-b border-sidebar-border/60 py-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={toggleCollapsed}
+            aria-label="Expand sidebar"
+            className="text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
+            <PanelLeftOpenIcon className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
+      )}
+
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-1 py-2">
         <SidebarNav collapsed={collapsed} />
       </div>
 
       {!collapsed && (
         <>
-          <Separator className="bg-sidebar-border" />
+          <Separator className="bg-sidebar-border/60" />
           <div className="flex items-center gap-3 px-3 py-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground ring-2 ring-brand/20">
               {userInitials}
             </div>
             <div className="min-w-0 flex-1">

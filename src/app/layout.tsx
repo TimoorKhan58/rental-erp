@@ -15,8 +15,11 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: APPLICATION.name,
-  description: "Enterprise rental management system for your business",
+  title: {
+    default: APPLICATION.name,
+    template: `%s · ${APPLICATION.shortName}`,
+  },
+  description: "Enterprise rental management system for Manyar Tent Service",
 };
 
 export default function RootLayout({

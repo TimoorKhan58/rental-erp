@@ -49,6 +49,13 @@ export function toRentalInvoiceDomain(record: {
     unitPrice: Prisma.Decimal;
     lineTotal: Prisma.Decimal;
     sortOrder: number;
+    productName?: string | null;
+    dailyRate?: Prisma.Decimal | null;
+    numberOfDays?: number | null;
+    damagedQuantity?: number;
+    lostQuantity?: number;
+    missingQuantity?: number;
+    notes?: string | null;
   }>;
 }): RentalInvoice {
   return RentalInvoice.reconstitute({
@@ -77,6 +84,13 @@ export function toRentalInvoiceDomain(record: {
       unitPrice: decimalToNumber(item.unitPrice),
       lineTotal: decimalToNumber(item.lineTotal),
       sortOrder: item.sortOrder,
+      productName: item.productName ?? null,
+      dailyRate: item.dailyRate ? decimalToNumber(item.dailyRate) : null,
+      numberOfDays: item.numberOfDays ?? null,
+      damagedQuantity: item.damagedQuantity ?? 0,
+      lostQuantity: item.lostQuantity ?? 0,
+      missingQuantity: item.missingQuantity ?? 0,
+      notes: item.notes ?? null,
     })),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -111,6 +125,14 @@ export function toRentalInvoiceCreateInput(
         unitPrice: toPrismaDecimal(item.unitPrice),
         lineTotal: toPrismaDecimal(item.lineTotal),
         sortOrder: item.sortOrder,
+        productName: item.productName,
+        dailyRate:
+          item.dailyRate === null ? null : toPrismaDecimal(item.dailyRate),
+        numberOfDays: item.numberOfDays,
+        damagedQuantity: item.damagedQuantity,
+        lostQuantity: item.lostQuantity,
+        missingQuantity: item.missingQuantity,
+        notes: item.notes,
       })),
     },
   };
@@ -152,6 +174,14 @@ export function toRentalInvoiceUpdateInput(
         unitPrice: toPrismaDecimal(item.unitPrice),
         lineTotal: toPrismaDecimal(item.lineTotal),
         sortOrder: item.sortOrder,
+        productName: item.productName,
+        dailyRate:
+          item.dailyRate === null ? null : toPrismaDecimal(item.dailyRate),
+        numberOfDays: item.numberOfDays,
+        damagedQuantity: item.damagedQuantity,
+        lostQuantity: item.lostQuantity,
+        missingQuantity: item.missingQuantity,
+        notes: item.notes,
       })),
     };
   }

@@ -14,5 +14,7 @@ export function toRentalOrderListQuery(
     status: input.status,
     customerId: input.customerId,
     warehouseId: input.warehouseId,
+    eventFrom: input.eventFrom,
+    eventTo: input.eventTo,
   };
 }

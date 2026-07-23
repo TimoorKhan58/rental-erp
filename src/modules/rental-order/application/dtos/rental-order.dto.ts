@@ -6,6 +6,9 @@ export interface RentalOrderItemDto {
   quantity: number;
   dailyRate: number;
   reservedQuantity: number;
+  startDate: string;
+  endDate: string;
+  numberOfDays: number;
 }
 
 export interface RentalOrderDto {
@@ -31,6 +34,8 @@ export interface CreateRentalOrderItemDto {
   productId: string;
   quantity: number;
   dailyRate: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CreateRentalOrderDto {

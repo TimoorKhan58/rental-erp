@@ -14,6 +14,35 @@ import {
   validateRentalPeriod,
 } from "@/modules/rental-order/domain/rental-order.rules";
 
+const LINE_PERIOD = {
+  startDate: new Date("2026-02-01T00:00:00.000Z"),
+  endDate: new Date("2026-02-05T00:00:00.000Z"),
+  numberOfDays: 4,
+};
+
+function buildLineItem(
+  override: Partial<{
+    id: string;
+    productId: typeof PRODUCT_ID;
+    quantity: number;
+    dailyRate: number;
+    reservedQuantity: number;
+    startDate: Date;
+    endDate: Date;
+    numberOfDays: number;
+  }> = {},
+) {
+  return {
+    id: ITEM_ID,
+    productId: PRODUCT_ID,
+    quantity: 10,
+    dailyRate: 10,
+    reservedQuantity: 0,
+    ...LINE_PERIOD,
+    ...override,
+  };
+}
+
 import {
   ITEM_ID,
   OTHER_PRODUCT_ID,
@@ -169,12 +198,80 @@ describe("RentalOrder entity", () => {
 });
 
 describe("RentalOrder rules", () => {
+  const orderStart = new Date("2026-02-01T00:00:00.000Z");
+  const orderEnd = new Date("2026-02-05T00:00:00.000Z");
+
   it("validates rental order items", () => {
-    const items = validateRentalOrderItems([
-      { productId: PRODUCT_ID, quantity: 10, dailyRate: 25 },
-    ]);
+    const items = validateRentalOrderItems(
+      [{ productId: PRODUCT_ID, quantity: 10, dailyRate: 25 }],
+      orderStart,
+      orderEnd,
+    );
 
     expect(items[0]?.reservedQuantity).toBe(0);
+    expect(items[0]?.numberOfDays).toBeGreaterThan(0);
+  });
+
+  it("supports per-line rental periods within one order", () => {
+    const items = validateRentalOrderItems(
+      [
+        {
+          productId: PRODUCT_ID,
+          quantity: 10,
+          dailyRate: 25,
+          startDate: new Date("2026-02-01T00:00:00.000Z"),
+          endDate: new Date("2026-02-02T00:00:00.000Z"),
+        },
+        {
+          productId: OTHER_PRODUCT_ID,
+          quantity: 5,
+          dailyRate: 40,
+          startDate: new Date("2026-02-03T00:00:00.000Z"),
+          endDate: new Date("2026-02-05T00:00:00.000Z"),
+        },
+      ],
+      orderStart,
+      orderEnd,
+    );
+
+    expect(items[0]?.numberOfDays).toBe(1);
+    expect(items[1]?.numberOfDays).toBe(2);
+  });
+
+  it("counts same-day deliver and return as 1 day", () => {
+    const items = validateRentalOrderItems(
+      [
+        {
+          productId: PRODUCT_ID,
+          quantity: 2,
+          dailyRate: 100,
+          startDate: new Date("2026-02-01T00:00:00.000Z"),
+          endDate: new Date("2026-02-01T00:00:00.000Z"),
+        },
+      ],
+      new Date("2026-02-01T00:00:00.000Z"),
+      new Date("2026-02-01T00:00:00.000Z"),
+    );
+
+    expect(items[0]?.numberOfDays).toBe(1);
+  });
+
+  it("counts return within 24 hours as 1 day", () => {
+    const items = validateRentalOrderItems(
+      [
+        {
+          productId: PRODUCT_ID,
+          quantity: 2,
+          dailyRate: 100,
+          startDate: new Date("2026-02-01T10:00:00.000Z"),
+          endDate: new Date("2026-02-02T09:00:00.000Z"),
+        },
+      ],
+      new Date("2026-02-01T10:00:00.000Z"),
+      new Date("2026-02-02T09:00:00.000Z"),
+    );
+
+    expect(items[0]?.numberOfDays).toBe(1);
   });
 
   it("validates rental period", () => {
@@ -188,41 +285,17 @@ describe("RentalOrder rules", () => {
 
   it("computes reserved status", () => {
     expect(
-      computeStatusAfterReserve([
-        {
-          id: ITEM_ID,
-          productId: PRODUCT_ID,
-          quantity: 10,
-          dailyRate: 10,
-          reservedQuantity: 10,
-        },
-      ]),
+      computeStatusAfterReserve([buildLineItem({ reservedQuantity: 10 })]),
     ).toBe("RESERVED");
 
     expect(
-      computeStatusAfterReserve([
-        {
-          id: ITEM_ID,
-          productId: PRODUCT_ID,
-          quantity: 10,
-          dailyRate: 10,
-          reservedQuantity: 5,
-        },
-      ]),
+      computeStatusAfterReserve([buildLineItem({ reservedQuantity: 5 })]),
     ).toBe("CONFIRMED");
   });
 
   it("applies reserve quantities to matching items", () => {
     const updated = applyReserveToItems(
-      [
-        {
-          id: ITEM_ID,
-          productId: PRODUCT_ID,
-          quantity: 10,
-          dailyRate: 10,
-          reservedQuantity: 2,
-        },
-      ],
+      [buildLineItem({ reservedQuantity: 2 })],
       [{ productId: PRODUCT_ID, quantity: 3 }],
     );
 
@@ -232,15 +305,7 @@ describe("RentalOrder rules", () => {
   it("rejects unknown product on reserve", () => {
     expect(() =>
       applyReserveToItems(
-        [
-          {
-            id: ITEM_ID,
-            productId: PRODUCT_ID,
-            quantity: 10,
-            dailyRate: 10,
-            reservedQuantity: 0,
-          },
-        ],
+        [buildLineItem()],
         [{ productId: OTHER_PRODUCT_ID, quantity: 10 }],
       ),
     ).toThrow(RentalOrderInvalidReserveError);

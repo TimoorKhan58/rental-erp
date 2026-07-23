@@ -86,15 +86,23 @@ const inspectLineItemSchema = z
       .number({ message: "Enter a valid quantity" })
       .int("Must be a whole number")
       .min(0, "Cannot be negative"),
+    missingQuantity: z
+      .number({ message: "Enter a valid quantity" })
+      .int("Must be a whole number")
+      .min(0, "Cannot be negative"),
     notes: optionalTextSchema(500),
   })
   .superRefine((item, ctx) => {
-    const total = item.goodQuantity + item.damagedQuantity + item.lostQuantity;
+    const total =
+      item.goodQuantity +
+      item.damagedQuantity +
+      item.lostQuantity +
+      item.missingQuantity;
 
     if (total !== item.returnedQuantity) {
       ctx.addIssue({
         code: "custom",
-        message: `Good, damaged, and lost quantities must sum to ${item.returnedQuantity}`,
+        message: `Good, damaged, lost, and missing quantities must sum to ${item.returnedQuantity}`,
         path: ["goodQuantity"],
       });
     }

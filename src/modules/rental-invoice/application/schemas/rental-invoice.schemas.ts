@@ -22,6 +22,14 @@ const RentalInvoiceItemInputSchema = z.object({
   quantity: PositiveIntSchema,
   unitPrice: NonNegativeNumberSchema,
   sortOrder: z.coerce.number().int().nonnegative().optional(),
+  productName: TrimmedStringSchema.max(200).optional().nullable(),
+  dailyRate: NonNegativeNumberSchema.optional().nullable(),
+  numberOfDays: z.coerce.number().int().positive().optional().nullable(),
+  damagedQuantity: z.coerce.number().int().nonnegative().optional(),
+  lostQuantity: z.coerce.number().int().nonnegative().optional(),
+  missingQuantity: z.coerce.number().int().nonnegative().optional(),
+  notes: TrimmedStringSchema.max(500).optional().nullable(),
+  lineTotal: NonNegativeNumberSchema.optional(),
 });
 
 export const RentalInvoiceIdParamSchema = z.object({

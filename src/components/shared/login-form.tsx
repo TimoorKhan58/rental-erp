@@ -48,18 +48,18 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full border-border/60 shadow-token-md">
+    <Card className="w-full border-border/60 shadow-soft-lg">
       <CardHeader className="space-y-1 pb-4 lg:hidden">
         <CardTitle className="font-heading text-xl">Sign in</CardTitle>
         <CardDescription>
           Enter your credentials to access the dashboard.
         </CardDescription>
       </CardHeader>
-      <CardContent className={cn("space-y-4", "lg:px-6 lg:pb-6 lg:pt-0")}>
+      <CardContent className={cn("space-y-5", "lg:px-6 lg:pb-6 lg:pt-0")}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              Email address
             </label>
             <Input
               id="email"
@@ -70,7 +70,7 @@ export function LoginForm() {
               onChange={(event) => setEmail(event.target.value)}
               required
               disabled={isSubmitting}
-              className="h-9"
+              className="h-10 border-border/60 bg-muted/30 focus-visible:bg-card"
             />
           </div>
           <div className="space-y-2">
@@ -86,25 +86,29 @@ export function LoginForm() {
               required
               disabled={isSubmitting}
               minLength={8}
-              className="h-9"
+              className="h-10 border-border/60 bg-muted/30 focus-visible:bg-card"
             />
           </div>
           {error && (
             <p
-              className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="rounded-lg border border-destructive/20 bg-destructive/8 px-3 py-2.5 text-sm text-destructive"
               role="alert"
             >
               {error}
             </p>
           )}
-          <Button type="submit" className="h-9 w-full" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="h-10 w-full bg-brand text-brand-foreground hover:bg-brand/90"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? (
               <>
                 <Loader2Icon className="animate-spin" />
                 Signing in...
               </>
             ) : (
-              "Sign in"
+              "Sign in to dashboard"
             )}
           </Button>
         </form>

@@ -8,6 +8,7 @@ export interface ReturnItemDto {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes: string | null;
 }
 
@@ -55,6 +56,7 @@ export interface InspectReturnItemDto {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes?: string | null;
 }
 

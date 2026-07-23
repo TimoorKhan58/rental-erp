@@ -3,6 +3,7 @@ import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/renta
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
   ReturnInvalidStatusError,
+  computeReleaseQuantity,
   computeRestockQuantity,
 } from "@/modules/return/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -101,9 +102,10 @@ export class CompleteReturnService {
             });
           }
 
+          const releaseQuantity = computeReleaseQuantity(item);
           const restockQuantity = computeRestockQuantity(item);
 
-          if (restockQuantity > 0) {
+          if (releaseQuantity > 0 || restockQuantity > 0) {
             const inventory = await inventoryRepository.findByProductAndWarehouse(
               toProductId(rentalItem.productId),
               rentalOrder.warehouseId,
@@ -119,22 +121,41 @@ export class CompleteReturnService {
               });
             }
 
-            await executeCreateStockMovementInScope(
-              {
-                stockMovementRepository,
-                inventoryRepository,
-                auditLogger,
-                userId,
-              },
-              {
+            const movementScope = {
+              stockMovementRepository,
+              inventoryRepository,
+              auditLogger,
+              userId,
+            };
+
+            // Clear any leftover reservation so returned stock becomes available.
+            // (Dispatch usually releases first; this covers partial / leftover reserve.)
+            const releaseNow = Math.min(
+              releaseQuantity,
+              inventory.reservedQuantity,
+            );
+
+            if (releaseNow > 0) {
+              await executeCreateStockMovementInScope(movementScope, {
+                inventoryId: inventory.id,
+                movementType: "RELEASE",
+                quantity: releaseNow,
+                referenceType: RENTAL_ORDER_REFERENCE_TYPE,
+                referenceId: rentalOrder.id,
+                remarks: `Released reservation for return ${existing.returnNumber} on rental order ${rentalOrder.orderNumber}`,
+              });
+            }
+
+            if (restockQuantity > 0) {
+              await executeCreateStockMovementInScope(movementScope, {
                 inventoryId: inventory.id,
                 movementType: "IN",
                 quantity: restockQuantity,
                 referenceType: RENTAL_ORDER_REFERENCE_TYPE,
                 referenceId: rentalOrder.id,
                 remarks: `Returned for rental order ${rentalOrder.orderNumber} (${item.goodQuantity} good, ${item.damagedQuantity} damaged)`,
-              },
-            );
+              });
+            }
           }
 
           if (item.lostQuantity > 0) {

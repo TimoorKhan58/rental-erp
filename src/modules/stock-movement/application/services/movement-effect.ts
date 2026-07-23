@@ -101,6 +101,15 @@ export function computeMovementEffect(
         );
       }
 
+      if (newQuantity < props.reservedQuantity) {
+        throw new StockMovementInsufficientQuantityError(
+          "Adjustment would leave on-hand below reserved quantity",
+          movementType,
+          quantity,
+          props.quantityOnHand - props.reservedQuantity,
+        );
+      }
+
       return {
         quantityOnHand: newQuantity,
         reservedQuantity: props.reservedQuantity,

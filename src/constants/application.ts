@@ -5,7 +5,9 @@ import packageJson from "../../package.json";
  * Single source of truth — import from here instead of hardcoding values.
  */
 export const APPLICATION = {
-  name: "Rental ERP",
+  name: "Manyar Tent ERP",
+  shortName: "MT ERP",
+  tagline: "Rental operations, simplified.",
   version: packageJson.version,
   timezone: "Asia/Karachi",
   currency: "PKR",

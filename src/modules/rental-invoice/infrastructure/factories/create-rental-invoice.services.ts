@@ -1,4 +1,5 @@
 import type { RentalInvoiceApplicationServices as RentalInvoiceApplicationServicesBase } from "@/modules/rental-invoice/application/services/rental-invoice-application-services.interface";
+import { ConvertMissingToLossService } from "@/modules/rental-invoice/application/services/convert-missing-to-loss.service";
 import { CreateRentalInvoiceService } from "@/modules/rental-invoice/application/services/create-rental-invoice.service";
 import { GenerateRentalInvoiceFromOrderService } from "@/modules/rental-invoice/application/services/generate-rental-invoice-from-order.service";
 import { GetRentalInvoiceByIdService } from "@/modules/rental-invoice/application/services/get-rental-invoice-by-id.service";
@@ -41,6 +42,7 @@ export function createRentalInvoiceApplicationServices(
   const updateRentalInvoice = new UpdateRentalInvoiceService(transactionRunner);
   const issueRentalInvoice = new IssueRentalInvoiceService(transactionRunner);
   const voidRentalInvoice = new VoidRentalInvoiceService(transactionRunner);
+  const convertMissingToLoss = new ConvertMissingToLossService(deps);
 
   return {
     getRentalInvoiceById,
@@ -50,6 +52,7 @@ export function createRentalInvoiceApplicationServices(
     updateRentalInvoice,
     issueRentalInvoice,
     voidRentalInvoice,
+    convertMissingToLoss,
     rentalInvoiceService: new RentalInvoiceService(
       getRentalInvoiceById,
       listRentalInvoices,

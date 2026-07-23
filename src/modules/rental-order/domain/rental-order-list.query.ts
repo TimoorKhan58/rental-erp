@@ -7,4 +7,8 @@ export interface RentalOrderListQuery {
   status?: string;
   customerId?: string;
   warehouseId?: string;
+  /** Inclusive — keep orders with eventEndDate >= eventFrom. */
+  eventFrom?: Date;
+  /** Inclusive — keep orders with eventStartDate <= eventTo. */
+  eventTo?: Date;
 }

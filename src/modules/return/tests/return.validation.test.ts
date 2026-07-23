@@ -112,6 +112,7 @@ describe("InspectReturnSchema", () => {
           goodQuantity: 3,
           damagedQuantity: 1,
           lostQuantity: 1,
+        missingQuantity: 0,
         },
       ],
     });
@@ -132,6 +133,7 @@ describe("InspectReturnSchema", () => {
             goodQuantity: -1,
             damagedQuantity: 0,
             lostQuantity: 0,
+          missingQuantity: 0,
           },
         ],
       }),
@@ -147,6 +149,7 @@ describe("InspectReturnSchema", () => {
             goodQuantity: 5,
             damagedQuantity: 0,
             lostQuantity: 0,
+          missingQuantity: 0,
           },
         ],
       }),

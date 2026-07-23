@@ -1,7 +1,7 @@
 import { SettingsInvariantError } from "@/modules/settings/domain/settings.errors";
+import { BOOTSTRAP_COMPANY_SETTINGS } from "@/modules/settings/domain/settings.constants";
 import { parseRequest } from "@/shared/application/validation";
 import {
-  NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 
@@ -45,25 +45,20 @@ export class UpdateSettingsService {
           systemSettingsRepository.findActive(),
         ]);
 
-        if (existingCompany === null) {
-          throw new NotFoundError({
-            message: "Company settings not found",
-          });
-        }
+        const resolvedCompany =
+          existingCompany ??
+          (await settingsRepository.createDefault(BOOTSTRAP_COMPANY_SETTINGS));
 
-        if (existingSystem === null) {
-          throw new NotFoundError({
-            message: "System settings not found",
-          });
-        }
+        const resolvedSystem =
+          existingSystem ?? (await systemSettingsRepository.createDefault());
 
         try {
           if (companyUpdateData !== undefined) {
-            existingCompany.withUpdated(companyUpdateData);
+            resolvedCompany.withUpdated(companyUpdateData);
           }
 
           if (systemUpdateData !== undefined) {
-            existingSystem.withUpdated(systemUpdateData);
+            resolvedSystem.withUpdated(systemUpdateData);
           }
         } catch (error) {
           if (error instanceof SettingsInvariantError) {
@@ -76,14 +71,14 @@ export class UpdateSettingsService {
           throw error;
         }
 
-        let updatedCompany = existingCompany;
-        let updatedSystem = existingSystem;
+        let updatedCompany = resolvedCompany;
+        let updatedSystem = resolvedSystem;
 
         if (companyUpdateData !== undefined) {
-          const previousValues = toCompanySettingsAuditValues(existingCompany);
+          const previousValues = toCompanySettingsAuditValues(resolvedCompany);
 
           updatedCompany = await settingsRepository.update(
-            existingCompany.id,
+            resolvedCompany.id,
             companyUpdateData,
           );
 
@@ -99,10 +94,10 @@ export class UpdateSettingsService {
         }
 
         if (systemUpdateData !== undefined) {
-          const previousValues = toSystemSettingsAuditValues(existingSystem);
+          const previousValues = toSystemSettingsAuditValues(resolvedSystem);
 
           updatedSystem = await systemSettingsRepository.update(
-            existingSystem.id,
+            resolvedSystem.id,
             systemUpdateData,
           );
 

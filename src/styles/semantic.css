@@ -1,58 +1,57 @@
 /**
- * Semantic color tokens - light and dark themes.
- * Components must reference these tokens, not raw color values.
+ * Semantic color tokens — Tent Pro theme.
  */
 :root {
   --surface: var(--card);
   --surface-foreground: var(--card-foreground);
 
-  --success: #15803d;
+  --success: #0d7c5f;
   --success-foreground: #ffffff;
-  --success-muted: #dcfce7;
+  --success-muted: #d1fae5;
 
-  --warning: #c2410c;
-  --warning-foreground: #9a3412;
-  --warning-muted: #ffedd5;
+  --warning: #b45309;
+  --warning-foreground: #78350f;
+  --warning-muted: #fef3c7;
 
-  --info: #374151;
+  --info: #5b6abf;
   --info-foreground: #ffffff;
-  --info-muted: #f3f4f6;
+  --info-muted: #e8eaf6;
 
   --error: var(--destructive);
   --error-foreground: #ffffff;
   --error-muted: #fee2e2;
 
-  --primary-hover: #1f2937;
-  --primary-active: #374151;
-  --primary-disabled: rgba(17, 24, 39, 0.45);
+  --primary-hover: #152f3d;
+  --primary-active: #0f2430;
+  --primary-disabled: rgba(27, 58, 75, 0.45);
 
-  --secondary-hover: #f3f4f6;
-  --secondary-active: #e5e7eb;
+  --secondary-hover: #e4e1db;
+  --secondary-active: #ddd9d3;
 
-  --muted-hover: #e5e7eb;
-  --border-strong: #d1d5db;
+  --muted-hover: #e4e1db;
+  --border-strong: #cfc9c0;
 
-  --shadow-color: rgba(17, 24, 39, 0.06);
+  --shadow-color: rgba(27, 58, 75, 0.08);
 }
 
 .dark {
-  --success: #4ade80;
+  --success: #34d399;
   --success-foreground: #052e16;
-  --success-muted: #14532d;
+  --success-muted: #064e3b;
 
-  --warning: #fb923c;
-  --warning-foreground: #431407;
-  --warning-muted: #7c2d12;
+  --warning: #fbbf24;
+  --warning-foreground: #422006;
+  --warning-muted: #451a03;
 
-  --info: #d1d5db;
-  --info-foreground: #111827;
-  --info-muted: #374151;
+  --info: #818cf8;
+  --info-foreground: #0f1419;
+  --info-muted: #312e81;
 
   --error-foreground: #ffffff;
   --error-muted: #450a0a;
 
-  --primary-hover: #e5e7eb;
-  --primary-active: #d1d5db;
+  --primary-hover: #9ecce8;
+  --primary-active: #b5d9ef;
 
-  --shadow-color: rgba(0, 0, 0, 0.35);
+  --shadow-color: rgba(0, 0, 0, 0.4);
 }

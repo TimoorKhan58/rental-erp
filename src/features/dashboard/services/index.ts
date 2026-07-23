@@ -1,13 +1,6 @@
 export {
-  fetchDashboardMetrics,
+  fetchBusinessPulse,
   fetchDashboardNotifications,
-  fetchDashboardSummary,
-  fetchFinancialSummary,
-  fetchInventoryOverview,
+  fetchLiveDashboardSummary,
   fetchQuickActions,
-  fetchRecentActivity,
-  fetchRentalTrends,
-  fetchRevenueOverview,
-  fetchSystemStatus,
-  fetchUpcomingTasks,
 } from "./dashboard.service";

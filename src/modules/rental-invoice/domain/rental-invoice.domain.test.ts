@@ -214,6 +214,16 @@ describe("RentalInvoice entity", () => {
 });
 
 describe("RentalInvoice totals", () => {
+  const emptyBill = {
+    productName: null,
+    dailyRate: null,
+    numberOfDays: null,
+    damagedQuantity: 0,
+    lostQuantity: 0,
+    missingQuantity: 0,
+    notes: null,
+  } as const;
+
   it("computes subtotal from charge line types", () => {
     const totals = computeInvoiceTotals([
       {
@@ -224,6 +234,7 @@ describe("RentalInvoice totals", () => {
         unitPrice: 100,
         lineTotal: 200,
         sortOrder: 0,
+        ...emptyBill,
       },
       {
         id: "2",
@@ -233,6 +244,7 @@ describe("RentalInvoice totals", () => {
         unitPrice: 50,
         lineTotal: 50,
         sortOrder: 1,
+        ...emptyBill,
       },
     ]);
 
@@ -252,6 +264,7 @@ describe("RentalInvoice totals", () => {
         unitPrice: 500,
         lineTotal: 500,
         sortOrder: 0,
+        ...emptyBill,
       },
       {
         id: "2",
@@ -261,6 +274,7 @@ describe("RentalInvoice totals", () => {
         unitPrice: 50,
         lineTotal: 50,
         sortOrder: 1,
+        ...emptyBill,
       },
     ]);
 
@@ -279,6 +293,7 @@ describe("RentalInvoice totals", () => {
         unitPrice: 100,
         lineTotal: 100,
         sortOrder: 0,
+        ...emptyBill,
       },
       {
         id: "2",
@@ -288,6 +303,7 @@ describe("RentalInvoice totals", () => {
         unitPrice: 10,
         lineTotal: 10,
         sortOrder: 1,
+        ...emptyBill,
       },
     ]);
 
@@ -306,6 +322,7 @@ describe("RentalInvoice totals", () => {
           unitPrice: 200,
           lineTotal: 200,
           sortOrder: 0,
+          ...emptyBill,
         },
       ],
       75,
@@ -325,6 +342,7 @@ describe("RentalInvoice totals", () => {
           unitPrice: 50,
           lineTotal: 50,
           sortOrder: 0,
+          ...emptyBill,
         },
         {
           id: "2",
@@ -334,6 +352,7 @@ describe("RentalInvoice totals", () => {
           unitPrice: 100,
           lineTotal: 100,
           sortOrder: 1,
+          ...emptyBill,
         },
       ]),
     ).toThrow(RentalInvoiceInvariantError);
@@ -351,6 +370,7 @@ describe("RentalInvoice totals", () => {
             unitPrice: 100,
             lineTotal: 100,
             sortOrder: 0,
+            ...emptyBill,
           },
         ],
         -1,
@@ -367,9 +387,38 @@ describe("RentalInvoiceItem", () => {
       quantity: 3,
       unitPrice: 100,
       sortOrder: 0,
+      productName: null,
+      dailyRate: null,
+      numberOfDays: null,
+      damagedQuantity: 0,
+      lostQuantity: 0,
+      missingQuantity: 0,
+      notes: null,
     });
 
     expect(item.lineTotal).toBe(300);
+  });
+
+  it("creates product bill row with days and condition charges", () => {
+    const item = RentalInvoiceItem.create({
+      lineType: "RENTAL_CHARGE",
+      description: "Banquet Chair",
+      quantity: 10,
+      unitPrice: 45,
+      sortOrder: 0,
+      productName: "Banquet Chair",
+      dailyRate: 45,
+      numberOfDays: 2,
+      damagedQuantity: 2,
+      lostQuantity: 1,
+      missingQuantity: 0,
+      notes: "Damage ×2, Lost ×1",
+      lineTotal: 10 * 45 * 2 + 2 * 45 * 2 + 1 * 45 * 5,
+    });
+
+    expect(item.productName).toBe("Banquet Chair");
+    expect(item.numberOfDays).toBe(2);
+    expect(item.lineTotal).toBe(1125);
   });
 
   it("validates items with indexed field errors", () => {

@@ -19,6 +19,8 @@ interface RentalOrderItemRecord {
   quantity: number;
   rentalPricePerDay: Prisma.Decimal;
   reservedQuantity: number;
+  eventStartDate: Date;
+  eventEndDate: Date;
   numberOfDays: number;
   lineTotal: Prisma.Decimal;
 }
@@ -148,6 +150,8 @@ function createMockRentalOrderStore(initial: RentalOrderRecord[] = []) {
               quantity: number;
               rentalPricePerDay: Prisma.Decimal;
               reservedQuantity: number;
+              eventStartDate: Date;
+              eventEndDate: Date;
               numberOfDays: number;
               lineTotal: Prisma.Decimal;
             }>;
@@ -176,6 +180,8 @@ function createMockRentalOrderStore(initial: RentalOrderRecord[] = []) {
             quantity: item.quantity,
             rentalPricePerDay: item.rentalPricePerDay,
             reservedQuantity: item.reservedQuantity,
+            eventStartDate: item.eventStartDate,
+            eventEndDate: item.eventEndDate,
             numberOfDays: item.numberOfDays,
             lineTotal: item.lineTotal,
           })),
@@ -266,8 +272,12 @@ describe("PrismaRentalOrderRepository", () => {
         quantity: item.quantity,
         rentalPricePerDay: new Prisma.Decimal(item.dailyRate),
         reservedQuantity: item.reservedQuantity,
-        numberOfDays: 4,
-        lineTotal: new Prisma.Decimal(item.quantity * item.dailyRate * 4),
+        eventStartDate: item.startDate,
+        eventEndDate: item.endDate,
+        numberOfDays: item.numberOfDays,
+        lineTotal: new Prisma.Decimal(
+          item.quantity * item.dailyRate * item.numberOfDays,
+        ),
       })),
     } satisfies RentalOrderRecord;
   })();

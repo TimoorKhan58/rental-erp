@@ -1,6 +1,7 @@
 import type { SystemSettingId } from "@/shared/domain/ids";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
+  repositoryCreate,
   repositoryFindFirst,
   repositoryUpdate,
 } from "@/shared/infrastructure/database";
@@ -10,6 +11,7 @@ import type { ISystemSettingsRepository } from "@/modules/settings/domain/system
 import type { UpdateSystemSettingsData } from "@/modules/settings/domain/settings.types";
 
 import {
+  toSystemSettingsCreateInput,
   toSystemSettingsDomain,
   toSystemSettingsUpdateInput,
 } from "../mappers/system-settings.persistence.mapper";
@@ -28,6 +30,17 @@ export class PrismaSystemSettingsRepository implements ISystemSettingsRepository
         }),
       { model: MODEL, operation: "findActive" },
     ).then((record) => (record ? toSystemSettingsDomain(record) : null));
+  }
+
+  createDefault(): Promise<SystemSettings> {
+    return repositoryCreate(
+      this.runner,
+      (db) =>
+        db.systemSetting.create({
+          data: toSystemSettingsCreateInput(),
+        }),
+      { model: MODEL, operation: "createDefault" },
+    ).then(toSystemSettingsDomain);
   }
 
   update(

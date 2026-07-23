@@ -351,21 +351,31 @@ describe("CompleteDispatchService", () => {
     expect(result.status).toBe("COMPLETED");
     expect(result.dispatchedAt).not.toBeNull();
     expect(result.completedAt).not.toBeNull();
-    expect(stockMovementRepository.count()).toBe(1);
+    expect(stockMovementRepository.count()).toBe(2);
 
-    const movement = (
+    const movements = (
       await stockMovementRepository.findPaged({
         page: 1,
         pageSize: 10,
         sortOrder: "desc",
       })
-    ).items[0];
-    expect(movement?.movementType).toBe("OUT");
-    expect(movement?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
-    expect(movement?.referenceId).toBe(RENTAL_ORDER_ID);
+    ).items;
+    expect(movements.map((m) => m.movementType).sort()).toEqual([
+      "OUT",
+      "RELEASE",
+    ]);
+    expect(
+      movements.every(
+        (m) =>
+          m.referenceType === RENTAL_ORDER_REFERENCE_TYPE &&
+          m.referenceId === RENTAL_ORDER_ID,
+      ),
+    ).toBe(true);
 
     const inventory = await inventoryRepository.findById(INVENTORY_ID);
     expect(inventory?.quantityOnHand).toBe(45);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.availableQuantity).toBe(45);
   });
 
   it("rejects complete when not ready", async () => {

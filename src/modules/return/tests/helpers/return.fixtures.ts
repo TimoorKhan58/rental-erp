@@ -116,11 +116,13 @@ export function buildInspectedReturnEntity(
     goodQuantity?: number;
     damagedQuantity?: number;
     lostQuantity?: number;
+    missingQuantity?: number;
   } = {},
 ): Return {
   const goodQuantity = options.goodQuantity ?? 3;
   const damagedQuantity = options.damagedQuantity ?? 1;
   const lostQuantity = options.lostQuantity ?? 1;
+  const missingQuantity = options.missingQuantity ?? 0;
   const received = buildReceivedReturnEntity();
   const now = new Date("2026-01-19T10:00:00.000Z");
 
@@ -133,6 +135,7 @@ export function buildInspectedReturnEntity(
       goodQuantity,
       damagedQuantity,
       lostQuantity,
+      missingQuantity,
     })),
     updatedAt: now,
   });

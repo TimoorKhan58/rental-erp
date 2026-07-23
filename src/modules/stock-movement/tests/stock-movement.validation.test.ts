@@ -93,6 +93,26 @@ describe("CreateStockMovementSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts negative quantity for ADJUSTMENT", () => {
+    const result = CreateStockMovementSchema.safeParse({
+      inventoryId: INVENTORY_ID,
+      movementType: "ADJUSTMENT",
+      quantity: -5,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects zero quantity for ADJUSTMENT", () => {
+    const result = CreateStockMovementSchema.safeParse({
+      inventoryId: INVENTORY_ID,
+      movementType: "ADJUSTMENT",
+      quantity: 0,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects invalid inventoryId", () => {
     const result = CreateStockMovementSchema.safeParse({
       inventoryId: "bad",

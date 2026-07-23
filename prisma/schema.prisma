@@ -572,6 +572,8 @@ model RentalOrderItem {
   quantity          Int
   rentalPricePerDay Decimal     @db.Decimal(12, 2)
   reservedQuantity  Int         @default(0)
+  eventStartDate    DateTime    @db.Date
+  eventEndDate      DateTime    @db.Date
   numberOfDays      Int
   lineTotal         Decimal     @db.Decimal(12, 2)
   notes             String?
@@ -580,6 +582,8 @@ model RentalOrderItem {
 
   @@index([rentalOrderId])
   @@index([productId])
+  @@index([eventStartDate])
+  @@index([eventEndDate])
   @@map("rental_order_items")
 }
 
@@ -843,6 +847,7 @@ enum RentalInvoiceLineType {
   DAMAGE_CHARGE
   LOST_ITEM_CHARGE
   REPAIR_CHARGE
+  LABOUR_CHARGE
   MANUAL_CHARGE
   DISCOUNT
   TAX
@@ -884,15 +889,22 @@ model RentalInvoice {
 }
 
 model RentalInvoiceItem {
-  id              String                @id @default(uuid()) @db.Uuid
-  rentalInvoiceId String                @db.Uuid
-  rentalInvoice   RentalInvoice         @relation(fields: [rentalInvoiceId], references: [id], onDelete: Cascade)
-  lineType        RentalInvoiceLineType
-  description     String
-  quantity        Int
-  unitPrice       Decimal               @db.Decimal(12, 2)
-  lineTotal       Decimal               @db.Decimal(12, 2)
-  sortOrder       Int                   @default(0)
+  id               String                @id @default(uuid()) @db.Uuid
+  rentalInvoiceId  String                @db.Uuid
+  rentalInvoice    RentalInvoice         @relation(fields: [rentalInvoiceId], references: [id], onDelete: Cascade)
+  lineType         RentalInvoiceLineType
+  description      String
+  quantity         Int
+  unitPrice        Decimal               @db.Decimal(12, 2)
+  lineTotal        Decimal               @db.Decimal(12, 2)
+  sortOrder        Int                   @default(0)
+  productName      String?
+  dailyRate        Decimal?              @db.Decimal(12, 2)
+  numberOfDays     Int?
+  damagedQuantity  Int                   @default(0)
+  lostQuantity     Int                   @default(0)
+  missingQuantity  Int                   @default(0)
+  notes            String?
 
   @@index([rentalInvoiceId])
   @@map("rental_invoice_items")

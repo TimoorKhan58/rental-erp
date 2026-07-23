@@ -11,6 +11,7 @@ import {
   assertCanConfirm,
   assertCanReserve,
   assertCanUpdate,
+  computeOrderDateEnvelope,
   computeStatusAfterReserve,
   normalizeRentalOrderProps,
   validateRentalOrderItems,
@@ -59,14 +60,21 @@ export class RentalOrder implements Entity<RentalOrderId> {
   ): Omit<RentalOrderProps, "id" | "status" | "createdAt" | "updatedAt"> {
     validateRentalPeriod(data.startDate, data.endDate);
 
+    const items = validateRentalOrderItems(
+      data.items,
+      data.startDate,
+      data.endDate,
+    );
+    const envelope = computeOrderDateEnvelope(items);
+
     return {
       orderNumber: createOrderNumber(data.orderNumber),
       customerId: data.customerId,
       warehouseId: data.warehouseId,
-      startDate: data.startDate,
-      endDate: data.endDate,
+      startDate: envelope.startDate,
+      endDate: envelope.endDate,
       remarks: normalizeOptionalText(data.remarks),
-      items: validateRentalOrderItems(data.items),
+      items,
       createdById: data.createdById,
     };
   }

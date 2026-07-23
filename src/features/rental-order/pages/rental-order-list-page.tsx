@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3Icon, PlusIcon } from "lucide-react";
+import { BarChart3Icon, CalendarDaysIcon, PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
@@ -25,6 +25,13 @@ export function RentalOrderListPage() {
         ]}
         actions={
           <>
+            <AppButton
+              variant="outline"
+              leftIcon={<CalendarDaysIcon className="size-4" aria-hidden="true" />}
+              render={<Link href={ROUTES.rentalOrdersCalendar} />}
+            >
+              Calendar
+            </AppButton>
             <AppButton
               variant="outline"
               leftIcon={<BarChart3Icon className="size-4" aria-hidden="true" />}

@@ -23,6 +23,8 @@ import { CustomerStatusBadge } from "../components/customer-status-badge";
 type CustomerFormBaseProps = {
   onCancel: () => void;
   isSubmitting?: boolean;
+  /** `dialog` hides the live preview sidebar for compact modal use. */
+  layout?: "page" | "dialog";
 };
 
 type CreateCustomerFormProps = CustomerFormBaseProps & {
@@ -102,6 +104,7 @@ function CreateCustomerForm({
   onSubmit,
   onCancel,
   isSubmitting = false,
+  layout = "page",
 }: CreateCustomerFormProps) {
   const form = useForm<CreateCustomerFormValues>({
     resolver: zodResolver(createCustomerFormSchema),
@@ -109,9 +112,10 @@ function CreateCustomerForm({
   });
 
   const watched = form.watch(["name", "customerCode", "phone", "isActive"]);
+  const isDialog = layout === "dialog";
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_280px]">
+    <div className={isDialog ? undefined : "grid gap-6 xl:grid-cols-[1fr_280px]"}>
       <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
         <SectionCard
           title="Customer information"
@@ -166,12 +170,14 @@ function CreateCustomerForm({
         <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel="Create customer" />
       </AppForm>
 
-      <CustomerFormPreview
-        name={watched[0] ?? ""}
-        customerCode={watched[1] ?? ""}
-        phone={watched[2] ?? ""}
-        isActive={watched[3] ?? true}
-      />
+      {isDialog ? null : (
+        <CustomerFormPreview
+          name={watched[0] ?? ""}
+          customerCode={watched[1] ?? ""}
+          phone={watched[2] ?? ""}
+          isActive={watched[3] ?? true}
+        />
+      )}
     </div>
   );
 }

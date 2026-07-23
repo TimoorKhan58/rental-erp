@@ -1,68 +1,32 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { PageContainer } from "@/components/layout";
 import { DashboardSkeleton } from "@/components/design-system/loading";
 import {
-  useDashboardMetrics,
+  useBusinessPulse,
   useDashboardNotifications,
-  useDashboardSummary,
-  useFinancialSummary,
-  useInventoryOverview,
   useQuickActions,
-  useRecentActivity,
-  useRentalTrends,
-  useRevenueOverview,
-  useSystemStatus,
-  useUpcomingTasks,
 } from "../hooks";
 import { useOrganizationName } from "@/features/settings/hooks";
+import { AttentionNeeded } from "./attention-needed";
+import { BusinessPulseRow } from "./business-pulse-row";
+import { CatalogSnapshot } from "./catalog-snapshot";
 import { DashboardHero } from "./dashboard-hero";
-import { FeaturedKpiRow } from "./featured-kpi-row";
-import { KpiGrid } from "./kpi-grid";
-import { QuickActionsPanel } from "./quick-actions-panel";
-import { ActivityTimeline } from "./activity-timeline";
 import { NotificationsPanel } from "./notifications-panel";
-import { UpcomingTasksList } from "./upcoming-tasks";
-import { InventoryOverviewSection } from "./inventory-overview";
-import { FinancialSummarySection } from "./financial-summary";
-import { SystemStatusSection } from "./system-status";
-
-const RevenueChart = dynamic(
-  () => import("./revenue-chart").then((mod) => mod.RevenueChart),
-  { loading: () => null, ssr: false },
-);
-
-const RentalTrendsChart = dynamic(
-  () => import("./rental-trends-chart").then((mod) => mod.RentalTrendsChart),
-  { loading: () => null, ssr: false },
-);
+import { OpsHealthGrid } from "./ops-health-grid";
+import { QuickActionsPanel } from "./quick-actions-panel";
 
 /**
- * DashboardPage — enterprise dashboard home composition.
+ * DashboardPage — 20–25 second business scan for tent rental operations.
+ * First viewport: pulse KPIs + attention queue. Below: ops health + actions.
  */
 export function DashboardPage() {
-  const summary = useDashboardSummary();
+  const pulse = useBusinessPulse();
   const { organizationName } = useOrganizationName();
-  const metrics = useDashboardMetrics();
   const quickActions = useQuickActions();
-  const activity = useRecentActivity();
   const notifications = useDashboardNotifications();
-  const tasks = useUpcomingTasks();
-  const revenue = useRevenueOverview();
-  const rentalTrends = useRentalTrends();
-  const inventory = useInventoryOverview();
-  const financial = useFinancialSummary();
-  const systemStatus = useSystemStatus();
 
-  const isInitialLoading =
-    summary.isLoading &&
-    metrics.isLoading &&
-    !summary.data &&
-    !metrics.data;
-
-  const allMetrics = metrics.data ?? [];
-  const secondaryMetrics = allMetrics.slice(4);
+  const isInitialLoading = pulse.isLoading && !pulse.data;
 
   if (isInitialLoading) {
     return (
@@ -72,39 +36,50 @@ export function DashboardPage() {
     );
   }
 
+  const data = pulse.data;
+  const hasError = pulse.isError && !data;
+
   return (
     <PageContainer className="space-y-6">
-      <DashboardHero organizationName={organizationName} />
+      <DashboardHero
+        organizationName={organizationName}
+        attentionCount={data?.attentionCount ?? 0}
+      />
 
-      <FeaturedKpiRow metrics={allMetrics} isLoading={metrics.isLoading} />
-
-      {secondaryMetrics.length > 0 ? (
-        <KpiGrid metrics={secondaryMetrics} isLoading={metrics.isLoading} />
+      {hasError ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          Could not load live business numbers. Check your reports permission or try
+          refreshing.
+        </div>
       ) : null}
+
+      <BusinessPulseRow
+        metrics={data?.pulseMetrics ?? []}
+        isLoading={pulse.isFetching && !data}
+      />
 
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <RevenueChart data={revenue.data} isLoading={revenue.isLoading} />
-            <RentalTrendsChart
-              data={rentalTrends.data}
-              isLoading={rentalTrends.isLoading}
-            />
-          </div>
-
-          <FinancialSummarySection
-            items={financial.data ?? []}
-            isLoading={financial.isLoading}
+          <AttentionNeeded
+            items={data?.attention ?? []}
+            headline={data?.headline ?? ""}
+            isLoading={pulse.isFetching && !data}
           />
 
-          <InventoryOverviewSection
-            items={inventory.data ?? []}
-            isLoading={inventory.isLoading}
+          <OpsHealthGrid
+            items={data?.opsHealth ?? []}
+            isLoading={pulse.isFetching && !data}
           />
 
-          <ActivityTimeline
-            items={activity.data ?? []}
-            isLoading={activity.isLoading}
+          <CatalogSnapshot
+            customers={data?.catalog.customers ?? 0}
+            products={data?.catalog.products ?? 0}
+            suppliers={data?.catalog.suppliers ?? 0}
+            warehouses={data?.catalog.warehouses ?? 0}
+            isLoading={pulse.isFetching && !data}
           />
         </div>
 
@@ -118,13 +93,6 @@ export function DashboardPage() {
           <NotificationsPanel
             notifications={notifications.data ?? []}
             isLoading={notifications.isLoading}
-          />
-
-          <UpcomingTasksList tasks={tasks.data ?? []} isLoading={tasks.isLoading} />
-
-          <SystemStatusSection
-            items={systemStatus.data ?? []}
-            isLoading={systemStatus.isLoading}
           />
         </aside>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { FileTextIcon, ReceiptIcon } from "lucide-react";
 import { AppButton } from "@/components/design-system/button";
@@ -8,10 +9,10 @@ import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  useGenerateRentalInvoiceFromOrder,
   useRentalInvoicePermissions,
   useRentalInvoices,
 } from "../hooks";
+import { GenerateRentalInvoiceDialog } from "../dialogs/generate-rental-invoice-dialog";
 import { RentalInvoiceStatusBadge } from "./rental-invoice-status-badge";
 
 type RentalOrderBillingSectionProps = {
@@ -24,7 +25,7 @@ export function RentalOrderBillingSection({
   canGenerate = true,
 }: RentalOrderBillingSectionProps) {
   const { canCreate, canRead } = useRentalInvoicePermissions();
-  const generateInvoice = useGenerateRentalInvoiceFromOrder();
+  const [generateOpen, setGenerateOpen] = useState(false);
   const invoicesQuery = useRentalInvoices({
     rentalOrderId,
     page: 1,
@@ -38,61 +39,70 @@ export function RentalOrderBillingSection({
 
   const invoices = invoicesQuery.data?.items ?? [];
   const activeInvoice = invoices.find((invoice) => invoice.status !== "VOID");
-  const showGenerate =
-    canGenerate && canCreate && activeInvoice === undefined && !generateInvoice.isPending;
+  const showGenerate = canGenerate && canCreate && activeInvoice === undefined;
 
   return (
-    <SectionCard
-      title="Customer invoice"
-      actions={
-        showGenerate ? (
-          <AppButton
-            size="sm"
-            leftIcon={<ReceiptIcon className="size-4" aria-hidden="true" />}
-            onClick={() => generateInvoice.mutate(rentalOrderId)}
-            disabled={generateInvoice.isPending}
-          >
-            Generate invoice
-          </AppButton>
-        ) : null
-      }
-    >
-      {invoicesQuery.isLoading ? (
-        <LoadingState label="Loading invoices..." />
-      ) : invoices.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No customer invoice yet. Generate one after the return is completed to bill rental
-          charges, damage, and lost items.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {invoices.map((invoice) => (
-            <div
-              key={invoice.id}
-              className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+    <>
+      <SectionCard
+        title="Customer invoice"
+        actions={
+          showGenerate ? (
+            <AppButton
+              size="sm"
+              leftIcon={<ReceiptIcon className="size-4" aria-hidden="true" />}
+              onClick={() => setGenerateOpen(true)}
             >
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium">{invoice.invoiceNumber}</p>
-                  <RentalInvoiceStatusBadge status={invoice.status} />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {formatDate(invoice.invoiceDate)} · {formatCurrency(invoice.grandTotal)}
-                  {invoice.balance > 0 ? ` · ${formatCurrency(invoice.balance)} due` : " · Paid"}
-                </p>
-              </div>
-              <AppButton
-                variant="outline"
-                size="sm"
-                leftIcon={<FileTextIcon className="size-4" aria-hidden="true" />}
-                render={<Link href={ROUTES.rentalInvoiceDetail(invoice.id)} />}
+              Generate invoice
+            </AppButton>
+          ) : null
+        }
+      >
+        {invoicesQuery.isLoading ? (
+          <LoadingState label="Loading invoices..." />
+        ) : invoices.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No customer invoice yet. After returns are completed, generate a bill with
+            separate rental, damage, loss, and missing lines. Missing is not charged until
+            converted to loss.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {invoices.map((invoice) => (
+              <div
+                key={invoice.id}
+                className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
-                View invoice
-              </AppButton>
-            </div>
-          ))}
-        </div>
-      )}
-    </SectionCard>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{invoice.invoiceNumber}</p>
+                    <RentalInvoiceStatusBadge status={invoice.status} />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(invoice.invoiceDate)} · {formatCurrency(invoice.grandTotal)}
+                    {invoice.balance > 0
+                      ? ` · ${formatCurrency(invoice.balance)} due`
+                      : " · Paid"}
+                  </p>
+                </div>
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<FileTextIcon className="size-4" aria-hidden="true" />}
+                  render={<Link href={ROUTES.rentalInvoiceDetail(invoice.id)} />}
+                >
+                  View invoice
+                </AppButton>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
+      <GenerateRentalInvoiceDialog
+        rentalOrderId={rentalOrderId}
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+      />
+    </>
   );
 }

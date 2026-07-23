@@ -21,6 +21,7 @@ export {
 export {
   calculateLineSubtotal,
   calculateOrderTotal,
+  calculateOrderTotalFromItems,
   calculateRentalDays,
   deriveReservationStatus,
   getRemainingReserveQuantity,

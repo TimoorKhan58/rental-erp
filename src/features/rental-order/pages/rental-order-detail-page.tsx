@@ -27,7 +27,7 @@ import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
 import {
-  calculateOrderTotal,
+  calculateOrderTotalFromItems,
   calculateRentalDays,
   canCancelRentalOrder,
   canConfirmRentalOrder,
@@ -168,7 +168,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
     }
 
     const rentalDays = calculateRentalDays(order.startDate, order.endDate);
-    const orderTotal = calculateOrderTotal(order.items, rentalDays);
+    const orderTotal = calculateOrderTotalFromItems(order.items);
     const { reserved, total } = getOrderReservedUnits(order);
 
     return {
@@ -344,7 +344,6 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
           <SectionCard title="Line items">
             <RentalOrderLineItemsTable
               items={order.items}
-              rentalDays={metrics.rentalDays}
               productLabelById={productLabelById}
               productNameById={productNameById}
             />

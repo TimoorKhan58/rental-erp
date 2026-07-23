@@ -9,6 +9,13 @@ export interface RentalInvoiceItemResponse {
   unitPrice: number;
   lineTotal: number;
   sortOrder: number;
+  productName: string | null;
+  dailyRate: number | null;
+  numberOfDays: number | null;
+  damagedQuantity: number;
+  lostQuantity: number;
+  missingQuantity: number;
+  notes: string | null;
 }
 
 export interface RentalInvoiceResponse {
@@ -68,6 +75,13 @@ export function toRentalInvoiceResponse(
       unitPrice: item.unitPrice,
       lineTotal: item.lineTotal,
       sortOrder: item.sortOrder,
+      productName: item.productName,
+      dailyRate: item.dailyRate,
+      numberOfDays: item.numberOfDays,
+      damagedQuantity: item.damagedQuantity,
+      lostQuantity: item.lostQuantity,
+      missingQuantity: item.missingQuantity,
+      notes: item.notes,
     })),
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,

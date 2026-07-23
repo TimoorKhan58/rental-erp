@@ -18,6 +18,13 @@ export interface RentalInvoiceItemProps {
   unitPrice: number;
   lineTotal: number;
   sortOrder: number;
+  productName: string | null;
+  dailyRate: number | null;
+  numberOfDays: number | null;
+  damagedQuantity: number;
+  lostQuantity: number;
+  missingQuantity: number;
+  notes: string | null;
 }
 
 export interface CreateRentalInvoiceItemData {
@@ -26,6 +33,15 @@ export interface CreateRentalInvoiceItemData {
   quantity: number;
   unitPrice: number;
   sortOrder?: number;
+  productName?: string | null;
+  dailyRate?: number | null;
+  numberOfDays?: number | null;
+  damagedQuantity?: number;
+  lostQuantity?: number;
+  missingQuantity?: number;
+  notes?: string | null;
+  /** When set, used instead of quantity × unitPrice (product bill rows). */
+  lineTotal?: number;
 }
 
 export interface CreateRentalInvoiceData {

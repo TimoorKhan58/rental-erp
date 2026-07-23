@@ -1,5 +1,6 @@
 export { useInventoryListParams } from "./use-inventory-list-params";
 export {
+  useAdjustInventory,
   useCreateInventory,
   useDeleteInventory,
   useInventory,

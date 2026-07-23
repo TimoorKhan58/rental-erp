@@ -99,6 +99,7 @@ describe("ReturnService facade", () => {
             goodQuantity: 3,
             damagedQuantity: 1,
             lostQuantity: 1,
+          missingQuantity: 0,
           },
         ],
       },
@@ -132,6 +133,7 @@ describe("ReturnService facade", () => {
           goodQuantity: 4,
           damagedQuantity: 1,
           lostQuantity: 0,
+        missingQuantity: 0,
         },
       ],
     };

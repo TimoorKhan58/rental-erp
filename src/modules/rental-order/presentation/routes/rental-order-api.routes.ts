@@ -11,7 +11,6 @@ import {
 import { ListRentalOrdersSchema } from "@/modules/rental-order/application/schemas/list-rental-orders.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
-import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import {
   toRentalOrderListResponse,
@@ -28,7 +27,6 @@ export async function handleListRentalOrders(
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
   const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListRentalOrdersSchema, query);
 
   const result = await runRentalOrderApiRoute({
     request,
@@ -36,20 +34,12 @@ export async function handleListRentalOrders(
     httpMethod: "GET",
     permission: PERMISSIONS.rentalOrders.read,
     resolveServices,
-    handler: async (_ctx, services) =>
-      services.listRentalOrders.execute(listInput),
+    handler: async (_ctx, services) => {
+      const listInput = parseRequest(ListRentalOrdersSchema, query);
+      const paginated = await services.listRentalOrders.execute(listInput);
+      return toRentalOrderListResponse(paginated);
+    },
   });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<RentalOrderDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderListResponse(paginated),
-      },
-    });
-  }
 
   return toJsonResponse(result);
 }

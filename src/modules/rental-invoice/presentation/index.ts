@@ -1,4 +1,5 @@
 export {
+  handleConvertMissingToLoss,
   handleCreateRentalInvoice,
   handleGetRentalInvoiceById,
   handleIssueRentalInvoice,

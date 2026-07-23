@@ -27,6 +27,7 @@ export const LINE_TYPE_LABELS: Record<RentalInvoiceLineType, string> = {
   DAMAGE_CHARGE: "Damage charge",
   LOST_ITEM_CHARGE: "Lost item charge",
   REPAIR_CHARGE: "Repair charge",
+  LABOUR_CHARGE: "Labour charge",
   MANUAL_CHARGE: "Manual charge",
   DISCOUNT: "Discount",
   TAX: "Tax",

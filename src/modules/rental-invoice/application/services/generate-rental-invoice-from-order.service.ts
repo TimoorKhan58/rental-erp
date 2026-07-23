@@ -1,5 +1,6 @@
 import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
 import { assertRentalOrderEligibleForInvoice } from "@/modules/rental-invoice/domain";
+import { createProductRepositoryFromUnitOfWork } from "@/modules/product/infrastructure/factories/create-product.repository";
 import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
 import { syncRentalOrderStatusFromReturns } from "@/modules/rental-order/application/services/sync-rental-order-status-from-returns";
 import { createReturnRepositoryFromUnitOfWork } from "@/modules/return/infrastructure/factories/create-return.repository";
@@ -11,6 +12,7 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import type { ProductId } from "@/shared/domain/ids";
 
 import type { RentalInvoiceDto } from "../dtos/rental-invoice.dto";
 import { toRentalOrderId } from "../mappers/rental-invoice.mapper";
@@ -18,7 +20,7 @@ import {
   GenerateRentalInvoiceFromOrderSchema,
   type GenerateRentalInvoiceFromOrderInput,
 } from "../schemas/generate-rental-invoice.schema";
-import { buildRentalInvoiceLinesFromOrder } from "./build-rental-invoice-lines";
+import { buildRentalInvoiceLinesFromOrder, appendOptionalInvoiceCharges } from "./build-rental-invoice-lines";
 import type { CreateRentalInvoiceService } from "./create-rental-invoice.service";
 import { generateNextInvoiceNumber } from "./generate-invoice-number";
 import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
@@ -41,6 +43,7 @@ export class GenerateRentalInvoiceFromOrderService {
       const returnRepository = createReturnRepositoryFromUnitOfWork(context);
       const rentalInvoiceRepository =
         createRentalInvoiceRepositoryFromUnitOfWork(context);
+      const productRepository = createProductRepositoryFromUnitOfWork(context);
 
       await syncRentalOrderStatusFromReturns(rentalOrderId, {
         dispatchRepository,
@@ -103,11 +106,42 @@ export class GenerateRentalInvoiceFromOrderService {
         )
       ).flat();
 
-      const items = buildRentalInvoiceLinesFromOrder({
-        rentalOrder,
-        returns,
-      });
+      const uniqueProductIds = [
+        ...new Set(rentalOrder.items.map((item) => item.productId)),
+      ];
+      const productRecords = await Promise.all(
+        uniqueProductIds.map((productId) =>
+          productRepository.findById(productId as ProductId),
+        ),
+      );
+      const productNameById = new Map<string, string>();
+      const actualPriceByProductId = new Map<string, number>();
+      for (const record of productRecords) {
+        if (record) {
+          productNameById.set(record.product.id, String(record.product.name));
+          if (record.product.replacementCost != null) {
+            actualPriceByProductId.set(
+              record.product.id,
+              Number(record.product.replacementCost),
+            );
+          }
+        }
+      }
 
+      const items = appendOptionalInvoiceCharges(
+        buildRentalInvoiceLinesFromOrder({
+          rentalOrder,
+          returns,
+          productNameById,
+          actualPriceByProductId,
+          conditionChargeOverrides: data.conditionChargeOverrides,
+        }),
+        {
+          deliveryCharges: data.deliveryCharges,
+          labourCharges: data.labourCharges,
+          taxAmount: data.taxAmount,
+        },
+      );
       if (items.length === 0) {
         throw new UnprocessableError({
           message: "Unable to build invoice lines for this rental order",
@@ -132,6 +166,14 @@ export class GenerateRentalInvoiceFromOrderService {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           sortOrder: item.sortOrder,
+          productName: item.productName,
+          dailyRate: item.dailyRate,
+          numberOfDays: item.numberOfDays,
+          damagedQuantity: item.damagedQuantity,
+          lostQuantity: item.lostQuantity,
+          missingQuantity: item.missingQuantity,
+          notes: item.notes,
+          lineTotal: item.lineTotal,
         })),
       };
     });

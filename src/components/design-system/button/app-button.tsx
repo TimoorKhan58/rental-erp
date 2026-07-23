@@ -35,13 +35,18 @@ export function AppButton({
   ...props
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
-  const isIconOnly = size?.startsWith("icon");
+  const isIconOnly = Boolean(size?.startsWith("icon"));
 
   return (
     <Button
       variant={variant}
       size={size}
-      className={cn(className)}
+      className={cn(
+        // Ghost icon buttons need an explicit foreground so ⋯ menus stay
+        // visible in both light and dark themes.
+        isIconOnly && variant === "ghost" && "text-muted-foreground hover:text-foreground",
+        className,
+      )}
       disabled={isDisabled}
       aria-busy={loading}
       aria-disabled={isDisabled}
@@ -52,7 +57,11 @@ export function AppButton({
       ) : leftIcon ? (
         <span data-icon="inline-start">{leftIcon}</span>
       ) : null}
-      {!isIconOnly ? <span>{loading ? loadingLabel : children}</span> : null}
+      {isIconOnly ? (
+        !loading && !leftIcon ? children : null
+      ) : (
+        <span>{loading ? loadingLabel : children}</span>
+      )}
       {!loading && rightIcon ? <span data-icon="inline-end">{rightIcon}</span> : null}
     </Button>
   );

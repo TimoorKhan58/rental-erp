@@ -40,6 +40,14 @@ export function validateRentalInvoiceItems(
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         sortOrder: item.sortOrder ?? index,
+        productName: item.productName ?? null,
+        dailyRate: item.dailyRate ?? null,
+        numberOfDays: item.numberOfDays ?? null,
+        damagedQuantity: item.damagedQuantity ?? 0,
+        lostQuantity: item.lostQuantity ?? 0,
+        missingQuantity: item.missingQuantity ?? 0,
+        notes: item.notes ?? null,
+        lineTotal: item.lineTotal,
       });
     } catch (error) {
       if (error instanceof RentalInvoiceInvariantError) {
@@ -175,7 +183,15 @@ export function normalizeRentalInvoiceProps(
 ): RentalInvoiceProps {
   const items = props.items.map((item) => ({
     ...item,
-    lineTotal: computeLineTotalAmount(item.quantity, item.unitPrice),
+    productName: item.productName ?? null,
+    dailyRate: item.dailyRate ?? null,
+    numberOfDays: item.numberOfDays ?? null,
+    damagedQuantity: item.damagedQuantity ?? 0,
+    lostQuantity: item.lostQuantity ?? 0,
+    missingQuantity: item.missingQuantity ?? 0,
+    notes: normalizeOptionalText(item.notes),
+    // Preserve stored line totals (product rows include days + damage/loss).
+    lineTotal: item.lineTotal,
   }));
   const totals = computeInvoiceTotals(items, props.paidAmount);
 

@@ -3,16 +3,29 @@ import { z } from "zod";
 const optionalTextSchema = (max: number) =>
   z.string().trim().max(max).optional().nullable().or(z.literal(""));
 
-const lineItemSchema = z.object({
-  productId: z.string().uuid("Select a product"),
-  quantity: z
-    .number({ message: "Enter a valid quantity" })
-    .int("Must be a whole number")
-    .positive("Quantity must be greater than zero"),
-  dailyRate: z
-    .number({ message: "Enter a valid rate" })
-    .positive("Daily rate must be greater than zero"),
-});
+const lineItemSchema = z
+  .object({
+    productId: z.string().uuid("Select a product"),
+    quantity: z
+      .number({ message: "Enter a valid quantity" })
+      .int("Must be a whole number")
+      .positive("Quantity must be greater than zero"),
+    dailyRate: z
+      .number({ message: "Enter a valid rate" })
+      .positive("Daily rate must be greater than zero"),
+    useCustomDates: z.boolean().default(false),
+    startDate: z.string().min(1, "Start date is required"),
+    endDate: z.string().min(1, "End date is required"),
+  })
+  .superRefine((item, ctx) => {
+    if (new Date(item.endDate).getTime() < new Date(item.startDate).getTime()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Line end date cannot be before start date",
+        path: ["endDate"],
+      });
+    }
+  });
 
 const lineItemsRefinement = (items: Array<{ productId: string }>, ctx: z.RefinementCtx) => {
   const productIds = items.map((item) => item.productId);
@@ -31,10 +44,10 @@ const dateRangeRefinement = (
   data: { startDate: string; endDate: string },
   ctx: z.RefinementCtx,
 ) => {
-  if (new Date(data.endDate).getTime() <= new Date(data.startDate).getTime()) {
+  if (new Date(data.endDate).getTime() < new Date(data.startDate).getTime()) {
     ctx.addIssue({
       code: "custom",
-      message: "End date must be after start date",
+      message: "End date cannot be before start date",
       path: ["endDate"],
     });
   }
@@ -47,12 +60,28 @@ export const createRentalOrderFormSchema = z
     warehouseId: z.string().uuid("Select a warehouse"),
     startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().min(1, "End date is required"),
+    bookInAdvance: z.boolean().default(false),
     remarks: optionalTextSchema(500),
     items: z.array(lineItemSchema).min(1, "At least one line item is required"),
   })
   .superRefine((data, ctx) => {
     lineItemsRefinement(data.items, ctx);
     dateRangeRefinement(data, ctx);
+
+    if (data.bookInAdvance) {
+      const start = new Date(data.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      start.setHours(0, 0, 0, 0);
+
+      if (start.getTime() < today.getTime()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Advance bookings must start today or later",
+          path: ["startDate"],
+        });
+      }
+    }
   });
 
 export const updateRentalOrderFormSchema = z

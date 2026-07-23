@@ -106,12 +106,14 @@ function CreateRepairForm({
       .map((item) => {
         const prior = priorRepaired.get(item.id) ?? 0;
         const remaining = item.damagedQuantity - prior;
+        const productId =
+          productByRentalItem.get(item.rentalOrderItemId) ?? "";
 
         return {
           id: item.id,
-          label: productLabelById.get(productByRentalItem.get(item.id) ?? "") ?? item.id,
+          label: productLabelById.get(productId) ?? item.id,
           remaining,
-          productId: productByRentalItem.get(item.id) ?? "",
+          productId,
           damagedQuantity: item.damagedQuantity,
         };
       })
@@ -144,14 +146,10 @@ function CreateRepairForm({
       return;
     }
 
-    const rentalItem = rentalOrder.items.find((item) => item.id === returnItemId);
-
-    form.setValue("productId", selected.productId);
-    form.setValue("warehouseId", rentalOrder.warehouseId);
+    form.setValue("productId", selected.productId, { shouldValidate: true });
+    form.setValue("warehouseId", rentalOrder.warehouseId, { shouldValidate: true });
     form.setValue("maxQuantity", selected.remaining);
     form.setValue("quantity", Math.min(form.getValues("quantity"), selected.remaining));
-
-    void rentalItem;
   }, [returnItemId, returnRecord, rentalOrder, returnItemOptions, form]);
 
   return (

@@ -63,6 +63,7 @@ export function toInspectReturnPayload(values: InspectReturnFormValues): Inspect
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.damagedQuantity,
       lostQuantity: item.lostQuantity,
+      missingQuantity: item.missingQuantity,
       notes: normalizeOptionalString(item.notes),
     })),
   };
@@ -89,6 +90,7 @@ export function toInspectFormValues(returnRecord: ReturnResponse): InspectReturn
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.damagedQuantity,
       lostQuantity: item.lostQuantity,
+      missingQuantity: item.missingQuantity ?? 0,
       notes: item.notes ?? "",
     })),
   };

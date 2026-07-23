@@ -1,6 +1,6 @@
 import type { ISettingsRepository } from "@/modules/settings/domain/settings.repository.interface";
 import type { ISystemSettingsRepository } from "@/modules/settings/domain/system-settings.repository.interface";
-import { NotFoundError } from "@/shared/infrastructure/errors";
+import { BOOTSTRAP_COMPANY_SETTINGS } from "@/modules/settings/domain/settings.constants";
 
 import type { SettingsProfileDto } from "../dtos/settings.dto";
 import { toSettingsProfileDto } from "../mappers/settings.mapper";
@@ -17,18 +17,13 @@ export class GetSettingsService {
       this.systemSettingsRepository.findActive(),
     ]);
 
-    if (company === null) {
-      throw new NotFoundError({
-        message: "Company settings not found",
-      });
-    }
+    const resolvedCompany =
+      company ??
+      (await this.settingsRepository.createDefault(BOOTSTRAP_COMPANY_SETTINGS));
 
-    if (system === null) {
-      throw new NotFoundError({
-        message: "System settings not found",
-      });
-    }
+    const resolvedSystem =
+      system ?? (await this.systemSettingsRepository.createDefault());
 
-    return toSettingsProfileDto(company, system);
+    return toSettingsProfileDto(resolvedCompany, resolvedSystem);
   }
 }

@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -244,29 +245,36 @@ export function AuditListTable() {
                   Columns
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {(Object.keys(COLUMN_LABELS) as AuditColumnId[]).map((columnId) => (
-                    <DropdownMenuCheckboxItem
-                      key={columnId}
-                      checked={visibleColumns.has(columnId)}
-                      onCheckedChange={(checked) => {
-                        setVisibleColumnIds((prev) => {
-                          if (checked) {
-                            return prev.includes(columnId) ? prev : [...prev, columnId];
-                          }
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {(Object.keys(COLUMN_LABELS) as AuditColumnId[]).map((columnId) => (
+                      <DropdownMenuCheckboxItem
+                        key={columnId}
+                        checked={visibleColumns.has(columnId)}
+                        disabled={
+                          columnId === "actions" || columnId === "entityName"
+                        }
+                        onCheckedChange={(checked) => {
+                          setVisibleColumnIds((prev) => {
+                            if (checked) {
+                              return prev.includes(columnId)
+                                ? prev
+                                : [...prev, columnId];
+                            }
 
-                          if (columnId === "actions" || columnId === "entityName") {
-                            return prev;
-                          }
+                            if (columnId === "actions" || columnId === "entityName") {
+                              return prev;
+                            }
 
-                          return prev.filter((id) => id !== columnId);
-                        });
-                      }}
-                    >
-                      {COLUMN_LABELS[columnId]}
-                    </DropdownMenuCheckboxItem>
-                  ))}
+                            return prev.filter((id) => id !== columnId);
+                          });
+                        }}
+                      >
+                        {COLUMN_LABELS[columnId]}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
 

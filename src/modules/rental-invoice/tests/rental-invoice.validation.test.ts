@@ -4,6 +4,8 @@ import {
   CreateRentalInvoiceSchema,
   UpdateRentalInvoiceSchema,
 } from "@/modules/rental-invoice/application/schemas/rental-invoice.schemas";
+import { GenerateRentalInvoiceFromOrderSchema } from "@/modules/rental-invoice/application/schemas/generate-rental-invoice.schema";
+import { appendOptionalInvoiceCharges } from "@/modules/rental-invoice/application/services/build-rental-invoice-lines";
 import { ListRentalInvoicesSchema } from "@/modules/rental-invoice/application/schemas/list-rental-invoices.schema";
 
 import {
@@ -122,6 +124,7 @@ describe("CreateRentalInvoiceSchema", () => {
       "DAMAGE_CHARGE",
       "LOST_ITEM_CHARGE",
       "REPAIR_CHARGE",
+      "LABOUR_CHARGE",
       "MANUAL_CHARGE",
       "DISCOUNT",
       "TAX",
@@ -320,5 +323,57 @@ describe("ListRentalInvoicesSchema", () => {
 
       expect(result.status).toBe(status);
     }
+  });
+});
+
+describe("GenerateRentalInvoiceFromOrderSchema", () => {
+  it("defaults optional charges to zero", () => {
+    const result = GenerateRentalInvoiceFromOrderSchema.parse({
+      rentalOrderId: RENTAL_ORDER_ID,
+    });
+
+    expect(result.deliveryCharges).toBe(0);
+    expect(result.labourCharges).toBe(0);
+    expect(result.taxAmount).toBe(0);
+  });
+
+  it("accepts optional delivery, labour, and tax amounts", () => {
+    const result = GenerateRentalInvoiceFromOrderSchema.parse({
+      rentalOrderId: RENTAL_ORDER_ID,
+      deliveryCharges: 1500,
+      labourCharges: 800,
+      taxAmount: 250,
+    });
+
+    expect(result.deliveryCharges).toBe(1500);
+    expect(result.labourCharges).toBe(800);
+    expect(result.taxAmount).toBe(250);
+  });
+});
+
+describe("appendOptionalInvoiceCharges", () => {
+  it("appends only positive optional charge lines", () => {
+    const lines = appendOptionalInvoiceCharges(
+      [
+        {
+          lineType: "RENTAL_CHARGE",
+          description: "Chair",
+          quantity: 10,
+          unitPrice: 30,
+          sortOrder: 0,
+        },
+      ],
+      {
+        deliveryCharges: 1000,
+        labourCharges: 0,
+        taxAmount: 200,
+      },
+    );
+
+    expect(lines).toHaveLength(3);
+    expect(lines[1]?.lineType).toBe("DELIVERY_CHARGE");
+    expect(lines[1]?.unitPrice).toBe(1000);
+    expect(lines[2]?.lineType).toBe("TAX");
+    expect(lines[2]?.unitPrice).toBe(200);
   });
 });

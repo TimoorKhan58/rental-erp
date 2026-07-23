@@ -78,6 +78,16 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
       items = items.filter((item) => item.warehouseId === query.warehouseId);
     }
 
+    if (query.eventFrom !== undefined) {
+      const eventFrom = query.eventFrom;
+      items = items.filter((item) => item.endDate.getTime() >= eventFrom.getTime());
+    }
+
+    if (query.eventTo !== undefined) {
+      const eventTo = query.eventTo;
+      items = items.filter((item) => item.startDate.getTime() <= eventTo.getTime());
+    }
+
     if (query.search) {
       const term = query.search.toLowerCase();
       items = items.filter(

@@ -47,6 +47,7 @@ export function validateReturnItems(
       goodQuantity: 0,
       damagedQuantity: 0,
       lostQuantity: 0,
+      missingQuantity: 0,
       notes: normalizeOptionalText(item.notes),
     };
   });
@@ -165,7 +166,12 @@ export function applyInspectionToItems(
 
     inspectMap.delete(item.rentalOrderItemId);
 
-    if (inspectItem.goodQuantity < 0 || inspectItem.damagedQuantity < 0 || inspectItem.lostQuantity < 0) {
+    if (
+      inspectItem.goodQuantity < 0 ||
+      inspectItem.damagedQuantity < 0 ||
+      inspectItem.lostQuantity < 0 ||
+      inspectItem.missingQuantity < 0
+    ) {
       throw new ReturnInvalidItemError(
         "Inspection quantities cannot be negative",
         item.rentalOrderItemId,
@@ -175,7 +181,8 @@ export function applyInspectionToItems(
     const total =
       inspectItem.goodQuantity +
       inspectItem.damagedQuantity +
-      inspectItem.lostQuantity;
+      inspectItem.lostQuantity +
+      inspectItem.missingQuantity;
 
     if (total !== item.returnedQuantity) {
       throw new ReturnInvalidItemError(
@@ -189,6 +196,7 @@ export function applyInspectionToItems(
       goodQuantity: inspectItem.goodQuantity,
       damagedQuantity: inspectItem.damagedQuantity,
       lostQuantity: inspectItem.lostQuantity,
+      missingQuantity: inspectItem.missingQuantity,
       notes:
         inspectItem.notes !== undefined
           ? normalizeOptionalText(inspectItem.notes)
@@ -222,4 +230,9 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 
 export function computeRestockQuantity(item: ReturnItemProps): number {
   return item.goodQuantity;
+}
+
+/** Qty whose rental reservation should clear when the return is completed. */
+export function computeReleaseQuantity(item: ReturnItemProps): number {
+  return item.returnedQuantity;
 }

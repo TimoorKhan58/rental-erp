@@ -59,7 +59,7 @@ export function InspectReturnDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Inspect returned items"
-      description={`Record condition assessment for "${returnRecord.returnNumber}". Good, damaged, and lost quantities must sum to the returned quantity for each item.`}
+      description={`Record condition for "${returnRecord.returnNumber}". Good, damaged, lost, and missing must sum to the returned quantity. Missing is not charged now — if never returned it becomes a loss at actual price.`}
       size="lg"
     >
       <AppForm form={form} onSubmit={handleSubmit} className="space-y-4">
@@ -72,7 +72,7 @@ export function InspectReturnDialog({
                 (Returned: {item.returnedQuantity})
               </span>
             </p>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <NumberField
                 control={form.control}
                 name={`items.${index}.goodQuantity`}
@@ -91,11 +91,17 @@ export function InspectReturnDialog({
                 label="Lost"
                 min={0}
               />
+              <NumberField
+                control={form.control}
+                name={`items.${index}.missingQuantity`}
+                label="Missing"
+                min={0}
+              />
             </div>
             <TextField
               control={form.control}
               name={`items.${index}.notes`}
-              label="Damage notes"
+              label="Condition notes"
               className="mt-3"
             />
           </div>

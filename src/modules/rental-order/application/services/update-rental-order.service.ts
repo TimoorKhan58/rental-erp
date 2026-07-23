@@ -41,21 +41,6 @@ export class UpdateRentalOrderService {
     const data = parseRequest(UpdateRentalOrderSchema, input);
     const updateData = toUpdateRentalOrderData(data);
 
-    if (updateData.items !== undefined) {
-      try {
-        validateRentalOrderItems(updateData.items);
-      } catch (error) {
-        if (error instanceof RentalOrderInvariantError) {
-          throw new UnprocessableError({
-            message: error.message,
-            details: { field: error.field },
-          });
-        }
-
-        throw error;
-      }
-    }
-
     return this.transactionRunner.run(async ({ rentalOrderRepository, auditLogger }) => {
       const existing = await rentalOrderRepository.findById(toRentalOrderId(id));
 
@@ -64,6 +49,29 @@ export class UpdateRentalOrderService {
           message: "Rental order not found",
           details: { id },
         });
+      }
+
+      if (updateData.items !== undefined) {
+        const existingProps = existing.toProps();
+        const orderStartDate = updateData.startDate ?? existingProps.startDate;
+        const orderEndDate = updateData.endDate ?? existingProps.endDate;
+
+        try {
+          validateRentalOrderItems(
+            updateData.items,
+            orderStartDate,
+            orderEndDate,
+          );
+        } catch (error) {
+          if (error instanceof RentalOrderInvariantError) {
+            throw new UnprocessableError({
+              message: error.message,
+              details: { field: error.field },
+            });
+          }
+
+          throw error;
+        }
       }
 
       try {

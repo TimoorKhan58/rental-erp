@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { Settings } from "@/modules/settings/domain/settings.entity";
-import type { UpdateSettingsData } from "@/modules/settings/domain/settings.types";
+import type { CreateSettingsData, UpdateSettingsData } from "@/modules/settings/domain/settings.types";
 import type { CompanySettingId } from "@/shared/domain/ids";
 
 function decimalToNumber(value: Prisma.Decimal): number {
@@ -215,4 +215,44 @@ export function toSettingsUpdateInput(
   }
 
   return update;
+}
+
+export function toSettingsCreateInput(
+  data: CreateSettingsData,
+): Prisma.CompanySettingCreateInput {
+  const normalized = Settings.create(data);
+
+  return {
+    companyName: normalized.companyName,
+    businessName: normalized.businessName,
+    ownerName: normalized.ownerName,
+    phone: normalized.phone,
+    secondaryPhone: normalized.secondaryPhone,
+    email: normalized.email,
+    website: normalized.website,
+    address: normalized.address,
+    city: normalized.city,
+    province: normalized.province,
+    country: normalized.country,
+    postalCode: normalized.postalCode,
+    ntn: normalized.ntn,
+    strn: normalized.strn,
+    logoUrl: normalized.logoUrl,
+    faviconUrl: normalized.faviconUrl,
+    currencyCode: normalized.currencyCode,
+    currencySymbol: normalized.currencySymbol,
+    timezone: normalized.timezone,
+    language: normalized.language,
+    dateFormat: normalized.dateFormat,
+    timeFormat: normalized.timeFormat,
+    numberFormat: normalized.numberFormat,
+    defaultRentalDays: normalized.defaultRentalDays,
+    defaultTaxPercentage: toPrismaDecimal(normalized.defaultTaxPercentage),
+    fiscalYearStartMonth: normalized.fiscalYearStartMonth,
+    securityDepositEnabled: normalized.securityDepositEnabled,
+    lateFeeEnabled: normalized.lateFeeEnabled,
+    isActive: normalized.isActive,
+    setupCompleted: normalized.setupCompleted,
+    maintenanceMode: normalized.maintenanceMode,
+  };
 }

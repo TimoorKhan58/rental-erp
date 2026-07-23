@@ -1,5 +1,6 @@
 export {
   CheckboxField,
+  ComboboxField,
   CurrencyField,
   DatePickerField,
   MultiSelectField,

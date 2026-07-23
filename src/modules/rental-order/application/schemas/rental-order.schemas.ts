@@ -12,11 +12,38 @@ import { RENTAL_ORDER_STATUSES } from "@/modules/rental-order/domain/rental-orde
 
 const PositiveNumberSchema = z.coerce.number().positive();
 
-const RentalOrderItemInputSchema = z.object({
-  productId: UUIDSchema,
-  quantity: PositiveIntSchema,
-  dailyRate: PositiveNumberSchema,
-});
+const RentalOrderItemInputSchema = z
+  .object({
+    productId: UUIDSchema,
+    quantity: PositiveIntSchema,
+    dailyRate: PositiveNumberSchema,
+    startDate: DateSchema.optional(),
+    endDate: DateSchema.optional(),
+  })
+  .superRefine((item, ctx) => {
+    if (
+      (item.startDate && !item.endDate) ||
+      (!item.startDate && item.endDate)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Both start and end dates are required for a custom line period",
+        path: ["startDate"],
+      });
+    }
+
+    if (
+      item.startDate &&
+      item.endDate &&
+      item.endDate.getTime() < item.startDate.getTime()
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Line end date cannot be before start date",
+        path: ["endDate"],
+      });
+    }
+  });
 
 export const RentalOrderIdParamSchema = z.object({
   id: UUIDSchema,
@@ -33,10 +60,10 @@ export const CreateRentalOrderSchema = z
     items: z.array(RentalOrderItemInputSchema).min(1),
   })
   .superRefine((value, ctx) => {
-    if (value.endDate.getTime() <= value.startDate.getTime()) {
+    if (value.endDate.getTime() < value.startDate.getTime()) {
       ctx.addIssue({
         code: "custom",
-        message: "End date must be after start date",
+        message: "End date cannot be before start date",
         path: ["endDate"],
       });
     }
@@ -65,11 +92,11 @@ export const UpdateRentalOrderSchema = z
     if (
       value.startDate !== undefined &&
       value.endDate !== undefined &&
-      value.endDate.getTime() <= value.startDate.getTime()
+      value.endDate.getTime() < value.startDate.getTime()
     ) {
       ctx.addIssue({
         code: "custom",
-        message: "End date must be after start date",
+        message: "End date cannot be before start date",
         path: ["endDate"],
       });
     }

@@ -13,9 +13,9 @@ import type {
 } from "./rental-order.types";
 
 export function validateRentalPeriod(startDate: Date, endDate: Date): void {
-  if (endDate.getTime() <= startDate.getTime()) {
+  if (endDate.getTime() < startDate.getTime()) {
     throw new RentalOrderInvariantError(
-      "End date must be after start date",
+      "End date cannot be before start date",
       "endDate",
     );
   }
@@ -23,6 +23,8 @@ export function validateRentalPeriod(startDate: Date, endDate: Date): void {
 
 export function validateRentalOrderItems(
   items: CreateRentalOrderItemData[],
+  orderStartDate: Date,
+  orderEndDate: Date,
 ): RentalOrderItemProps[] {
   if (items.length === 0) {
     throw new RentalOrderInvariantError(
@@ -57,14 +59,56 @@ export function validateRentalOrderItems(
 
     productIds.add(item.productId);
 
+    const startDate = item.startDate ?? orderStartDate;
+    const endDate = item.endDate ?? orderEndDate;
+    validateRentalPeriod(startDate, endDate);
+    const numberOfDays = computeRentalDays(startDate, endDate);
+
     return {
       id: "",
       productId: item.productId,
       quantity: item.quantity,
       dailyRate: item.dailyRate,
       reservedQuantity: 0,
+      startDate,
+      endDate,
+      numberOfDays,
     };
   });
+}
+
+export function computeOrderDateEnvelope(items: RentalOrderItemProps[]): {
+  startDate: Date;
+  endDate: Date;
+} {
+  if (items.length === 0) {
+    throw new RentalOrderInvariantError(
+      "Rental order must have at least one item",
+      "items",
+    );
+  }
+
+  let startDate = items[0]!.startDate;
+  let endDate = items[0]!.endDate;
+
+  for (const item of items.slice(1)) {
+    if (item.startDate.getTime() < startDate.getTime()) {
+      startDate = item.startDate;
+    }
+    if (item.endDate.getTime() > endDate.getTime()) {
+      endDate = item.endDate;
+    }
+  }
+
+  return { startDate, endDate };
+}
+
+export function computeOrderSubtotal(items: RentalOrderItemProps[]): number {
+  return items.reduce(
+    (sum, item) =>
+      sum + computeLineTotal(item.quantity, item.dailyRate, item.numberOfDays),
+    0,
+  );
 }
 
 export function assertReservedQuantityWithinOrdered(
@@ -232,11 +276,20 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/**
+ * Rental billing days:
+ * - Same deliver/return date → 1 day
+ * - Return within 24 hours → 1 day
+ * - Longer periods → ceil of elapsed 24-hour blocks (minimum 1)
+ */
 export function computeRentalDays(startDate: Date, endDate: Date): number {
   validateRentalPeriod(startDate, endDate);
   const msPerDay = 1000 * 60 * 60 * 24;
-  const days = Math.ceil((endDate.getTime() - startDate.getTime()) / msPerDay);
-  return Math.max(1, days);
+  const elapsedMs = endDate.getTime() - startDate.getTime();
+  if (elapsedMs <= msPerDay) {
+    return 1;
+  }
+  return Math.ceil(elapsedMs / msPerDay);
 }
 
 export function computeLineTotal(

@@ -1,4 +1,5 @@
 export {
+  adjustInventoryStock,
   createInventory,
   deleteInventory,
   getInventory,

@@ -17,6 +17,7 @@ export const RENTAL_INVOICE_LINE_TYPES = [
   "DAMAGE_CHARGE",
   "LOST_ITEM_CHARGE",
   "REPAIR_CHARGE",
+  "LABOUR_CHARGE",
   "MANUAL_CHARGE",
   "DISCOUNT",
   "TAX",
@@ -34,6 +35,13 @@ export type RentalInvoiceItemResponse = {
   unitPrice: number;
   lineTotal: number;
   sortOrder: number;
+  productName: string | null;
+  dailyRate: number | null;
+  numberOfDays: number | null;
+  damagedQuantity: number;
+  lostQuantity: number;
+  missingQuantity: number;
+  notes: string | null;
 };
 
 export type RentalInvoiceResponse = {

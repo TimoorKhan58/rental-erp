@@ -29,6 +29,8 @@
     "db:backup": "bash ./scripts/db/backup.sh",
     "db:restore": "bash ./scripts/db/restore.sh",
     "db:studio": "prisma studio",
+    "demo:wedding": "node ./scripts/seed-wedding-scenario.mjs",
+    "seed:malakand": "node ./scripts/seed-malakand-price-list.mjs",
     "db:auth-generate": "better-auth generate --config src/lib/auth/config.ts -y",
     "config:check": "vitest run src/shared/config/env.validation.test.ts",
     "docker:dev": "docker compose up --build",

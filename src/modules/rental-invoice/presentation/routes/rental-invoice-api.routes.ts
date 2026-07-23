@@ -235,3 +235,33 @@ export async function handleVoidRentalInvoice(
 
   return toJsonResponse(result);
 }
+
+export async function handleConvertMissingToLoss(
+  request: NextRequest,
+  id: string,
+  resolveServices: RentalInvoiceServiceResolver,
+): Promise<Response> {
+  const params = parseRequest(RentalInvoiceIdParamSchema, { id });
+
+  const result = await runRentalInvoiceApiRoute({
+    request,
+    route: RENTAL_INVOICE_ROUTES.convertMissingToLoss(id),
+    httpMethod: "POST",
+    permission: PERMISSIONS.rentalInvoices.update,
+    resolveServices,
+    handler: async (_ctx, services) =>
+      services.convertMissingToLoss.execute(params),
+  });
+
+  if (result.status === 200 && "data" in result.body) {
+    return toJsonResponse({
+      ...result,
+      body: {
+        ...result.body,
+        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+      },
+    });
+  }
+
+  return toJsonResponse(result);
+}

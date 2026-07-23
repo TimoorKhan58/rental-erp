@@ -154,4 +154,29 @@ describe("ListRentalOrdersSchema", () => {
     expect(result.customerId).toBe(CUSTOMER_ID);
     expect(result.warehouseId).toBe(WAREHOUSE_ID);
   });
+
+  it("accepts event date overlap filters", () => {
+    const result = ListRentalOrdersSchema.parse({
+      page: "1",
+      pageSize: "10",
+      sortOrder: "desc",
+      eventFrom: "2026-07-01",
+      eventTo: "2026-07-31",
+    });
+
+    expect(result.eventFrom).toBeInstanceOf(Date);
+    expect(result.eventTo).toBeInstanceOf(Date);
+  });
+
+  it("rejects eventTo before eventFrom", () => {
+    expect(() =>
+      ListRentalOrdersSchema.parse({
+        page: "1",
+        pageSize: "10",
+        sortOrder: "desc",
+        eventFrom: "2026-07-31",
+        eventTo: "2026-07-01",
+      }),
+    ).toThrow();
+  });
 });

@@ -1,45 +1,23 @@
 /**
- * Dashboard service — notifications use the live API;
- * remaining widgets stay mock until dedicated dashboard endpoints exist.
+ * Dashboard service — business pulse uses live reporting API;
+ * notifications use the live notification API; quick actions are static.
  */
-import {
-  MOCK_DASHBOARD_METRICS,
-  MOCK_FINANCIAL_SUMMARY,
-  MOCK_INVENTORY_OVERVIEW,
-  MOCK_ORGANIZATION_NAME,
-  MOCK_QUICK_ACTIONS,
-  MOCK_RECENT_ACTIVITY,
-  MOCK_RENTAL_TRENDS,
-  MOCK_REVENUE_OVERVIEW,
-  MOCK_SYSTEM_STATUS,
-  MOCK_UPCOMING_TASKS,
-} from "../mock";
-import type {
-  ActivityItem,
-  DashboardMetric,
-  DashboardNotification,
-  DashboardSummary,
-  FinancialSummaryItem,
-  InventoryOverviewItem,
-  QuickAction,
-  RentalTrendPoint,
-  RevenueOverview,
-  SystemStatusItem,
-  UpcomingTask,
-} from "../types";
+import { apiGet } from "@/lib/api";
 import { getNotifications } from "@/features/notification/services";
 import type {
   NotificationPriority,
   NotificationResponse,
 } from "@/features/notification/types";
-
-const MOCK_DELAY_MS = 400;
-
-function delay<T>(data: T, ms = MOCK_DELAY_MS): Promise<T> {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(data), ms);
-  });
-}
+import {
+  DASHBOARD_QUICK_ACTIONS,
+  toBusinessPulse,
+} from "../mappers/business-pulse.mapper";
+import type {
+  BusinessPulse,
+  DashboardNotification,
+  LiveDashboardSummary,
+  QuickAction,
+} from "../types";
 
 function priorityToSeverity(
   priority: NotificationPriority,
@@ -69,23 +47,17 @@ function toDashboardNotification(
   };
 }
 
-export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  return delay({
-    organizationName: MOCK_ORGANIZATION_NAME,
-    metrics: MOCK_DASHBOARD_METRICS,
-  });
+export async function fetchLiveDashboardSummary(): Promise<LiveDashboardSummary> {
+  return apiGet<LiveDashboardSummary>("/reports/dashboard");
 }
 
-export async function fetchDashboardMetrics(): Promise<DashboardMetric[]> {
-  return delay(MOCK_DASHBOARD_METRICS);
+export async function fetchBusinessPulse(): Promise<BusinessPulse> {
+  const summary = await fetchLiveDashboardSummary();
+  return toBusinessPulse(summary);
 }
 
 export async function fetchQuickActions(): Promise<QuickAction[]> {
-  return delay(MOCK_QUICK_ACTIONS, 200);
-}
-
-export async function fetchRecentActivity(): Promise<ActivityItem[]> {
-  return delay(MOCK_RECENT_ACTIVITY);
+  return DASHBOARD_QUICK_ACTIONS;
 }
 
 export async function fetchDashboardNotifications(): Promise<DashboardNotification[]> {
@@ -97,28 +69,4 @@ export async function fetchDashboardNotifications(): Promise<DashboardNotificati
   });
 
   return result.items.map(toDashboardNotification);
-}
-
-export async function fetchUpcomingTasks(): Promise<UpcomingTask[]> {
-  return delay(MOCK_UPCOMING_TASKS);
-}
-
-export async function fetchRevenueOverview(): Promise<RevenueOverview> {
-  return delay(MOCK_REVENUE_OVERVIEW);
-}
-
-export async function fetchRentalTrends(): Promise<RentalTrendPoint[]> {
-  return delay(MOCK_RENTAL_TRENDS);
-}
-
-export async function fetchInventoryOverview(): Promise<InventoryOverviewItem[]> {
-  return delay(MOCK_INVENTORY_OVERVIEW);
-}
-
-export async function fetchFinancialSummary(): Promise<FinancialSummaryItem[]> {
-  return delay(MOCK_FINANCIAL_SUMMARY);
-}
-
-export async function fetchSystemStatus(): Promise<SystemStatusItem[]> {
-  return delay(MOCK_SYSTEM_STATUS, 250);
 }

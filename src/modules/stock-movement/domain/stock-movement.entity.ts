@@ -114,7 +114,14 @@ function validateStockMovement(input: StockMovementValidationInput): void {
     );
   }
 
-  if (input.quantity <= 0) {
+  if (input.movementType === "ADJUSTMENT") {
+    if (input.quantity === 0) {
+      throw new StockMovementInvariantError(
+        "quantity cannot be zero for ADJUSTMENT",
+        "quantity",
+      );
+    }
+  } else if (input.quantity <= 0) {
     throw new StockMovementInvariantError(
       "quantity must be greater than zero",
       "quantity",

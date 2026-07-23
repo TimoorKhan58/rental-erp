@@ -197,6 +197,21 @@ describe("computeMovementEffect", () => {
     expect(effect.newQuantity).toBe(115);
   });
 
+  it("ADJUSTMENT decreases quantityOnHand with negative quantity", () => {
+    const effect = computeMovementEffect(inventory, "ADJUSTMENT", -15);
+
+    expect(effect.quantityOnHand).toBe(85);
+    expect(effect.reservedQuantity).toBe(10);
+    expect(effect.previousQuantity).toBe(100);
+    expect(effect.newQuantity).toBe(85);
+  });
+
+  it("ADJUSTMENT rejects decrease that would go below reserved quantity", () => {
+    expect(() => computeMovementEffect(inventory, "ADJUSTMENT", -95)).toThrow(
+      StockMovementInsufficientQuantityError,
+    );
+  });
+
   it("reconstituted inventory remains valid after IN movement", () => {
     const effect = computeMovementEffect(inventory, "IN", 10);
     const props = inventory.toProps();

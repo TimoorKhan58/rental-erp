@@ -3,6 +3,7 @@
 import { BellIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   useNotificationPermissions,
   useUnreadNotificationCount,
@@ -10,9 +11,10 @@ import {
 
 type NotificationBellButtonProps = {
   onClick: () => void;
+  className?: string;
 };
 
-export function NotificationBellButton({ onClick }: NotificationBellButtonProps) {
+export function NotificationBellButton({ onClick, className }: NotificationBellButtonProps) {
   const { canRead, isLoading: permissionsLoading } = useNotificationPermissions();
   const { data: unreadCount = 0 } = useUnreadNotificationCount(canRead);
 
@@ -33,7 +35,7 @@ export function NotificationBellButton({ onClick }: NotificationBellButtonProps)
           ? `Notifications, ${unreadCount} unread`
           : "Notifications, no unread"
       }
-      className="relative"
+      className={cn("relative", className)}
       onClick={onClick}
     >
       <BellIcon className="size-4" aria-hidden="true" />

@@ -10,6 +10,7 @@ import {
   ClockIcon,
   PackageIcon,
   PencilIcon,
+  ScaleIcon,
   Trash2Icon,
   UserCheckIcon,
   UserXIcon,
@@ -35,6 +36,7 @@ import { InventoryStatusBadge } from "../components/inventory-status-badge";
 import { InventoryStockStatusBadge } from "../components/inventory-stock-status-badge";
 import { InventoryRecoveryIndicator } from "../components/inventory-recovery-indicator";
 import { InventoryStockLevelBar } from "../components/inventory-stock-level-bar";
+import { AdjustInventoryDialog } from "../dialogs/adjust-inventory-dialog";
 import { DeleteInventoryDialog } from "../dialogs/delete-inventory-dialog";
 import { EditInventoryDialog } from "../dialogs/edit-inventory-dialog";
 import { ToggleInventoryStatusDialog } from "../dialogs/toggle-inventory-status-dialog";
@@ -141,7 +143,7 @@ function RelatedEntityCard({
 export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
   const router = useRouter();
   const { data: inventory, isLoading, isError, error, refetch } = useInventory(inventoryId);
-  const { canUpdate, canDelete } = useInventoryPermissions();
+  const { canUpdate, canDelete, canAdjust } = useInventoryPermissions();
   const { productLabelById, warehouseLabelById, productPricingById } =
     useInventoryFilterOptions();
   const { productRecoveryById } = useInventoryRecoveryMaps();
@@ -149,6 +151,7 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
   const { data: warehouse } = useWarehouse(inventory?.warehouseId ?? "");
 
   const [editOpen, setEditOpen] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
@@ -236,6 +239,15 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
                 onClick={() => setStatusOpen(true)}
               >
                 {inventory.isActive ? "Deactivate" : "Activate"}
+              </AppButton>
+            ) : null}
+            {canAdjust ? (
+              <AppButton
+                variant="outline"
+                leftIcon={<ScaleIcon className="size-4" aria-hidden="true" />}
+                onClick={() => setAdjustOpen(true)}
+              >
+                Adjust stock
               </AppButton>
             ) : null}
             {canUpdate ? (
@@ -452,6 +464,12 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
         inventory={inventory}
         open={editOpen}
         onOpenChange={setEditOpen}
+      />
+
+      <AdjustInventoryDialog
+        inventory={inventory}
+        open={adjustOpen}
+        onOpenChange={setAdjustOpen}
       />
 
       <DeleteInventoryDialog

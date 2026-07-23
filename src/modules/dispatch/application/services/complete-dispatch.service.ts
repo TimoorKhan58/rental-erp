@@ -105,22 +105,39 @@ export class CompleteDispatchService {
             });
           }
 
-          await executeCreateStockMovementInScope(
-            {
-              stockMovementRepository,
-              inventoryRepository,
-              auditLogger,
-              userId,
-            },
-            {
+          const movementScope = {
+            stockMovementRepository,
+            inventoryRepository,
+            auditLogger,
+            userId,
+          };
+
+          // Consume reservation when stock leaves the warehouse so available
+          // quantity is no longer held against items that are already on rent.
+          const releaseQuantity = Math.min(
+            item.quantity,
+            inventory.reservedQuantity,
+          );
+
+          if (releaseQuantity > 0) {
+            await executeCreateStockMovementInScope(movementScope, {
               inventoryId: inventory.id,
-              movementType: "OUT",
-              quantity: item.quantity,
+              movementType: "RELEASE",
+              quantity: releaseQuantity,
               referenceType: RENTAL_ORDER_REFERENCE_TYPE,
               referenceId: rentalOrder.id,
-              remarks: `Dispatched for rental order ${rentalOrder.orderNumber}`,
-            },
-          );
+              remarks: `Released reservation for dispatch of rental order ${rentalOrder.orderNumber}`,
+            });
+          }
+
+          await executeCreateStockMovementInScope(movementScope, {
+            inventoryId: inventory.id,
+            movementType: "OUT",
+            quantity: item.quantity,
+            referenceType: RENTAL_ORDER_REFERENCE_TYPE,
+            referenceId: rentalOrder.id,
+            remarks: `Dispatched for rental order ${rentalOrder.orderNumber}`,
+          });
         }
 
         const completed = updated.withCompleted();

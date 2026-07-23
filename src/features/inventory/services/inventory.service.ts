@@ -35,3 +35,30 @@ export async function updateInventory(
 export async function deleteInventory(id: string): Promise<null> {
   return apiDelete<null>(`${BASE}/${id}`);
 }
+
+export type AdjustInventoryPayload = {
+  inventoryId: string;
+  quantity: number;
+  remarks: string;
+};
+
+export type StockMovementResponse = {
+  id: string;
+  inventoryId: string;
+  movementType: string;
+  quantity: number;
+  previousQuantity: number;
+  newQuantity: number;
+  remarks: string;
+};
+
+export async function adjustInventoryStock(
+  payload: AdjustInventoryPayload,
+): Promise<StockMovementResponse> {
+  return apiPost<StockMovementResponse>("/stock-movements", {
+    inventoryId: payload.inventoryId,
+    movementType: "ADJUSTMENT",
+    quantity: payload.quantity,
+    remarks: payload.remarks,
+  });
+}

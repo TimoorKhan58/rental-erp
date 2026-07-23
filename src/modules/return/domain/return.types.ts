@@ -15,6 +15,7 @@ export interface ReturnItemProps {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes: string | null;
 }
 
@@ -63,6 +64,7 @@ export interface InspectReturnItemData {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes?: string | null;
 }
 

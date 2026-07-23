@@ -51,6 +51,24 @@ function mapRentalOrderFilter(
     where.warehouseId = String(filter.warehouseId);
   }
 
+  if (filter.eventFrom !== undefined) {
+    where.eventEndDate = {
+      ...(typeof where.eventEndDate === "object" && where.eventEndDate !== null
+        ? where.eventEndDate
+        : {}),
+      gte: filter.eventFrom as Date,
+    };
+  }
+
+  if (filter.eventTo !== undefined) {
+    where.eventStartDate = {
+      ...(typeof where.eventStartDate === "object" && where.eventStartDate !== null
+        ? where.eventStartDate
+        : {}),
+      lte: filter.eventTo as Date,
+    };
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -108,6 +126,14 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
       filter.warehouseId = query.warehouseId;
     }
 
+    if (query.eventFrom !== undefined) {
+      filter.eventFrom = query.eventFrom;
+    }
+
+    if (query.eventTo !== undefined) {
+      filter.eventTo = query.eventTo;
+    }
+
     return runRepositoryPagedQuery(
       this.runner,
       {
@@ -139,10 +165,18 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
         },
         meta: { model: MODEL, operation: "findPaged" },
       },
-    ).then((result) => ({
-      items: result.items.map(toRentalOrderDomain),
-      meta: result.meta,
-    }));
+    ).then((result) => {
+      try {
+        return {
+          items: result.items.map(toRentalOrderDomain),
+          meta: result.meta,
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to map rental orders";
+        throw new Error(`Rental order list mapping failed: ${message}`);
+      }
+    });
   }
 
   create(data: CreateRentalOrderData): Promise<RentalOrder> {

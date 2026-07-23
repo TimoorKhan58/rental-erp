@@ -7,6 +7,9 @@ export interface RentalOrderItemResponse {
   quantity: number;
   dailyRate: number;
   reservedQuantity: number;
+  startDate: string;
+  endDate: string;
+  numberOfDays: number;
 }
 
 export interface RentalOrderResponse {
@@ -45,6 +48,9 @@ export function toRentalOrderResponse(dto: RentalOrderDto): RentalOrderResponse 
       quantity: item.quantity,
       dailyRate: item.dailyRate,
       reservedQuantity: item.reservedQuantity,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      numberOfDays: item.numberOfDays,
     })),
     createdById: dto.createdById,
     createdAt: dto.createdAt,

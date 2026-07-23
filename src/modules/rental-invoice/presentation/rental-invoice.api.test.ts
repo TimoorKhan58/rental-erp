@@ -40,6 +40,7 @@ function createMockServices() {
     createRentalInvoice: { execute: vi.fn() },
     updateRentalInvoice: { execute: vi.fn() },
     issueRentalInvoice: { execute: vi.fn() },
+    convertMissingToLoss: { execute: vi.fn() },
     voidRentalInvoice: { execute: vi.fn() },
   };
 }

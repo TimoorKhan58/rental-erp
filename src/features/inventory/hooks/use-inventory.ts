@@ -17,6 +17,7 @@ import {
   getInventory,
   getInventoryList,
   updateInventory,
+  adjustInventoryStock,
 } from "../services";
 
 type LookupOption = {
@@ -269,6 +270,24 @@ export function useToggleInventoryStatus() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.detail(data.id) }),
+      ]);
+    },
+  });
+}
+
+export function useAdjustInventory() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: adjustInventoryStock,
+    showSuccessToast: true,
+    successMessage: "Stock adjustment recorded successfully.",
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.inventory.detail(data.inventoryId),
+        }),
       ]);
     },
   });

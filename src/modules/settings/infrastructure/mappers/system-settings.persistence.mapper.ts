@@ -196,3 +196,39 @@ export function toSystemSettingsUpdateInput(
 
   return update;
 }
+
+export function toSystemSettingsCreateInput(): Prisma.SystemSettingCreateInput {
+  const defaults = SystemSettings.create();
+
+  return {
+    appName: defaults.appName,
+    appVersion: defaults.appVersion,
+    environment: defaults.environment,
+    supportEmail: defaults.supportEmail,
+    supportPhone: defaults.supportPhone,
+    minPasswordLength: defaults.minPasswordLength,
+    maxLoginAttempts: defaults.maxLoginAttempts,
+    lockoutDurationMinutes: defaults.lockoutDurationMinutes,
+    requireEmailVerification: defaults.requireEmailVerification,
+    allowPasswordReset: defaults.allowPasswordReset,
+    sessionTimeoutMinutes: defaults.sessionTimeoutMinutes,
+    rememberMeDurationDays: defaults.rememberMeDurationDays,
+    maxConcurrentSessions: defaults.maxConcurrentSessions,
+    passwordExpiryDays: defaults.passwordExpiryDays,
+    ipWhitelistEnabled: defaults.ipWhitelistEnabled,
+    auditLogRetentionDays: defaults.auditLogRetentionDays,
+    maxUploadSizeMb: defaults.maxUploadSizeMb,
+    allowedFileTypes: defaults.allowedFileTypes,
+    uploadStoragePath: defaults.uploadStoragePath,
+    emailNotificationsEnabled: defaults.emailNotificationsEnabled,
+    smsNotificationsEnabled: defaults.smsNotificationsEnabled,
+    defaultNotificationEmail: defaults.defaultNotificationEmail,
+    backupEnabled: defaults.backupEnabled,
+    backupFrequency: defaults.backupFrequency,
+    backupRetentionDays: defaults.backupRetentionDays,
+    lastBackupAt: defaults.lastBackupAt,
+    defaultDashboardView: defaults.defaultDashboardView,
+    recentItemsLimit: defaults.recentItemsLimit,
+    chartDefaultPeriodDays: defaults.chartDefaultPeriodDays,
+  };
+}

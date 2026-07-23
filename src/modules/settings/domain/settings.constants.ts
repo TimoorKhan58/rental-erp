@@ -74,3 +74,30 @@ export const DEFAULT_NUMBER_SEQUENCE = {
   paddingLength: 3,
   suffix: null,
 } as const;
+
+/** First-run bootstrap when migrations seed data is missing. */
+export const BOOTSTRAP_COMPANY_SETTINGS = {
+  companyName: "Manyar Tent Service",
+  businessName: "Manyar Tent Service",
+  phone: "+920000000000",
+  email: "info@manyartent.com",
+  address: "Main Office",
+  city: "Lahore",
+  province: "Punjab",
+  country: APPLICATION.country,
+  currencyCode: APPLICATION.currency,
+  currencySymbol: "Rs",
+  timezone: APPLICATION.timezone,
+  language: "en",
+  dateFormat: "DD/MM/YYYY",
+  timeFormat: "HH:mm",
+  numberFormat: "#,##0.00",
+  defaultRentalDays: 3,
+  defaultTaxPercentage: 0,
+  fiscalYearStartMonth: 7,
+  securityDepositEnabled: false,
+  lateFeeEnabled: false,
+  isActive: true,
+  setupCompleted: false,
+  maintenanceMode: false,
+} as const;

@@ -274,6 +274,7 @@ describe("return route handlers", () => {
               goodQuantity: 3,
               damagedQuantity: 1,
               lostQuantity: 1,
+            missingQuantity: 0,
             },
           ],
         },

@@ -11,6 +11,13 @@ export interface RentalInvoiceItemDto {
   unitPrice: number;
   lineTotal: number;
   sortOrder: number;
+  productName: string | null;
+  dailyRate: number | null;
+  numberOfDays: number | null;
+  damagedQuantity: number;
+  lostQuantity: number;
+  missingQuantity: number;
+  notes: string | null;
 }
 
 export interface RentalInvoiceDto {
@@ -42,6 +49,14 @@ export interface CreateRentalInvoiceItemDto {
   quantity: number;
   unitPrice: number;
   sortOrder?: number;
+  productName?: string | null;
+  dailyRate?: number | null;
+  numberOfDays?: number | null;
+  damagedQuantity?: number;
+  lostQuantity?: number;
+  missingQuantity?: number;
+  notes?: string | null;
+  lineTotal?: number;
 }
 
 export interface CreateRentalInvoiceDto {

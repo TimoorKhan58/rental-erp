@@ -25,6 +25,9 @@ export type RentalOrderItemResponse = {
   quantity: number;
   dailyRate: number;
   reservedQuantity: number;
+  startDate: string;
+  endDate: string;
+  numberOfDays: number;
 };
 
 export type RentalOrderResponse = {
@@ -63,12 +66,18 @@ export type ListRentalOrdersParams = {
   status?: RentalOrderStatus;
   customerId?: string;
   warehouseId?: string;
+  /** ISO date — include orders overlapping this range start. */
+  eventFrom?: string;
+  /** ISO date — include orders overlapping this range end. */
+  eventTo?: string;
 };
 
 export type RentalOrderLineItemPayload = {
   productId: string;
   quantity: number;
   dailyRate: number;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type CreateRentalOrderPayload = {

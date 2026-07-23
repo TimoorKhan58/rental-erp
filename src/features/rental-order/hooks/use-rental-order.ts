@@ -27,6 +27,7 @@ import {
 type LookupOption = {
   id: string;
   label: string;
+  keywords?: string;
 };
 
 export function useRentalOrderPermissions() {
@@ -80,7 +81,8 @@ export function useRentalOrderFilterOptions() {
 
   const productOptions: LookupOption[] = (products.data?.items ?? []).map((item) => ({
     id: item.id,
-    label: `${item.productCode} — ${item.name}`,
+    label: item.name,
+    keywords: item.productCode,
   }));
 
   const customerLabelById = new Map(customerOptions.map((item) => [item.id, item.label]));

@@ -7,6 +7,7 @@ import type {
   UpdateRentalInvoiceInput,
 } from "../schemas/rental-invoice.schemas";
 import type { ListRentalInvoicesInput } from "../schemas/list-rental-invoices.schema";
+import type { ConvertMissingToLossService } from "./convert-missing-to-loss.service";
 import type { CreateRentalInvoiceService } from "./create-rental-invoice.service";
 import type { GenerateRentalInvoiceFromOrderService } from "./generate-rental-invoice-from-order.service";
 import type { GenerateRentalInvoiceFromOrderInput } from "../schemas/generate-rental-invoice.schema";
@@ -24,6 +25,7 @@ export interface RentalInvoiceApplicationServices {
   updateRentalInvoice: UpdateRentalInvoiceService;
   issueRentalInvoice: IssueRentalInvoiceService;
   voidRentalInvoice: VoidRentalInvoiceService;
+  convertMissingToLoss: ConvertMissingToLossService;
 }
 
 export type RentalInvoiceServiceResolver = (

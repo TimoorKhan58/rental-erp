@@ -16,6 +16,20 @@ function normalizeOptionalString(value: string | null | undefined): string | nul
   return value.trim();
 }
 
+function toLinePayload(
+  item: CreateRentalOrderFormValues["items"][number],
+  orderStartDate: string,
+  orderEndDate: string,
+) {
+  return {
+    productId: item.productId,
+    quantity: item.quantity,
+    dailyRate: item.dailyRate,
+    startDate: item.useCustomDates ? item.startDate : undefined,
+    endDate: item.useCustomDates ? item.endDate : undefined,
+  };
+}
+
 export function toCreateRentalOrderPayload(
   values: CreateRentalOrderFormValues,
 ): CreateRentalOrderPayload {
@@ -26,11 +40,9 @@ export function toCreateRentalOrderPayload(
     startDate: values.startDate,
     endDate: values.endDate,
     remarks: normalizeOptionalString(values.remarks),
-    items: values.items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      dailyRate: item.dailyRate,
-    })),
+    items: values.items.map((item) =>
+      toLinePayload(item, values.startDate, values.endDate),
+    ),
   };
 }
 
@@ -43,11 +55,9 @@ export function toUpdateRentalOrderPayload(
     startDate: values.startDate,
     endDate: values.endDate,
     remarks: normalizeOptionalString(values.remarks),
-    items: values.items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      dailyRate: item.dailyRate,
-    })),
+    items: values.items.map((item) =>
+      toLinePayload(item, values.startDate, values.endDate),
+    ),
   };
 }
 
@@ -60,10 +70,18 @@ export function toRentalOrderFormValues(
     startDate: order.startDate,
     endDate: order.endDate,
     remarks: order.remarks ?? "",
-    items: order.items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      dailyRate: item.dailyRate,
-    })),
+    items: order.items.map((item) => {
+      const matchesOrderDates =
+        item.startDate === order.startDate && item.endDate === order.endDate;
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        dailyRate: item.dailyRate,
+        useCustomDates: !matchesOrderDates,
+        startDate: item.startDate,
+        endDate: item.endDate,
+      };
+    }),
   };
 }

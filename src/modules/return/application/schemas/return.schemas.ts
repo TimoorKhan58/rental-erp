@@ -50,6 +50,7 @@ export const InspectReturnSchema = z.object({
         goodQuantity: z.coerce.number().int().min(0),
         damagedQuantity: z.coerce.number().int().min(0),
         lostQuantity: z.coerce.number().int().min(0),
+        missingQuantity: z.coerce.number().int().min(0).default(0),
         notes: TrimmedStringSchema.max(500).optional().nullable(),
       }),
     )

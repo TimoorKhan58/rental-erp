@@ -1,4 +1,8 @@
-import { calculateOrderTotal, calculateRentalDays, deriveReservationStatus } from "./rental-order-totals.mapper";
+import {
+  calculateOrderTotalFromItems,
+  calculateRentalDays,
+  deriveReservationStatus,
+} from "./rental-order-totals.mapper";
 import type { RentalOrderResponse, RentalOrderStatus } from "../types";
 
 export type RentalOrderSummaryStats = {
@@ -23,8 +27,7 @@ export function computeRentalOrderSummary(
   let pendingActionCount = 0;
 
   for (const order of orders) {
-    const rentalDays = calculateRentalDays(order.startDate, order.endDate);
-    totalRevenue += calculateOrderTotal(order.items, rentalDays);
+    totalRevenue += calculateOrderTotalFromItems(order.items);
 
     switch (order.status) {
       case "DRAFT":

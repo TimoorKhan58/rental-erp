@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
-import { CalendarIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { CalendarIcon, CheckIcon, ChevronsUpDownIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -208,6 +208,130 @@ export function SelectField<T extends FieldValues>({
           </SelectContent>
         </Select>
       )}
+    />
+  );
+}
+
+/** ComboboxField — searchable single select. */
+export function ComboboxField<T extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  disabled,
+  className,
+  options,
+  placeholder = "Select an option",
+  searchPlaceholder = "Search...",
+  emptyMessage = "No results found.",
+}: BaseFieldProps<T> & {
+  options: Array<{ value: string; label: string; keywords?: string }>;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  return (
+    <FormField
+      control={control}
+      name={name}
+      label={label}
+      description={description}
+      className={className}
+      render={(field) => {
+        const selectedLabel =
+          options.find((option) => option.value === field.value)?.label ?? null;
+
+        const filteredOptions = options.filter((option) => {
+          const query = search.trim().toLowerCase();
+          if (!query) {
+            return true;
+          }
+
+          const haystack = `${option.label} ${option.keywords ?? ""}`.toLowerCase();
+          return haystack.includes(query);
+        });
+
+        return (
+          <Popover
+            open={open}
+            onOpenChange={(nextOpen) => {
+              setOpen(nextOpen);
+              if (!nextOpen) {
+                setSearch("");
+              }
+            }}
+          >
+            <PopoverTrigger
+              render={
+                <AppButton
+                  id={name}
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  disabled={disabled}
+                  className="w-full justify-between font-normal"
+                  rightIcon={<ChevronsUpDownIcon className="size-4 opacity-50" />}
+                />
+              }
+            >
+              <span className={cn("truncate", !selectedLabel && "text-muted-foreground")}>
+                {selectedLabel ?? placeholder}
+              </span>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--anchor-width)] min-w-56 p-2" align="start">
+              <SearchBox
+                id={`${String(name)}-search`}
+                value={search}
+                onChange={setSearch}
+                placeholder={searchPlaceholder}
+                className="max-w-none"
+              />
+              <div className="max-h-56 overflow-y-auto pt-1" role="listbox">
+                {filteredOptions.length === 0 ? (
+                  <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                    {emptyMessage}
+                  </p>
+                ) : (
+                  filteredOptions.map((option) => {
+                    const selected = option.value === field.value;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                          selected && "bg-muted",
+                        )}
+                        onClick={() => {
+                          field.onChange(option.value);
+                          setOpen(false);
+                          setSearch("");
+                        }}
+                      >
+                        <CheckIcon
+                          className={cn(
+                            "size-4 shrink-0",
+                            selected ? "opacity-100" : "opacity-0",
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{option.label}</span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        );
+      }}
     />
   );
 }

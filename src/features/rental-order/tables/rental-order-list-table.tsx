@@ -153,6 +153,7 @@ export function RentalOrderListTable({
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading}
+        density="compact"
         toolbar={
           <div className="space-y-3">
             <RentalOrderStatusFilterChips

@@ -1,6 +1,7 @@
 import type { CompanySettingId } from "@/shared/domain/ids";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
+  repositoryCreate,
   repositoryFindFirst,
   repositoryUpdate,
 } from "@/shared/infrastructure/database";
@@ -8,9 +9,10 @@ import {
 import { SettingsNotFoundError } from "@/modules/settings/domain/settings.errors";
 import type { Settings } from "@/modules/settings/domain/settings.entity";
 import type { ISettingsRepository } from "@/modules/settings/domain/settings.repository.interface";
-import type { UpdateSettingsData } from "@/modules/settings/domain/settings.types";
+import type { CreateSettingsData, UpdateSettingsData } from "@/modules/settings/domain/settings.types";
 
 import {
+  toSettingsCreateInput,
   toSettingsDomain,
   toSettingsUpdateInput,
 } from "../mappers/settings.persistence.mapper";
@@ -40,6 +42,17 @@ export class PrismaSettingsRepository implements ISettingsRepository {
     }
 
     return settings;
+  }
+
+  createDefault(data: CreateSettingsData): Promise<Settings> {
+    return repositoryCreate(
+      this.runner,
+      (db) =>
+        db.companySetting.create({
+          data: toSettingsCreateInput(data),
+        }),
+      { model: MODEL, operation: "createDefault" },
+    ).then(toSettingsDomain);
   }
 
   update(id: CompanySettingId, data: UpdateSettingsData): Promise<Settings> {

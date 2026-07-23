@@ -182,6 +182,33 @@ describe("CreateStockMovementService", () => {
     expect(inventory?.quantityOnHand).toBe(115);
   });
 
+  it("creates ADJUSTMENT movement and decreases on-hand", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([buildInventoryEntity()]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const result = await service.execute({
+      inventoryId: INVENTORY_ID,
+      movementType: "ADJUSTMENT",
+      quantity: -20,
+      remarks: "Cycle count variance",
+    });
+
+    expect(result.quantity).toBe(-20);
+    expect(result.previousQuantity).toBe(100);
+    expect(result.newQuantity).toBe(80);
+
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(80);
+  });
+
   it("persists reference fields and remarks", async () => {
     const inventoryRepository = new InMemoryInventoryRepository();
     inventoryRepository.seed([buildInventoryEntity()]);

@@ -439,6 +439,7 @@ describe("InspectReturnService", () => {
             goodQuantity: 3,
             damagedQuantity: 1,
             lostQuantity: 1,
+          missingQuantity: 0,
           },
         ],
       },
@@ -474,6 +475,7 @@ describe("InspectReturnService", () => {
               goodQuantity: 5,
               damagedQuantity: 0,
               lostQuantity: 0,
+            missingQuantity: 0,
             },
           ],
         },
@@ -506,6 +508,7 @@ describe("InspectReturnService", () => {
               goodQuantity: 3,
               damagedQuantity: 1,
               lostQuantity: 0,
+            missingQuantity: 0,
             },
           ],
         },
@@ -515,7 +518,7 @@ describe("InspectReturnService", () => {
 });
 
 describe("CompleteReturnService", () => {
-  it("completes inspected return with IN stock movement for good quantity only", async () => {
+  it("completes inspected return with RELEASE then IN so stock becomes available", async () => {
     const returnRepository = new InMemoryReturnRepository();
     returnRepository.seed([buildInspectedReturnEntity()]);
     const dispatchRepository = new InMemoryDispatchRepository();
@@ -550,8 +553,61 @@ describe("CompleteReturnService", () => {
 
     expect(result.status).toBe("COMPLETED");
     expect(result.completedAt).not.toBeNull();
-    expect(stockMovementRepository.count()).toBe(1);
+    expect(stockMovementRepository.count()).toBe(2);
 
+    const movements = (
+      await stockMovementRepository.findPaged({
+        page: 1,
+        pageSize: 10,
+        sortOrder: "desc",
+      })
+    ).items;
+    const release = movements.find((m) => m.movementType === "RELEASE");
+    const restock = movements.find((m) => m.movementType === "IN");
+    expect(release?.quantity).toBe(5);
+    expect(restock?.quantity).toBe(3);
+    expect(restock?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
+    expect(restock?.referenceId).toBe(RENTAL_ORDER_ID);
+
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(48);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.availableQuantity).toBe(48);
+  });
+
+  it("restocks without RELEASE when reservation was already cleared at dispatch", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildInspectedReturnEntity()]);
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([buildCompletedDispatchEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 45,
+        reservedQuantity: 0,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CompleteReturnService(
+      createWriteScope(
+        returnRepository,
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await service.execute({ id: RETURN_ID });
+
+    expect(stockMovementRepository.count()).toBe(1);
     const movement = (
       await stockMovementRepository.findPaged({
         page: 1,
@@ -560,15 +616,14 @@ describe("CompleteReturnService", () => {
       })
     ).items[0];
     expect(movement?.movementType).toBe("IN");
-    expect(movement?.quantity).toBe(3);
-    expect(movement?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
-    expect(movement?.referenceId).toBe(RENTAL_ORDER_ID);
 
     const inventory = await inventoryRepository.findById(INVENTORY_ID);
     expect(inventory?.quantityOnHand).toBe(48);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.availableQuantity).toBe(48);
   });
 
-  it("logs RETURN audit for lost items without stock movement", async () => {
+  it("releases reservation for lost items and logs RETURN audit without restock IN", async () => {
     const returnRepository = new InMemoryReturnRepository();
     returnRepository.seed([
       buildInspectedReturnEntity({
@@ -582,7 +637,15 @@ describe("CompleteReturnService", () => {
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
     rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
     const inventoryRepository = new InMemoryInventoryRepository();
-    inventoryRepository.seed([buildInventoryEntity()]);
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 5,
+      }),
+    ]);
     const stockMovementRepository = new InMemoryStockMovementRepository();
     const auditLogger = new MockAuditLogger();
     const service = new CompleteReturnService(
@@ -599,7 +662,22 @@ describe("CompleteReturnService", () => {
 
     await service.execute({ id: RETURN_ID });
 
-    expect(stockMovementRepository.count()).toBe(0);
+    expect(stockMovementRepository.count()).toBe(1);
+    const movement = (
+      await stockMovementRepository.findPaged({
+        page: 1,
+        pageSize: 10,
+        sortOrder: "desc",
+      })
+    ).items[0];
+    expect(movement?.movementType).toBe("RELEASE");
+    expect(movement?.quantity).toBe(5);
+
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(50);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.availableQuantity).toBe(50);
+
     expect(
       auditLogger.entries.filter((entry) => entry.action === "RETURN"),
     ).toHaveLength(1);
@@ -609,6 +687,7 @@ describe("CompleteReturnService", () => {
       newValues: {
         rentalOrderItemId: ITEM_ID,
         lostQuantity: 5,
+      missingQuantity: 0,
       },
     });
   });
@@ -904,6 +983,7 @@ describe("CreateReturnService prior returns aggregation", () => {
             goodQuantity: 0,
             damagedQuantity: 0,
             lostQuantity: 0,
+            missingQuantity: 0,
             notes: null,
           },
         ],
@@ -949,6 +1029,7 @@ describe("CreateReturnService prior returns aggregation", () => {
             goodQuantity: 0,
             damagedQuantity: 0,
             lostQuantity: 0,
+            missingQuantity: 0,
             notes: null,
           },
         ],
@@ -995,6 +1076,7 @@ describe("CreateReturnService prior returns aggregation", () => {
             goodQuantity: 0,
             damagedQuantity: 0,
             lostQuantity: 0,
+            missingQuantity: 0,
             notes: null,
           },
         ],

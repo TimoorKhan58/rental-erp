@@ -16,6 +16,9 @@
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-muted: var(--brand-muted);
     --color-chart-5: var(--chart-5);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
@@ -39,6 +42,20 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-surface: var(--surface);
+    --color-surface-foreground: var(--surface-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-muted: var(--success-muted);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-muted: var(--warning-muted);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-muted: var(--info-muted);
+    --color-error: var(--error);
+    --color-error-foreground: var(--error-foreground);
+    --color-error-muted: var(--error-muted);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -49,74 +66,81 @@
 }
 
 :root {
-    /* PrimeStay-inspired — light gray canvas, black primary, green/orange accents */
-    --background: #f3f4f6;
-    --foreground: #111827;
+    /* Tent Pro — slate-teal primary, warm gold accent, rental ERP */
+    --background: #f4f3f0;
+    --foreground: #1a1a1a;
     --card: #ffffff;
-    --card-foreground: #111827;
+    --card-foreground: #1a1a1a;
     --popover: #ffffff;
-    --popover-foreground: #111827;
-    --primary: #111827;
+    --popover-foreground: #1a1a1a;
+    --primary: #1b3a4b;
     --primary-foreground: #ffffff;
-    --secondary: #f9fafb;
-    --secondary-foreground: #111827;
-    --muted: #f3f4f6;
+    --secondary: #eceae6;
+    --secondary-foreground: #1a1a1a;
+    --muted: #eceae6;
     --muted-foreground: #6b7280;
-    --accent: #f3f4f6;
-    --accent-foreground: #111827;
-    --destructive: #dc2626;
-    --border: #e5e7eb;
-    --input: #e5e7eb;
-    --ring: #111827;
-    --chart-1: #111827;
-    --chart-2: #16a34a;
-    --chart-3: #ea580c;
-    --chart-4: #6b7280;
-    --chart-5: #d97706;
-    --radius: 0.625rem;
-    /* Light sidebar */
-    --sidebar: #f3f4f6;
-    --sidebar-foreground: #374151;
-    --sidebar-primary: #111827;
+    --accent: #eceae6;
+    --accent-foreground: #1a1a1a;
+    --destructive: #b91c1c;
+    --border: #ddd9d3;
+    --input: #ddd9d3;
+    --ring: #1b3a4b;
+    --brand: #c8860a;
+    --brand-foreground: #ffffff;
+    --brand-muted: #fdf4e3;
+    --chart-1: #1b3a4b;
+    --chart-2: #0d7c5f;
+    --chart-3: #c8860a;
+    --chart-4: #5b6abf;
+    --chart-5: #6b7280;
+    --radius: 0.5rem;
+    --navbar: #1b3a4b;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #4b5563;
+    --sidebar-primary: #1b3a4b;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #ffffff;
-    --sidebar-accent-foreground: #111827;
-    --sidebar-border: #e5e7eb;
-    --sidebar-ring: #111827;
+    --sidebar-accent: #f4f3f0;
+    --sidebar-accent-foreground: #1b3a4b;
+    --sidebar-border: #ddd9d3;
+    --sidebar-ring: #c8860a;
 }
 
 .dark {
-    --background: #111827;
-    --foreground: #f9fafb;
-    --card: #1f2937;
-    --card-foreground: #f9fafb;
-    --popover: #1f2937;
-    --popover-foreground: #f9fafb;
-    --primary: #f9fafb;
-    --primary-foreground: #111827;
-    --secondary: #374151;
-    --secondary-foreground: #f9fafb;
-    --muted: #374151;
+    --background: #0f1419;
+    --foreground: #f4f3f0;
+    --card: #1a2332;
+    --card-foreground: #f4f3f0;
+    --popover: #1a2332;
+    --popover-foreground: #f4f3f0;
+    --primary: #7eb8da;
+    --primary-foreground: #0f1419;
+    --secondary: #243044;
+    --secondary-foreground: #f4f3f0;
+    --muted: #243044;
     --muted-foreground: #9ca3af;
-    --accent: #374151;
-    --accent-foreground: #f9fafb;
+    --accent: #243044;
+    --accent-foreground: #f4f3f0;
     --destructive: #f87171;
-    --border: #374151;
-    --input: #374151;
-    --ring: #f9fafb;
-    --chart-1: #f9fafb;
-    --chart-2: #4ade80;
-    --chart-3: #fb923c;
-    --chart-4: #9ca3af;
-    --chart-5: #fbbf24;
-    --sidebar: #1f2937;
-    --sidebar-foreground: #e5e7eb;
-    --sidebar-primary: #f9fafb;
-    --sidebar-primary-foreground: #111827;
-    --sidebar-accent: #374151;
-    --sidebar-accent-foreground: #f9fafb;
-    --sidebar-border: #374151;
-    --sidebar-ring: #f9fafb;
+    --border: #2d3a4a;
+    --input: #2d3a4a;
+    --ring: #7eb8da;
+    --brand: #f0b429;
+    --brand-foreground: #0f1419;
+    --brand-muted: #3d2f14;
+    --chart-1: #7eb8da;
+    --chart-2: #34d399;
+    --chart-3: #f0b429;
+    --chart-4: #818cf8;
+    --chart-5: #9ca3af;
+    --navbar: #152a36;
+    --sidebar: #141c28;
+    --sidebar-foreground: #d1d5db;
+    --sidebar-primary: #7eb8da;
+    --sidebar-primary-foreground: #0f1419;
+    --sidebar-accent: #243044;
+    --sidebar-accent-foreground: #f4f3f0;
+    --sidebar-border: #2d3a4a;
+    --sidebar-ring: #f0b429;
 }
 
 @layer base {
@@ -130,6 +154,7 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -137,29 +162,16 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-semibold tracking-tight text-foreground;
   }
 
-  h1 {
-    @apply text-2xl;
-  }
-
-  h2 {
-    @apply text-xl;
-  }
-
-  h3 {
-    @apply text-lg;
-  }
+  h1 { @apply text-2xl; }
+  h2 { @apply text-xl; }
+  h3 { @apply text-lg; }
 
   ::selection {
-    background: color-mix(in oklch, var(--primary) 25%, transparent);
+    background: color-mix(in oklch, var(--brand) 35%, transparent);
     color: var(--foreground);
   }
 }
@@ -169,22 +181,99 @@
     background-color: var(--background);
   }
 
+  .tent-navbar {
+    background-color: var(--navbar);
+    color: #ffffff;
+  }
+
   .bg-brand-panel {
-    background: linear-gradient(160deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%);
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 100%, color-mix(in oklch, var(--brand) 22%, transparent), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 90% 10%, color-mix(in oklch, var(--chart-2) 12%, transparent), transparent 60%),
+      linear-gradient(165deg, #1b3a4b 0%, #152f3d 45%, #0f2430 100%);
+  }
+
+  .bg-brand-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   .text-gradient-brand {
-    background: linear-gradient(135deg, #111827, #16a34a);
+    background: linear-gradient(135deg, var(--primary), var(--brand));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .shadow-soft {
-    box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04);
+    box-shadow: 0 1px 2px rgba(27, 58, 75, 0.05), 0 1px 3px rgba(27, 58, 75, 0.08);
   }
 
   .shadow-soft-md {
-    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.08), 0 2px 4px rgba(17, 24, 39, 0.04);
+    box-shadow: 0 4px 16px rgba(27, 58, 75, 0.1), 0 2px 4px rgba(27, 58, 75, 0.05);
+  }
+
+  .shadow-soft-lg {
+    box-shadow: 0 8px 32px rgba(27, 58, 75, 0.12), 0 4px 8px rgba(27, 58, 75, 0.06);
+  }
+
+  .glass-topbar {
+    background: color-mix(in oklch, var(--card) 85%, transparent);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  }
+
+  .nav-active-indicator {
+    box-shadow: inset 3px 0 0 0 var(--brand);
+  }
+
+  .odoo-list-row:hover {
+    background-color: color-mix(in oklch, var(--primary) 5%, var(--card));
+  }
+}
+
+/* Customer bill print preview — print only the bill document */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #rental-invoice-print-bill,
+  #rental-invoice-print-bill * {
+    visibility: visible !important;
+  }
+
+  #rental-invoice-print-bill {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-close"] {
+    display: none !important;
+  }
+
+  [data-slot="dialog-content"] {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  [data-slot="dialog-header"],
+  [data-slot="dialog-footer"] {
+    display: none !important;
   }
 }

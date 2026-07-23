@@ -17,6 +17,19 @@ import type {
   UpdateRentalOrderInput,
 } from "../schemas/rental-order.schemas";
 
+function toIsoDate(value: Date | string): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid rental date value: ${String(value)}`);
+  }
+
+  return parsed.toISOString();
+}
+
 export function toRentalOrderDto(order: RentalOrder): RentalOrderDto {
   const props = order.toProps();
 
@@ -26,8 +39,8 @@ export function toRentalOrderDto(order: RentalOrder): RentalOrderDto {
     customerId: props.customerId,
     warehouseId: props.warehouseId,
     status: props.status,
-    startDate: props.startDate.toISOString(),
-    endDate: props.endDate.toISOString(),
+    startDate: toIsoDate(props.startDate),
+    endDate: toIsoDate(props.endDate),
     remarks: props.remarks,
     items: props.items.map((item) => ({
       id: item.id,
@@ -35,10 +48,13 @@ export function toRentalOrderDto(order: RentalOrder): RentalOrderDto {
       quantity: item.quantity,
       dailyRate: item.dailyRate,
       reservedQuantity: item.reservedQuantity,
+      startDate: toIsoDate(item.startDate),
+      endDate: toIsoDate(item.endDate),
+      numberOfDays: item.numberOfDays,
     })),
     createdById: props.createdById,
-    createdAt: props.createdAt.toISOString(),
-    updatedAt: props.updatedAt.toISOString(),
+    createdAt: toIsoDate(props.createdAt),
+    updatedAt: toIsoDate(props.updatedAt),
   };
 }
 
@@ -57,6 +73,8 @@ export function toCreateRentalOrderData(
       productId: item.productId as ProductId,
       quantity: item.quantity,
       dailyRate: item.dailyRate,
+      startDate: item.startDate,
+      endDate: item.endDate,
     })),
     createdById,
   };
@@ -75,6 +93,8 @@ export function toUpdateRentalOrderData(
       productId: item.productId as ProductId,
       quantity: item.quantity,
       dailyRate: item.dailyRate,
+      startDate: item.startDate,
+      endDate: item.endDate,
     })),
   };
 }

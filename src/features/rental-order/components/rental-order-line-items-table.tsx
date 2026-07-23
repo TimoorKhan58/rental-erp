@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import {
   calculateLineSubtotal,
   getRemainingReserveQuantity,
@@ -10,7 +10,6 @@ import type { RentalOrderItemResponse } from "../types";
 
 type RentalOrderLineItemsTableProps = {
   items: RentalOrderItemResponse[];
-  rentalDays: number;
   productLabelById: Map<string, string>;
   productNameById?: Map<string, string>;
   className?: string;
@@ -18,7 +17,6 @@ type RentalOrderLineItemsTableProps = {
 
 export function RentalOrderLineItemsTable({
   items,
-  rentalDays,
   productLabelById,
   productNameById,
   className,
@@ -27,17 +25,20 @@ export function RentalOrderLineItemsTable({
     productNameById?.get(productId) ?? productLabelById.get(productId) ?? productId;
 
   const orderTotal = items.reduce(
-    (sum, item) => sum + calculateLineSubtotal(item, rentalDays),
+    (sum, item) => sum + calculateLineSubtotal(item),
     0,
   );
 
   return (
     <div className={cn("overflow-x-auto rounded-xl border border-border/60", className)}>
-      <table className="w-full min-w-[760px] text-sm">
+      <table className="w-full min-w-[920px] text-sm">
         <thead>
           <tr className="border-b bg-muted/30 text-left">
             <th className="px-4 py-3 font-medium" scope="col">
               Product
+            </th>
+            <th className="px-4 py-3 font-medium" scope="col">
+              Rental period
             </th>
             <th className="px-4 py-3 font-medium" scope="col">
               Reservation
@@ -55,7 +56,7 @@ export function RentalOrderLineItemsTable({
         </thead>
         <tbody>
           {items.map((item) => {
-            const subtotal = calculateLineSubtotal(item, rentalDays);
+            const subtotal = calculateLineSubtotal(item);
             const remaining = getRemainingReserveQuantity(item);
 
             return (
@@ -70,6 +71,14 @@ export function RentalOrderLineItemsTable({
                       {remaining.toLocaleString()} remaining to reserve
                     </p>
                   ) : null}
+                </td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground">
+                    {item.numberOfDays} day{item.numberOfDays === 1 ? "" : "s"}
+                  </p>
+                  <p>
+                    {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                  </p>
                 </td>
                 <td className="px-4 py-3">
                   <div className="min-w-[8rem] space-y-1.5">
@@ -96,8 +105,8 @@ export function RentalOrderLineItemsTable({
         </tbody>
         <tfoot>
           <tr className="bg-muted/20">
-            <td colSpan={4} className="px-4 py-3 text-right font-medium">
-              Order total ({rentalDays} day{rentalDays === 1 ? "" : "s"})
+            <td colSpan={5} className="px-4 py-3 text-right font-medium">
+              Order total
             </td>
             <td className="px-4 py-3 text-right font-heading text-base font-semibold tabular-nums">
               {formatCurrency(orderTotal)}

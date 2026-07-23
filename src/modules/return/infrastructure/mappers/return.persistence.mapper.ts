@@ -47,6 +47,7 @@ export function toReturnDomain(record: {
     goodQuantity: number;
     brokenQuantity: number;
     lostQuantity: number;
+    missingQuantity?: number;
     notes: string | null;
   }>;
 }): Return {
@@ -69,6 +70,7 @@ export function toReturnDomain(record: {
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.brokenQuantity,
       lostQuantity: item.lostQuantity,
+      missingQuantity: item.missingQuantity ?? 0,
       notes: item.notes,
     })),
     createdById: record.inspectedById as UserId,
@@ -168,6 +170,7 @@ export function toReturnStatusUpdateInput(
           goodQuantity: item.goodQuantity,
           brokenQuantity: item.damagedQuantity,
           lostQuantity: item.lostQuantity,
+          missingQuantity: item.missingQuantity,
           notes: item.notes,
         },
       })),

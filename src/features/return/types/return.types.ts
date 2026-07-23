@@ -18,6 +18,7 @@ export type ReturnItemResponse = {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes: string | null;
 };
 
@@ -87,6 +88,7 @@ export type InspectReturnItemPayload = {
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
+  missingQuantity: number;
   notes?: string | null;
 };
 
