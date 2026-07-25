@@ -31,7 +31,9 @@ export function toCreateProductPayload(
   values: CreateProductFormValues,
 ): CreateProductPayload {
   return {
-    productCode: values.productCode.trim(),
+    ...(values.productCode?.trim()
+      ? { productCode: values.productCode.trim() }
+      : {}),
     name: values.name.trim(),
     description: normalizeOptionalString(values.description),
     unit: values.unit.trim(),

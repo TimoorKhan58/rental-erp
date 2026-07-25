@@ -41,7 +41,7 @@ export function toPurchaseOrderDto(order: PurchaseOrder): PurchaseOrderDto {
 }
 
 export function toCreatePurchaseOrderData(
-  input: CreatePurchaseOrderInput,
+  input: Omit<CreatePurchaseOrderInput, "poNumber"> & { poNumber: string },
 ): CreatePurchaseOrderData {
   return {
     poNumber: input.poNumber,

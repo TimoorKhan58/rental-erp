@@ -7,6 +7,7 @@ import type {
   CustomerReportParams,
   DateRangeParams,
   InventoryReportParams,
+  ProductReportParams,
   RentalReportParams,
 } from "../types";
 import {
@@ -15,6 +16,7 @@ import {
   getCustomerReport,
   getExpenseReport,
   getInventoryReport,
+  getProductReport,
   getProfitLoss,
   getRentalReport,
   getRevenueReport,
@@ -94,5 +96,12 @@ export function useCustomerReport(params: CustomerReportParams = {}) {
   return useQuery({
     queryKey: queryKeys.reports.customers(params),
     queryFn: () => getCustomerReport(params),
+  });
+}
+
+export function useProductReport(params: ProductReportParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.products(params),
+    queryFn: () => getProductReport(params),
   });
 }

@@ -37,7 +37,7 @@ export type ListWarehousesParams = {
 };
 
 export type CreateWarehousePayload = {
-  warehouseCode: string;
+  warehouseCode?: string;
   name: string;
   description?: string | null;
   address?: string | null;

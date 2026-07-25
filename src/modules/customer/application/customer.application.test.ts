@@ -26,12 +26,21 @@ import {
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
 
+const stubNumberSequences = {
+  generateNextNumber: vi.fn().mockResolvedValue({
+    formattedNumber: "CUS-00001",
+    number: 1,
+    sequence: {},
+  }),
+} as never;
+
 describe("CreateCustomerService", () => {
   it("creates a customer and returns a DTO", async () => {
     const repository = new InMemoryCustomerRepository();
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
     );
 
     const result = await service.execute(VALID_CREATE_INPUT);
@@ -46,6 +55,7 @@ describe("CreateCustomerService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(
@@ -59,6 +69,7 @@ describe("CreateCustomerService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
     );
 
     await expect(
@@ -71,6 +82,7 @@ describe("CreateCustomerService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
     );
 
     await expect(
@@ -207,6 +219,7 @@ describe("Customer application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -254,13 +267,29 @@ describe("Customer application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
     );
 
     await expect(
-      service.execute({ ...VALID_CREATE_INPUT, customerCode: "" }),
+      service.execute({ ...VALID_CREATE_INPUT, phone: "abc" }),
     ).rejects.toBeInstanceOf(ValidationError);
 
     expect(auditLogger.entries).toHaveLength(0);
+  });
+
+  it("auto-generates customer code when omitted", async () => {
+    const repository = new InMemoryCustomerRepository();
+    const auditLogger = new MockAuditLogger();
+    const service = new CreateCustomerService(
+      createPassThroughTransactionRunner({ repository, auditLogger }),
+      stubNumberSequences,
+    );
+
+    const { customerCode: _ignored, ...withoutCode } = VALID_CREATE_INPUT;
+    const result = await service.execute(withoutCode);
+
+    expect(result.customerCode).toBe("CUS-00001");
+    expect(stubNumberSequences.generateNextNumber).toHaveBeenCalledWith("CUSTOMER");
   });
 });
 
@@ -270,6 +299,7 @@ describe("Customer application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createRollbackTransactionRunner(repository, auditLogger),
+      stubNumberSequences,
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -284,6 +314,7 @@ describe("Customer application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateCustomerService(
       createRollbackTransactionRunner(repository, auditLogger),
+      stubNumberSequences,
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(

@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import type { SupplierDto } from "../dtos/supplier.dto";
 import {
   toCreateSupplierData,
@@ -17,11 +19,19 @@ import { parseRequest } from "@/shared/application/validation";
 import { ConflictError } from "@/shared/infrastructure/errors";
 
 export class CreateSupplierService {
-  constructor(private readonly transactionRunner: ISupplierTransactionRunner) {}
+  constructor(
+    private readonly transactionRunner: ISupplierTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
+  ) {}
 
   async execute(input: CreateSupplierInput): Promise<SupplierDto> {
     const data = parseRequest(CreateSupplierSchema, input);
-    const createData = toCreateSupplierData(data);
+    const supplierCode = await resolveDocumentCode(
+      this.numberSequences,
+      "SUPPLIER",
+      data.supplierCode,
+    );
+    const createData = toCreateSupplierData({ ...data, supplierCode });
 
     return this.transactionRunner.run(async ({ repository, auditLogger }) => {
       const existingCode = await repository.findBySupplierCode(

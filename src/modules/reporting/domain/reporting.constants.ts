@@ -107,6 +107,10 @@ export const PRODUCT_REPORT_SORT_FIELDS = [
   "name",
   "rentalCount",
   "rentedQuantity",
+  "quantityDays",
+  "revenue",
+  "rentalPricePerDay",
+  "quantityOnHand",
 ] as const;
 
 export type ProductReportSortField = (typeof PRODUCT_REPORT_SORT_FIELDS)[number];

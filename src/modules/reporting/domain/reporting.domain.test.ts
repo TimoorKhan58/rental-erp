@@ -32,6 +32,10 @@ import {
   roundMoney,
   startOfMonth,
   totalPages,
+  calculateQuantityDays,
+  calculateDaysPastDue,
+  resolveArAgingBucketKey,
+  buildArAgingBuckets,
 } from "./reporting.rules";
 
 describe("reporting constants", () => {
@@ -250,5 +254,71 @@ describe("inDateRange", () => {
         new Date("2026-06-30T00:00:00.000Z"),
       ),
     ).toBe(true);
+  });
+});
+
+describe("calculateQuantityDays", () => {
+  it("multiplies quantity by rental days", () => {
+    expect(calculateQuantityDays(3, 4)).toBe(12);
+  });
+
+  it("never returns negative volume", () => {
+    expect(calculateQuantityDays(-2, 5)).toBe(0);
+    expect(calculateQuantityDays(2, -1)).toBe(0);
+  });
+});
+
+describe("AR aging bucket assignment", () => {
+  const reference = new Date("2026-07-25T12:00:00.000Z");
+
+  it("treats future due dates as current", () => {
+    const daysPastDue = calculateDaysPastDue(
+      new Date("2026-08-01T00:00:00.000Z"),
+      new Date("2026-07-01T00:00:00.000Z"),
+      reference,
+    );
+    expect(daysPastDue).toBeLessThan(0);
+    expect(resolveArAgingBucketKey(daysPastDue)).toBe("current");
+  });
+
+  it("falls back to invoiceDate when dueDate is null", () => {
+    const daysPastDue = calculateDaysPastDue(
+      null,
+      new Date("2026-07-01T00:00:00.000Z"),
+      reference,
+    );
+    expect(daysPastDue).toBe(24);
+    expect(resolveArAgingBucketKey(daysPastDue)).toBe("d1_30");
+  });
+
+  it("aggregates balances into aging buckets", () => {
+    const result = buildArAgingBuckets(
+      [
+        {
+          balance: 100,
+          dueDate: new Date("2026-08-10T00:00:00.000Z"),
+          invoiceDate: new Date("2026-07-01T00:00:00.000Z"),
+        },
+        {
+          balance: 250,
+          dueDate: null,
+          invoiceDate: new Date("2026-06-01T00:00:00.000Z"),
+        },
+        {
+          balance: 0,
+          dueDate: new Date("2026-01-01T00:00:00.000Z"),
+          invoiceDate: new Date("2026-01-01T00:00:00.000Z"),
+        },
+      ],
+      reference,
+    );
+
+    expect(result.totalOutstanding).toBe(350);
+    expect(result.buckets.find((bucket) => bucket.key === "current")?.balance).toBe(
+      100,
+    );
+    expect(result.buckets.find((bucket) => bucket.key === "d31_60")?.balance).toBe(
+      250,
+    );
   });
 });

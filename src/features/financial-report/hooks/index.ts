@@ -5,6 +5,7 @@ export {
 export {
   useCustomerReportParams,
   useInventoryReportParams,
+  useProductReportParams,
   useRentalReportParams,
 } from "./use-operational-report-params";
 export {
@@ -14,6 +15,7 @@ export {
   useExpenseReport,
   useFinancialReportPermissions,
   useInventoryReport,
+  useProductReport,
   useProfitLoss,
   useRentalReport,
   useRevenueReport,

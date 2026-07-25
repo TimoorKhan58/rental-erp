@@ -76,6 +76,139 @@ export function endOfMonth(reference: Date = new Date()): Date {
   );
 }
 
+export function calculateQuantityDays(
+  quantity: number,
+  numberOfDays: number,
+): number {
+  return Math.max(0, quantity * numberOfDays);
+}
+
+export function calculateUtilizationPercent(
+  reserved: number,
+  onHand: number,
+): number {
+  if (onHand <= 0) {
+    return 0;
+  }
+  return roundMoney((reserved / onHand) * 100);
+}
+
+export type ArAgingBucketKey =
+  | "current"
+  | "d1_30"
+  | "d31_60"
+  | "d61_90"
+  | "d90_plus";
+
+export interface ArAgingInvoiceInput {
+  balance: number;
+  dueDate: Date | null;
+  invoiceDate: Date;
+}
+
+export function resolveArAgingBucketKey(
+  daysPastDue: number,
+): ArAgingBucketKey {
+  if (daysPastDue <= 0) {
+    return "current";
+  }
+  if (daysPastDue <= 30) {
+    return "d1_30";
+  }
+  if (daysPastDue <= 60) {
+    return "d31_60";
+  }
+  if (daysPastDue <= 90) {
+    return "d61_90";
+  }
+  return "d90_plus";
+}
+
+export function calculateDaysPastDue(
+  dueDate: Date | null,
+  invoiceDate: Date,
+  reference: Date = new Date(),
+): number {
+  const anchor = dueDate ?? invoiceDate;
+  const ms = reference.getTime() - anchor.getTime();
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
+
+export function resolveReportPeriod(
+  query: { dateFrom?: Date; dateTo?: Date },
+  reference: Date = new Date(),
+): { dateFrom: Date; dateTo: Date } {
+  return {
+    dateFrom: query.dateFrom ?? startOfMonth(reference),
+    dateTo: query.dateTo ?? reference,
+  };
+}
+
+export const AR_AGING_BUCKET_ORDER = [
+  "current",
+  "d1_30",
+  "d31_60",
+  "d61_90",
+  "d90_plus",
+] as const satisfies readonly ArAgingBucketKey[];
+
+export const AR_AGING_BUCKET_LABELS: Record<ArAgingBucketKey, string> = {
+  current: "Not due yet",
+  d1_30: "1–30 days",
+  d31_60: "31–60 days",
+  d61_90: "61–90 days",
+  d90_plus: "90+ days",
+};
+
+export interface ArAgingBucketSummary {
+  key: ArAgingBucketKey;
+  label: string;
+  invoiceCount: number;
+  balance: number;
+}
+
+export function buildArAgingBuckets(
+  invoices: ArAgingInvoiceInput[],
+  reference: Date = new Date(),
+): { buckets: ArAgingBucketSummary[]; totalOutstanding: number } {
+  const bucketTotals = new Map<ArAgingBucketKey, { invoiceCount: number; balance: number }>(
+    AR_AGING_BUCKET_ORDER.map((key) => [key, { invoiceCount: 0, balance: 0 }]),
+  );
+
+  let totalOutstanding = 0;
+
+  for (const invoice of invoices) {
+    const balance = roundMoney(invoice.balance);
+    if (balance <= 0) {
+      continue;
+    }
+
+    totalOutstanding = roundMoney(totalOutstanding + balance);
+    const daysPastDue = calculateDaysPastDue(
+      invoice.dueDate,
+      invoice.invoiceDate,
+      reference,
+    );
+    const key = resolveArAgingBucketKey(daysPastDue);
+    const bucket = bucketTotals.get(key)!;
+    bucket.invoiceCount += 1;
+    bucket.balance = roundMoney(bucket.balance + balance);
+  }
+
+  return {
+    buckets: AR_AGING_BUCKET_ORDER.map((key) => {
+      const bucket = bucketTotals.get(key)!;
+      return {
+        key,
+        label: AR_AGING_BUCKET_LABELS[key],
+        invoiceCount: bucket.invoiceCount,
+        balance: bucket.balance,
+      };
+    }),
+    totalOutstanding,
+  };
+}
+
 export function inDateRange(
   date: Date,
   dateFrom?: Date,

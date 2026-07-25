@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { CancelDispatchService } from "@/modules/dispatch/application/services/cancel-dispatch.service";
 import { CompleteDispatchService } from "@/modules/dispatch/application/services/complete-dispatch.service";
@@ -86,6 +86,7 @@ describe("CreateDispatchService", () => {
         auditLogger,
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -108,6 +109,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -125,6 +127,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(
@@ -145,6 +148,7 @@ describe("CreateDispatchService", () => {
         auditLogger,
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -167,6 +171,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -186,6 +191,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -205,6 +211,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         undefined,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -658,6 +665,7 @@ describe("CreateDispatchService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(
@@ -683,6 +691,7 @@ describe("CreateDispatchService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(
@@ -709,6 +718,7 @@ describe("CreateDispatchService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     const result = await service.execute({

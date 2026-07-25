@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { Repair, RepairInvariantError } from "@/modules/repair/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
@@ -33,10 +35,16 @@ import type { IRepairTransactionRunner } from "./repair-transaction.runner";
 export class CreateRepairService {
   constructor(
     private readonly transactionRunner: IRepairTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreateRepairInput): Promise<RepairDto> {
     const data = parseRequest(CreateRepairSchema, input);
+    const repairNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "REPAIR",
+      data.repairNumber,
+    );
 
     return this.transactionRunner.run(
       async ({
@@ -52,7 +60,10 @@ export class CreateRepairService {
           });
         }
 
-        const createData = toCreateRepairData(data, toUserId(userId));
+        const createData = toCreateRepairData(
+          { ...data, repairNumber },
+          toUserId(userId),
+        );
 
         try {
           Repair.create(createData);

@@ -28,6 +28,8 @@ export const queryKeys = {
     financial: () => [...queryKeys.dashboard.all, "financial"] as const,
     systemStatus: () => [...queryKeys.dashboard.all, "system-status"] as const,
     quickActions: () => [...queryKeys.dashboard.all, "quick-actions"] as const,
+    rentalInsights: (params?: Record<string, unknown>) =>
+      [...queryKeys.dashboard.all, "rental-insights", params ?? {}] as const,
   },
   customers: {
     all: ["app", "customers"] as const,

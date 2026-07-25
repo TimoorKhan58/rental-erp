@@ -36,7 +36,7 @@ export type ListCustomersParams = {
 };
 
 export type CreateCustomerPayload = {
-  customerCode: string;
+  customerCode?: string;
   name: string;
   phone: string;
   cnic?: string | null;

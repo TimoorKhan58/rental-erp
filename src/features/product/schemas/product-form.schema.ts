@@ -11,7 +11,7 @@ const optionalTextSchema = (max: number) =>
   z.string().trim().max(max).optional().nullable().or(z.literal(""));
 
 export const createProductFormSchema = z.object({
-  productCode: z.string().trim().min(1, "Product code is required").max(50),
+  productCode: z.string().trim().max(50).optional().or(z.literal("")),
   name: z.string().trim().min(1, "Product name is required").max(200),
   description: optionalTextSchema(2000),
   unit: z.string().trim().min(1, "Unit is required").max(50),

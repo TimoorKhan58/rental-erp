@@ -7,6 +7,7 @@ import type {
   MaintenanceReportQuery,
   ProcurementReportQuery,
   ProductReportQuery,
+  RentalInsightsQuery,
   RentalReportQuery,
   RepairReportQuery,
   ReturnReportQuery,
@@ -16,13 +17,17 @@ import type {
 import type { IReportingRepository } from "@/modules/reporting/domain/reporting.repository.interface";
 import {
   average,
+  buildArAgingBuckets,
   calculateAvailableQuantity,
   calculateInventoryValue,
+  calculateQuantityDays,
   calculateRentalDurationDays,
+  calculateUtilizationPercent,
   endOfMonth,
   inDateRange,
   isLowStock,
   isOverstock,
+  resolveReportPeriod,
   roundMoney,
   startOfMonth,
   totalPages,
@@ -41,6 +46,8 @@ import type {
   ProcurementReportLine,
   ProductReport,
   ProductReportLine,
+  RentalInsightsProductLine,
+  RentalInsightsReport,
   RentalReport,
   RentalReportLine,
   RepairReport,
@@ -1307,6 +1314,173 @@ export class PrismaReportingRepository implements IReportingRepository {
     };
   }
 
+  async getRentalInsights(query: RentalInsightsQuery): Promise<RentalInsightsReport> {
+    const period = resolveReportPeriod(query);
+    const reference = new Date();
+
+    const [products, orderItems, inventories, invoices] = await this.runner.run(
+      async (db) => {
+        const [productRows, itemRows, inventoryRows, invoiceRows] = await Promise.all([
+          db.product.findMany({ where: { isActive: true } }),
+          db.rentalOrderItem.findMany({
+            include: {
+              rentalOrder: true,
+            },
+          }),
+          db.inventory.findMany({
+            where: { isActive: true },
+            select: {
+              productId: true,
+              quantityOnHand: true,
+              reservedQuantity: true,
+            },
+          }),
+          db.rentalInvoice.findMany({
+            where: {
+              status: { in: ["ISSUED", "PARTIALLY_PAID"] },
+            },
+            select: {
+              balance: true,
+              dueDate: true,
+              invoiceDate: true,
+            },
+          }),
+        ]);
+
+        return [productRows, itemRows, inventoryRows, invoiceRows] as const;
+      },
+      { model: MODEL, operation: "getRentalInsights" },
+    );
+
+    const productLines: RentalInsightsProductLine[] = products.map((product) => {
+      const productItems = orderItems.filter((item) => {
+        if (item.productId !== product.id) {
+          return false;
+        }
+        return inDateRange(
+          item.rentalOrder.bookingDate,
+          period.dateFrom,
+          period.dateTo,
+        );
+      });
+
+      const rentalOrderIds = new Set(
+        productItems.map((item) => item.rentalOrderId),
+      );
+
+      return {
+        productId: product.id,
+        productCode: product.productCode,
+        productName: product.name,
+        rentalCount: rentalOrderIds.size,
+        rentedQuantity: productItems.reduce((sum, item) => sum + item.quantity, 0),
+        quantityDays: productItems.reduce(
+          (sum, item) =>
+            sum + calculateQuantityDays(item.quantity, item.numberOfDays),
+          0,
+        ),
+        revenue: roundMoney(
+          productItems.reduce(
+            (sum, item) => sum + decimalToNumber(item.lineTotal),
+            0,
+          ),
+        ),
+      };
+    });
+
+    const rentableLines = productLines.filter((line) => {
+      const product = products.find((row) => row.id === line.productId);
+      return product?.isRentable ?? false;
+    });
+
+    const topByRevenue = [...rentableLines]
+      .sort((a, b) => b.revenue - a.revenue || b.quantityDays - a.quantityDays)
+      .slice(0, 5);
+
+    const topByQuantityDays = [...rentableLines]
+      .sort((a, b) => b.quantityDays - a.quantityDays || b.revenue - a.revenue)
+      .slice(0, 5);
+
+    const inventoryByProduct = new Map<
+      string,
+      { onHand: number; reserved: number }
+    >();
+    for (const row of inventories) {
+      const current = inventoryByProduct.get(row.productId) ?? {
+        onHand: 0,
+        reserved: 0,
+      };
+      inventoryByProduct.set(row.productId, {
+        onHand: current.onHand + row.quantityOnHand,
+        reserved: current.reserved + row.reservedQuantity,
+      });
+    }
+
+    let fleetOnHand = 0;
+    let fleetReserved = 0;
+
+    const utilizationByProduct = products
+      .filter((product) => product.isRentable)
+      .map((product) => {
+        const totals = inventoryByProduct.get(product.id) ?? {
+          onHand: product.totalQuantity,
+          reserved: 0,
+        };
+        fleetOnHand += totals.onHand;
+        fleetReserved += totals.reserved;
+        const available = calculateAvailableQuantity(
+          totals.onHand,
+          totals.reserved,
+        );
+
+        return {
+          productId: product.id,
+          productName: product.name,
+          onHand: totals.onHand,
+          reserved: totals.reserved,
+          available,
+          utilizationPercent: calculateUtilizationPercent(
+            totals.reserved,
+            totals.onHand,
+          ),
+        };
+      })
+      .sort((a, b) => b.onHand - a.onHand)
+      .slice(0, 8);
+
+    const fleetAvailable = calculateAvailableQuantity(fleetOnHand, fleetReserved);
+    const arAging = buildArAgingBuckets(
+      invoices.map((invoice) => ({
+        balance: decimalToNumber(invoice.balance),
+        dueDate: invoice.dueDate,
+        invoiceDate: invoice.invoiceDate,
+      })),
+      reference,
+    );
+
+    return {
+      period: {
+        from: period.dateFrom,
+        to: period.dateTo,
+      },
+      topByRevenue,
+      topByQuantityDays,
+      utilization: {
+        fleet: {
+          onHand: fleetOnHand,
+          reserved: fleetReserved,
+          available: fleetAvailable,
+          utilizationPercent: calculateUtilizationPercent(
+            fleetReserved,
+            fleetOnHand,
+          ),
+        },
+        byProduct: utilizationByProduct,
+      },
+      arAging,
+    };
+  }
+
   async getProductReport(query: ProductReportQuery): Promise<ProductReport> {
     const [products, orderItems, inventories] = await this.runner.run(
       async (db) => {
@@ -1359,8 +1533,14 @@ export class PrismaReportingRepository implements IReportingRepository {
         productId: product.id,
         productCode: product.productCode,
         productName: product.name,
+        rentalPricePerDay: roundMoney(decimalToNumber(product.rentalPricePerDay)),
         rentalCount: rentalOrderIds.size,
         rentedQuantity: productItems.reduce((sum, item) => sum + item.quantity, 0),
+        quantityDays: productItems.reduce(
+          (sum, item) =>
+            sum + calculateQuantityDays(item.quantity, item.numberOfDays),
+          0,
+        ),
         revenue: roundMoney(
           productItems.reduce(
             (sum, item) => sum + decimalToNumber(item.lineTotal),
@@ -1390,6 +1570,10 @@ export class PrismaReportingRepository implements IReportingRepository {
         name: (line) => line.productName,
         rentalCount: (line) => line.rentalCount,
         rentedQuantity: (line) => line.rentedQuantity,
+        quantityDays: (line) => line.quantityDays,
+        revenue: (line) => line.revenue,
+        rentalPricePerDay: (line) => line.rentalPricePerDay,
+        quantityOnHand: (line) => line.quantityOnHand,
       },
       "productCode",
     );

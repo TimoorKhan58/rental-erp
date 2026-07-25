@@ -138,7 +138,7 @@ export function DataTableShell<T>({
       {toolbar}
       {(search || filters || actions) && (
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             {search}
             {filters}
           </div>

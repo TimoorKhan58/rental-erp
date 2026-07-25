@@ -8,6 +8,10 @@ import {
   repositoryUpdate,
 } from "@/shared/infrastructure/database";
 
+import {
+  DEFAULT_SEQUENCE_STARTING_NUMBER,
+  DOCUMENT_TYPE_PREFIXES,
+} from "@/modules/settings/domain/number-sequence.constants";
 import { NumberSequence } from "@/modules/settings/domain/number-sequence.entity";
 import { NumberSequenceNotFoundError } from "@/modules/settings/domain/number-sequence.errors";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
@@ -25,6 +29,7 @@ import {
 } from "../mappers/number-sequence.persistence.mapper";
 
 const MODEL = "DocumentSequence";
+const AUTO_CREATE_PADDING_LENGTH = 5;
 
 function isPrismaClient(db: DbClient): db is PrismaClient {
   return "$transaction" in db;
@@ -142,7 +147,7 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
       throw new SettingsNotFoundError();
     }
 
-    const record = await db.documentSequence.findUnique({
+    let record = await db.documentSequence.findUnique({
       where: {
         companySettingId_documentType: {
           companySettingId: companySetting.id,
@@ -150,6 +155,29 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
         },
       },
     });
+
+    if (record === null) {
+      const created = NumberSequence.create({
+        companySettingId: companySetting.id as never,
+        documentType,
+        prefix: DOCUMENT_TYPE_PREFIXES[documentType],
+        startingNumber: DEFAULT_SEQUENCE_STARTING_NUMBER,
+        currentNumber: DEFAULT_SEQUENCE_STARTING_NUMBER,
+        paddingLength: AUTO_CREATE_PADDING_LENGTH,
+      });
+
+      record = await db.documentSequence.create({
+        data: {
+          companySettingId: companySetting.id,
+          documentType,
+          prefix: created.prefix,
+          suffix: created.suffix,
+          startingNumber: created.startingNumber,
+          currentNumber: created.currentNumber,
+          paddingLength: created.paddingLength,
+        },
+      });
+    }
 
     if (record === null) {
       throw new NumberSequenceNotFoundError(documentType);

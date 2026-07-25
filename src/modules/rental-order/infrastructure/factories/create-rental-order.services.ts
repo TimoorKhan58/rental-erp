@@ -9,6 +9,7 @@ import { ListRentalOrdersService } from "@/modules/rental-order/application/serv
 import { ReserveRentalOrderService } from "@/modules/rental-order/application/services/reserve-rental-order.service";
 import { UpdateRentalOrderService } from "@/modules/rental-order/application/services/update-rental-order.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createRentalOrderRepositoryFromSharedDeps } from "./create-rental-order.repository";
 import { createRentalOrderTransactionRunner } from "./create-rental-order-transaction.runner";
@@ -28,10 +29,14 @@ export function createRentalOrderApplicationServices(
   const transactionRunner = createRentalOrderTransactionRunner(deps, {
     userId,
   });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getRentalOrderById = new GetRentalOrderByIdService(repository);
   const listRentalOrders = new ListRentalOrdersService(repository);
-  const createRentalOrder = new CreateRentalOrderService(transactionRunner);
+  const createRentalOrder = new CreateRentalOrderService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateRentalOrder = new UpdateRentalOrderService(transactionRunner);
   const confirmRentalOrder = new ConfirmRentalOrderService(transactionRunner);
   const reserveRentalOrder = new ReserveRentalOrderService(transactionRunner);

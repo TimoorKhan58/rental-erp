@@ -55,7 +55,7 @@ export type ListPaymentsParams = {
 };
 
 export type CreatePaymentPayload = {
-  paymentNumber: string;
+  paymentNumber?: string;
   rentalInvoiceId: string;
   customerId: string;
   paymentDate: string;

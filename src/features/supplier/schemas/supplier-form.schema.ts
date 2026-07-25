@@ -16,7 +16,7 @@ const emailSchema = z
   .or(z.literal(""));
 
 export const createSupplierFormSchema = z.object({
-  supplierCode: z.string().trim().min(1, "Supplier code is required").max(50),
+  supplierCode: z.string().trim().max(50).optional().or(z.literal("")),
   name: z.string().trim().min(1, "Supplier name is required").max(200),
   phone: phoneSchema,
   email: emailSchema,

@@ -6,6 +6,7 @@ import type {
   MaintenanceReportDto,
   ProcurementReportDto,
   ProductReportDto,
+  RentalInsightsReportDto,
   RentalReportDto,
   RepairReportDto,
   ReturnReportDto,
@@ -72,5 +73,11 @@ export function toWarehouseReportResponse(
 }
 
 export function toProductReportResponse(dto: ProductReportDto): ProductReportDto {
+  return dto;
+}
+
+export function toRentalInsightsResponse(
+  dto: RentalInsightsReportDto,
+): RentalInsightsReportDto {
   return dto;
 }

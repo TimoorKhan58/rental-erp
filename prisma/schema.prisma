@@ -1121,6 +1121,11 @@ enum DocumentType {
   REPAIR
   CUSTOMER
   PRODUCT
+  SUPPLIER
+  WAREHOUSE
+  PURCHASE_ORDER
+  RETURN
+  MAINTENANCE
 }
 
 model CompanySetting {

@@ -32,7 +32,7 @@ export function toCreateProcurementPayload(
   values: CreateProcurementFormValues,
 ): CreateProcurementPayload {
   return {
-    poNumber: values.poNumber.trim(),
+    ...(values.poNumber?.trim() ? { poNumber: values.poNumber.trim() } : {}),
     supplierId: values.supplierId,
     warehouseId: values.warehouseId,
     orderDate: values.orderDate,

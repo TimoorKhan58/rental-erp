@@ -50,11 +50,19 @@ describe("CreatePaymentSchema", () => {
     ).toThrow();
   });
 
-  it("rejects empty payment number", () => {
+  it("accepts empty payment number for auto-generation", () => {
+    const result = CreatePaymentSchema.parse({
+      ...VALID_CREATE_INPUT,
+      paymentNumber: "",
+    });
+    expect(result.paymentNumber).toBe("");
+  });
+
+  it("rejects overly long payment number", () => {
     expect(() =>
       CreatePaymentSchema.parse({
         ...VALID_CREATE_INPUT,
-        paymentNumber: "",
+        paymentNumber: "x".repeat(51),
       }),
     ).toThrow();
   });

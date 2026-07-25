@@ -69,7 +69,7 @@ export type ReturnLineItemPayload = {
 };
 
 export type CreateReturnPayload = {
-  returnNumber: string;
+  returnNumber?: string;
   rentalOrderId: string;
   dispatchId: string;
   returnDate: string;

@@ -20,7 +20,9 @@ export function toCreateMaintenancePayload(
   values: CreateMaintenanceFormValues,
 ): CreateMaintenancePayload {
   return {
-    maintenanceNumber: values.maintenanceNumber.trim(),
+    ...(values.maintenanceNumber?.trim()
+      ? { maintenanceNumber: values.maintenanceNumber.trim() }
+      : {}),
     productId: values.productId,
     warehouseId: values.warehouseId,
     inventoryId: values.inventoryId,

@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   DateSchema,
-  NonEmptyStringSchema,
   PaginationSchema,
   PositiveIntSchema,
   TrimmedStringSchema,
@@ -19,7 +18,7 @@ export const RepairIdParamSchema = z.object({
 });
 
 export const CreateRepairSchema = z.object({
-  repairNumber: NonEmptyStringSchema.max(50),
+  repairNumber: TrimmedStringSchema.max(50).optional(),
   returnId: UUIDSchema,
   returnItemId: UUIDSchema,
   productId: UUIDSchema,

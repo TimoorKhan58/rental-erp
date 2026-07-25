@@ -39,7 +39,9 @@ function toLineItemPayload(
 
 export function toCreateReturnPayload(values: CreateReturnFormValues): CreateReturnPayload {
   return {
-    returnNumber: values.returnNumber.trim(),
+    ...(values.returnNumber?.trim()
+      ? { returnNumber: values.returnNumber.trim() }
+      : {}),
     rentalOrderId: values.rentalOrderId,
     dispatchId: values.dispatchId,
     returnDate: values.returnDate,

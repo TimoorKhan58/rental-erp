@@ -8,6 +8,7 @@ import { PostPaymentService } from "@/modules/payment/application/services/post-
 import { UpdatePaymentService } from "@/modules/payment/application/services/update-payment.service";
 import { VoidPaymentService } from "@/modules/payment/application/services/void-payment.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createPaymentRepositoryFromSharedDeps } from "./create-payment.repository";
 import { createPaymentTransactionRunner } from "./create-payment-transaction.runner";
@@ -25,10 +26,14 @@ export function createPaymentApplicationServices(
 ): WiredPaymentApplicationServices {
   const repository = createPaymentRepositoryFromSharedDeps(deps);
   const transactionRunner = createPaymentTransactionRunner(deps, { userId });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getPaymentById = new GetPaymentByIdService(repository);
   const listPayments = new ListPaymentsService(repository);
-  const createPayment = new CreatePaymentService(transactionRunner);
+  const createPayment = new CreatePaymentService(
+    transactionRunner,
+    numberSequences,
+  );
   const updatePayment = new UpdatePaymentService(transactionRunner);
   const postPayment = new PostPaymentService(transactionRunner);
   const voidPayment = new VoidPaymentService(transactionRunner);

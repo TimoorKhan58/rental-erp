@@ -16,7 +16,7 @@ const cnicSchema = z
   .or(z.literal(""));
 
 export const createCustomerFormSchema = z.object({
-  customerCode: z.string().trim().min(1, "Customer code is required").max(50),
+  customerCode: z.string().trim().max(50).optional().or(z.literal("")),
   name: z.string().trim().min(1, "Customer name is required").max(200),
   phone: phoneSchema,
   cnic: cnicSchema,

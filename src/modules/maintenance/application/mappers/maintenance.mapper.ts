@@ -38,7 +38,9 @@ export function toUserId(id: string): UserId {
 }
 
 export function toCreateMaintenanceData(
-  input: CreateMaintenanceInput,
+  input: Omit<CreateMaintenanceInput, "maintenanceNumber"> & {
+    maintenanceNumber: string;
+  },
   createdById: UserId,
 ): CreateMaintenanceData {
   return {

@@ -27,7 +27,10 @@ export function MobileSidebar() {
             Main application navigation
           </SheetDescription>
         </SheetHeader>
-        <SidebarNav onNavigate={closeMobile} className="px-1 py-3" />
+        <SidebarNav
+          onNavigate={closeMobile}
+          className="min-h-0 flex-1 overflow-y-auto px-1 py-3"
+        />
       </SheetContent>
     </Sheet>
   );

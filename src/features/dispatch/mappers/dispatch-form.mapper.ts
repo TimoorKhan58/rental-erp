@@ -39,7 +39,9 @@ export function toCreateDispatchPayload(
   values: CreateDispatchFormValues,
 ): CreateDispatchPayload {
   return {
-    dispatchNumber: values.dispatchNumber.trim(),
+    ...(values.dispatchNumber?.trim()
+      ? { dispatchNumber: values.dispatchNumber.trim() }
+      : {}),
     rentalOrderId: values.rentalOrderId,
     dispatchDate: values.dispatchDate,
     deliveryMethod: values.deliveryMethod,

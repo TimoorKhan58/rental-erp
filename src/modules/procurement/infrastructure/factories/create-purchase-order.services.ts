@@ -11,6 +11,7 @@ import { ListPurchaseOrdersService } from "@/modules/procurement/application/ser
 import { ReceivePurchaseOrderService } from "@/modules/procurement/application/services/receive-purchase-order.service";
 import { UpdatePurchaseOrderService } from "@/modules/procurement/application/services/update-purchase-order.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createPurchaseOrderRepositoryFromSharedDeps } from "./create-purchase-order.repository";
 import { createPurchaseOrderTransactionRunner } from "./create-purchase-order-transaction.runner";
@@ -30,10 +31,14 @@ export function createPurchaseOrderApplicationServices(
   const transactionRunner = createPurchaseOrderTransactionRunner(deps, {
     userId,
   });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getPurchaseOrderById = new GetPurchaseOrderByIdService(repository);
   const listPurchaseOrders = new ListPurchaseOrdersService(repository);
-  const createPurchaseOrder = new CreatePurchaseOrderService(transactionRunner);
+  const createPurchaseOrder = new CreatePurchaseOrderService(
+    transactionRunner,
+    numberSequences,
+  );
   const updatePurchaseOrder = new UpdatePurchaseOrderService(transactionRunner);
   const approvePurchaseOrder = new ApprovePurchaseOrderService(transactionRunner);
   const receivePurchaseOrder = new ReceivePurchaseOrderService(transactionRunner);

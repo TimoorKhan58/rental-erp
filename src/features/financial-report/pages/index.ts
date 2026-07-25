@@ -3,6 +3,7 @@ export * from "./cash-flow-report-page";
 export * from "./customer-report-page";
 export * from "./expense-report-page";
 export * from "./inventory-report-page";
+export * from "./product-report-page";
 export * from "./profit-loss-report-page";
 export * from "./rental-report-page";
 export * from "./reports-hub-page";

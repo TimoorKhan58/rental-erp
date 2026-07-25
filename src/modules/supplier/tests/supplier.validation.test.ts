@@ -16,9 +16,18 @@ describe("Supplier validation schemas", () => {
     expect(result.supplierCode).toBe("SUPP-001");
   });
 
-  it("rejects invalid supplier code", () => {
+  it("accepts omitted supplier code", () => {
+    const { supplierCode: _omit, ...withoutCode } = VALID_CREATE_INPUT;
+    const result = parseRequest(CreateSupplierSchema, withoutCode);
+    expect(result.supplierCode).toBeUndefined();
+  });
+
+  it("rejects overly long supplier code", () => {
     expect(() =>
-      parseRequest(CreateSupplierSchema, { ...VALID_CREATE_INPUT, supplierCode: "" }),
+      parseRequest(CreateSupplierSchema, {
+        ...VALID_CREATE_INPUT,
+        supplierCode: "x".repeat(51),
+      }),
     ).toThrow();
   });
 

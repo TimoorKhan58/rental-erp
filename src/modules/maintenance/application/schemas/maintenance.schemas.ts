@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   DateSchema,
-  NonEmptyStringSchema,
   PaginationSchema,
   PositiveIntSchema,
   TrimmedStringSchema,
@@ -20,7 +19,7 @@ export const MaintenanceIdParamSchema = z.object({
 });
 
 export const CreateMaintenanceSchema = z.object({
-  maintenanceNumber: NonEmptyStringSchema.max(50),
+  maintenanceNumber: TrimmedStringSchema.max(50).optional(),
   productId: UUIDSchema,
   warehouseId: UUIDSchema,
   inventoryId: UUIDSchema,

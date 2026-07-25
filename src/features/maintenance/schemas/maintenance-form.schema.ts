@@ -6,7 +6,7 @@ const optionalTextSchema = (max: number) =>
 
 export const createMaintenanceFormSchema = z
   .object({
-    maintenanceNumber: z.string().trim().min(1, "Maintenance number is required").max(50),
+    maintenanceNumber: z.string().trim().max(50).optional().or(z.literal("")),
     productId: z.string().uuid("Product is required"),
     warehouseId: z.string().uuid("Warehouse is required"),
     inventoryId: z.string().uuid("Select inventory"),

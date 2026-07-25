@@ -7,6 +7,8 @@ import type {
   CustomerReportSortField,
   InventoryReportParams,
   InventoryReportSortField,
+  ProductReportParams,
+  ProductReportSortField,
   RentalReportParams,
   RentalReportSortField,
 } from "../types";
@@ -170,6 +172,43 @@ export function useCustomerReportParams() {
     setSorting: (
       sortBy: CustomerReportSortField,
       sortOrder: CustomerReportParams["sortOrder"] = "asc",
+    ) => updateParams({ sortBy, sortOrder }),
+  };
+}
+
+export function useProductReportParams() {
+  const { searchParams, updateParams } = useUrlUpdater();
+
+  const params = useMemo<ProductReportParams>(
+    () => ({
+      page: Number(searchParams.get("page") ?? DEFAULT_PAGE),
+      pageSize: Number(searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE),
+      sortBy: (searchParams.get("sortBy") as ProductReportSortField | null) ?? undefined,
+      sortOrder:
+        (searchParams.get("sortOrder") as ProductReportParams["sortOrder"]) ?? "desc",
+      search: searchParams.get("search") ?? undefined,
+      dateFrom: searchParams.get("dateFrom") ?? undefined,
+      dateTo: searchParams.get("dateTo") ?? undefined,
+    }),
+    [searchParams],
+  );
+
+  const [localSearch, setLocalSearch] = useState(params.search ?? "");
+
+  return {
+    params,
+    localSearch,
+    setLocalSearch,
+    setPage: (page: number) => updateParams({ page }),
+    setSearch: (search: string) => {
+      setLocalSearch(search);
+      updateParams({ search, page: DEFAULT_PAGE });
+    },
+    setDateRange: (from?: string, to?: string) =>
+      updateParams({ dateFrom: from, dateTo: to, page: DEFAULT_PAGE }),
+    setSorting: (
+      sortBy: ProductReportSortField,
+      sortOrder: ProductReportParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
   };
 }

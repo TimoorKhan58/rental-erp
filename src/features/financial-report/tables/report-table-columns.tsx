@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import type {
   CustomerReportLine,
   InventoryReportLine,
+  ProductReportLine,
   ProfitLossAccountLine,
   RentalReportLine,
 } from "../types";
@@ -156,6 +157,63 @@ export function getCustomerReportColumns(): Array<DataTableColumn<CustomerReport
       id: "lastOrderDate",
       header: "Last order",
       cell: (row) => (row.lastOrderDate ? formatDate(row.lastOrderDate) : "—"),
+    },
+  ];
+}
+
+export function getProductReportColumns(): Array<DataTableColumn<ProductReportLine>> {
+  return [
+    {
+      id: "productCode",
+      header: "Product",
+      cell: (row) => `${row.productCode} — ${row.productName}`,
+    },
+    {
+      id: "rentalPricePerDay",
+      header: "Actual rate",
+      cell: (row) => formatCurrency(row.rentalPricePerDay),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "rentalCount",
+      header: "Rentals",
+      cell: (row) => row.rentalCount,
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "rentedQuantity",
+      header: "Qty rented",
+      cell: (row) => row.rentedQuantity,
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "quantityDays",
+      header: "Qty-days",
+      cell: (row) => row.quantityDays,
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "revenue",
+      header: "Revenue",
+      cell: (row) => formatCurrency(row.revenue),
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "quantityOnHand",
+      header: "On hand",
+      cell: (row) => row.quantityOnHand,
+      className: "text-right",
+      headerClassName: "text-right",
+    },
+    {
+      id: "isRentable",
+      header: "Rentable",
+      cell: (row) => (row.isRentable ? "Yes" : "No"),
     },
   ];
 }

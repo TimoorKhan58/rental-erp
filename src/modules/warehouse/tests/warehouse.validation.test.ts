@@ -29,11 +29,17 @@ describe("Warehouse validation schemas", () => {
     expect(result.phone).toBeUndefined();
   });
 
-  it("rejects invalid warehouse code", () => {
+  it("accepts omitted warehouse code", () => {
+    const { warehouseCode: _omit, ...withoutCode } = VALID_CREATE_INPUT;
+    const result = parseRequest(CreateWarehouseSchema, withoutCode);
+    expect(result.warehouseCode).toBeUndefined();
+  });
+
+  it("rejects overly long warehouse code", () => {
     expect(() =>
       parseRequest(CreateWarehouseSchema, {
         ...VALID_CREATE_INPUT,
-        warehouseCode: "",
+        warehouseCode: "x".repeat(51),
       }),
     ).toThrow();
   });

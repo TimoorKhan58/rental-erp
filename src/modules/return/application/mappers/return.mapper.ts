@@ -40,7 +40,7 @@ export function toProductId(id: string): ProductId {
 }
 
 export function toCreateReturnData(
-  input: CreateReturnInput,
+  input: Omit<CreateReturnInput, "returnNumber"> & { returnNumber: string },
   createdById: UserId,
 ): CreateReturnData {
   return {

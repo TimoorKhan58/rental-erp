@@ -53,7 +53,7 @@ export type ListRepairsParams = {
 };
 
 export type CreateRepairPayload = {
-  repairNumber: string;
+  repairNumber?: string;
   returnId: string;
   returnItemId: string;
   productId: string;

@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   DateSchema,
-  NonEmptyStringSchema,
   PositiveIntSchema,
   TrimmedStringSchema,
   UUIDSchema,
@@ -20,7 +19,7 @@ export const ReturnIdParamSchema = z.object({
 });
 
 export const CreateReturnSchema = z.object({
-  returnNumber: NonEmptyStringSchema.max(50),
+  returnNumber: TrimmedStringSchema.max(50).optional(),
   rentalOrderId: UUIDSchema,
   dispatchId: UUIDSchema,
   returnDate: DateSchema,

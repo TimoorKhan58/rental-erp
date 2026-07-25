@@ -6,6 +6,7 @@ import type {
   MaintenanceReportQuery,
   ProcurementReportQuery,
   ProductReportQuery,
+  RentalInsightsQuery,
   RentalReportQuery,
   RepairReportQuery,
   ReturnReportQuery,
@@ -20,6 +21,7 @@ import type {
   MaintenanceReport,
   ProcurementReport,
   ProductReport,
+  RentalInsightsReport,
   RentalReport,
   RepairReport,
   ReturnReport,
@@ -35,6 +37,7 @@ import type {
   MaintenanceReportDto,
   ProcurementReportDto,
   ProductReportDto,
+  RentalInsightsReportDto,
   RentalReportDto,
   RepairReportDto,
   ReturnReportDto,
@@ -49,6 +52,7 @@ import type {
   MaintenanceReportQueryParsed,
   ProcurementReportQueryParsed,
   ProductReportQueryParsed,
+  RentalInsightsQueryParsed,
   RentalReportQueryParsed,
   RepairReportQueryParsed,
   ReturnReportQueryParsed,
@@ -65,6 +69,12 @@ function toIsoRequired(value: Date): string {
 }
 
 export function toDashboardQuery(input: DashboardQueryParsed): DashboardQuery {
+  return { dateFrom: input.dateFrom, dateTo: input.dateTo };
+}
+
+export function toRentalInsightsQuery(
+  input: RentalInsightsQueryParsed,
+): RentalInsightsQuery {
   return { dateFrom: input.dateFrom, dateTo: input.dateTo };
 }
 
@@ -363,5 +373,26 @@ export function toProductReportDto(report: ProductReport): ProductReportDto {
     lines: report.lines.map(mapLine),
     mostRented: report.mostRented.map(mapLine),
     leastRented: report.leastRented.map(mapLine),
+  };
+}
+
+export function toRentalInsightsDto(
+  report: RentalInsightsReport,
+): RentalInsightsReportDto {
+  return {
+    period: {
+      from: toIsoRequired(report.period.from),
+      to: toIsoRequired(report.period.to),
+    },
+    topByRevenue: report.topByRevenue.map((line) => ({ ...line })),
+    topByQuantityDays: report.topByQuantityDays.map((line) => ({ ...line })),
+    utilization: {
+      fleet: { ...report.utilization.fleet },
+      byProduct: report.utilization.byProduct.map((line) => ({ ...line })),
+    },
+    arAging: {
+      buckets: report.arAging.buckets.map((bucket) => ({ ...bucket })),
+      totalOutstanding: report.arAging.totalOutstanding,
+    },
   };
 }

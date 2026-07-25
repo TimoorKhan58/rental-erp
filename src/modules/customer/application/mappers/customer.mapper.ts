@@ -36,7 +36,9 @@ export function toCustomerDto(customer: Customer): CustomerDto {
   };
 }
 
-export function toCreateCustomerData(input: CreateCustomerInput): CreateCustomerData {
+export function toCreateCustomerData(
+  input: Omit<CreateCustomerInput, "customerCode"> & { customerCode: string },
+): CreateCustomerData {
   return {
     customerCode: createCustomerCode(input.customerCode),
     name: input.name,

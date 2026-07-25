@@ -29,7 +29,7 @@ const lineItemsRefinement = (items: Array<{ productId: string }>, ctx: z.Refinem
 
 export const createProcurementFormSchema = z
   .object({
-    poNumber: z.string().trim().min(1, "PO number is required").max(50),
+    poNumber: z.string().trim().max(50).optional().or(z.literal("")),
     supplierId: z.string().uuid("Select a supplier"),
     warehouseId: z.string().uuid("Select a warehouse"),
     orderDate: z.string().min(1, "Order date is required"),

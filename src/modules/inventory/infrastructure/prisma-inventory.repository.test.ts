@@ -53,17 +53,35 @@ function applyWhereFilter(
   }
 
   if (where.OR) {
-    const orClauses = where.OR as Array<Record<string, { contains: string }>>;
+    const orClauses = where.OR as Array<Record<string, unknown>>;
     return items.filter((item) =>
       orClauses.some((orClause) => {
         const field = Object.keys(orClause)[0] as keyof InventoryRecord;
-        const contains = orClause[field]?.contains.toLowerCase();
+        const condition = orClause[field as string];
         const value = item[field];
-        return (
-          value !== null &&
-          value !== undefined &&
-          String(value).toLowerCase().includes(contains ?? "")
-        );
+
+        // Relation filters (product/warehouse) are not represented in the
+        // flat mock records, so they never match here.
+        if (value === null || value === undefined) {
+          return false;
+        }
+
+        if (typeof condition === "string") {
+          return value === condition;
+        }
+
+        if (
+          typeof condition === "object" &&
+          condition !== null &&
+          "contains" in condition
+        ) {
+          const contains = String(
+            (condition as { contains: string }).contains,
+          ).toLowerCase();
+          return String(value).toLowerCase().includes(contains);
+        }
+
+        return false;
       }),
     );
   }

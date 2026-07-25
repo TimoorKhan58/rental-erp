@@ -241,7 +241,9 @@ export type ProductReportSortField =
   | "productName"
   | "rentalCount"
   | "rentedQuantity"
+  | "quantityDays"
   | "revenue"
+  | "rentalPricePerDay"
   | "quantityOnHand";
 
 export type ProductReportParams = {
@@ -258,8 +260,10 @@ export type ProductReportLine = {
   productId: string;
   productCode: string;
   productName: string;
+  rentalPricePerDay: number;
   rentalCount: number;
   rentedQuantity: number;
+  quantityDays: number;
   revenue: number;
   quantityOnHand: number;
   isRentable: boolean;

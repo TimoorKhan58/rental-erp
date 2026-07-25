@@ -9,6 +9,7 @@ import { GetCustomerByIdService } from "@/modules/customer/application/services/
 import { ListCustomersService } from "@/modules/customer/application/services/list-customers.service";
 import { UpdateCustomerService } from "@/modules/customer/application/services/update-customer.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createCustomerRepositoryFromSharedDeps } from "./create-customer.repository";
 import { createCustomerTransactionRunner } from "./create-customer-transaction.runner";
@@ -25,10 +26,14 @@ export function createCustomerApplicationServices(
 ): WiredCustomerApplicationServices {
   const repository = createCustomerRepositoryFromSharedDeps(deps);
   const transactionRunner = createCustomerTransactionRunner(deps);
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getCustomerById = new GetCustomerByIdService(repository);
   const listCustomers = new ListCustomersService(repository);
-  const createCustomer = new CreateCustomerService(transactionRunner);
+  const createCustomer = new CreateCustomerService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateCustomer = new UpdateCustomerService(transactionRunner);
   const deleteCustomer = new DeleteCustomerService(transactionRunner);
 

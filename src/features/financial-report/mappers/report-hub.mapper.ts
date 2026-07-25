@@ -50,6 +50,12 @@ export const REPORT_HUB_CARDS: ReportHubCard[] = [
     href: ROUTES.reportsCustomers,
     category: "operational",
   },
+  {
+    title: "Products",
+    description: "Which tents and gear earn the most — revenue, volume, and rates.",
+    href: ROUTES.reportsProducts,
+    category: "operational",
+  },
 ];
 
 export function toPaginationMeta(report: {

@@ -68,14 +68,10 @@ function CreateSupplierForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Supplier information">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Code is assigned automatically on save.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            control={form.control}
-            name="supplierCode"
-            label="Supplier code"
-            placeholder="e.g. SUP-001"
-            description="Unique identifier for this supplier."
-          />
           <TextField
             control={form.control}
             name="name"

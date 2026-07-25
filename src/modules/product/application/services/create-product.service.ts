@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import type { ProductDto } from "../dtos/product.dto";
 import {
   toCreateProductData,
@@ -18,11 +20,19 @@ import { parseRequest } from "@/shared/application/validation";
 import { ConflictError } from "@/shared/infrastructure/errors";
 
 export class CreateProductService {
-  constructor(private readonly transactionRunner: IProductTransactionRunner) {}
+  constructor(
+    private readonly transactionRunner: IProductTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
+  ) {}
 
   async execute(input: CreateProductInput): Promise<ProductDto> {
     const data = parseRequest(CreateProductSchema, input);
-    const createData = toCreateProductData(data);
+    const productCode = await resolveDocumentCode(
+      this.numberSequences,
+      "PRODUCT",
+      data.productCode,
+    );
+    const createData = toCreateProductData({ ...data, productCode });
 
     return this.transactionRunner.run(
       async ({

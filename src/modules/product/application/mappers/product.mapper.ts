@@ -78,7 +78,9 @@ export function toProductDto(
   };
 }
 
-export function toCreateProductData(input: CreateProductInput): CreateProductData {
+export function toCreateProductData(
+  input: Omit<CreateProductInput, "productCode"> & { productCode: string },
+): CreateProductData {
   return {
     productCode: createProductCode(input.productCode),
     name: createProductName(input.name),

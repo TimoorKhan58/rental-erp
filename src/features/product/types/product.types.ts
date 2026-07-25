@@ -72,7 +72,7 @@ export type ListProductsParams = {
 };
 
 export type CreateProductPayload = {
-  productCode: string;
+  productCode?: string;
   name: string;
   description?: string | null;
   unit: string;

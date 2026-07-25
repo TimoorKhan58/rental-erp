@@ -286,11 +286,65 @@ export interface ProductReportLine {
   productId: string;
   productCode: string;
   productName: string;
+  rentalPricePerDay: number;
   rentalCount: number;
   rentedQuantity: number;
+  quantityDays: number;
   revenue: number;
   quantityOnHand: number;
   isRentable: boolean;
+}
+
+export interface RentalInsightsProductLine {
+  productId: string;
+  productCode: string;
+  productName: string;
+  revenue: number;
+  rentalCount: number;
+  quantityDays: number;
+  rentedQuantity: number;
+}
+
+export interface RentalInsightsUtilizationProductLine {
+  productId: string;
+  productName: string;
+  onHand: number;
+  reserved: number;
+  available: number;
+  utilizationPercent: number;
+}
+
+export interface RentalInsightsUtilization {
+  fleet: {
+    onHand: number;
+    reserved: number;
+    available: number;
+    utilizationPercent: number;
+  };
+  byProduct: RentalInsightsUtilizationProductLine[];
+}
+
+export interface RentalInsightsArAgingBucket {
+  key: "current" | "d1_30" | "d31_60" | "d61_90" | "d90_plus";
+  label: string;
+  invoiceCount: number;
+  balance: number;
+}
+
+export interface RentalInsightsArAging {
+  buckets: RentalInsightsArAgingBucket[];
+  totalOutstanding: number;
+}
+
+export interface RentalInsightsReport {
+  period: {
+    from: Date;
+    to: Date;
+  };
+  topByRevenue: RentalInsightsProductLine[];
+  topByQuantityDays: RentalInsightsProductLine[];
+  utilization: RentalInsightsUtilization;
+  arAging: RentalInsightsArAging;
 }
 
 export interface ProductReport {

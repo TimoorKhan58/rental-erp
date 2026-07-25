@@ -59,7 +59,7 @@ export function toRentalOrderDto(order: RentalOrder): RentalOrderDto {
 }
 
 export function toCreateRentalOrderData(
-  input: CreateRentalOrderInput,
+  input: Omit<CreateRentalOrderInput, "orderNumber"> & { orderNumber: string },
   createdById: UserId,
 ): CreateRentalOrderData {
   return {

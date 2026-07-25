@@ -36,7 +36,9 @@ export function toSupplierDto(supplier: Supplier): SupplierDto {
   };
 }
 
-export function toCreateSupplierData(input: CreateSupplierInput): CreateSupplierData {
+export function toCreateSupplierData(
+  input: Omit<CreateSupplierInput, "supplierCode"> & { supplierCode: string },
+): CreateSupplierData {
   return {
     supplierCode: createSupplierCode(input.supplierCode),
     name: input.name,

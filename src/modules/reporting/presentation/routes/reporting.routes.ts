@@ -10,5 +10,6 @@ export const REPORTING_ROUTES = {
   customers: "/api/reports/customers",
   suppliers: "/api/reports/suppliers",
   warehouses: "/api/reports/warehouses",
+  rentalInsights: "/api/reports/rental-insights",
   products: "/api/reports/products",
 } as const;

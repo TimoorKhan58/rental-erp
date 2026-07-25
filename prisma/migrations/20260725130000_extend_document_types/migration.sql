@@ -1,0 +1,6 @@
+-- Extend document numbering to cover remaining master-data and ops codes.
+ALTER TYPE "DocumentType" ADD VALUE IF NOT EXISTS 'SUPPLIER';
+ALTER TYPE "DocumentType" ADD VALUE IF NOT EXISTS 'WAREHOUSE';
+ALTER TYPE "DocumentType" ADD VALUE IF NOT EXISTS 'PURCHASE_ORDER';
+ALTER TYPE "DocumentType" ADD VALUE IF NOT EXISTS 'RETURN';
+ALTER TYPE "DocumentType" ADD VALUE IF NOT EXISTS 'MAINTENANCE';

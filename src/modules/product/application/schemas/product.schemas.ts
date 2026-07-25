@@ -40,7 +40,7 @@ export const ProductIdParamSchema = z.object({
 });
 
 export const CreateProductSchema = z.object({
-  productCode: NonEmptyStringSchema.max(50),
+  productCode: TrimmedStringSchema.max(50).optional(),
   name: NonEmptyStringSchema.max(200),
   description: TrimmedStringSchema.max(2000).optional().nullable(),
   unit: NonEmptyStringSchema.max(50),

@@ -23,7 +23,7 @@ export const DispatchIdParamSchema = z.object({
 });
 
 export const CreateDispatchSchema = z.object({
-  dispatchNumber: NonEmptyStringSchema.max(50),
+  dispatchNumber: TrimmedStringSchema.max(50).optional(),
   rentalOrderId: UUIDSchema,
   dispatchDate: DateSchema,
   deliveryMethod: DeliveryMethodSchema,

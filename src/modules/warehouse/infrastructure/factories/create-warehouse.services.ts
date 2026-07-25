@@ -9,6 +9,7 @@ import { GetWarehouseByIdService } from "@/modules/warehouse/application/service
 import { ListWarehousesService } from "@/modules/warehouse/application/services/list-warehouses.service";
 import { UpdateWarehouseService } from "@/modules/warehouse/application/services/update-warehouse.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createWarehouseRepositoryFromSharedDeps } from "./create-warehouse.repository";
 import { createWarehouseTransactionRunner } from "./create-warehouse-transaction.runner";
@@ -25,10 +26,14 @@ export function createWarehouseApplicationServices(
 ): WiredWarehouseApplicationServices {
   const repository = createWarehouseRepositoryFromSharedDeps(deps);
   const transactionRunner = createWarehouseTransactionRunner(deps);
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getWarehouseById = new GetWarehouseByIdService(repository);
   const listWarehouses = new ListWarehousesService(repository);
-  const createWarehouse = new CreateWarehouseService(transactionRunner);
+  const createWarehouse = new CreateWarehouseService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateWarehouse = new UpdateWarehouseService(transactionRunner);
   const deleteWarehouse = new DeleteWarehouseService(transactionRunner);
 

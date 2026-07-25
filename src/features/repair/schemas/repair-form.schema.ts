@@ -5,7 +5,7 @@ const optionalTextSchema = (max: number) =>
 
 export const createRepairFormSchema = z
   .object({
-    repairNumber: z.string().trim().min(1, "Repair number is required").max(50),
+    repairNumber: z.string().trim().max(50).optional().or(z.literal("")),
     returnId: z.string().uuid("Select a return"),
     returnItemId: z.string().uuid("Select a return item"),
     productId: z.string().uuid("Product is required"),

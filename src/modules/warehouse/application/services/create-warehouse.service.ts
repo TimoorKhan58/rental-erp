@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import type { WarehouseDto } from "../dtos/warehouse.dto";
 import {
   toCreateWarehouseData,
@@ -17,11 +19,19 @@ import { parseRequest } from "@/shared/application/validation";
 import { ConflictError } from "@/shared/infrastructure/errors";
 
 export class CreateWarehouseService {
-  constructor(private readonly transactionRunner: IWarehouseTransactionRunner) {}
+  constructor(
+    private readonly transactionRunner: IWarehouseTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
+  ) {}
 
   async execute(input: CreateWarehouseInput): Promise<WarehouseDto> {
     const data = parseRequest(CreateWarehouseSchema, input);
-    const createData = toCreateWarehouseData(data);
+    const warehouseCode = await resolveDocumentCode(
+      this.numberSequences,
+      "WAREHOUSE",
+      data.warehouseCode,
+    );
+    const createData = toCreateWarehouseData({ ...data, warehouseCode });
 
     return this.transactionRunner.run(async ({ repository, auditLogger }) => {
       const existingCode = await repository.findByWarehouseCode(

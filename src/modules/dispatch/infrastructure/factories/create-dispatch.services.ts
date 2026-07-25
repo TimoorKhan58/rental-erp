@@ -8,6 +8,7 @@ import { GetDispatchByIdService } from "@/modules/dispatch/application/services/
 import { ListDispatchesService } from "@/modules/dispatch/application/services/list-dispatches.service";
 import { UpdateDispatchService } from "@/modules/dispatch/application/services/update-dispatch.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createDispatchRepositoryFromSharedDeps } from "./create-dispatch.repository";
 import { createDispatchTransactionRunner } from "./create-dispatch-transaction.runner";
@@ -25,10 +26,14 @@ export function createDispatchApplicationServices(
 ): WiredDispatchApplicationServices {
   const repository = createDispatchRepositoryFromSharedDeps(deps);
   const transactionRunner = createDispatchTransactionRunner(deps, { userId });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getDispatchById = new GetDispatchByIdService(repository);
   const listDispatches = new ListDispatchesService(repository);
-  const createDispatch = new CreateDispatchService(transactionRunner);
+  const createDispatch = new CreateDispatchService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateDispatch = new UpdateDispatchService(transactionRunner);
   const completeDispatch = new CompleteDispatchService(transactionRunner);
   const cancelDispatch = new CancelDispatchService(transactionRunner);

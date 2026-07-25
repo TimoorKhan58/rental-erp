@@ -155,14 +155,10 @@ function CreateRepairForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Repair details">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Repair number is assigned automatically on save.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            control={form.control}
-            name="repairNumber"
-            label="Repair number"
-            placeholder="e.g. RPR-2026-001"
-            description="Unique identifier for this repair."
-          />
           <SelectField
             control={form.control}
             name="returnId"

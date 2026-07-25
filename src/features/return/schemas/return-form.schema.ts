@@ -47,7 +47,7 @@ const quantityLimitRefinement = (
 
 export const createReturnFormSchema = z
   .object({
-    returnNumber: z.string().trim().min(1, "Return number is required").max(50),
+    returnNumber: z.string().trim().max(50).optional().or(z.literal("")),
     rentalOrderId: z.string().uuid("Select a rental order"),
     dispatchId: z.string().uuid("Select a dispatch"),
     returnDate: z.string().min(1, "Return date is required"),

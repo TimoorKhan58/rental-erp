@@ -20,7 +20,7 @@ export const WarehouseIdParamSchema = z.object({
 });
 
 export const CreateWarehouseSchema = z.object({
-  warehouseCode: NonEmptyStringSchema.max(50),
+  warehouseCode: TrimmedStringSchema.max(50).optional(),
   name: NonEmptyStringSchema.max(200),
   description: TrimmedStringSchema.max(2000).optional().nullable(),
   address: TrimmedStringSchema.max(500).optional().nullable(),

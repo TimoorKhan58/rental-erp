@@ -62,7 +62,7 @@ export type ProcurementLineItemPayload = {
 };
 
 export type CreateProcurementPayload = {
-  poNumber: string;
+  poNumber?: string;
   supplierId: string;
   warehouseId: string;
   orderDate: string;

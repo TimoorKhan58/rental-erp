@@ -49,6 +49,45 @@ function unitPriceLabel(item: RentalInvoiceItemResponse): string {
   return formatCurrency(item.unitPrice);
 }
 
+function InvoiceTotals({
+  subtotal,
+  discount,
+  tax,
+  grandTotal,
+}: {
+  subtotal: number;
+  discount: number;
+  tax: number;
+  grandTotal: number;
+}) {
+  return (
+    <div className="space-y-2 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
+      <div className="flex items-center justify-between gap-3 text-muted-foreground">
+        <span>Subtotal</span>
+        <span className="tabular-nums text-foreground">{formatCurrency(subtotal)}</span>
+      </div>
+      {discount > 0 ? (
+        <div className="flex items-center justify-between gap-3 text-muted-foreground">
+          <span>Discount</span>
+          <span className="tabular-nums text-success">−{formatCurrency(discount)}</span>
+        </div>
+      ) : null}
+      {tax > 0 ? (
+        <div className="flex items-center justify-between gap-3 text-muted-foreground">
+          <span>Tax</span>
+          <span className="tabular-nums text-foreground">{formatCurrency(tax)}</span>
+        </div>
+      ) : null}
+      <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2 font-medium">
+        <span>Grand total</span>
+        <span className="font-heading text-base font-semibold tabular-nums">
+          {formatCurrency(grandTotal)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function RentalInvoiceLineItemsTable({
   items,
   subtotal,
@@ -60,101 +99,154 @@ export function RentalInvoiceLineItemsTable({
   const sortedItems = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
-    <div className={cn("overflow-x-auto rounded-xl border border-border/60", className)}>
-      <table className="w-full min-w-[820px] text-sm">
-        <thead>
-          <tr className="border-b bg-muted/30 text-left">
-            <th className="px-4 py-3 font-medium" scope="col">
-              Charge
-            </th>
-            <th className="px-4 py-3 font-medium" scope="col">
-              Details
-            </th>
-            <th className="px-4 py-3 font-medium text-right" scope="col">
-              Qty
-            </th>
-            <th className="px-4 py-3 font-medium text-right" scope="col">
-              Unit price
-            </th>
-            <th className="px-4 py-3 font-medium text-right" scope="col">
-              Amount
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedItems.map((item) => {
-            const isMissing =
-              item.lineType === "MANUAL_CHARGE" && item.missingQuantity > 0;
-            const isConditionCharge =
-              item.lineType === "DAMAGE_CHARGE" ||
-              item.lineType === "LOST_ITEM_CHARGE" ||
-              isMissing;
+    <div className={cn("space-y-3", className)}>
+      <div className="space-y-3 md:hidden">
+        {sortedItems.map((item) => {
+          const isMissing =
+            item.lineType === "MANUAL_CHARGE" && item.missingQuantity > 0;
+          const isConditionCharge =
+            item.lineType === "DAMAGE_CHARGE" ||
+            item.lineType === "LOST_ITEM_CHARGE" ||
+            isMissing;
 
-            return (
-              <tr
-                key={item.id}
-                className={cn(
-                  "border-b last:border-b-0 transition-colors hover:bg-muted/20",
-                  isConditionCharge && "bg-muted/10",
-                )}
-              >
-                <td className="px-4 py-3 align-top">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {lineTypeLabel(item)}
-                  </p>
-                  <p className="font-medium">{item.description}</p>
-                </td>
-                <td className="px-4 py-3 align-top text-muted-foreground">
-                  {item.notes?.trim() ? item.notes : "—"}
-                </td>
-                <td className="px-4 py-3 align-top text-right tabular-nums">
-                  {quantityLabel(item)}
-                </td>
-                <td className="px-4 py-3 align-top text-right tabular-nums">
-                  {unitPriceLabel(item)}
-                </td>
-                <td className="px-4 py-3 align-top text-right tabular-nums font-medium">
+          return (
+            <article
+              key={item.id}
+              className={cn(
+                "rounded-xl border border-border/60 bg-card p-4 shadow-soft",
+                isConditionCharge && "bg-muted/10",
+              )}
+            >
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {lineTypeLabel(item)}
+              </p>
+              <div className="mt-1 flex items-start justify-between gap-3">
+                <p className="min-w-0 font-medium">{item.description}</p>
+                <p className="shrink-0 font-medium tabular-nums">
                   {isMissing ? "—" : formatCurrency(item.lineTotal)}
+                </p>
+              </div>
+              {item.notes?.trim() ? (
+                <p className="mt-2 text-sm text-muted-foreground">{item.notes}</p>
+              ) : null}
+              <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Qty</dt>
+                  <dd className="tabular-nums">{quantityLabel(item)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Unit price</dt>
+                  <dd className="tabular-nums">{unitPriceLabel(item)}</dd>
+                </div>
+              </dl>
+            </article>
+          );
+        })}
+
+        <InvoiceTotals
+          subtotal={subtotal}
+          discount={discount}
+          tax={tax}
+          grandTotal={grandTotal}
+        />
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-xl border border-border/60 md:block">
+        <table className="w-full min-w-[820px] text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30 text-left">
+              <th className="px-4 py-3 font-medium" scope="col">
+                Charge
+              </th>
+              <th className="px-4 py-3 font-medium" scope="col">
+                Details
+              </th>
+              <th className="px-4 py-3 font-medium text-right" scope="col">
+                Qty
+              </th>
+              <th className="px-4 py-3 font-medium text-right" scope="col">
+                Unit price
+              </th>
+              <th className="px-4 py-3 font-medium text-right" scope="col">
+                Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedItems.map((item) => {
+              const isMissing =
+                item.lineType === "MANUAL_CHARGE" && item.missingQuantity > 0;
+              const isConditionCharge =
+                item.lineType === "DAMAGE_CHARGE" ||
+                item.lineType === "LOST_ITEM_CHARGE" ||
+                isMissing;
+
+              return (
+                <tr
+                  key={item.id}
+                  className={cn(
+                    "border-b last:border-b-0 transition-colors hover:bg-muted/20",
+                    isConditionCharge && "bg-muted/10",
+                  )}
+                >
+                  <td className="px-4 py-3 align-top">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {lineTypeLabel(item)}
+                    </p>
+                    <p className="font-medium">{item.description}</p>
+                  </td>
+                  <td className="px-4 py-3 align-top text-muted-foreground">
+                    {item.notes?.trim() ? item.notes : "—"}
+                  </td>
+                  <td className="px-4 py-3 align-top text-right tabular-nums">
+                    {quantityLabel(item)}
+                  </td>
+                  <td className="px-4 py-3 align-top text-right tabular-nums">
+                    {unitPriceLabel(item)}
+                  </td>
+                  <td className="px-4 py-3 align-top text-right tabular-nums font-medium">
+                    {isMissing ? "—" : formatCurrency(item.lineTotal)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="border-t bg-muted/20">
+              <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">
+                Subtotal
+              </td>
+              <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(subtotal)}</td>
+            </tr>
+            {discount > 0 ? (
+              <tr className="bg-muted/20">
+                <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">
+                  Discount
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums text-success">
+                  −{formatCurrency(discount)}
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-        <tfoot>
-          <tr className="border-t bg-muted/20">
-            <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">
-              Subtotal
-            </td>
-            <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(subtotal)}</td>
-          </tr>
-          {discount > 0 ? (
-            <tr className="bg-muted/20">
-              <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">
-                Discount
+            ) : null}
+            {tax > 0 ? (
+              <tr className="bg-muted/20">
+                <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">
+                  Tax
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(tax)}</td>
+              </tr>
+            ) : null}
+            <tr className="bg-muted/30">
+              <td colSpan={4} className="px-4 py-3 text-right font-medium">
+                Grand total
               </td>
-              <td className="px-4 py-2 text-right tabular-nums text-success">
-                −{formatCurrency(discount)}
+              <td className="px-4 py-3 text-right font-heading text-base font-semibold tabular-nums">
+                {formatCurrency(grandTotal)}
               </td>
             </tr>
-          ) : null}
-          {tax > 0 ? (
-            <tr className="bg-muted/20">
-              <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">
-                Tax
-              </td>
-              <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(tax)}</td>
-            </tr>
-          ) : null}
-          <tr className="bg-muted/30">
-            <td colSpan={4} className="px-4 py-3 text-right font-medium">
-              Grand total
-            </td>
-            <td className="px-4 py-3 text-right font-heading text-base font-semibold tabular-nums">
-              {formatCurrency(grandTotal)}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }

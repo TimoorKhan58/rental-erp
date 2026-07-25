@@ -56,6 +56,7 @@ export interface FixtureProduct {
   productCode: string;
   name: string;
   purchaseCost: number;
+  rentalPricePerDay: number;
   isRentable: boolean;
   isActive: boolean;
   totalQuantity: number;
@@ -92,6 +93,7 @@ export interface FixtureRentalOrderItem {
   rentalOrderId: string;
   productId: string;
   quantity: number;
+  numberOfDays: number;
   lineTotal: number;
 }
 
@@ -226,6 +228,7 @@ export function buildProduct(
     productCode: "PROD-001",
     name: "Folding Chair",
     purchaseCost: 25,
+    rentalPricePerDay: 150,
     isRentable: true,
     isActive: true,
     totalQuantity: 100,
@@ -277,6 +280,7 @@ export function buildRentalOrderItem(
     rentalOrderId: RENTAL_ONE_ID,
     productId: PRODUCT_ONE_ID,
     quantity: 20,
+    numberOfDays: 1,
     lineTotal: 300,
     ...overrides,
   };

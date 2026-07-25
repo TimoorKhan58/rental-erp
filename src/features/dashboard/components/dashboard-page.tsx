@@ -15,6 +15,7 @@ import { DashboardHero } from "./dashboard-hero";
 import { NotificationsPanel } from "./notifications-panel";
 import { OpsHealthGrid } from "./ops-health-grid";
 import { QuickActionsPanel } from "./quick-actions-panel";
+import { RentalInsightsSection } from "./rental-insights-section";
 
 /**
  * DashboardPage — 20–25 second business scan for tent rental operations.
@@ -73,6 +74,8 @@ export function DashboardPage() {
             items={data?.opsHealth ?? []}
             isLoading={pulse.isFetching && !data}
           />
+
+          <RentalInsightsSection />
 
           <CatalogSnapshot
             customers={data?.catalog.customers ?? 0}

@@ -72,7 +72,7 @@ export type DispatchLineItemPayload = {
 };
 
 export type CreateDispatchPayload = {
-  dispatchNumber: string;
+  dispatchNumber?: string;
   rentalOrderId: string;
   dispatchDate: string;
   deliveryMethod: DeliveryMethod;

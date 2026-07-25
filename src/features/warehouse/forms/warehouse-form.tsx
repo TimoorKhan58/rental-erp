@@ -68,14 +68,10 @@ function CreateWarehouseForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Warehouse information">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Code is assigned automatically on save.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            control={form.control}
-            name="warehouseCode"
-            label="Warehouse code"
-            placeholder="e.g. WH-001"
-            description="Unique identifier for this warehouse."
-          />
           <TextField
             control={form.control}
             name="name"

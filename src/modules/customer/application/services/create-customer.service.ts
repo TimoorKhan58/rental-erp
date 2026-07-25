@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import type { CustomerDto } from "../dtos/customer.dto";
 import {
   toCreateCustomerData,
@@ -17,11 +19,19 @@ import { parseRequest } from "@/shared/application/validation";
 import { ConflictError } from "@/shared/infrastructure/errors";
 
 export class CreateCustomerService {
-  constructor(private readonly transactionRunner: ICustomerTransactionRunner) {}
+  constructor(
+    private readonly transactionRunner: ICustomerTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
+  ) {}
 
   async execute(input: CreateCustomerInput): Promise<CustomerDto> {
     const data = parseRequest(CreateCustomerSchema, input);
-    const createData = toCreateCustomerData(data);
+    const customerCode = await resolveDocumentCode(
+      this.numberSequences,
+      "CUSTOMER",
+      data.customerCode,
+    );
+    const createData = toCreateCustomerData({ ...data, customerCode });
 
     return this.transactionRunner.run(async ({ repository, auditLogger }) => {
       const existingCode = await repository.findByCustomerCode(

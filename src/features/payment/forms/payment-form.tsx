@@ -99,14 +99,10 @@ function CreatePaymentForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Payment details">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Payment number is assigned automatically on save.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            control={form.control}
-            name="paymentNumber"
-            label="Payment number"
-            placeholder="e.g. PAY-2026-001"
-            description="Unique identifier for this payment."
-          />
           <SelectField
             control={form.control}
             name="customerId"

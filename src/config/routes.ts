@@ -73,6 +73,7 @@ export const ROUTES = {
   reportsRental: "/reports/rental",
   reportsInventory: "/reports/inventory",
   reportsCustomers: "/reports/customers",
+  reportsProducts: "/reports/products",
   audit: "/audit",
   auditDetail: (id: string) => `/audit/${id}`,
   notifications: "/notifications",

@@ -30,7 +30,7 @@ const lineItemsRefinement = (items: Array<{ productId: string }>, ctx: z.Refinem
 
 export const createDispatchFormSchema = z
   .object({
-    dispatchNumber: z.string().trim().min(1, "Dispatch number is required").max(50),
+    dispatchNumber: z.string().trim().max(50).optional().or(z.literal("")),
     rentalOrderId: z.string().uuid("Select a rental order"),
     dispatchDate: z.string().min(1, "Dispatch date is required"),
     deliveryMethod: z.enum(DELIVERY_METHODS, { message: "Select a delivery method" }),

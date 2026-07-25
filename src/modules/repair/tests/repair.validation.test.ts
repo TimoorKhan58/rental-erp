@@ -75,11 +75,19 @@ describe("CreateRepairSchema", () => {
     ).toThrow();
   });
 
-  it("rejects empty repair number", () => {
+  it("accepts empty repair number for auto-generation", () => {
+    const result = CreateRepairSchema.parse({
+      ...VALID_CREATE_INPUT,
+      repairNumber: "",
+    });
+    expect(result.repairNumber).toBe("");
+  });
+
+  it("rejects overly long repair number", () => {
     expect(() =>
       CreateRepairSchema.parse({
         ...VALID_CREATE_INPUT,
-        repairNumber: "",
+        repairNumber: "x".repeat(51),
       }),
     ).toThrow();
   });

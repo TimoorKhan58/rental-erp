@@ -36,7 +36,7 @@ export function toWarehouseDto(warehouse: Warehouse): WarehouseDto {
 }
 
 export function toCreateWarehouseData(
-  input: CreateWarehouseInput,
+  input: Omit<CreateWarehouseInput, "warehouseCode"> & { warehouseCode: string },
 ): CreateWarehouseData {
   return {
     warehouseCode: createWarehouseCode(input.warehouseCode),

@@ -20,7 +20,9 @@ export function toCreateCustomerPayload(
   values: CreateCustomerFormValues,
 ): CreateCustomerPayload {
   return {
-    customerCode: values.customerCode.trim(),
+    ...(values.customerCode?.trim()
+      ? { customerCode: values.customerCode.trim() }
+      : {}),
     name: values.name.trim(),
     phone: values.phone.trim(),
     cnic: normalizeOptionalString(values.cnic),

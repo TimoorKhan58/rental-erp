@@ -41,7 +41,7 @@ export function toPaymentDto(payment: Payment): PaymentDto {
 }
 
 export function toCreatePaymentData(
-  input: CreatePaymentInput,
+  input: Omit<CreatePaymentInput, "paymentNumber"> & { paymentNumber: string },
   createdById: UserId,
 ): CreatePaymentData {
   return {

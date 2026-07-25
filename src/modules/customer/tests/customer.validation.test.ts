@@ -16,10 +16,18 @@ describe("Customer validation schemas", () => {
     expect(result.customerCode).toBe("CUST-001");
   });
 
-  it("rejects invalid customer code", () => {
-    expect(() =>
-      parseRequest(CreateCustomerSchema, { ...VALID_CREATE_INPUT, customerCode: "" }),
-    ).toThrow();
+  it("allows omitting customer code for auto-generation", () => {
+    const result = parseRequest(CreateCustomerSchema, {
+      ...VALID_CREATE_INPUT,
+      customerCode: "",
+    });
+    expect(result.customerCode).toBe("");
+  });
+
+  it("allows create payload without customer code", () => {
+    const { customerCode: _ignored, ...withoutCode } = VALID_CREATE_INPUT;
+    const result = parseRequest(CreateCustomerSchema, withoutCode);
+    expect(result.customerCode).toBeUndefined();
   });
 
   it("rejects invalid phone", () => {

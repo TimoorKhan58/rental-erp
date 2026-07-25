@@ -18,7 +18,9 @@ function normalizeOptionalString(value: string | null | undefined): string | nul
 
 export function toCreateRepairPayload(values: CreateRepairFormValues): CreateRepairPayload {
   return {
-    repairNumber: values.repairNumber.trim(),
+    ...(values.repairNumber?.trim()
+      ? { repairNumber: values.repairNumber.trim() }
+      : {}),
     returnId: values.returnId,
     returnItemId: values.returnItemId,
     productId: values.productId,

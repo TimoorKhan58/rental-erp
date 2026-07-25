@@ -9,6 +9,7 @@ import { GetProductByIdService } from "@/modules/product/application/services/ge
 import { ListProductsService } from "@/modules/product/application/services/list-products.service";
 import { UpdateProductService } from "@/modules/product/application/services/update-product.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createProductRepositoryFromSharedDeps } from "./create-product.repository";
 import { createProductTransactionRunner } from "./create-product-transaction.runner";
@@ -25,10 +26,14 @@ export function createProductApplicationServices(
 ): WiredProductApplicationServices {
   const repository = createProductRepositoryFromSharedDeps(deps);
   const transactionRunner = createProductTransactionRunner(deps);
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getProductById = new GetProductByIdService(repository);
   const listProducts = new ListProductsService(repository);
-  const createProduct = new CreateProductService(transactionRunner);
+  const createProduct = new CreateProductService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateProduct = new UpdateProductService(transactionRunner);
   const deleteProduct = new DeleteProductService(transactionRunner);
 

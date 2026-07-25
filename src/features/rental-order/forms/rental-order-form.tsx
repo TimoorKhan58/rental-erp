@@ -10,7 +10,6 @@ import {
   SelectField,
   SwitchField,
   TextAreaField,
-  TextField,
 } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { SectionCard } from "@/components/design-system/card";
@@ -126,14 +125,10 @@ function CreateRentalOrderForm({
     <>
       <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
         <SectionCard title="Rental order details">
+          <p className="mb-4 text-sm text-muted-foreground">
+            Order number is assigned automatically on save.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
-            <TextField
-              control={form.control}
-              name="orderNumber"
-              label="Order number"
-              placeholder="e.g. RO-2026-001"
-              description="Unique identifier for this rental order."
-            />
             <div className="space-y-2">
               <SelectField
                 control={form.control}

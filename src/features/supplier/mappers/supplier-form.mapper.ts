@@ -20,7 +20,9 @@ export function toCreateSupplierPayload(
   values: CreateSupplierFormValues,
 ): CreateSupplierPayload {
   return {
-    supplierCode: values.supplierCode.trim(),
+    ...(values.supplierCode?.trim()
+      ? { supplierCode: values.supplierCode.trim() }
+      : {}),
     name: values.name.trim(),
     phone: values.phone.trim(),
     email: normalizeOptionalString(values.email),

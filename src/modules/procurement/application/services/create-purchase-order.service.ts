@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { PurchaseOrder } from "@/modules/procurement/domain/purchase-order.entity";
 import {
   PurchaseOrderInvariantError,
@@ -27,11 +29,17 @@ import type { IPurchaseOrderTransactionRunner } from "./purchase-order-transacti
 export class CreatePurchaseOrderService {
   constructor(
     private readonly transactionRunner: IPurchaseOrderTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreatePurchaseOrderInput): Promise<PurchaseOrderDto> {
     const data = parseRequest(CreatePurchaseOrderSchema, input);
-    const createData = toCreatePurchaseOrderData(data);
+    const poNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "PURCHASE_ORDER",
+      data.poNumber,
+    );
+    const createData = toCreatePurchaseOrderData({ ...data, poNumber });
 
     try {
       PurchaseOrder.create(createData);

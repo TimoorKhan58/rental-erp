@@ -35,7 +35,7 @@ export function toUserId(id: string): UserId {
 }
 
 export function toCreateRepairData(
-  input: CreateRepairInput,
+  input: Omit<CreateRepairInput, "repairNumber"> & { repairNumber: string },
   createdById: UserId,
 ): CreateRepairData {
   return {

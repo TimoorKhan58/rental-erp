@@ -30,11 +30,17 @@ describe("Product validation schemas", () => {
     expect(result.replacementCost).toBeUndefined();
   });
 
-  it("rejects invalid product code", () => {
+  it("accepts omitted product code", () => {
+    const { productCode: _omit, ...withoutCode } = VALID_CREATE_INPUT;
+    const result = parseRequest(CreateProductSchema, withoutCode);
+    expect(result.productCode).toBeUndefined();
+  });
+
+  it("rejects overly long product code", () => {
     expect(() =>
       parseRequest(CreateProductSchema, {
         ...VALID_CREATE_INPUT,
-        productCode: "",
+        productCode: "x".repeat(51),
       }),
     ).toThrow();
   });

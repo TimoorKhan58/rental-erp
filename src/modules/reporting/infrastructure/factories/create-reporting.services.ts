@@ -8,6 +8,7 @@ import { GetInventoryReportService } from "@/modules/reporting/application/servi
 import { GetMaintenanceReportService } from "@/modules/reporting/application/services/get-maintenance-report.service";
 import { GetProcurementReportService } from "@/modules/reporting/application/services/get-procurement-report.service";
 import { GetProductReportService } from "@/modules/reporting/application/services/get-product-report.service";
+import { GetRentalInsightsService } from "@/modules/reporting/application/services/get-rental-insights.service";
 import { GetRentalReportService } from "@/modules/reporting/application/services/get-rental-report.service";
 import { GetRepairReportService } from "@/modules/reporting/application/services/get-repair-report.service";
 import { GetReturnReportService } from "@/modules/reporting/application/services/get-return-report.service";
@@ -30,6 +31,7 @@ export function createReportingApplicationServices(
   const reportingRepository = createReportingRepositoryFromSharedDeps(deps);
 
   const getDashboard = new GetDashboardService(reportingRepository);
+  const getRentalInsights = new GetRentalInsightsService(reportingRepository);
   const getInventoryReport = new GetInventoryReportService(reportingRepository);
   const getRentalReport = new GetRentalReportService(reportingRepository);
   const getDispatchReport = new GetDispatchReportService(reportingRepository);
@@ -48,6 +50,7 @@ export function createReportingApplicationServices(
 
   return {
     getDashboard,
+    getRentalInsights,
     getInventoryReport,
     getRentalReport,
     getDispatchReport,
@@ -61,6 +64,7 @@ export function createReportingApplicationServices(
     getProductReport,
     reportingService: new ReportingService(
       getDashboard,
+      getRentalInsights,
       getInventoryReport,
       getRentalReport,
       getDispatchReport,

@@ -109,14 +109,10 @@ function CreateDispatchForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Dispatch details">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Dispatch number is assigned automatically on save.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            control={form.control}
-            name="dispatchNumber"
-            label="Dispatch number"
-            placeholder="e.g. DSP-2026-001"
-            description="Unique identifier for this dispatch."
-          />
           <SelectField
             control={form.control}
             name="rentalOrderId"

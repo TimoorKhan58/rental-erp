@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { Maintenance, MaintenanceInvariantError } from "@/modules/maintenance/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
@@ -29,10 +31,16 @@ import type { IMaintenanceTransactionRunner } from "./maintenance-transaction.ru
 export class CreateMaintenanceService {
   constructor(
     private readonly transactionRunner: IMaintenanceTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreateMaintenanceInput): Promise<MaintenanceDto> {
     const data = parseRequest(CreateMaintenanceSchema, input);
+    const maintenanceNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "MAINTENANCE",
+      data.maintenanceNumber,
+    );
 
     return this.transactionRunner.run(
       async ({ maintenanceRepository, inventoryRepository, auditLogger, userId }) => {
@@ -42,7 +50,10 @@ export class CreateMaintenanceService {
           });
         }
 
-        const createData = toCreateMaintenanceData(data, toUserId(userId));
+        const createData = toCreateMaintenanceData(
+          { ...data, maintenanceNumber },
+          toUserId(userId),
+        );
 
         try {
           Maintenance.create(createData);

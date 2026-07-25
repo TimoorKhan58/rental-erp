@@ -34,7 +34,9 @@ export function toCreateRentalOrderPayload(
   values: CreateRentalOrderFormValues,
 ): CreateRentalOrderPayload {
   return {
-    orderNumber: values.orderNumber.trim(),
+    ...(values.orderNumber?.trim()
+      ? { orderNumber: values.orderNumber.trim() }
+      : {}),
     customerId: values.customerId,
     warehouseId: values.warehouseId,
     startDate: values.startDate,

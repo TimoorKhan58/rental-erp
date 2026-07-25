@@ -10,6 +10,7 @@ import { ReceiveReturnService } from "@/modules/return/application/services/rece
 import { ReturnService } from "@/modules/return/application/services/return.service";
 import { UpdateReturnService } from "@/modules/return/application/services/update-return.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createReturnRepositoryFromSharedDeps } from "./create-return.repository";
 import { createReturnTransactionRunner } from "./create-return-transaction.runner";
@@ -27,10 +28,14 @@ export function createReturnApplicationServices(
 ): WiredReturnApplicationServices {
   const repository = createReturnRepositoryFromSharedDeps(deps);
   const transactionRunner = createReturnTransactionRunner(deps, { userId });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getReturnById = new GetReturnByIdService(repository);
   const listReturns = new ListReturnsService(repository);
-  const createReturn = new CreateReturnService(transactionRunner);
+  const createReturn = new CreateReturnService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateReturn = new UpdateReturnService(transactionRunner);
   const receiveReturn = new ReceiveReturnService(transactionRunner);
   const inspectReturn = new InspectReturnService(transactionRunner);

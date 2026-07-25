@@ -32,6 +32,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     const result = await service.execute(VALID_CREATE_INPUT);
@@ -46,6 +47,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(
@@ -59,6 +61,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(
@@ -71,6 +74,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(
@@ -207,6 +211,7 @@ describe("Supplier application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -254,10 +259,11 @@ describe("Supplier application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(
-      service.execute({ ...VALID_CREATE_INPUT, supplierCode: "" }),
+      service.execute({ ...VALID_CREATE_INPUT, phone: "bad" }),
     ).rejects.toBeInstanceOf(ValidationError);
 
     expect(auditLogger.entries).toHaveLength(0);
@@ -270,6 +276,7 @@ describe("Supplier application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createRollbackTransactionRunner(repository, auditLogger),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -284,6 +291,7 @@ describe("Supplier application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createRollbackTransactionRunner(repository, auditLogger),
+      { generateNextNumber: vi.fn() } as any,
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(

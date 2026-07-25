@@ -19,7 +19,7 @@ export const CustomerIdParamSchema = z.object({
 });
 
 export const CreateCustomerSchema = z.object({
-  customerCode: NonEmptyStringSchema.max(50),
+  customerCode: TrimmedStringSchema.max(50).optional(),
   name: NonEmptyStringSchema.max(200),
   phone: PhoneSchema,
   cnic: CnicSchema,

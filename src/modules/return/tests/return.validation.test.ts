@@ -55,11 +55,19 @@ describe("CreateReturnSchema", () => {
     ).toThrow();
   });
 
-  it("rejects empty return number", () => {
+  it("accepts empty return number for auto-generation", () => {
+    const result = CreateReturnSchema.parse({
+      ...VALID_CREATE_INPUT,
+      returnNumber: "",
+    });
+    expect(result.returnNumber).toBe("");
+  });
+
+  it("rejects overly long return number", () => {
     expect(() =>
       CreateReturnSchema.parse({
         ...VALID_CREATE_INPUT,
-        returnNumber: "",
+        returnNumber: "x".repeat(51),
       }),
     ).toThrow();
   });

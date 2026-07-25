@@ -11,6 +11,7 @@ export { InventoryOverviewSection } from "./inventory-overview";
 export { NotificationsPanel } from "./notifications-panel";
 export { OpsHealthGrid } from "./ops-health-grid";
 export { QuickActionsPanel } from "./quick-actions-panel";
+export { RentalInsightsSection } from "./rental-insights-section";
 export { RentalTrendsChart } from "./rental-trends-chart";
 export { RevenueChart } from "./revenue-chart";
 export { SystemStatusSection } from "./system-status";

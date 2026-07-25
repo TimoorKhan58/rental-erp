@@ -125,6 +125,22 @@ export function getProductTableColumns({
       cell: (row) => formatCurrency(Number(row.rentalRate)),
     },
     {
+      id: "replacementCost",
+      header: (
+        <SortableColumnHeader
+          label="Replacement cost"
+          field="replacementCost"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
+        />
+      ),
+      cell: (row) =>
+        row.replacementCost === null
+          ? "—"
+          : formatCurrency(Number(row.replacementCost)),
+    },
+    {
       id: "isActive",
       header: (
         <SortableColumnHeader

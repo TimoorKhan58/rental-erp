@@ -55,7 +55,7 @@ const dateRangeRefinement = (
 
 export const createRentalOrderFormSchema = z
   .object({
-    orderNumber: z.string().trim().min(1, "Order number is required").max(50),
+    orderNumber: z.string().trim().max(50).optional().or(z.literal("")),
     customerId: z.string().uuid("Select a customer"),
     warehouseId: z.string().uuid("Select a warehouse"),
     startDate: z.string().min(1, "Start date is required"),

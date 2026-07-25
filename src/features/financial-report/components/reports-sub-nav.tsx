@@ -15,6 +15,7 @@ const LINKS = [
   { label: "Rentals", href: ROUTES.reportsRental },
   { label: "Inventory", href: ROUTES.reportsInventory },
   { label: "Customers", href: ROUTES.reportsCustomers },
+  { label: "Products", href: ROUTES.reportsProducts },
 ] as const;
 
 export function ReportsSubNav() {

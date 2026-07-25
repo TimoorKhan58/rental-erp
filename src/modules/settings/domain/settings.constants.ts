@@ -11,6 +11,11 @@ export const DOCUMENT_TYPES = [
   "REPAIR",
   "CUSTOMER",
   "PRODUCT",
+  "SUPPLIER",
+  "WAREHOUSE",
+  "PURCHASE_ORDER",
+  "RETURN",
+  "MAINTENANCE",
 ] as const;
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];

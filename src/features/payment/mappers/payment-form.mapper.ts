@@ -20,7 +20,9 @@ export function toCreatePaymentPayload(
   values: CreatePaymentFormValues,
 ): CreatePaymentPayload {
   return {
-    paymentNumber: values.paymentNumber.trim(),
+    ...(values.paymentNumber?.trim()
+      ? { paymentNumber: values.paymentNumber.trim() }
+      : {}),
     rentalInvoiceId: values.rentalInvoiceId,
     customerId: values.customerId,
     paymentDate: values.paymentDate,

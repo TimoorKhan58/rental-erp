@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
 import { APPLICATION } from "@/constants/application";
 import { AppProviders } from "@/providers";
@@ -13,6 +13,11 @@ const hankenGrotesk = Hanken_Grotesk({
   preload: true,
   adjustFontFallback: true,
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: {

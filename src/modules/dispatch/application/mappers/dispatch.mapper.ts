@@ -33,7 +33,7 @@ export function toUserId(id: string): UserId {
 }
 
 export function toCreateDispatchData(
-  input: CreateDispatchInput,
+  input: Omit<CreateDispatchInput, "dispatchNumber"> & { dispatchNumber: string },
   createdById: UserId,
 ): CreateDispatchData {
   return {

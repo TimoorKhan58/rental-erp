@@ -13,7 +13,7 @@ export const SupplierIdParamSchema = z.object({
 });
 
 export const CreateSupplierSchema = z.object({
-  supplierCode: NonEmptyStringSchema.max(50),
+  supplierCode: TrimmedStringSchema.max(50).optional(),
   name: NonEmptyStringSchema.max(200),
   phone: PhoneSchema,
   email: EmailSchema.optional().nullable(),

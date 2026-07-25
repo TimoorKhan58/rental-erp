@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { Dispatch } from "@/modules/dispatch/domain";
 import {
   DispatchInvariantError,
@@ -32,10 +34,16 @@ import type { IDispatchTransactionRunner } from "./dispatch-transaction.runner";
 export class CreateDispatchService {
   constructor(
     private readonly transactionRunner: IDispatchTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreateDispatchInput): Promise<DispatchDto> {
     const data = parseRequest(CreateDispatchSchema, input);
+    const dispatchNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "DISPATCH",
+      data.dispatchNumber,
+    );
 
     return this.transactionRunner.run(
       async ({
@@ -50,7 +58,10 @@ export class CreateDispatchService {
           });
         }
 
-        const createData = toCreateDispatchData(data, toUserId(userId));
+        const createData = toCreateDispatchData(
+          { ...data, dispatchNumber },
+          toUserId(userId),
+        );
 
         try {
           Dispatch.create(createData);

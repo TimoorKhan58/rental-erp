@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   DateSchema,
-  NonEmptyStringSchema,
   TrimmedStringSchema,
   UUIDSchema,
 } from "@/shared/application/validation";
@@ -19,7 +18,7 @@ export const PaymentIdParamSchema = z.object({
 });
 
 export const CreatePaymentSchema = z.object({
-  paymentNumber: NonEmptyStringSchema.max(50),
+  paymentNumber: TrimmedStringSchema.max(50).optional(),
   rentalInvoiceId: UUIDSchema,
   customerId: UUIDSchema,
   paymentDate: DateSchema,

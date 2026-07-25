@@ -9,6 +9,7 @@ import { RepairService } from "@/modules/repair/application/services/repair.serv
 import { StartRepairService } from "@/modules/repair/application/services/start-repair.service";
 import { UpdateRepairService } from "@/modules/repair/application/services/update-repair.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createRepairRepositoryFromSharedDeps } from "./create-repair.repository";
 import { createRepairTransactionRunner } from "./create-repair-transaction.runner";
@@ -26,10 +27,14 @@ export function createRepairApplicationServices(
 ): WiredRepairApplicationServices {
   const repository = createRepairRepositoryFromSharedDeps(deps);
   const transactionRunner = createRepairTransactionRunner(deps, { userId });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getRepairById = new GetRepairByIdService(repository);
   const listRepairs = new ListRepairsService(repository);
-  const createRepair = new CreateRepairService(transactionRunner);
+  const createRepair = new CreateRepairService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateRepair = new UpdateRepairService(transactionRunner);
   const startRepair = new StartRepairService(transactionRunner);
   const completeRepair = new CompleteRepairService(transactionRunner);

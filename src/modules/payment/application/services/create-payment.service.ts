@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import {
   Payment,
   PaymentInvariantError,
@@ -32,10 +34,16 @@ import type { IPaymentTransactionRunner } from "./payment-transaction.runner";
 export class CreatePaymentService {
   constructor(
     private readonly transactionRunner: IPaymentTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreatePaymentInput): Promise<PaymentDto> {
     const data = parseRequest(CreatePaymentSchema, input);
+    const paymentNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "PAYMENT",
+      data.paymentNumber,
+    );
 
     return this.transactionRunner.run(
       async ({ paymentRepository, rentalInvoiceRepository, auditLogger, userId }) => {
@@ -45,7 +53,10 @@ export class CreatePaymentService {
           });
         }
 
-        const createData = toCreatePaymentData(data, toUserId(userId));
+        const createData = toCreatePaymentData(
+          { ...data, paymentNumber },
+          toUserId(userId),
+        );
 
         try {
           Payment.create(createData);

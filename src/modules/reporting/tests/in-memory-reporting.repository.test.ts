@@ -188,6 +188,20 @@ describe("InMemoryReportingRepository", () => {
     expect(report.leastRented.length).toBeGreaterThan(0);
   });
 
+  it("returns rental insights with quantity-days aggregation", async () => {
+    const report = await createRepo().getRentalInsights({});
+    const totalQuantityDays = report.topByQuantityDays.reduce(
+      (sum, line) => sum + line.quantityDays,
+      0,
+    );
+
+    expect(report.period.from).toBeTruthy();
+    expect(report.topByRevenue.length).toBeGreaterThan(0);
+    expect(totalQuantityDays).toBeGreaterThan(0);
+    expect(report.utilization.fleet.onHand).toBeGreaterThan(0);
+    expect(report.arAging.buckets).toHaveLength(5);
+  });
+
   it("clears seeded data", async () => {
     const repository = createRepo();
     repository.clear();

@@ -63,4 +63,5 @@ export { ListNumberSequencesService } from "./services/list-number-sequences.ser
 export { GetNumberSequenceByIdService } from "./services/get-number-sequence-by-id.service";
 export { UpdateNumberSequenceService } from "./services/update-number-sequence.service";
 export { GenerateNextNumberService } from "./services/generate-next-number.service";
+export { resolveDocumentCode } from "./services/resolve-document-code";
 export { SettingsService } from "./services/settings.service";

@@ -9,6 +9,7 @@ import {
   MaintenanceReportQuerySchema,
   ProcurementReportQuerySchema,
   ProductReportQuerySchema,
+  RentalInsightsQuerySchema,
   RentalReportQuerySchema,
   RepairReportQuerySchema,
   ReturnReportQuerySchema,
@@ -26,6 +27,7 @@ import {
   toMaintenanceReportResponse,
   toProcurementReportResponse,
   toProductReportResponse,
+  toRentalInsightsResponse,
   toRentalReportResponse,
   toRepairReportResponse,
   toReturnReportResponse,
@@ -353,6 +355,35 @@ export async function handleGetWarehouseReport(
       body: {
         ...result.body,
         data: toWarehouseReportResponse(result.body.data as never),
+      },
+    });
+  }
+
+  return toJsonResponse(result);
+}
+
+export async function handleGetRentalInsights(
+  request: NextRequest,
+  resolveServices: ReportingServiceResolver,
+): Promise<Response> {
+  const input = parseRequest(RentalInsightsQuerySchema, parseQuery(request));
+
+  const result = await runReportingApiRoute({
+    request,
+    route: REPORTING_ROUTES.rentalInsights,
+    httpMethod: "GET",
+    permission: PERMISSIONS.reports.read,
+    resolveServices,
+    handler: async (_ctx, services) =>
+      services.getRentalInsights.execute(input),
+  });
+
+  if (result.status === 200 && "data" in result.body) {
+    return toJsonResponse({
+      ...result,
+      body: {
+        ...result.body,
+        data: toRentalInsightsResponse(result.body.data as never),
       },
     });
   }

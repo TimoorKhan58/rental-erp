@@ -10,6 +10,11 @@ export const DOCUMENT_TYPE_PREFIXES: Record<DocumentType, string> = {
   REPAIR: "RPR-",
   CUSTOMER: "CUS-",
   PRODUCT: "PRD-",
+  SUPPLIER: "SUP-",
+  WAREHOUSE: "WH-",
+  PURCHASE_ORDER: "PO-",
+  RETURN: "RET-",
+  MAINTENANCE: "MNT-",
 };
 
 export const DEFAULT_SEQUENCE_PADDING_LENGTH = 3;

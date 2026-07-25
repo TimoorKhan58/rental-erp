@@ -9,6 +9,7 @@ import { MaintenanceService } from "@/modules/maintenance/application/services/m
 import { StartMaintenanceService } from "@/modules/maintenance/application/services/start-maintenance.service";
 import { UpdateMaintenanceService } from "@/modules/maintenance/application/services/update-maintenance.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createMaintenanceRepositoryFromSharedDeps } from "./create-maintenance.repository";
 import { createMaintenanceTransactionRunner } from "./create-maintenance-transaction.runner";
@@ -26,10 +27,14 @@ export function createMaintenanceApplicationServices(
 ): WiredMaintenanceApplicationServices {
   const repository = createMaintenanceRepositoryFromSharedDeps(deps);
   const transactionRunner = createMaintenanceTransactionRunner(deps, { userId });
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getMaintenanceById = new GetMaintenanceByIdService(repository);
   const listMaintenances = new ListMaintenancesService(repository);
-  const createMaintenance = new CreateMaintenanceService(transactionRunner);
+  const createMaintenance = new CreateMaintenanceService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateMaintenance = new UpdateMaintenanceService(transactionRunner);
   const startMaintenance = new StartMaintenanceService(transactionRunner);
   const completeMaintenance = new CompleteMaintenanceService(transactionRunner);

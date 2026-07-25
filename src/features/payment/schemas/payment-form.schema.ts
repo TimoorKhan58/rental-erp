@@ -5,7 +5,7 @@ const optionalTextSchema = (max: number) =>
   z.string().trim().max(max).optional().nullable().or(z.literal(""));
 
 export const createPaymentFormSchema = z.object({
-  paymentNumber: z.string().trim().min(1, "Payment number is required").max(50),
+  paymentNumber: z.string().trim().max(50).optional().or(z.literal("")),
   customerId: z.string().uuid("Customer is required"),
   rentalInvoiceId: z.string().uuid("Invoice is required"),
   paymentDate: z.string().min(1, "Payment date is required"),

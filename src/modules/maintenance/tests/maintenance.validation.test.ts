@@ -76,11 +76,19 @@ describe("CreateMaintenanceSchema", () => {
     ).toThrow();
   });
 
-  it("rejects empty maintenance number", () => {
+  it("accepts empty maintenance number for auto-generation", () => {
+    const result = CreateMaintenanceSchema.parse({
+      ...VALID_CREATE_INPUT,
+      maintenanceNumber: "",
+    });
+    expect(result.maintenanceNumber).toBe("");
+  });
+
+  it("rejects overly long maintenance number", () => {
     expect(() =>
       CreateMaintenanceSchema.parse({
         ...VALID_CREATE_INPUT,
-        maintenanceNumber: "",
+        maintenanceNumber: "x".repeat(51),
       }),
     ).toThrow();
   });

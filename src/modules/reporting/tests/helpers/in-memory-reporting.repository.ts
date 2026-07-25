@@ -6,6 +6,7 @@ import type {
   MaintenanceReportQuery,
   ProcurementReportQuery,
   ProductReportQuery,
+  RentalInsightsQuery,
   RentalReportQuery,
   RepairReportQuery,
   ReturnReportQuery,
@@ -15,13 +16,17 @@ import type {
 import type { IReportingRepository } from "@/modules/reporting/domain/reporting.repository.interface";
 import {
   average,
+  buildArAgingBuckets,
   calculateAvailableQuantity,
   calculateInventoryValue,
+  calculateQuantityDays,
   calculateRentalDurationDays,
+  calculateUtilizationPercent,
   endOfMonth,
   inDateRange,
   isLowStock,
   isOverstock,
+  resolveReportPeriod,
   roundMoney,
   startOfMonth,
   totalPages,
@@ -40,6 +45,7 @@ import type {
   ProcurementReportLine,
   ProductReport,
   ProductReportLine,
+  RentalInsightsReport,
   RentalReport,
   RentalReportLine,
   RepairReport,
@@ -1213,6 +1219,136 @@ export class InMemoryReportingRepository implements IReportingRepository {
     };
   }
 
+  async getRentalInsights(query: RentalInsightsQuery): Promise<RentalInsightsReport> {
+    const period = resolveReportPeriod(query);
+    const reference = new Date();
+    const activeProducts = this.products.filter((row) => row.isActive);
+    const activeInventories = this.inventories.filter((row) => row.isActive);
+
+    const productLines = activeProducts.map((product) => {
+      const productItems = this.rentalOrderItems.filter((item) => {
+        if (item.productId !== product.id) {
+          return false;
+        }
+        const order = this.getRentalOrder(item.rentalOrderId);
+        return inDateRange(order.bookingDate, period.dateFrom, period.dateTo);
+      });
+
+      const rentalOrderIds = new Set(
+        productItems.map((item) => item.rentalOrderId),
+      );
+
+      return {
+        productId: product.id,
+        productCode: product.productCode,
+        productName: product.name,
+        rentalCount: rentalOrderIds.size,
+        rentedQuantity: productItems.reduce((sum, item) => sum + item.quantity, 0),
+        quantityDays: productItems.reduce(
+          (sum, item) =>
+            sum + calculateQuantityDays(item.quantity, item.numberOfDays),
+          0,
+        ),
+        revenue: roundMoney(
+          productItems.reduce((sum, item) => sum + item.lineTotal, 0),
+        ),
+      };
+    });
+
+    const rentableLines = productLines.filter((line) => {
+      const product = activeProducts.find((row) => row.id === line.productId);
+      return product?.isRentable ?? false;
+    });
+
+    const topByRevenue = [...rentableLines]
+      .sort((a, b) => b.revenue - a.revenue || b.quantityDays - a.quantityDays)
+      .slice(0, 5);
+
+    const topByQuantityDays = [...rentableLines]
+      .sort((a, b) => b.quantityDays - a.quantityDays || b.revenue - a.revenue)
+      .slice(0, 5);
+
+    const inventoryByProduct = new Map<
+      string,
+      { onHand: number; reserved: number }
+    >();
+    for (const row of activeInventories) {
+      const current = inventoryByProduct.get(row.productId) ?? {
+        onHand: 0,
+        reserved: 0,
+      };
+      inventoryByProduct.set(row.productId, {
+        onHand: current.onHand + row.quantityOnHand,
+        reserved: current.reserved + row.reservedQuantity,
+      });
+    }
+
+    let fleetOnHand = 0;
+    let fleetReserved = 0;
+
+    const utilizationByProduct = activeProducts
+      .filter((product) => product.isRentable)
+      .map((product) => {
+        const totals = inventoryByProduct.get(product.id) ?? {
+          onHand: product.totalQuantity,
+          reserved: 0,
+        };
+        fleetOnHand += totals.onHand;
+        fleetReserved += totals.reserved;
+        const available = calculateAvailableQuantity(
+          totals.onHand,
+          totals.reserved,
+        );
+
+        return {
+          productId: product.id,
+          productName: product.name,
+          onHand: totals.onHand,
+          reserved: totals.reserved,
+          available,
+          utilizationPercent: calculateUtilizationPercent(
+            totals.reserved,
+            totals.onHand,
+          ),
+        };
+      })
+      .sort((a, b) => b.onHand - a.onHand)
+      .slice(0, 8);
+
+    const arAging = buildArAgingBuckets(
+      this.invoices
+        .filter((invoice) => ["ISSUED", "PARTIALLY_PAID"].includes(invoice.status))
+        .map((invoice) => ({
+          balance: invoice.balance,
+          dueDate: invoice.dueDate,
+          invoiceDate: invoice.invoiceDate,
+        })),
+      reference,
+    );
+
+    return {
+      period: {
+        from: period.dateFrom,
+        to: period.dateTo,
+      },
+      topByRevenue,
+      topByQuantityDays,
+      utilization: {
+        fleet: {
+          onHand: fleetOnHand,
+          reserved: fleetReserved,
+          available: calculateAvailableQuantity(fleetOnHand, fleetReserved),
+          utilizationPercent: calculateUtilizationPercent(
+            fleetReserved,
+            fleetOnHand,
+          ),
+        },
+        byProduct: utilizationByProduct,
+      },
+      arAging,
+    };
+  }
+
   async getProductReport(query: ProductReportQuery): Promise<ProductReport> {
     const activeProducts = this.products.filter((row) => row.isActive);
     const activeInventories = this.inventories.filter((row) => row.isActive);
@@ -1242,8 +1378,14 @@ export class InMemoryReportingRepository implements IReportingRepository {
         productId: product.id,
         productCode: product.productCode,
         productName: product.name,
+        rentalPricePerDay: roundMoney(product.rentalPricePerDay),
         rentalCount: rentalOrderIds.size,
         rentedQuantity: productItems.reduce((sum, item) => sum + item.quantity, 0),
+        quantityDays: productItems.reduce(
+          (sum, item) =>
+            sum + calculateQuantityDays(item.quantity, item.numberOfDays),
+          0,
+        ),
         revenue: roundMoney(
           productItems.reduce((sum, item) => sum + item.lineTotal, 0),
         ),
@@ -1266,6 +1408,10 @@ export class InMemoryReportingRepository implements IReportingRepository {
         name: (line) => line.productName,
         rentalCount: (line) => line.rentalCount,
         rentedQuantity: (line) => line.rentedQuantity,
+        quantityDays: (line) => line.quantityDays,
+        revenue: (line) => line.revenue,
+        rentalPricePerDay: (line) => line.rentalPricePerDay,
+        quantityOnHand: (line) => line.quantityOnHand,
       },
       "productCode",
     );

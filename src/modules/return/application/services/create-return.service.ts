@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { Return } from "@/modules/return/domain";
 import { ReturnInvariantError } from "@/modules/return/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -35,10 +37,16 @@ import type { IReturnTransactionRunner } from "./return-transaction.runner";
 export class CreateReturnService {
   constructor(
     private readonly transactionRunner: IReturnTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreateReturnInput): Promise<ReturnDto> {
     const data = parseRequest(CreateReturnSchema, input);
+    const returnNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "RETURN",
+      data.returnNumber,
+    );
 
     return this.transactionRunner.run(
       async ({
@@ -54,7 +62,10 @@ export class CreateReturnService {
           });
         }
 
-        const createData = toCreateReturnData(data, toUserId(userId));
+        const createData = toCreateReturnData(
+          { ...data, returnNumber },
+          toUserId(userId),
+        );
 
         try {
           Return.create(createData);

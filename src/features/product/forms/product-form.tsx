@@ -77,14 +77,10 @@ function CreateProductForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Product information">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Code is assigned automatically on save.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            control={form.control}
-            name="productCode"
-            label="Product code"
-            placeholder="e.g. PRD-001"
-            description="Unique identifier for this product."
-          />
           <TextField
             control={form.control}
             name="name"

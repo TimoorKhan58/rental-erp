@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   DateSchema,
-  NonEmptyStringSchema,
   OptionalDateSchema,
   PositiveIntSchema,
   TrimmedStringSchema,
@@ -24,7 +23,7 @@ export const PurchaseOrderIdParamSchema = z.object({
 });
 
 export const CreatePurchaseOrderSchema = z.object({
-  poNumber: NonEmptyStringSchema.max(50),
+  poNumber: TrimmedStringSchema.max(50).optional(),
   supplierId: UUIDSchema,
   warehouseId: UUIDSchema,
   orderDate: DateSchema,

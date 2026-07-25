@@ -6,6 +6,7 @@ import type {
   MaintenanceReportDto,
   ProcurementReportDto,
   ProductReportDto,
+  RentalInsightsReportDto,
   RentalReportDto,
   RepairReportDto,
   ReturnReportDto,
@@ -20,6 +21,7 @@ import type {
   MaintenanceReportQueryInput,
   ProcurementReportQueryInput,
   ProductReportQueryInput,
+  RentalInsightsQueryInput,
   RentalReportQueryInput,
   RepairReportQueryInput,
   ReturnReportQueryInput,
@@ -34,6 +36,7 @@ import type { GetInventoryReportService } from "./get-inventory-report.service";
 import type { GetMaintenanceReportService } from "./get-maintenance-report.service";
 import type { GetProcurementReportService } from "./get-procurement-report.service";
 import type { GetProductReportService } from "./get-product-report.service";
+import type { GetRentalInsightsService } from "./get-rental-insights.service";
 import type { GetRentalReportService } from "./get-rental-report.service";
 import type { GetRepairReportService } from "./get-repair-report.service";
 import type { GetReturnReportService } from "./get-return-report.service";
@@ -43,6 +46,7 @@ import type { GetWarehouseReportService } from "./get-warehouse-report.service";
 export class ReportingService implements IReportingService {
   constructor(
     private readonly getDashboardService: GetDashboardService,
+    private readonly getRentalInsightsService: GetRentalInsightsService,
     private readonly getInventoryReportService: GetInventoryReportService,
     private readonly getRentalReportService: GetRentalReportService,
     private readonly getDispatchReportService: GetDispatchReportService,
@@ -58,6 +62,12 @@ export class ReportingService implements IReportingService {
 
   getDashboard(input: DashboardQueryInput): Promise<DashboardSummaryDto> {
     return this.getDashboardService.execute(input);
+  }
+
+  getRentalInsights(
+    input: RentalInsightsQueryInput,
+  ): Promise<RentalInsightsReportDto> {
+    return this.getRentalInsightsService.execute(input);
   }
 
   getInventoryReport(

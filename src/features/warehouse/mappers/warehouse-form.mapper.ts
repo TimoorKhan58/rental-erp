@@ -20,7 +20,9 @@ export function toCreateWarehousePayload(
   values: CreateWarehouseFormValues,
 ): CreateWarehousePayload {
   return {
-    warehouseCode: values.warehouseCode.trim(),
+    ...(values.warehouseCode?.trim()
+      ? { warehouseCode: values.warehouseCode.trim() }
+      : {}),
     name: values.name.trim(),
     description: normalizeOptionalString(values.description),
     address: normalizeOptionalString(values.address),

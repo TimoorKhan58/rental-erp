@@ -1,3 +1,5 @@
+import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import { RentalOrderInvariantError } from "@/modules/rental-order/domain/rental-order.errors";
 import { parseRequest } from "@/shared/application/validation";
@@ -27,10 +29,16 @@ import type { IRentalOrderTransactionRunner } from "./rental-order-transaction.r
 export class CreateRentalOrderService {
   constructor(
     private readonly transactionRunner: IRentalOrderTransactionRunner,
+    private readonly numberSequences: INumberSequenceRepository,
   ) {}
 
   async execute(input: CreateRentalOrderInput): Promise<RentalOrderDto> {
     const data = parseRequest(CreateRentalOrderSchema, input);
+    const orderNumber = await resolveDocumentCode(
+      this.numberSequences,
+      "RENTAL_ORDER",
+      data.orderNumber,
+    );
 
     return this.transactionRunner.run(
       async ({ rentalOrderRepository, auditLogger, userId }) => {
@@ -40,7 +48,10 @@ export class CreateRentalOrderService {
           });
         }
 
-        const createData = toCreateRentalOrderData(data, toUserId(userId));
+        const createData = toCreateRentalOrderData(
+          { ...data, orderNumber },
+          toUserId(userId),
+        );
 
         try {
           RentalOrder.create(createData);

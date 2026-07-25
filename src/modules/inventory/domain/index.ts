@@ -11,5 +11,6 @@ export {
   type InventorySortField,
 } from "./inventory.constants";
 export type { InventoryListQuery } from "./inventory-list.query";
+export { buildInventorySearchClause } from "./inventory-search";
 export type { IInventoryRepository } from "./inventory.repository.interface";
 export type { CreateInventoryData, UpdateInventoryData } from "./inventory.types";

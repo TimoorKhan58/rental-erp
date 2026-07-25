@@ -72,7 +72,9 @@ function CustomerFormPreview({
         <div className="-mt-8 flex flex-col items-center text-center">
           <CustomerAvatar name={displayName} size="lg" className="ring-4 ring-card" />
           <p className="mt-3 font-heading text-lg font-semibold">{displayName}</p>
-          <p className="text-sm text-primary">{customerCode.trim() || "Code pending"}</p>
+          <p className="text-sm text-primary">
+            {customerCode.trim() || "Auto-generated"}
+          </p>
           <div className="mt-2">
             <CustomerStatusBadge isActive={isActive} />
           </div>
@@ -111,7 +113,7 @@ function CreateCustomerForm({
     defaultValues: { ...createDefaults, ...defaultValues },
   });
 
-  const watched = form.watch(["name", "customerCode", "phone", "isActive"]);
+  const watched = form.watch(["name", "phone", "isActive"]);
   const isDialog = layout === "dialog";
 
   return (
@@ -121,14 +123,10 @@ function CreateCustomerForm({
           title="Customer information"
           description="Basic profile details for the new customer."
         >
+          <p className="mb-4 text-sm text-muted-foreground">
+            Code is assigned automatically on save.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
-            <TextField
-              control={form.control}
-              name="customerCode"
-              label="Customer code"
-              placeholder="e.g. CUST-001"
-              description="Unique identifier for this customer."
-            />
             <TextField
               control={form.control}
               name="name"
@@ -173,9 +171,9 @@ function CreateCustomerForm({
       {isDialog ? null : (
         <CustomerFormPreview
           name={watched[0] ?? ""}
-          customerCode={watched[1] ?? ""}
-          phone={watched[2] ?? ""}
-          isActive={watched[3] ?? true}
+          customerCode="Auto-generated"
+          phone={watched[1] ?? ""}
+          isActive={watched[2] ?? true}
         />
       )}
     </div>

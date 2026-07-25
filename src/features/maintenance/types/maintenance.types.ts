@@ -66,7 +66,7 @@ export type ListMaintenancesParams = {
 };
 
 export type CreateMaintenancePayload = {
-  maintenanceNumber: string;
+  maintenanceNumber?: string;
   productId: string;
   warehouseId: string;
   inventoryId: string;

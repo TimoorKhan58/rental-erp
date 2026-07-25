@@ -18,7 +18,7 @@ import type {
   CreateInventoryData,
   UpdateInventoryData,
 } from "@/modules/inventory/domain/inventory.types";
-import { INVENTORY_SEARCH_FIELDS } from "@/modules/inventory/domain/inventory.constants";
+import { buildInventorySearchClause } from "@/modules/inventory/domain/inventory-search";
 
 import {
   toInventoryCreateInput,
@@ -118,6 +118,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   ): Promise<PaginatedResult<Inventory>> {
     const filter = buildInventoryFilter(query);
     const hasFilter = Object.keys(filter).length > 0;
+    const searchWhere = buildInventorySearchClause(query.search);
 
     const result = await runRepositoryPagedQuery(
       this.runner,
@@ -128,10 +129,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
           sortBy: query.sortBy,
           sortOrder: query.sortOrder,
           filter: hasFilter ? filter : undefined,
-          search: query.search,
-          searchFields: INVENTORY_SEARCH_FIELDS,
         }),
-        searchFields: INVENTORY_SEARCH_FIELDS,
+        baseWhere: searchWhere as Prisma.InventoryWhereInput | undefined,
         mapFilter: mapInventoryFilter,
         mapSort: mapInventorySort,
         handlers: {

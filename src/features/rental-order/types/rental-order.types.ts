@@ -81,7 +81,7 @@ export type RentalOrderLineItemPayload = {
 };
 
 export type CreateRentalOrderPayload = {
-  orderNumber: string;
+  orderNumber?: string;
   customerId: string;
   warehouseId: string;
   startDate: string;

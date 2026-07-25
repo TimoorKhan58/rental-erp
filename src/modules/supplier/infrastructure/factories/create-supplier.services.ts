@@ -9,6 +9,7 @@ import { GetSupplierByIdService } from "@/modules/supplier/application/services/
 import { ListSuppliersService } from "@/modules/supplier/application/services/list-suppliers.service";
 import { UpdateSupplierService } from "@/modules/supplier/application/services/update-supplier.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
 import { createSupplierRepositoryFromSharedDeps } from "./create-supplier.repository";
 import { createSupplierTransactionRunner } from "./create-supplier-transaction.runner";
@@ -25,10 +26,14 @@ export function createSupplierApplicationServices(
 ): WiredSupplierApplicationServices {
   const repository = createSupplierRepositoryFromSharedDeps(deps);
   const transactionRunner = createSupplierTransactionRunner(deps);
+  const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getSupplierById = new GetSupplierByIdService(repository);
   const listSuppliers = new ListSuppliersService(repository);
-  const createSupplier = new CreateSupplierService(transactionRunner);
+  const createSupplier = new CreateSupplierService(
+    transactionRunner,
+    numberSequences,
+  );
   const updateSupplier = new UpdateSupplierService(transactionRunner);
   const deleteSupplier = new DeleteSupplierService(transactionRunner);
 

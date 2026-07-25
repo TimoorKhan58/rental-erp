@@ -37,7 +37,7 @@ export type ListSuppliersParams = {
 };
 
 export type CreateSupplierPayload = {
-  supplierCode: string;
+  supplierCode?: string;
   name: string;
   phone: string;
   email?: string | null;
