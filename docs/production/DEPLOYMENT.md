@@ -130,16 +130,21 @@ Equivalent semantics: `prisma migrate deploy` (see [runbooks/MIGRATIONS.md](./ru
 
 ### Render (native Node)
 
-Render does **not** run migrations unless you configure them. For the existing web service:
+Render does **not** run migrations unless you configure them. This project’s `npm run start` runs `prisma migrate deploy` before `next start`, so a normal Render start will apply pending migrations.
+
+Recommended Render settings:
 
 1. **Build Command:** `npm ci && npm run build`  
    (`npm run build` runs `prisma generate && next build`)
-2. **Pre-Deploy Command:** `npm run db:migrate:deploy`  
-   (applies pending migrations to `DATABASE_URL` before the new release receives traffic)
+2. **Pre-Deploy Command (optional):** `npm run db:migrate:deploy`  
+   (preferred when available — migrates before traffic switches)
 3. **Start Command:** `npm run start`  
-   (`next start` — standalone output is Docker-only via `DOCKER_BUILD=1`)
+   (`prisma migrate deploy && next start` — standalone output is Docker-only via `DOCKER_BUILD=1`)
+4. **Node version:** pin via `engines.node` (`22.x`) or the `NODE_VERSION=22` env var
 
 Required env on Render: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `APP_URL`, `BETTER_AUTH_URL` (HTTPS), `APP_ENV=production`, `NODE_ENV=production`.
+
+If the site shows “server error” / P2021 `company_settings` missing, the database has not received migrations yet — check start logs for `prisma migrate deploy` output.
 
 ---
 

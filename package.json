@@ -5,12 +5,13 @@
   "private": true,
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=22.x"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "prisma migrate deploy && next start",
+    "start:app": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "validate": "npm run lint && npm run typecheck && npm run build",
@@ -62,6 +63,7 @@
     "next-themes": "^0.4.6",
     "pg": "^8.22.0",
     "pino": "^10.3.1",
+    "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.4",
@@ -91,7 +93,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "jsdom": "^29.1.1",
-    "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
