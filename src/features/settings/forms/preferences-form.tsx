@@ -75,7 +75,13 @@ export function PreferencesForm({
             <TextField control={form.control} name="dateFormat" label="Date format" disabled={disabled} />
             <TextField control={form.control} name="timeFormat" label="Time format" disabled={disabled} />
             <TextField control={form.control} name="numberFormat" label="Number format" disabled={disabled} />
-            <TextField control={form.control} name="currencyCode" label="Currency code" disabled={disabled} />
+            <TextField
+              control={form.control}
+              name="currencyCode"
+              label="Currency code"
+              description="ISO 4217 (USD, PKR, EUR, AED, …)"
+              disabled={disabled}
+            />
             <TextField control={form.control} name="currencySymbol" label="Currency symbol" disabled={disabled} />
           </div>
         </SectionCard>

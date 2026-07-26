@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/unauthorized"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/logout", "/unauthorized"]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) {

@@ -1,4 +1,5 @@
 import { APPLICATION } from "@/constants/application";
+import { getCurrencySymbol } from "@/lib/i18n/locale-config";
 
 export const SETTINGS_MODULE = "settings";
 export const SETTINGS_ENTITY_NAME = "Settings";
@@ -28,15 +29,17 @@ export const BACKUP_FREQUENCIES = ["HOURLY", "DAILY", "WEEKLY", "MONTHLY"] as co
 
 export type BackupFrequency = (typeof BACKUP_FREQUENCIES)[number];
 
+const defaultCurrencySymbol = getCurrencySymbol(APPLICATION.currency, APPLICATION.locale);
+
 export const DEFAULT_COMPANY_SETTINGS = {
   currencyCode: APPLICATION.currency,
-  currencySymbol: "Rs",
+  currencySymbol: defaultCurrencySymbol,
   timezone: APPLICATION.timezone,
-  language: "en",
+  language: APPLICATION.locale,
   dateFormat: "DD/MM/YYYY",
   timeFormat: "HH:mm",
   numberFormat: "#,##0.00",
-  country: APPLICATION.country,
+  country: "Unspecified",
   defaultRentalDays: 3,
   defaultTaxPercentage: 0,
   fiscalYearStartMonth: 1,
@@ -82,24 +85,24 @@ export const DEFAULT_NUMBER_SEQUENCE = {
 
 /** First-run bootstrap when migrations seed data is missing. */
 export const BOOTSTRAP_COMPANY_SETTINGS = {
-  companyName: "Manyar Tent Service",
-  businessName: "Manyar Tent Service",
-  phone: "+920000000000",
-  email: "info@manyartent.com",
-  address: "Main Office",
-  city: "Lahore",
-  province: "Punjab",
-  country: APPLICATION.country,
+  companyName: "Your Company",
+  businessName: "Your Company",
+  phone: "+10000000000",
+  email: "admin@example.com",
+  address: "Head office",
+  city: "City",
+  province: "Region",
+  country: "Unspecified",
   currencyCode: APPLICATION.currency,
-  currencySymbol: "Rs",
+  currencySymbol: defaultCurrencySymbol,
   timezone: APPLICATION.timezone,
-  language: "en",
+  language: APPLICATION.locale,
   dateFormat: "DD/MM/YYYY",
   timeFormat: "HH:mm",
   numberFormat: "#,##0.00",
   defaultRentalDays: 3,
   defaultTaxPercentage: 0,
-  fiscalYearStartMonth: 7,
+  fiscalYearStartMonth: 1,
   securityDepositEnabled: false,
   lateFeeEnabled: false,
   isActive: true,

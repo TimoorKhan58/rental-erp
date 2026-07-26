@@ -1,5 +1,5 @@
 import { ROUTES } from "@/config/routes";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 import type {
   AttentionItem,
   BusinessPulse,
@@ -10,7 +10,7 @@ import type {
 } from "../types";
 
 function formatCount(value: number): string {
-  return value.toLocaleString("en-PK");
+  return formatNumber(value);
 }
 
 function activeRentals(summary: LiveDashboardSummary): number {

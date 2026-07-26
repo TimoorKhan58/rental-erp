@@ -53,8 +53,16 @@ export function getInventoryTableColumns({
   onDelete,
   onToggleStatus,
 }: InventoryTableColumnOptions): Array<DataTableColumn<InventoryResponse>> {
+  // Catalog names are seeded as "English / Urdu"; show English only in this column.
+  const toEnglishProductName = (name: string) => {
+    const separator = name.indexOf(" / ");
+    return separator === -1 ? name : name.slice(0, separator).trim();
+  };
+
   const resolveProductName = (productId: string) =>
-    productNameById.get(productId) ?? productLabelById.get(productId) ?? productId;
+    toEnglishProductName(
+      productNameById.get(productId) ?? productLabelById.get(productId) ?? productId,
+    );
 
   const resolveWarehouseName = (warehouseId: string) =>
     warehouseNameById.get(warehouseId) ?? warehouseLabelById.get(warehouseId) ?? warehouseId;

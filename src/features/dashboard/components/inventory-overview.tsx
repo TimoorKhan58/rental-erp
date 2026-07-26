@@ -38,7 +38,7 @@ export const InventoryOverviewSection = memo(function InventoryOverviewSection({
             <MetricCard
               key={item.id}
               label={item.label}
-              value={item.value.toLocaleString("en-PK")}
+              value={item.value.toLocaleString()}
               hint={item.description}
             />
           ))}

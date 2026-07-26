@@ -11,7 +11,7 @@ import type {
   UpcomingTask,
 } from "../types";
 
-export const MOCK_ORGANIZATION_NAME = "Manyar Tent Service";
+export const MOCK_ORGANIZATION_NAME = "Acme Rentals";
 
 export const MOCK_DASHBOARD_METRICS: DashboardMetric[] = [
   {
@@ -53,7 +53,7 @@ export const MOCK_DASHBOARD_METRICS: DashboardMetric[] = [
   {
     id: "revenue",
     label: "Revenue",
-    value: "PKR 4.8M",
+    value: "$4.8M",
     subtitle: "Month to date",
     trend: "up",
     changeLabel: "+9.4% vs last month",
@@ -62,7 +62,7 @@ export const MOCK_DASHBOARD_METRICS: DashboardMetric[] = [
   {
     id: "outstanding-payments",
     label: "Outstanding Payments",
-    value: "PKR 620K",
+    value: "$620K",
     subtitle: "Awaiting collection",
     trend: "down",
     changeLabel: "-6.1% vs last month",
@@ -109,7 +109,7 @@ export const MOCK_RECENT_ACTIVITY: ActivityItem[] = [
   {
     id: "act-2",
     title: "Payment received",
-    description: "PKR 85,000 received from Horizon Weddings.",
+    description: "$85,000 received from Horizon Weddings.",
     timestamp: "2026-07-11T07:40:00+05:00",
     status: "success",
     icon: "payments",
@@ -225,28 +225,28 @@ export const MOCK_FINANCIAL_SUMMARY: FinancialSummaryItem[] = [
   {
     id: "monthly-revenue",
     label: "Monthly Revenue",
-    value: "PKR 4.8M",
+    value: "$4.8M",
     trend: "up",
     changeLabel: "+9.4%",
   },
   {
     id: "expenses",
     label: "Expenses",
-    value: "PKR 1.9M",
+    value: "$1.9M",
     trend: "up",
     changeLabel: "+3.1%",
   },
   {
     id: "profit",
     label: "Profit",
-    value: "PKR 2.9M",
+    value: "$2.9M",
     trend: "up",
     changeLabel: "+12.8%",
   },
   {
     id: "outstanding",
     label: "Outstanding",
-    value: "PKR 620K",
+    value: "$620K",
     trend: "down",
     changeLabel: "-6.1%",
   },

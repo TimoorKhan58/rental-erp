@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { ChartContainer } from "../charts";
-import { formatCompactNumber } from "@/lib/utils";
+import { formatCompactNumber, formatCurrency } from "@/lib/utils";
 import type { RevenueOverview } from "../types";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,7 +22,7 @@ type RevenueChartProps = {
 
 function formatTooltipValue(value: number | string): string {
   const numeric = typeof value === "number" ? value : Number(value);
-  return `PKR ${formatCompactNumber(numeric)}`;
+  return formatCurrency(numeric);
 }
 
 export const RevenueChart = memo(function RevenueChart({
@@ -40,7 +40,7 @@ export const RevenueChart = memo(function RevenueChart({
   return (
     <ChartContainer
       title="Revenue Overview"
-      description={`${data.period} · PKR ${formatCompactNumber(data.total)} total`}
+      description={`${data.period} · ${formatCurrency(data.total)} total`}
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data.data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

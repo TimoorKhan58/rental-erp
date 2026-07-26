@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: APPLICATION.name,
     template: `%s · ${APPLICATION.shortName}`,
   },
-  description: "Enterprise rental management system for Manyar Tent Service",
+  description: "Enterprise rental management system for multi-market operations",
 };
 
 export default function RootLayout({

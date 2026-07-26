@@ -134,7 +134,7 @@ const envObjectSchema = z
     // ── Application ────────────────────────────────────────────────────────
     APP_NAME: z.string().trim().min(1).default("Rental ERP"),
     APP_URL: z.string().trim().url().default("http://localhost:3000"),
-    APP_LOCALE: z.string().trim().min(2).default("en-PK"),
+    APP_LOCALE: z.string().trim().min(2).default("en"),
     TIMEZONE: z.string().trim().min(1).default("UTC"),
 
     // ── Database ───────────────────────────────────────────────────────────

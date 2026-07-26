@@ -9,7 +9,7 @@ export const testEnvFixture = {
   APP_ENV: "test",
   APP_NAME: "Rental ERP",
   APP_URL: "http://localhost:3000",
-  APP_LOCALE: "en-PK",
+  APP_LOCALE: "en",
   DATABASE_URL: "postgresql://test:test@localhost:5432/test",
   DATABASE_POOL_MAX: 5,
   DATABASE_POOL_IDLE_TIMEOUT_MS: 30_000,

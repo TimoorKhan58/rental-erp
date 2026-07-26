@@ -1,15 +1,16 @@
 import { APPLICATION } from "@/constants/application";
+import { getCurrencySymbol } from "@/lib/i18n/locale-config";
 
 /** Client-safe defaults for resetting preferences in the settings UI. */
 export const DEFAULT_COMPANY_SETTINGS = {
   currencyCode: APPLICATION.currency,
-  currencySymbol: "Rs",
+  currencySymbol: getCurrencySymbol(APPLICATION.currency, APPLICATION.locale),
   timezone: APPLICATION.timezone,
-  language: "en",
+  language: APPLICATION.locale,
   dateFormat: "DD/MM/YYYY",
   timeFormat: "HH:mm",
   numberFormat: "#,##0.00",
-  country: APPLICATION.country,
+  country: "Unspecified",
   defaultRentalDays: 3,
   defaultTaxPercentage: 0,
   fiscalYearStartMonth: 1,

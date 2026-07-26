@@ -81,7 +81,7 @@ export const CatalogSnapshot = memo(function CatalogSnapshot({
                   </div>
                   <div>
                     <p className="font-heading text-lg font-semibold tabular-nums">
-                      {values[item.key].toLocaleString("en-PK")}
+                      {values[item.key].toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">{item.label}</p>
                   </div>

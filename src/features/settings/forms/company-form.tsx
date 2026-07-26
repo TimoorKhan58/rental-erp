@@ -106,18 +106,30 @@ export function CompanyForm({
         <div className="grid gap-4 md:grid-cols-2">
           <TextField control={form.control} name="address" label="Address" disabled={disabled} className="md:col-span-2" />
           <TextField control={form.control} name="city" label="City" disabled={disabled} />
-          <TextField control={form.control} name="province" label="Province" disabled={disabled} />
+          <TextField control={form.control} name="province" label="State / Province" disabled={disabled} />
           <TextField control={form.control} name="country" label="Country" disabled={disabled} />
           <TextField control={form.control} name="postalCode" label="Postal code" disabled={disabled} />
-          <TextField control={form.control} name="ntn" label="NTN" disabled={disabled} />
-          <TextField control={form.control} name="strn" label="STRN" disabled={disabled} />
+          <TextField control={form.control} name="ntn" label="Tax ID" disabled={disabled} />
+          <TextField control={form.control} name="strn" label="Secondary tax ID" disabled={disabled} />
         </div>
       </SectionCard>
 
       <SectionCard title="Locale & commerce defaults">
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField control={form.control} name="currencyCode" label="Currency code" disabled={disabled} />
-          <TextField control={form.control} name="currencySymbol" label="Currency symbol" disabled={disabled} />
+          <TextField
+            control={form.control}
+            name="currencyCode"
+            label="Currency code"
+            description="ISO 4217 code (USD, PKR, EUR, AED, …)"
+            disabled={disabled}
+          />
+          <TextField
+            control={form.control}
+            name="currencySymbol"
+            label="Currency symbol"
+            description="Display override for invoices and reports"
+            disabled={disabled}
+          />
           <TextField control={form.control} name="timezone" label="Timezone" disabled={disabled} />
           <TextField control={form.control} name="language" label="Language" disabled={disabled} />
           <TextField control={form.control} name="dateFormat" label="Date format" disabled={disabled} />

@@ -7,7 +7,6 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import { ROUTES } from "@/config/routes";
 import { signOut, useSession } from "@/lib/auth/client";
 import { clearAuthStorage } from "@/lib/auth/token-storage";
@@ -26,15 +25,16 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const router = useRouter();
   const { data: session, isPending } = useSession();
 
   const handleSignOut = useCallback(async () => {
     await signOut();
     clearAuthStorage();
-    router.push(ROUTES.login);
-    router.refresh();
-  }, [router]);
+
+    // Full reload rather than a client navigation: drops every in-memory cache
+    // holding the previous user's data and forces a fresh session lookup.
+    window.location.assign(ROUTES.login);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({

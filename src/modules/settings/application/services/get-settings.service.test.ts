@@ -55,7 +55,7 @@ describe("GetSettingsService", () => {
       BOOTSTRAP_COMPANY_SETTINGS,
     );
     expect(systemSettingsRepository.createDefault).toHaveBeenCalled();
-    expect(result.company.companyName).toBe("Manyar Tent Service");
+    expect(result.company.companyName).toBe("Your Company");
     expect(result.system.appName).toBeTruthy();
   });
 });

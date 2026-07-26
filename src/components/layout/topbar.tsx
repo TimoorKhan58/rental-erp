@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { useOrganizationName } from "@/features/settings/hooks";
-import { useSession } from "@/lib/auth/client";
+import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { AppButton } from "@/components/design-system/button";
 import { Button } from "@/components/ui/button";
@@ -46,10 +46,11 @@ const QUICK_ACTION_LINKS = [
 
 export function Topbar() {
   const { openMobile } = useSidebar();
-  const { data: session } = useSession();
+  const { session, signOut } = useAuth();
   const { organizationName } = useOrganizationName();
   const [search, setSearch] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const userName = session?.user.name ?? "Guest";
   const userInitials = session?.user.name ? getInitials(session.user.name) : "G";
@@ -169,8 +170,14 @@ export function Topbar() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {session ? (
-                <DropdownMenuItem render={<Link href={ROUTES.logout} />}>
-                  Sign out
+                <DropdownMenuItem
+                  disabled={signingOut}
+                  onClick={() => {
+                    setSigningOut(true);
+                    void signOut();
+                  }}
+                >
+                  {signingOut ? "Signing out..." : "Sign out"}
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem render={<Link href={ROUTES.login} />}>

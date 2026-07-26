@@ -45,12 +45,13 @@ export function BrandLogo({
     <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-xl bg-primary shadow-soft",
+          "flex shrink-0 items-center justify-center rounded-xl shadow-soft",
           config.box,
+          isLight ? "bg-[#1b3a4b]" : "bg-primary",
         )}
       >
         <TentIcon
-          className={cn(config.icon, isLight ? "text-brand" : "text-brand")}
+          className={cn(config.icon, isLight ? "text-[#c8860a]" : "text-brand")}
           aria-hidden="true"
         />
       </div>
@@ -59,7 +60,7 @@ export function BrandLogo({
           className={cn(
             "truncate font-heading font-semibold leading-tight tracking-tight",
             config.title,
-            isLight ? "text-white" : "text-foreground",
+            isLight ? "text-[#ffffff]" : "text-foreground",
           )}
         >
           {APPLICATION.shortName}
@@ -69,7 +70,7 @@ export function BrandLogo({
             className={cn(
               "truncate leading-tight",
               config.tagline,
-              isLight ? "text-white/60" : "text-muted-foreground",
+              isLight ? "text-[#ffffff]/60" : "text-muted-foreground",
             )}
           >
             {APPLICATION.tagline}

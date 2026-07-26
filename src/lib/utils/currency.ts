@@ -1,30 +1,38 @@
-import { APPLICATION } from "@/constants/application";
+import { getActiveLocaleConfig } from "@/lib/i18n/locale-config";
 
-const currencyFormatter = new Intl.NumberFormat("en-PK", {
-  style: "currency",
-  currency: APPLICATION.currency,
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
+type FormatCurrencyOptions = {
+  currency?: string;
+  locale?: string;
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+};
 
 export function formatCurrency(
   value: number | null | undefined,
-  options?: { minimumFractionDigits?: number; maximumFractionDigits?: number },
+  options?: FormatCurrencyOptions,
 ): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "—";
   }
 
-  if (!options) {
-    return currencyFormatter.format(value);
-  }
+  const active = getActiveLocaleConfig();
+  const locale = options?.locale ?? active.locale;
+  const currency = options?.currency ?? active.currency;
 
-  return new Intl.NumberFormat("en-PK", {
-    style: "currency",
-    currency: APPLICATION.currency,
-    minimumFractionDigits: options.minimumFractionDigits ?? 0,
-    maximumFractionDigits: options.maximumFractionDigits ?? 2,
-  }).format(value);
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options?.minimumFractionDigits ?? 0,
+      maximumFractionDigits: options?.maximumFractionDigits ?? 2,
+    }).format(value);
+  } catch {
+    // Invalid currency/locale from tenant settings — still show a usable amount.
+    return `${currency} ${value.toLocaleString(locale, {
+      minimumFractionDigits: options?.minimumFractionDigits ?? 0,
+      maximumFractionDigits: options?.maximumFractionDigits ?? 2,
+    })}`;
+  }
 }
 
 export function parseCurrencyInput(value: string): number | null {

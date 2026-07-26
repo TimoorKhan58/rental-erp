@@ -1,3 +1,5 @@
+import { getActiveLocaleConfig } from "@/lib/i18n/locale-config";
+
 export function formatNumber(
   value: number | null | undefined,
   options: Intl.NumberFormatOptions = {},
@@ -6,7 +8,7 @@ export function formatNumber(
     return "—";
   }
 
-  return new Intl.NumberFormat("en-PK", options).format(value);
+  return new Intl.NumberFormat(getActiveLocaleConfig().locale, options).format(value);
 }
 
 export function formatPercent(
@@ -17,7 +19,7 @@ export function formatPercent(
     return "—";
   }
 
-  return new Intl.NumberFormat("en-PK", {
+  return new Intl.NumberFormat(getActiveLocaleConfig().locale, {
     style: "percent",
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
@@ -29,7 +31,7 @@ export function formatCompactNumber(value: number | null | undefined): string {
     return "—";
   }
 
-  return new Intl.NumberFormat("en-PK", {
+  return new Intl.NumberFormat(getActiveLocaleConfig().locale, {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);

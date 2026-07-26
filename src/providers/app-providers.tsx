@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { THEME_STORAGE_KEY } from "@/config/theme";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "./auth-provider";
+import { LocaleProvider } from "./locale-provider";
 import { QueryProvider } from "./query-provider";
 
 type AppProvidersProps = {
@@ -23,10 +24,12 @@ export function AppProviders({ children }: AppProvidersProps) {
     >
       <QueryProvider>
         <AuthProvider>
-          <TooltipProvider delay={300}>
-            {children}
-            <Toaster richColors closeButton />
-          </TooltipProvider>
+          <LocaleProvider>
+            <TooltipProvider delay={300}>
+              {children}
+              <Toaster richColors closeButton />
+            </TooltipProvider>
+          </LocaleProvider>
         </AuthProvider>
       </QueryProvider>
     </ThemeProvider>

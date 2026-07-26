@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { AuthLayout } from "@/layouts";
 import { getOrganizationName } from "@/lib/branding/get-organization-name";
 
+export const dynamic = "force-dynamic";
+
 type AuthGroupLayoutProps = {
   children: ReactNode;
 };
@@ -9,5 +11,9 @@ type AuthGroupLayoutProps = {
 export default async function AuthGroupLayout({ children }: AuthGroupLayoutProps) {
   const organizationName = await getOrganizationName();
 
-  return <AuthLayout organizationName={organizationName}>{children}</AuthLayout>;
+  return (
+    <AuthLayout organizationName={organizationName}>
+      {children}
+    </AuthLayout>
+  );
 }
