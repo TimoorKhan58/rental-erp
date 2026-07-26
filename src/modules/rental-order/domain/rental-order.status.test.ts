@@ -57,6 +57,9 @@ describe("status transition guards", () => {
           quantity: 10,
           dailyRate: 10,
           reservedQuantity: 0,
+          startDate: new Date("2026-02-01T00:00:00.000Z"),
+          endDate: new Date("2026-02-05T00:00:00.000Z"),
+          numberOfDays: 4,
         },
       ]),
     ).not.toThrow();

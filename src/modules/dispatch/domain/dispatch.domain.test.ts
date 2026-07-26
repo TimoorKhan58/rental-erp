@@ -23,6 +23,12 @@ import {
   buildReadyDispatchEntity,
 } from "../tests/helpers/dispatch.fixtures";
 
+const LINE_PERIOD = {
+  startDate: new Date("2026-02-01T00:00:00.000Z"),
+  endDate: new Date("2026-02-05T00:00:00.000Z"),
+  numberOfDays: 4,
+};
+
 describe("Dispatch entity", () => {
   it("creates normalized dispatch props", () => {
     const props = Dispatch.create(buildCreateDispatchData());
@@ -190,6 +196,7 @@ describe("Dispatch rules", () => {
             quantity: 10,
             dailyRate: 150,
             reservedQuantity: 10,
+            ...LINE_PERIOD,
           },
         ],
       ),
@@ -216,6 +223,7 @@ describe("Dispatch rules", () => {
             quantity: 10,
             dailyRate: 150,
             reservedQuantity: 10,
+            ...LINE_PERIOD,
           },
         ],
       ),

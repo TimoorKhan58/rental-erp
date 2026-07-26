@@ -173,6 +173,7 @@ export interface FixtureInvoice {
   customerId: string;
   status: string;
   invoiceDate: Date;
+  dueDate: Date | null;
   grandTotal: number;
   balance: number;
 }
@@ -375,11 +376,15 @@ export function buildPurchaseOrder(
 export function buildInvoice(
   overrides: Partial<FixtureInvoice> = {},
 ): FixtureInvoice {
+  const invoiceDate =
+    overrides.invoiceDate ?? new Date("2026-07-05T00:00:00.000Z");
+
   return {
     id: INVOICE_ONE_ID,
     customerId: CUSTOMER_ONE_ID,
     status: "ISSUED",
-    invoiceDate: new Date("2026-07-05T00:00:00.000Z"),
+    invoiceDate,
+    dueDate: new Date(invoiceDate.getTime() + 30 * 24 * 60 * 60 * 1000),
     grandTotal: 500,
     balance: 500,
     ...overrides,

@@ -1,6 +1,5 @@
 import {
   calculateOrderTotalFromItems,
-  calculateRentalDays,
   deriveReservationStatus,
 } from "./rental-order-totals.mapper";
 import type { RentalOrderResponse, RentalOrderStatus } from "../types";

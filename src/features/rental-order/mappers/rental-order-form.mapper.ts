@@ -16,11 +16,7 @@ function normalizeOptionalString(value: string | null | undefined): string | nul
   return value.trim();
 }
 
-function toLinePayload(
-  item: CreateRentalOrderFormValues["items"][number],
-  orderStartDate: string,
-  orderEndDate: string,
-) {
+function toLinePayload(item: CreateRentalOrderFormValues["items"][number]) {
   return {
     productId: item.productId,
     quantity: item.quantity,
@@ -42,9 +38,7 @@ export function toCreateRentalOrderPayload(
     startDate: values.startDate,
     endDate: values.endDate,
     remarks: normalizeOptionalString(values.remarks),
-    items: values.items.map((item) =>
-      toLinePayload(item, values.startDate, values.endDate),
-    ),
+    items: values.items.map((item) => toLinePayload(item)),
   };
 }
 
@@ -57,9 +51,7 @@ export function toUpdateRentalOrderPayload(
     startDate: values.startDate,
     endDate: values.endDate,
     remarks: normalizeOptionalString(values.remarks),
-    items: values.items.map((item) =>
-      toLinePayload(item, values.startDate, values.endDate),
-    ),
+    items: values.items.map((item) => toLinePayload(item)),
   };
 }
 

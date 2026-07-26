@@ -321,6 +321,7 @@ describe("RentalOrder rules", () => {
             quantity: 10,
             dailyRate: 10,
             reservedQuantity: 0,
+            ...LINE_PERIOD,
           },
         ],
         [],

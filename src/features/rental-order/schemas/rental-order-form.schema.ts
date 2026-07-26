@@ -13,7 +13,7 @@ const lineItemSchema = z
     dailyRate: z
       .number({ message: "Enter a valid rate" })
       .positive("Daily rate must be greater than zero"),
-    useCustomDates: z.boolean().default(false),
+    useCustomDates: z.boolean(),
     startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().min(1, "End date is required"),
   })
@@ -60,7 +60,7 @@ export const createRentalOrderFormSchema = z
     warehouseId: z.string().uuid("Select a warehouse"),
     startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().min(1, "End date is required"),
-    bookInAdvance: z.boolean().default(false),
+    bookInAdvance: z.boolean(),
     remarks: optionalTextSchema(500),
     items: z.array(lineItemSchema).min(1, "At least one line item is required"),
   })
