@@ -11,7 +11,7 @@ import { GetSettingsService } from "./get-settings.service";
 
 function createCompanySettings() {
   return Settings.reconstitute({
-    id: "cs000001-0000-4000-8000-000000000001" as CompanySettingId,
+    id: "00000000-0000-4000-8000-000000000101" as CompanySettingId,
     ...Settings.create(BOOTSTRAP_COMPANY_SETTINGS),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -20,7 +20,7 @@ function createCompanySettings() {
 
 function createSystemSettings() {
   return SystemSettings.reconstitute({
-    id: "ss000001-0000-4000-8000-000000000001" as SystemSettingId,
+    id: "00000000-0000-4000-8000-000000000102" as SystemSettingId,
     ...SystemSettings.create(),
     createdAt: new Date(),
     updatedAt: new Date(),

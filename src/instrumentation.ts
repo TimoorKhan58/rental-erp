@@ -6,6 +6,29 @@
  * when ERROR_TRACKER_PROVIDER / OTEL_* are configured — see docs/production/OBSERVABILITY.md.
  */
 
+/** Next.js passes Node's IncomingMessage header dict, not the Fetch Headers API. */
+function toWebHeaders(
+  headers: NodeJS.Dict<string | string[]>,
+): Headers {
+  const out = new Headers();
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (value === undefined) {
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        out.append(key, item);
+      }
+    } else {
+      out.set(key, value);
+    }
+  }
+
+  return out;
+}
+
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     // Eagerly initialize metrics registry / event-loop sampler.
@@ -18,7 +41,11 @@ export async function register(): Promise<void> {
 
 export async function onRequestError(
   error: unknown,
-  request: { path: string; method: string; headers: Headers },
+  request: {
+    path: string;
+    method: string;
+    headers: NodeJS.Dict<string | string[]>;
+  },
   _context: { routerKind: string; routePath: string },
 ): Promise<void> {
   const { reportRouteError } = await import(
@@ -28,13 +55,14 @@ export async function onRequestError(
     "@/shared/infrastructure/http/headers"
   );
 
-  const requestId = getRequestId(request.headers);
-  const correlationId = getCorrelationId(request.headers, requestId);
+  const headers = toWebHeaders(request.headers);
+  const requestId = getRequestId(headers);
+  const correlationId = getCorrelationId(headers, requestId);
 
   reportRouteError(error, {
     requestId,
     correlationId,
-    tenantId: getTenantId(request.headers),
+    tenantId: getTenantId(headers),
     route: request.path,
     httpMethod: request.method,
   });

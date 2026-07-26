@@ -31,8 +31,8 @@ import {
 } from "../tests/helpers/transaction-test-runner";
 
 const stubCustomerSequence = NumberSequence.reconstitute({
-  id: "ds000001-0000-4000-8000-000000000001" as DocumentSequenceId,
-  companySettingId: "cs000001-0000-4000-8000-000000000001" as CompanySettingId,
+  id: "00000000-0000-4000-8000-000000000206" as DocumentSequenceId,
+  companySettingId: "00000000-0000-4000-8000-000000000101" as CompanySettingId,
   documentType: "CUSTOMER",
   prefix: "CUS-",
   suffix: null,

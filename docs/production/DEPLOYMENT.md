@@ -128,6 +128,19 @@ Equivalent semantics: `prisma migrate deploy` (see [runbooks/MIGRATIONS.md](./ru
 
 **Order:** backup → migrate → start/restart app → verify readiness.
 
+### Render (native Node)
+
+Render does **not** run migrations unless you configure them. For the existing web service:
+
+1. **Build Command:** `npm ci && npm run build`  
+   (`npm run build` runs `prisma generate && next build`)
+2. **Pre-Deploy Command:** `npm run db:migrate:deploy`  
+   (applies pending migrations to `DATABASE_URL` before the new release receives traffic)
+3. **Start Command:** `npm run start`  
+   (`next start` — standalone output is Docker-only via `DOCKER_BUILD=1`)
+
+Required env on Render: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `APP_URL`, `BETTER_AUTH_URL` (HTTPS), `APP_ENV=production`, `NODE_ENV=production`.
+
 ---
 
 ## 7. Docker Compose deployment sequence

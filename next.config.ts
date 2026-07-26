@@ -47,8 +47,10 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  // Required for the production Docker image (copies a minimal server into .next/standalone).
-  output: "standalone",
+  // Standalone output is for the production Docker image only
+  // (`COPY .next/standalone` + `node server.js`). Native hosts such as Render
+  // use `npm run start` (`next start`), which is incompatible with standalone.
+  ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" as const } : {}),
   poweredByHeader: false,
   reactStrictMode: true,
   // Prefer Next/Node compression when not terminating TLS at a reverse proxy

@@ -5,6 +5,7 @@ import { DEFAULT_USER_ROLE } from "@/constants/roles";
 import prisma from "@/lib/prisma";
 import { appConfig } from "@/shared/config/app.config";
 import { authConfig } from "@/shared/config/auth.config";
+import { securityConfig } from "@/shared/config/security.config";
 
 const trustedOrigins = Array.from(
   new Set(
@@ -101,7 +102,17 @@ export const auth = betterAuth({
       path: "/",
     },
     ipAddress: {
-      ipAddressHeaders: ["x-real-ip", "x-forwarded-for"],
+      // Prefer single-value edge headers (Render/Cloudflare) before multi-hop XFF.
+      // Nginx Docker sets x-real-ip; Render typically sets cf-connecting-ip.
+      ipAddressHeaders: [
+        "cf-connecting-ip",
+        "true-client-ip",
+        "x-real-ip",
+        "x-forwarded-for",
+      ],
+      ...(securityConfig.trustedProxies.length > 0
+        ? { trustedProxies: [...securityConfig.trustedProxies] }
+        : {}),
       disableIpTracking: false,
     },
   },

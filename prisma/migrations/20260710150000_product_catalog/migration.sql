@@ -181,6 +181,6 @@ ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_productId_fkey" 
 
 -- Seed default units of measure
 INSERT INTO "units_of_measure" ("id", "code", "name", "description", "isActive", "createdAt", "updatedAt") VALUES
-    ('um000001-0000-4000-8000-000000000001', 'PCS', 'Pieces', 'Individual items', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('um000001-0000-4000-8000-000000000002', 'SET', 'Set', 'Grouped item set', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('um000001-0000-4000-8000-000000000003', 'DAY', 'Day', 'Rental day unit', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('00000000-0000-4000-8000-000000000301', 'PCS', 'Pieces', 'Individual items', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('00000000-0000-4000-8000-000000000302', 'SET', 'Set', 'Grouped item set', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('00000000-0000-4000-8000-000000000303', 'DAY', 'Day', 'Rental day unit', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
