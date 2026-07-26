@@ -9,8 +9,12 @@ import {
   CUSTOMER_ENTITY_NAME,
   CUSTOMER_MODULE,
 } from "@/modules/customer/application/services/customer-service.constants";
+import { NumberSequence } from "@/modules/settings/domain/number-sequence.entity";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
+import type { GeneratedNumberResult } from "@/modules/settings/domain/number-sequence.types";
 import { ConflictError, NotFoundError } from "@/shared/infrastructure/errors";
 import { ValidationError } from "@/shared/infrastructure/errors";
+import type { CompanySettingId, DocumentSequenceId } from "@/shared/domain/ids";
 
 import {
   CUSTOMER_ID,
@@ -26,13 +30,32 @@ import {
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
 
-const stubNumberSequences = {
-  generateNextNumber: vi.fn().mockResolvedValue({
-    formattedNumber: "CUS-00001",
-    number: 1,
-    sequence: {},
-  }),
-} as never;
+const stubCustomerSequence = NumberSequence.reconstitute({
+  id: "ds000001-0000-4000-8000-000000000001" as DocumentSequenceId,
+  companySettingId: "cs000001-0000-4000-8000-000000000001" as CompanySettingId,
+  documentType: "CUSTOMER",
+  prefix: "CUS-",
+  suffix: null,
+  startingNumber: 1,
+  currentNumber: 2,
+  paddingLength: 5,
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+});
+
+const stubGenerateNextNumberResult: GeneratedNumberResult = {
+  formattedNumber: "CUS-00001",
+  number: 1,
+  sequence: stubCustomerSequence,
+};
+
+const stubNumberSequences: INumberSequenceRepository = {
+  findById: vi.fn().mockResolvedValue(null),
+  findAll: vi.fn().mockResolvedValue([]),
+  findByDocumentType: vi.fn().mockResolvedValue(null),
+  update: vi.fn().mockResolvedValue(stubCustomerSequence),
+  generateNextNumber: vi.fn().mockResolvedValue(stubGenerateNextNumberResult),
+};
 
 describe("CreateCustomerService", () => {
   it("creates a customer and returns a DTO", async () => {

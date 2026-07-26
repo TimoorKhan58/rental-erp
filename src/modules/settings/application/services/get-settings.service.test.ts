@@ -5,12 +5,13 @@ import { Settings } from "@/modules/settings/domain/settings.entity";
 import { SystemSettings } from "@/modules/settings/domain/system-settings.entity";
 import type { ISettingsRepository } from "@/modules/settings/domain/settings.repository.interface";
 import type { ISystemSettingsRepository } from "@/modules/settings/domain/system-settings.repository.interface";
+import type { CompanySettingId, SystemSettingId } from "@/shared/domain/ids";
 
 import { GetSettingsService } from "./get-settings.service";
 
 function createCompanySettings() {
   return Settings.reconstitute({
-    id: "cs000001-0000-4000-8000-000000000001",
+    id: "cs000001-0000-4000-8000-000000000001" as CompanySettingId,
     ...Settings.create(BOOTSTRAP_COMPANY_SETTINGS),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -19,7 +20,7 @@ function createCompanySettings() {
 
 function createSystemSettings() {
   return SystemSettings.reconstitute({
-    id: "ss000001-0000-4000-8000-000000000001",
+    id: "ss000001-0000-4000-8000-000000000001" as SystemSettingId,
     ...SystemSettings.create(),
     createdAt: new Date(),
     updatedAt: new Date(),
