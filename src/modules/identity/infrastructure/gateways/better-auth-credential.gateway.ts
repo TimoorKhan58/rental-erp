@@ -1,15 +1,15 @@
 import { generateId } from "@better-auth/core/utils/id";
 import { hashPassword } from "better-auth/crypto";
-import type { PrismaClient } from "@/generated/prisma/client";
 import type {
   CreateAuthCredentialInput,
   IIdentityAuthGateway,
   ResetAuthCredentialPasswordInput,
   UpdateAuthCredentialInput,
 } from "@/modules/identity/application/services/identity-auth.gateway.interface";
+import type { DbClient } from "@/shared/infrastructure/database/prisma-types";
 
 export class BetterAuthCredentialGateway implements IIdentityAuthGateway {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly db: DbClient) {}
 
   async createCredentialUser(
     input: CreateAuthCredentialInput,
@@ -19,30 +19,28 @@ export class BetterAuthCredentialGateway implements IIdentityAuthGateway {
     const passwordHash = await hashPassword(input.password);
     const now = new Date();
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.authUser.create({
-        data: {
-          id: authUserId,
-          name: input.name,
-          email: input.email.trim().toLowerCase(),
-          role: input.role,
-          erpUserId: input.erpUserId,
-          createdAt: now,
-          updatedAt: now,
-        },
-      });
+    await this.db.authUser.create({
+      data: {
+        id: authUserId,
+        name: input.name,
+        email: input.email.trim().toLowerCase(),
+        role: input.role,
+        erpUserId: input.erpUserId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
 
-      await tx.authAccount.create({
-        data: {
-          id: accountId,
-          accountId: authUserId,
-          providerId: "credential",
-          userId: authUserId,
-          password: passwordHash,
-          createdAt: now,
-          updatedAt: now,
-        },
-      });
+    await this.db.authAccount.create({
+      data: {
+        id: accountId,
+        accountId: authUserId,
+        providerId: "credential",
+        userId: authUserId,
+        password: passwordHash,
+        createdAt: now,
+        updatedAt: now,
+      },
     });
 
     return { authUserId };
@@ -75,7 +73,7 @@ export class BetterAuthCredentialGateway implements IIdentityAuthGateway {
       data.erpUserId = input.erpUserId;
     }
 
-    await this.prisma.authUser.update({
+    await this.db.authUser.update({
       where: { id: input.authUserId },
       data,
     });
@@ -85,7 +83,7 @@ export class BetterAuthCredentialGateway implements IIdentityAuthGateway {
     input: ResetAuthCredentialPasswordInput,
   ): Promise<void> {
     const passwordHash = await hashPassword(input.password);
-    const account = await this.prisma.authAccount.findFirst({
+    const account = await this.db.authAccount.findFirst({
       where: {
         userId: input.authUserId,
         providerId: "credential",
@@ -96,7 +94,7 @@ export class BetterAuthCredentialGateway implements IIdentityAuthGateway {
       throw new Error("Credential account not found for user");
     }
 
-    await this.prisma.authAccount.update({
+    await this.db.authAccount.update({
       where: { id: account.id },
       data: {
         password: passwordHash,
@@ -106,7 +104,7 @@ export class BetterAuthCredentialGateway implements IIdentityAuthGateway {
   }
 
   async revokeSessions(authUserId: string): Promise<void> {
-    await this.prisma.authSession.deleteMany({
+    await this.db.authSession.deleteMany({
       where: { userId: authUserId },
     });
   }

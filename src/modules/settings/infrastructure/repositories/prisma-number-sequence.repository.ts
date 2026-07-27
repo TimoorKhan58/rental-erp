@@ -16,8 +16,8 @@ import { NumberSequence } from "@/modules/settings/domain/number-sequence.entity
 import { NumberSequenceNotFoundError } from "@/modules/settings/domain/number-sequence.errors";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { assertCanGenerate } from "@/modules/settings/domain/number-sequence.rules";
+import type { EnsureActiveCompanySettingsService } from "@/modules/settings/application/services/ensure-active-company-settings.service";
 import type { DocumentType } from "@/modules/settings/domain/settings.constants";
-import { SettingsNotFoundError } from "@/modules/settings/domain/settings.errors";
 import type {
   GeneratedNumberResult,
   UpdateNumberSequenceData,
@@ -36,7 +36,10 @@ function isPrismaClient(db: DbClient): db is PrismaClient {
 }
 
 export class PrismaNumberSequenceRepository implements INumberSequenceRepository {
-  constructor(private readonly runner: RepositoryRunner) {}
+  constructor(
+    private readonly runner: RepositoryRunner,
+    private readonly ensureActiveCompanySettings: EnsureActiveCompanySettingsService,
+  ) {}
 
   findById(id: DocumentSequenceId): Promise<NumberSequence | null> {
     return repositoryFindFirst(
@@ -137,6 +140,8 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
     db: DbClient,
     documentType: DocumentType,
   ): Promise<GeneratedNumberResult> {
+    await this.ensureActiveCompanySettings.execute();
+
     const companySetting = await db.companySetting.findFirst({
       where: { isActive: true },
       orderBy: { createdAt: "asc" },
@@ -144,7 +149,7 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
     });
 
     if (companySetting === null) {
-      throw new SettingsNotFoundError();
+      throw new Error("Company settings bootstrap failed");
     }
 
     let record = await db.documentSequence.findUnique({

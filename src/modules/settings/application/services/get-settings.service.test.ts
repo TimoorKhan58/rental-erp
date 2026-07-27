@@ -7,6 +7,7 @@ import type { ISettingsRepository } from "@/modules/settings/domain/settings.rep
 import type { ISystemSettingsRepository } from "@/modules/settings/domain/system-settings.repository.interface";
 import type { CompanySettingId, SystemSettingId } from "@/shared/domain/ids";
 
+import { EnsureActiveCompanySettingsService } from "./ensure-active-company-settings.service";
 import { GetSettingsService } from "./get-settings.service";
 
 function createCompanySettings() {
@@ -45,8 +46,12 @@ describe("GetSettingsService", () => {
       update: vi.fn(),
     };
 
-    const service = new GetSettingsService(
+    const ensureActiveCompanySettings = new EnsureActiveCompanySettingsService(
       settingsRepository,
+    );
+
+    const service = new GetSettingsService(
+      ensureActiveCompanySettings,
       systemSettingsRepository,
     );
 

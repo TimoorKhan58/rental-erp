@@ -1,6 +1,7 @@
 import type { SettingsApplicationServices as SettingsApplicationServicesBase } from "@/modules/settings/application/services/settings-application-services.interface";
 import { GenerateNextNumberService } from "@/modules/settings/application/services/generate-next-number.service";
 import { GetNumberSequenceByIdService } from "@/modules/settings/application/services/get-number-sequence-by-id.service";
+import { EnsureActiveCompanySettingsService } from "@/modules/settings/application/services/ensure-active-company-settings.service";
 import { GetSettingsService } from "@/modules/settings/application/services/get-settings.service";
 import { ListNumberSequencesService } from "@/modules/settings/application/services/list-number-sequences.service";
 import {
@@ -36,8 +37,11 @@ export function createSettingsApplicationServices(
   const numberSequenceTransactionRunner =
     createNumberSequenceTransactionRunner(deps);
 
-  const getSettings = new GetSettingsService(
+  const ensureActiveCompanySettings = new EnsureActiveCompanySettingsService(
     settingsRepository,
+  );
+  const getSettings = new GetSettingsService(
+    ensureActiveCompanySettings,
     systemSettingsRepository,
   );
   const updateSettings = new UpdateSettingsService(settingsTransactionRunner);

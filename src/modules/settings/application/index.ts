@@ -57,6 +57,7 @@ export type {
   NumberSequenceWriteScope,
   INumberSequenceTransactionRunner,
 } from "./services/number-sequence-transaction.runner";
+export { EnsureActiveCompanySettingsService } from "./services/ensure-active-company-settings.service";
 export { GetSettingsService } from "./services/get-settings.service";
 export { UpdateSettingsService } from "./services/update-settings.service";
 export { ListNumberSequencesService } from "./services/list-number-sequences.service";

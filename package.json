@@ -33,11 +33,13 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
+    "db:seed": "prisma db seed",
     "db:backup": "bash ./scripts/db/backup.sh",
     "db:restore": "bash ./scripts/db/restore.sh",
     "db:studio": "prisma studio",
     "demo:wedding": "node ./scripts/seed-wedding-scenario.mjs",
     "seed:malakand": "node ./scripts/seed-malakand-price-list.mjs",
+    "create:admin": "tsx ./scripts/create-admin.ts",
     "db:auth-generate": "better-auth generate --config src/lib/auth/config.ts -y",
     "config:check": "vitest run src/shared/config/env.validation.test.ts",
     "docker:dev": "docker compose up --build",
@@ -93,6 +95,7 @@
     "jsdom": "^29.1.1",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }
