@@ -1,8 +1,14 @@
 /**
- * Interactive bootstrap for the first ERP administrator.
+ * Bootstrap for the first ERP administrator.
  *
  * Usage (from rental-erp/):
  *   npm run create:admin
+ *
+ * Interactive mode (default):
+ *   Prompts for name, email, password, and role.
+ *
+ * Production mode (non-interactive):
+ *   Set ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_ROLE.
  */
 import "dotenv/config";
 import { stdin as input, stdout as output } from "node:process";
@@ -13,8 +19,51 @@ import { createIdentityApplicationServices } from "../src/modules/identity/infra
 import { createSharedDeps } from "../src/shared/infrastructure/di/shared-deps";
 import { ConflictError, NotFoundError } from "../src/shared/infrastructure/errors";
 
+interface AdminCredentials {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}
+
 function isUserRole(value: string): value is UserRole {
   return (USER_ROLE_LIST as readonly string[]).includes(value);
+}
+
+function hasProductionEnv(): boolean {
+  return (
+    process.env.ADMIN_NAME !== undefined &&
+    process.env.ADMIN_NAME.length > 0 &&
+    process.env.ADMIN_EMAIL !== undefined &&
+    process.env.ADMIN_EMAIL.length > 0 &&
+    process.env.ADMIN_PASSWORD !== undefined &&
+    process.env.ADMIN_PASSWORD.length > 0 &&
+    process.env.ADMIN_ROLE !== undefined &&
+    process.env.ADMIN_ROLE.length > 0
+  );
+}
+
+function resolveProductionCredentials(): AdminCredentials {
+  const name = process.env.ADMIN_NAME!.trim();
+  const email = process.env.ADMIN_EMAIL!.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD!;
+  const role = process.env.ADMIN_ROLE!.trim().toLowerCase();
+
+  if (name.length === 0) {
+    throw new Error("ADMIN_NAME must not be empty");
+  }
+
+  if (password.length < 8) {
+    throw new Error("ADMIN_PASSWORD must be at least 8 characters");
+  }
+
+  if (!isUserRole(role)) {
+    throw new Error(
+      `ADMIN_ROLE must be one of: ${USER_ROLE_LIST.join(", ")}`,
+    );
+  }
+
+  return { name, email, password, role };
 }
 
 async function promptRequired(
@@ -67,19 +116,27 @@ async function promptRole(
   }
 }
 
-async function main(): Promise<void> {
-  const rl = createInterface({ input, output });
+async function resolveInteractiveCredentials(
+  rl: ReturnType<typeof createInterface>,
+): Promise<AdminCredentials> {
+  console.log("Create initial ERP administrator\n");
+
+  const name = await promptRequired(rl, "Name");
+  const email = (await promptRequired(rl, "Email")).toLowerCase();
+  const password = await promptPassword(rl);
+  const role = await promptRole(rl);
+
+  return { name, email, password, role };
+}
+
+async function bootstrapAdministrator(
+  credentials: AdminCredentials,
+): Promise<void> {
   const deps = createSharedDeps();
 
   try {
-    console.log("Create initial ERP administrator\n");
-
-    const name = await promptRequired(rl, "Name");
-    const email = (await promptRequired(rl, "Email")).toLowerCase();
-    const password = await promptPassword(rl);
-    const role = await promptRole(rl);
-
     const services = createIdentityApplicationServices(deps);
+    const { name, email, password, role } = credentials;
 
     const existingAuthUser = await deps.prisma.authUser.findUnique({
       where: { email },
@@ -87,10 +144,8 @@ async function main(): Promise<void> {
     });
 
     if (existingAuthUser !== null) {
-      throw new ConflictError({
-        message: "Email already exists",
-        details: { email },
-      });
+      console.log("\nAdministrator already exists.");
+      return;
     }
 
     const user = await services.createIdentityUser.execute({
@@ -105,10 +160,24 @@ async function main(): Promise<void> {
     console.log(`  ERP user id: ${user.id}`);
     console.log(`  Email: ${user.email}`);
     console.log(`  Role: ${user.role}`);
+  } finally {
+    await deps.prisma.$disconnect();
+  }
+}
+
+async function main(): Promise<void> {
+  const productionMode = hasProductionEnv();
+  const rl = productionMode ? null : createInterface({ input, output });
+
+  try {
+    const credentials = productionMode
+      ? resolveProductionCredentials()
+      : await resolveInteractiveCredentials(rl!);
+
+    await bootstrapAdministrator(credentials);
   } catch (error) {
     if (error instanceof ConflictError) {
-      console.error(`\nError: ${error.message}`);
-      process.exitCode = 1;
+      console.log("\nAdministrator already exists.");
       return;
     }
 
@@ -120,11 +189,16 @@ async function main(): Promise<void> {
       return;
     }
 
+    if (error instanceof Error) {
+      console.error(`\nError: ${error.message}`);
+      process.exitCode = 1;
+      return;
+    }
+
     console.error("\nFailed to create administrator:", error);
     process.exitCode = 1;
   } finally {
-    rl.close();
-    await deps.prisma.$disconnect();
+    rl?.close();
   }
 }
 
