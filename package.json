@@ -32,6 +32,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:safe": "bash ./scripts/db/migrate-safe.sh",
     "db:status": "prisma migrate status",
     "db:seed": "prisma db seed",
     "db:backup": "bash ./scripts/db/backup.sh",

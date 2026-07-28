@@ -22,7 +22,7 @@ import {
   createAppLogger,
   createRequestLogger,
 } from "@/shared/infrastructure/logging";
-import { resolveSessionUser } from "@/shared/infrastructure/auth";
+import { resolveActiveSessionUser } from "@/shared/infrastructure/auth";
 import { enterRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
 
 export interface AuthenticatedApiRequestResult {
@@ -48,11 +48,11 @@ export async function authenticateApiRequest(
     throw new UnauthorizedError();
   }
 
-  const resolvedUser = resolveSessionUser(session);
+  const resolvedUser = await resolveActiveSessionUser(session);
 
   if (resolvedUser === null) {
     throw new UnauthorizedError({
-      message: "User account is not linked to the ERP identity",
+      message: "User account is inactive or not linked to the ERP identity",
     });
   }
 

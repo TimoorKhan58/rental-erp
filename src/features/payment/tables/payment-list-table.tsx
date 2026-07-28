@@ -101,7 +101,6 @@ export function PaymentListTable({
 
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.payments.lists() });
-    void refetch();
   };
 
   const hasFilters =

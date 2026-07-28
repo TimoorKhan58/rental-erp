@@ -59,6 +59,9 @@ jobs:
       - name: Environment config checks
         run: npm run config:check
 
+      - name: Dependency vulnerability gate
+        run: npm run audit:ci
+
       - name: Production build
         run: npm run build
 

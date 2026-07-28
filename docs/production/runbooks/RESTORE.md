@@ -9,6 +9,7 @@ Restore PostgreSQL from a Rental ERP compressed backup. **Destructive** — over
 - `psql`, `gunzip` (or PowerShell equivalents)
 - `DATABASE_URL` pointing at the **intended restore target** (never guess)
 - Confirmed backup file path or known latest dump in `BACKUP_DIR`
+- Matching checksum manifest file: `<backup>.sha256`
 - Application traffic stopped or drained for production restores
 
 ## Procedure — latest backup
@@ -20,6 +21,7 @@ export BACKUP_DIR="/var/backups/rental-erp"
 ```
 
 Script waits 5 seconds before applying (Ctrl+C to abort).
+Restore fails fast if checksum manifest is missing or mismatched.
 
 ## Procedure — selected backup
 
@@ -43,5 +45,6 @@ Windows:
 ## Notes
 
 - Restores use plain SQL via `psql` with `ON_ERROR_STOP=1`
+- Checksum verification is mandatory before restore execution
 - If restore fails mid-stream, treat the database as inconsistent — restore again from a known-good dump or escalate
 - After restore to a newer app version, you may still need `prisma migrate deploy` if the dump predates pending migrations

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
+import type { ProductId, RentalOrderId } from "@/shared/domain/ids";
 
 import { InMemoryRentalOrderRepository } from "../tests/helpers/in-memory-rental-order.repository";
 import {
@@ -77,5 +79,56 @@ describe("InMemoryRentalOrderRepository", () => {
     const updated = await repository.updateStatus(order.id, "CANCELLED");
 
     expect(updated.status).toBe("CANCELLED");
+  });
+
+  it("filters paged results by reservation status", async () => {
+    const repository = new InMemoryRentalOrderRepository();
+    const notStarted = buildConfirmedRentalOrderEntity();
+    const partial = buildRentalOrderEntity({
+      id: "aa0e8400-e29b-41d4-a716-446655440000" as RentalOrderId,
+      status: "CONFIRMED",
+      items: [
+        {
+          id: "ab0e8400-e29b-41d4-a716-446655440000",
+          productId: "cc0e8400-e29b-41d4-a716-446655440000" as ProductId,
+          quantity: 10,
+          dailyRate: 50,
+          reservedQuantity: 5,
+          startDate: new Date("2026-07-10T00:00:00.000Z"),
+          endDate: new Date("2026-07-12T00:00:00.000Z"),
+          numberOfDays: 2,
+        },
+      ],
+    });
+    const complete = RentalOrder.reconstitute({
+      ...buildRentalOrderEntity({
+        id: "bb0e8400-e29b-41d4-a716-446655440000" as RentalOrderId,
+        status: "CONFIRMED",
+      }).toProps(),
+      status: "RESERVED",
+      items: [
+        {
+          id: "bc0e8400-e29b-41d4-a716-446655440000",
+          productId: "cd0e8400-e29b-41d4-a716-446655440000" as ProductId,
+          quantity: 10,
+          dailyRate: 50,
+          reservedQuantity: 10,
+          startDate: new Date("2026-07-10T00:00:00.000Z"),
+          endDate: new Date("2026-07-12T00:00:00.000Z"),
+          numberOfDays: 2,
+        },
+      ],
+    });
+    repository.seed([notStarted, partial, complete]);
+
+    const result = await repository.findPaged({
+      page: 1,
+      pageSize: 10,
+      sortOrder: "desc",
+      reservationStatus: "partial",
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe("aa0e8400-e29b-41d4-a716-446655440000");
   });
 });

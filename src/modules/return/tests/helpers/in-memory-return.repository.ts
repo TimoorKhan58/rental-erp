@@ -68,6 +68,19 @@ export class InMemoryReturnRepository implements IReturnRepository {
     return Promise.resolve(items);
   }
 
+  findByDispatchIds(dispatchIds: DispatchId[]): Promise<Return[]> {
+    if (dispatchIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    const dispatchIdSet = new Set(dispatchIds);
+    const items = Array.from(this.store.values())
+      .filter((stored) => dispatchIdSet.has(stored.record.dispatchId))
+      .map((stored) => Return.reconstitute(stored.record));
+
+    return Promise.resolve(items);
+  }
+
   async findPaged(query: ReturnListQuery): Promise<PaginatedResult<Return>> {
     let items = Array.from(this.store.values()).map((stored) =>
       Return.reconstitute(stored.record),

@@ -9,8 +9,15 @@ import { RENTAL_ORDER_SORT_FIELDS } from "@/modules/rental-order/domain/rental-o
 
 import { RentalOrderStatusFilterSchema } from "./rental-order.schemas";
 
+const ReservationStatusFilterSchema = z.enum([
+  "not-started",
+  "partial",
+  "complete",
+]);
+
 export const ListRentalOrdersSchema = PaginationSchema.extend({
   status: RentalOrderStatusFilterSchema.optional(),
+  reservationStatus: ReservationStatusFilterSchema.optional(),
   customerId: UUIDSchema.optional(),
   warehouseId: UUIDSchema.optional(),
   sortBy: z.enum(RENTAL_ORDER_SORT_FIELDS).optional(),

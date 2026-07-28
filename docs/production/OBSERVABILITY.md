@@ -29,7 +29,7 @@ Domain **audit logs** (database) remain separate from application structured log
 | Probe | Path | Checks | Failure |
 |-------|------|--------|---------|
 | Liveness | `GET /api/health` or `/api/health/live` | Process up | 5xx only if process broken |
-| Readiness | `GET /api/health/ready` | Config + Prisma client + DB (`SELECT 1` + migrations) | 503 |
+| Readiness | `GET /api/health/ready` | Config + Prisma client + DB (`SELECT 1` + migrations); fails if migration metadata check fails | 503 |
 | Startup | `GET /api/health/startup` | Config + Prisma client (no DB round-trip) | 503 |
 
 Keep probes lightweight. Do not put business logic behind health routes.

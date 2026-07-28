@@ -50,6 +50,8 @@ Central index for Rental ERP production engineering (Phases 8-001 → 8-010).
 | DB maintenance | [runbooks/MAINTENANCE.md](./runbooks/MAINTENANCE.md) |
 | DB incident | [runbooks/INCIDENT_DATABASE.md](./runbooks/INCIDENT_DATABASE.md) |
 | Disaster recovery checklist | [runbooks/DISASTER_RECOVERY.md](./runbooks/DISASTER_RECOVERY.md) |
+| Incident response (all severities) | [runbooks/INCIDENT_RESPONSE.md](./runbooks/INCIDENT_RESPONSE.md) |
+| Administrator bootstrap / break-glass | [runbooks/ADMIN_BOOTSTRAP.md](./runbooks/ADMIN_BOOTSTRAP.md) |
 
 ---
 

@@ -12,6 +12,7 @@ export function toRentalOrderListQuery(
     sortBy: input.sortBy,
     sortOrder: input.sortOrder,
     status: input.status,
+    reservationStatus: input.reservationStatus,
     customerId: input.customerId,
     warehouseId: input.warehouseId,
     eventFrom: input.eventFrom,

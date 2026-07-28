@@ -4,6 +4,7 @@ import type { InventoryId, ProductId, WarehouseId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
+  buildPaginationMeta,
   createRepositoryQuerySpec,
   repositoryCreate,
   repositoryDelete,
@@ -80,6 +81,29 @@ function mapInventorySort(
   return sort as Prisma.InventoryOrderByWithRelationInput;
 }
 
+function deriveInventoryStockStatus(item: {
+  quantityOnHand: number;
+  reservedQuantity: number;
+  minimumStock: number;
+  maximumStock: number | null;
+}): "in-stock" | "low-stock" | "out-of-stock" | "overstock" {
+  const availableQuantity = item.quantityOnHand - item.reservedQuantity;
+
+  if (availableQuantity <= 0) {
+    return "out-of-stock";
+  }
+
+  if (item.minimumStock > 0 && availableQuantity <= item.minimumStock) {
+    return "low-stock";
+  }
+
+  if (item.maximumStock !== null && item.quantityOnHand > item.maximumStock) {
+    return "overstock";
+  }
+
+  return "in-stock";
+}
+
 export class PrismaInventoryRepository implements IInventoryRepository {
   constructor(private readonly runner: RepositoryRunner) {}
 
@@ -119,6 +143,35 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     const filter = buildInventoryFilter(query);
     const hasFilter = Object.keys(filter).length > 0;
     const searchWhere = buildInventorySearchClause(query.search);
+
+    if (query.stockStatus !== undefined) {
+      const where = {
+        ...(searchWhere as Prisma.InventoryWhereInput | undefined),
+        ...(mapInventoryFilter(filter) ?? {}),
+      } satisfies Prisma.InventoryWhereInput;
+      const orderBy = mapInventorySort(
+        query.sortBy ? { [query.sortBy]: query.sortOrder ?? "desc" } : undefined,
+      );
+
+      const records = await this.runner.run(
+        (db) =>
+          db.inventory.findMany({
+            where,
+            orderBy,
+          }),
+        { model: MODEL, operation: "findPaged" },
+      );
+      const filtered = records.filter(
+        (item) => deriveInventoryStockStatus(item) === query.stockStatus,
+      );
+      const start = (query.page - 1) * query.pageSize;
+      const paged = filtered.slice(start, start + query.pageSize);
+
+      return {
+        items: paged.map(toInventoryDomain),
+        meta: buildPaginationMeta(query.page, query.pageSize, filtered.length),
+      };
+    }
 
     const result = await runRepositoryPagedQuery(
       this.runner,

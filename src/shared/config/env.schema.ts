@@ -279,6 +279,21 @@ const envObjectSchema = z
       });
     }
 
+    const metricsEnabled = data.ENABLE_METRICS ?? true;
+    if (
+      isHardened &&
+      metricsEnabled &&
+      (data.METRICS_BEARER_TOKEN === undefined ||
+        data.METRICS_BEARER_TOKEN.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["METRICS_BEARER_TOKEN"],
+        message:
+          "METRICS_BEARER_TOKEN is required when metrics are enabled in staging/production",
+      });
+    }
+
     if (data.UPLOAD_STORAGE === "s3") {
       context.addIssue({
         code: "custom",

@@ -1,4 +1,5 @@
 import type { Session } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 import type { UserRole } from "@/constants/roles";
 import { isUserRole } from "@/shared/application/authorization/types";
 
@@ -39,4 +40,25 @@ export function resolveSessionUser(
 
 export function getSessionErpUserId(session: Session): string | undefined {
   return resolveSessionUser(session)?.erpUserId;
+}
+
+export async function resolveActiveSessionUser(
+  session: Session,
+): Promise<ResolvedSessionUser | null> {
+  const resolved = resolveSessionUser(session);
+
+  if (resolved === null) {
+    return null;
+  }
+
+  const erpUser = await prisma.user.findUnique({
+    where: { id: resolved.erpUserId },
+    select: { id: true, isActive: true },
+  });
+
+  if (erpUser === null || !erpUser.isActive) {
+    return null;
+  }
+
+  return resolved;
 }

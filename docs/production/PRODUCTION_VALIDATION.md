@@ -26,8 +26,10 @@ Ref: [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) · [CONFIGURATION_GU
 
 - [ ] Postgres healthy (`pg_isready` / Compose health)
 - [ ] `prisma migrate status` — all migrations applied
+- [ ] If migrations are pending, use `npm run db:migrate:safe` for guarded deployment
 - [ ] Connectivity via `/api/health/ready`
 - [ ] Pre-go-live backup completed and stored off-host
+- [ ] Backup checksum manifest generated and verified (`*.sha256`)
 - [ ] Restore procedure documented and rehearsed on non-prod
 
 Ref: [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md) · [runbooks/MIGRATIONS.md](./runbooks/MIGRATIONS.md)
@@ -86,6 +88,7 @@ Ref: [SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md)
 - [ ] Backup script/cron owner assigned
 - [ ] Retention policy documented
 - [ ] RTO/RPO recorded ([DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md))
+- [ ] Incident commander and break-glass admin owner assigned
 
 ---
 

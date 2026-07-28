@@ -7,4 +7,5 @@ export interface InventoryListQuery {
   productId?: string;
   warehouseId?: string;
   isActive?: boolean;
+  stockStatus?: "in-stock" | "low-stock" | "out-of-stock" | "overstock";
 }

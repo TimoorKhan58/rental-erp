@@ -118,7 +118,6 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
 
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() });
-    void refetch();
   };
 
   const hasFilters =

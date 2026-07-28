@@ -26,10 +26,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    disableSignUp: true,
+    disableSignUp: false,
     minPasswordLength: authConfig.minPasswordLength,
   },
-  disabledPaths: ["/sign-up/email"],
   // Prisma models are Auth* because `User`/`Account` are ERP entities.
   // modelName must match Prisma client keys (camelCase).
   user: {

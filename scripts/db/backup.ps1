@@ -37,7 +37,16 @@ if (Get-Command gzip -ErrorAction SilentlyContinue) {
   $GzFile = $ZipFile
 }
 
+if (-not (Test-Path $GzFile)) {
+  throw "[backup] Backup artifact not found: $GzFile"
+}
+
+$Hash = Get-FileHash -Algorithm SHA256 -Path $GzFile
+$ChecksumFile = "$GzFile.sha256"
+"$($Hash.Hash.ToLower()) *$([System.IO.Path]::GetFileName($GzFile))" | Set-Content -Path $ChecksumFile -Encoding ascii
+
 Write-Host "[backup] Completed: $GzFile"
+Write-Host "[backup] Wrote checksum manifest: $ChecksumFile"
 
 if ($RetentionDays -gt 0) {
   $Cutoff = (Get-Date).AddDays(-$RetentionDays)

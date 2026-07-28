@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 
 import { CancelRentalOrderService } from "@/modules/rental-order/application/services/cancel-rental-order.service";
 import { ConfirmRentalOrderService } from "@/modules/rental-order/application/services/confirm-rental-order.service";
@@ -75,7 +76,7 @@ describe("CreateRentalOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -96,7 +97,7 @@ describe("CreateRentalOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -113,7 +114,7 @@ describe("CreateRentalOrderService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -131,7 +132,7 @@ describe("CreateRentalOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -572,7 +573,7 @@ describe("CreateRentalOrderService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(

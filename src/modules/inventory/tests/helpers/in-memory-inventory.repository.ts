@@ -14,6 +14,29 @@ interface StoredInventory {
   record: ReturnType<Inventory["toProps"]>;
 }
 
+function deriveInventoryStockStatus(item: {
+  quantityOnHand: number;
+  reservedQuantity: number;
+  minimumStock: number;
+  maximumStock: number | null;
+}): "in-stock" | "low-stock" | "out-of-stock" | "overstock" {
+  const availableQuantity = item.quantityOnHand - item.reservedQuantity;
+
+  if (availableQuantity <= 0) {
+    return "out-of-stock";
+  }
+
+  if (item.minimumStock > 0 && availableQuantity <= item.minimumStock) {
+    return "low-stock";
+  }
+
+  if (item.maximumStock !== null && item.quantityOnHand > item.maximumStock) {
+    return "overstock";
+  }
+
+  return "in-stock";
+}
+
 export class InMemoryInventoryRepository implements IInventoryRepository {
   private readonly store = new Map<string, StoredInventory>();
 
@@ -81,6 +104,12 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
 
     if (query.isActive !== undefined) {
       items = items.filter((item) => item.isActive === query.isActive);
+    }
+
+    if (query.stockStatus !== undefined) {
+      items = items.filter(
+        (item) => deriveInventoryStockStatus(item) === query.stockStatus,
+      );
     }
 
     if (query.search) {

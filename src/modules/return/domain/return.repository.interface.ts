@@ -13,6 +13,7 @@ export interface IReturnRepository {
   findById(id: ReturnInspectionId): Promise<Return | null>;
   findByReturnNumber(returnNumber: string): Promise<Return | null>;
   findByDispatchId(dispatchId: DispatchId): Promise<Return[]>;
+  findByDispatchIds(dispatchIds: DispatchId[]): Promise<Return[]>;
   findPaged(query: ReturnListQuery): Promise<PaginatedResult<Return>>;
   create(data: CreateReturnData): Promise<Return>;
   update(id: ReturnInspectionId, data: UpdateReturnData): Promise<Return>;

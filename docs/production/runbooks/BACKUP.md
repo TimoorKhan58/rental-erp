@@ -34,7 +34,12 @@ $env:BACKUP_DIR = "D:\backups\rental-erp"
 
 - File exists: `rental-erp_YYYYMMDDTHHMMSSZ.sql.gz`
 - Size is non-trivial (not 0 bytes)
-- Optional: `gunzip -t path/to/file.sql.gz`
+- Checksum manifest exists: `rental-erp_...sql.gz.sha256`
+- Mandatory integrity check:
+  - Linux/macOS: `sha256sum -c path/to/file.sql.gz.sha256`
+  - Windows: `Get-FileHash -Algorithm SHA256 path\to\file.sql.gz`
+    and compare with `.sha256` file
+- Optional compression test: `gunzip -t path/to/file.sql.gz`
 
 ## Automation (example only)
 

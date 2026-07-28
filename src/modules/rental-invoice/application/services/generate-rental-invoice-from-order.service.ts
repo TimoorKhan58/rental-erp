@@ -1,11 +1,12 @@
-import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
+import type { IDispatchRepository } from "@/modules/dispatch/domain/dispatch.repository.interface";
 import { assertRentalOrderEligibleForInvoice } from "@/modules/rental-invoice/domain";
-import { createProductRepositoryFromUnitOfWork } from "@/modules/product/infrastructure/factories/create-product.repository";
-import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
+import type { IProductRepository } from "@/modules/product/domain/product.repository.interface";
+import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
 import { syncRentalOrderStatusFromReturns } from "@/modules/rental-order/application/services/sync-rental-order-status-from-returns";
-import { createReturnRepositoryFromUnitOfWork } from "@/modules/return/infrastructure/factories/create-return.repository";
+import type { IReturnRepository } from "@/modules/return/domain/return.repository.interface";
 import { parseRequest } from "@/shared/application/validation";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import type { RepositoryUnitOfWorkContext } from "@/shared/infrastructure/database";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
 import {
   ConflictError,
@@ -23,12 +24,31 @@ import {
 import { buildRentalInvoiceLinesFromOrder, appendOptionalInvoiceCharges } from "./build-rental-invoice-lines";
 import type { CreateRentalInvoiceService } from "./create-rental-invoice.service";
 import { generateNextInvoiceNumber } from "./generate-invoice-number";
-import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
+import type { IRentalInvoiceRepository } from "../../domain/rental-invoice.repository.interface";
+import type { IRentalInvoiceTransactionRunner } from "./rental-invoice-transaction.runner";
+
+interface GenerateRentalInvoiceFromOrderScope {
+  readonly rentalOrderRepository: IRentalOrderRepository;
+  readonly dispatchRepository: IDispatchRepository;
+  readonly returnRepository: IReturnRepository;
+  readonly rentalInvoiceRepository: IRentalInvoiceRepository;
+  readonly productRepository: IProductRepository;
+  readonly transactionRunner: IRentalInvoiceTransactionRunner;
+}
+
+export interface IGenerateRentalInvoiceFromOrderScopeFactory {
+  create(
+    context: RepositoryUnitOfWorkContext,
+    options: { userId?: string },
+  ): GenerateRentalInvoiceFromOrderScope;
+}
 
 export class GenerateRentalInvoiceFromOrderService {
   constructor(
     private readonly deps: SharedDeps,
     private readonly createRentalInvoiceService: CreateRentalInvoiceService,
+    private readonly scopeFactory: IGenerateRentalInvoiceFromOrderScopeFactory,
+    private readonly userId?: string,
   ) {}
 
   async execute(
@@ -37,13 +57,15 @@ export class GenerateRentalInvoiceFromOrderService {
     const data = parseRequest(GenerateRentalInvoiceFromOrderSchema, input);
     const rentalOrderId = toRentalOrderId(data.rentalOrderId);
 
-    const createInput = await runWithRepositoryUnitOfWork(this.deps, async (context) => {
-      const rentalOrderRepository = createRentalOrderRepositoryFromUnitOfWork(context);
-      const dispatchRepository = createDispatchRepositoryFromUnitOfWork(context);
-      const returnRepository = createReturnRepositoryFromUnitOfWork(context);
-      const rentalInvoiceRepository =
-        createRentalInvoiceRepositoryFromUnitOfWork(context);
-      const productRepository = createProductRepositoryFromUnitOfWork(context);
+    return runWithRepositoryUnitOfWork(this.deps, async (context) => {
+      const {
+        rentalOrderRepository,
+        dispatchRepository,
+        returnRepository,
+        rentalInvoiceRepository,
+        productRepository,
+        transactionRunner,
+      } = this.scopeFactory.create(context, { userId: this.userId });
 
       await syncRentalOrderStatusFromReturns(rentalOrderId, {
         dispatchRepository,
@@ -153,7 +175,7 @@ export class GenerateRentalInvoiceFromOrderService {
       const dueDate = new Date(invoiceDate);
       dueDate.setDate(dueDate.getDate() + 7);
 
-      return {
+      const createInput = {
         invoiceNumber,
         rentalOrderId: data.rentalOrderId,
         customerId: rentalOrder.customerId,
@@ -176,16 +198,18 @@ export class GenerateRentalInvoiceFromOrderService {
           lineTotal: item.lineTotal,
         })),
       };
-    });
-
-    return this.createRentalInvoiceService.execute({
-      invoiceNumber: createInput.invoiceNumber,
-      rentalOrderId: createInput.rentalOrderId,
-      customerId: String(createInput.customerId),
-      invoiceDate: createInput.invoiceDate,
-      dueDate: createInput.dueDate,
-      notes: createInput.notes,
-      items: createInput.items,
+      return this.createRentalInvoiceService.execute(
+        {
+          invoiceNumber: createInput.invoiceNumber,
+          rentalOrderId: createInput.rentalOrderId,
+          customerId: String(createInput.customerId),
+          invoiceDate: createInput.invoiceDate,
+          dueDate: createInput.dueDate,
+          notes: createInput.notes,
+          items: createInput.items,
+        },
+        transactionRunner,
+      );
     });
   }
 }

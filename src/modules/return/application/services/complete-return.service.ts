@@ -168,6 +168,7 @@ export class CompleteReturnService {
               newValues: {
                 rentalOrderItemId: item.rentalOrderItemId,
                 lostQuantity: item.lostQuantity,
+                missingQuantity: item.missingQuantity,
                 returnNumber: existing.returnNumber,
               },
             });

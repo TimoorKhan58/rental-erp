@@ -38,6 +38,27 @@ if [[ ! -f "$BACKUP_FILE" ]]; then
   exit 1
 fi
 
+CHECKSUM_FILE="${BACKUP_FILE}.sha256"
+if [[ ! -f "$CHECKSUM_FILE" ]]; then
+  echo "[restore] ERROR: Missing checksum manifest: ${CHECKSUM_FILE}" >&2
+  exit 1
+fi
+
+echo "[restore] Verifying backup integrity with ${CHECKSUM_FILE}"
+if command -v sha256sum >/dev/null 2>&1; then
+  (cd "$(dirname "$BACKUP_FILE")" && sha256sum -c "$(basename "$CHECKSUM_FILE")")
+elif command -v shasum >/dev/null 2>&1; then
+  EXPECTED="$(awk '{print $1}' "$CHECKSUM_FILE")"
+  ACTUAL="$(shasum -a 256 "$BACKUP_FILE" | awk '{print $1}')"
+  if [[ "$EXPECTED" != "$ACTUAL" ]]; then
+    echo "[restore] ERROR: Checksum mismatch for ${BACKUP_FILE}" >&2
+    exit 1
+  fi
+else
+  echo "[restore] ERROR: sha256sum/shasum is required for integrity verification" >&2
+  exit 1
+fi
+
 echo "[restore] Restoring from ${BACKUP_FILE}"
 echo "[restore] Target DATABASE_URL is set (credentials redacted)"
 echo "[restore] Press Ctrl+C within 5 seconds to abort..."

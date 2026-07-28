@@ -142,6 +142,17 @@ describe("ListRentalOrdersSchema", () => {
     expect(result.status).toBe("CONFIRMED");
   });
 
+  it("accepts reservation status filter", () => {
+    const result = ListRentalOrdersSchema.parse({
+      page: "1",
+      pageSize: "10",
+      sortOrder: "desc",
+      reservationStatus: "partial",
+    });
+
+    expect(result.reservationStatus).toBe("partial");
+  });
+
   it("accepts customer and warehouse filters", () => {
     const result = ListRentalOrdersSchema.parse({
       page: "1",
@@ -176,6 +187,17 @@ describe("ListRentalOrdersSchema", () => {
         sortOrder: "desc",
         eventFrom: "2026-07-31",
         eventTo: "2026-07-01",
+      }),
+    ).toThrow();
+  });
+
+  it("rejects invalid reservation status", () => {
+    expect(() =>
+      ListRentalOrdersSchema.parse({
+        page: "1",
+        pageSize: "10",
+        sortOrder: "desc",
+        reservationStatus: "unknown-status",
       }),
     ).toThrow();
   });

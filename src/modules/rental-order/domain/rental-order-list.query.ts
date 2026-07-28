@@ -5,6 +5,7 @@ export interface RentalOrderListQuery {
   sortOrder?: "asc" | "desc";
   search?: string;
   status?: string;
+  reservationStatus?: "not-started" | "partial" | "complete";
   customerId?: string;
   warehouseId?: string;
   /** Inclusive — keep orders with eventEndDate >= eventFrom. */

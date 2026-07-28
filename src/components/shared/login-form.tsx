@@ -15,10 +15,22 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+function sanitizeCallbackUrl(value: string | null): string {
+  if (value === null || value.length === 0) {
+    return "/";
+  }
+
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

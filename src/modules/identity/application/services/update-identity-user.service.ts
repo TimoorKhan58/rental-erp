@@ -127,7 +127,9 @@ export class UpdateIdentityUserService {
           erpUserId: updated.id,
         });
 
-        if (data.isActive === false) {
+        const roleChanged = existing.roleName !== updated.roleName;
+
+        if (data.isActive === false || roleChanged) {
           await scope.authGateway.revokeSessions(existing.authUserId);
         }
       }

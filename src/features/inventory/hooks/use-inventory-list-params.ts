@@ -28,6 +28,9 @@ export function useInventoryListParams() {
         isActiveParam === null
           ? undefined
           : isActiveParam === "true",
+      stockStatus:
+        (searchParams.get("stockStatus") as StockStatusFilter | null) ??
+        undefined,
     };
   }, [searchParams]);
 

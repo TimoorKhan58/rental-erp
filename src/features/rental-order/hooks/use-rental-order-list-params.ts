@@ -28,15 +28,32 @@ export function useRentalOrderListParams() {
         (searchParams.get("sortOrder") as ListRentalOrdersParams["sortOrder"]) ?? "desc",
       search: searchParams.get("search") ?? undefined,
       status: (statusParam as RentalOrderStatus | null) ?? undefined,
+      reservationStatus:
+        (searchParams.get("reservationStatus") as RentalReservationFilter | null) ??
+        undefined,
       customerId: searchParams.get("customerId") ?? undefined,
       warehouseId: searchParams.get("warehouseId") ?? undefined,
+      eventFrom:
+        searchParams.get("eventFrom") ??
+        searchParams.get("startDateFrom") ??
+        undefined,
+      eventTo:
+        searchParams.get("eventTo") ??
+        searchParams.get("startDateTo") ??
+        undefined,
     };
   }, [searchParams]);
 
   const reservationStatus =
     (searchParams.get("reservationStatus") as RentalReservationFilter | "all" | null) ?? "all";
-  const startDateFrom = searchParams.get("startDateFrom") ?? undefined;
-  const startDateTo = searchParams.get("startDateTo") ?? undefined;
+  const startDateFrom =
+    searchParams.get("eventFrom") ??
+    searchParams.get("startDateFrom") ??
+    undefined;
+  const startDateTo =
+    searchParams.get("eventTo") ??
+    searchParams.get("startDateTo") ??
+    undefined;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 
@@ -81,7 +98,13 @@ export function useRentalOrderListParams() {
         page: DEFAULT_PAGE,
       }),
     setDateRange: (from?: string, to?: string) =>
-      updateParams({ startDateFrom: from, startDateTo: to, page: DEFAULT_PAGE }),
+      updateParams({
+        eventFrom: from,
+        eventTo: to,
+        startDateFrom: undefined,
+        startDateTo: undefined,
+        page: DEFAULT_PAGE,
+      }),
     setSorting: (
       sortBy: RentalOrderSortField,
       sortOrder: ListRentalOrdersParams["sortOrder"] = "asc",

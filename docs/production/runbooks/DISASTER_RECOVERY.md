@@ -4,9 +4,12 @@
 
 Loss of the primary PostgreSQL instance, corrupted data volume, or failed migration that cannot be rolled forward.
 
-## RTO / RPO (set by ops)
+## RTO / RPO
 
-Document target Recovery Time Objective and Recovery Point Objective for your deployment. Defaults assumed by tooling: last successful compressed backup in `BACKUP_DIR` (or off-host copy).
+- **RPO target:** ≤ 24 hours
+- **RTO target:** ≤ 4 hours
+
+These are initial operational targets and must be reviewed quarterly against restore drill evidence.
 
 ## Checklist
 

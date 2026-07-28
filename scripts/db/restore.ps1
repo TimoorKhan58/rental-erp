@@ -34,6 +34,22 @@ if (-not (Test-Path $BackupFile)) {
   throw "[restore] Backup file not found: $BackupFile"
 }
 
+$ChecksumFile = "$BackupFile.sha256"
+if (-not (Test-Path $ChecksumFile)) {
+  throw "[restore] Missing checksum manifest: $ChecksumFile"
+}
+
+Write-Host "[restore] Verifying backup integrity with $ChecksumFile"
+$ExpectedLine = (Get-Content -Path $ChecksumFile -TotalCount 1).Trim()
+if (-not $ExpectedLine) {
+  throw "[restore] Checksum manifest is empty: $ChecksumFile"
+}
+$ExpectedHash = ($ExpectedLine -split "\s+")[0].ToLower()
+$ActualHash = (Get-FileHash -Algorithm SHA256 -Path $BackupFile).Hash.ToLower()
+if ($ExpectedHash -ne $ActualHash) {
+  throw "[restore] Checksum mismatch for $BackupFile"
+}
+
 Write-Host "[restore] Restoring from $BackupFile"
 Write-Host "[restore] Press Ctrl+C within 5 seconds to abort..."
 Start-Sleep -Seconds 5

@@ -38,10 +38,15 @@ export class CreateRentalInvoiceService {
     private readonly transactionRunner: IRentalInvoiceTransactionRunner,
   ) {}
 
-  async execute(input: CreateRentalInvoiceInput): Promise<RentalInvoiceDto> {
+  async execute(
+    input: CreateRentalInvoiceInput,
+    transactionRunnerOverride?: IRentalInvoiceTransactionRunner,
+  ): Promise<RentalInvoiceDto> {
     const data = parseRequest(CreateRentalInvoiceSchema, input);
+    const transactionRunner =
+      transactionRunnerOverride ?? this.transactionRunner;
 
-    return this.transactionRunner.run(
+    return transactionRunner.run(
       async ({
         rentalInvoiceRepository,
         rentalOrderInvoiceLookup,

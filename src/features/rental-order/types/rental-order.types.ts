@@ -64,6 +64,7 @@ export type ListRentalOrdersParams = {
   sortOrder?: "asc" | "desc";
   search?: string;
   status?: RentalOrderStatus;
+  reservationStatus?: RentalReservationFilter;
   customerId?: string;
   warehouseId?: string;
   /** ISO date — include orders overlapping this range start. */

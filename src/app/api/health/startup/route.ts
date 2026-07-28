@@ -11,6 +11,10 @@ export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
   const snapshot = checkStartupHealth();
+  const sanitizedChecks = {
+    configuration: { ok: snapshot.checks.configuration.ok },
+    prisma: { ok: snapshot.checks.prisma.ok },
+  };
 
   return NextResponse.json(
     {
@@ -19,7 +23,7 @@ export async function GET(): Promise<NextResponse> {
       service: snapshot.service,
       timestamp: snapshot.timestamp,
       uptimeSeconds: snapshot.uptimeSeconds,
-      checks: snapshot.checks,
+      checks: sanitizedChecks,
     },
     {
       status: snapshot.ok ? 200 : 503,

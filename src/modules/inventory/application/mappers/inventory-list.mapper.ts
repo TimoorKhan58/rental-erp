@@ -14,5 +14,6 @@ export function toInventoryListQuery(
     productId: input.productId,
     warehouseId: input.warehouseId,
     isActive: input.isActive,
+    stockStatus: input.stockStatus,
   };
 }

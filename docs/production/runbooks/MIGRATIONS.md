@@ -12,6 +12,7 @@ Apply committed Prisma migrations safely to staging or production.
 | Generate client | `npm run db:generate` |
 | Check status | `npm run db:status` |
 | Deploy | `npm run db:migrate:deploy` |
+| Safe deploy (recommended) | `npm run db:migrate:safe` |
 
 Local development only: `npm run db:migrate` (`prisma migrate dev`).
 
@@ -24,6 +25,14 @@ Local development only: `npm run db:migrate` (`prisma migrate dev`).
 5. Confirm status is up to date
 6. Deploy application revision that expects the new schema
 7. Confirm `GET /api/health/ready`
+
+Preferred guarded flow:
+
+```bash
+npm run db:migrate:safe
+```
+
+This enforces backup + integrity manifest + migrate deploy + migration status verification.
 
 Docker: use the migrate image target / one-shot migrate service from Phase 8-002 docs (`docs/production/DOCKER.md`) with the same `migrate deploy` semantics.
 

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { Return } from "@/modules/return/domain/return.entity";
+import type { DispatchId, ReturnInspectionId } from "@/shared/domain/ids";
 
 import { InMemoryReturnRepository } from "./helpers/in-memory-return.repository";
 import {
@@ -29,6 +31,21 @@ describe("InMemoryReturnRepository", () => {
 
     expect(found).toHaveLength(1);
     expect(found[0]?.id).toBe(RETURN_ID);
+  });
+
+  it("finds by multiple dispatch ids", async () => {
+    const repository = new InMemoryReturnRepository();
+    const first = buildReturnEntity();
+    const second = Return.reconstitute({
+      ...buildReceivedReturnEntity().toProps(),
+      id: "ee0e8400-e29b-41d4-a716-446655440001" as ReturnInspectionId,
+      dispatchId: "cc0e8400-e29b-41d4-a716-446655440001" as DispatchId,
+    });
+    repository.seed([first, second]);
+
+    const found = await repository.findByDispatchIds([first.dispatchId, second.dispatchId]);
+
+    expect(found).toHaveLength(2);
   });
 
   it("replaces items on draft update", async () => {
