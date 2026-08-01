@@ -4,7 +4,7 @@ import { PageContainer, PageHeader } from "@/components/layout";
 import { LoadingState, AccessDeniedState, QueryErrorState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { SettingsSubNav } from "../components";
-import { ProfileForm } from "../forms";
+import { EmailVerificationPanel, ProfileForm } from "../forms";
 import {
   useProfile,
   useSettingsPermissions,
@@ -67,12 +67,15 @@ export function SettingsProfilePage() {
         ]}
       />
       <SettingsSubNav />
-      <ProfileForm
-        profile={profile}
-        canUpdate={canUpdateProfile}
-        isSubmitting={updateProfile.isPending}
-        onSubmit={handleSubmit}
-      />
+      <div className="space-y-6">
+        <ProfileForm
+          profile={profile}
+          canUpdate={canUpdateProfile}
+          isSubmitting={updateProfile.isPending}
+          onSubmit={handleSubmit}
+        />
+        <EmailVerificationPanel />
+      </div>
     </PageContainer>
   );
 }

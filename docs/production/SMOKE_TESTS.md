@@ -62,6 +62,25 @@ Sign in as an admin (or role with required permissions). Record pass/fail and no
 
 If time-boxed, **must pass**: P1, P2, P5, A1, A2, B1, B8, B13, B17, B19.
 
+### Phase 20 RC1 deployment smoke (ops + core workflow)
+
+| # | Area | Steps | Expected | ☐ |
+|---|------|-------|----------|---|
+| R1 | App start | Compose `ps` / process up | `app` healthy (readiness) | |
+| R2 | Migrations | `migrate` profile / `db:status` | All applied | |
+| R3 | Better Auth | Login page loads; session cookie set after login | Auth initializes | |
+| R4 | Login | Valid credentials | Dashboard | |
+| R5 | Dashboard | Open home | Loads without 5xx | |
+| R6 | Inventory | Open inventory | Page loads | |
+| R7 | Customer CRUD | Create or edit customer | Persists | |
+| R8 | Rental order | Create/open rental order | Workflow UI available | |
+| R9 | Dispatch | Open dispatch linked to order | Loads | |
+| R10 | Return | Open return / inspection | Loads | |
+| R11 | Reporting | Open Reports hub + one report | Renders | |
+| R12 | Health | `/api/health` + `/api/health/ready` | 200 | |
+| R13 | Metrics | `/api/metrics` with bearer | 200 Prometheus **or** disabled as configured | |
+| R14 | Graceful stop | `compose stop app` / recreate | Exits within ~30s; readiness recovers after start | |
+
 ---
 
 ## Sign-off

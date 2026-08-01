@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesReservationFilter, matchesStartDateRange } from "../mappers";
 import {
   RentalOrderReservationFilterChips,
   RentalOrderStatusFilterChips,
@@ -90,14 +89,7 @@ export function RentalOrderListTable({
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-    return items.filter(
-      (item) =>
-        matchesReservationFilter(item, reservationStatus) &&
-        matchesStartDateRange(item.startDate, startDateFrom, startDateTo),
-    );
-  }, [data?.items, reservationStatus, startDateFrom, startDateTo]);
+  const rows = data?.items ?? [];
 
   const statusFilterValue = params.status ?? "all";
 
@@ -119,7 +111,6 @@ export function RentalOrderListTable({
 
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() });
-    void refetch();
   };
 
   const hasFilters =

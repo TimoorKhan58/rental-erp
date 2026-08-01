@@ -22,6 +22,18 @@ describe("security headers", () => {
     expect(keys).toContain("Cross-Origin-Opener-Policy");
     expect(keys).toContain("Cross-Origin-Resource-Policy");
     expect(keys).toContain("Strict-Transport-Security");
+    expect(keys).toContain("X-Frame-Options");
+    expect(keys).toContain("X-Content-Type-Options");
+    expect(keys).toContain("Referrer-Policy");
+    expect(keys).toContain("Permissions-Policy");
+  });
+
+  it("sets frame deny and nosniff", () => {
+    const headers = Object.fromEntries(
+      buildSecurityHeaders({ enableHsts: false }).map((h) => [h.key, h.value]),
+    );
+    expect(headers["X-Frame-Options"]).toBe("DENY");
+    expect(headers["X-Content-Type-Options"]).toBe("nosniff");
   });
 });
 

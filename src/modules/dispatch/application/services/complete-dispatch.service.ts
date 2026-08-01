@@ -89,13 +89,26 @@ export class CompleteDispatchService {
           { dispatchedAt: dispatched.dispatchedAt },
         );
 
+        const inventories = await inventoryRepository.findByProductsAndWarehouse(
+          updated.items.map((item) => toProductId(item.productId)),
+          rentalOrder.warehouseId,
+        );
+        const inventoryByProductId = new Map(
+          inventories.map((inventory) => [
+            inventory.productId,
+            {
+              id: inventory.id,
+              reservedQuantity: inventory.reservedQuantity,
+            },
+          ]),
+        );
+
         for (const item of updated.items) {
-          const inventory = await inventoryRepository.findByProductAndWarehouse(
+          const inventory = inventoryByProductId.get(
             toProductId(item.productId),
-            rentalOrder.warehouseId,
           );
 
-          if (inventory === null) {
+          if (inventory === undefined) {
             throw new NotFoundError({
               message: "Inventory not found for product and warehouse",
               details: {
@@ -128,6 +141,7 @@ export class CompleteDispatchService {
               referenceId: rentalOrder.id,
               remarks: `Released reservation for dispatch of rental order ${rentalOrder.orderNumber}`,
             });
+            inventory.reservedQuantity -= releaseQuantity;
           }
 
           await executeCreateStockMovementInScope(movementScope, {
@@ -146,6 +160,19 @@ export class CompleteDispatchService {
           completed.status,
           { completedAt: completed.completedAt },
         );
+
+        // Move rental order onto rent once stock has left the warehouse.
+        // ON_RENT remains eligible for further partial dispatches.
+        if (
+          rentalOrder.status === "CONFIRMED" ||
+          rentalOrder.status === "RESERVED" ||
+          rentalOrder.status === "DISPATCHED"
+        ) {
+          await rentalOrderRepository.updateStatus(
+            rentalOrder.id,
+            "ON_RENT",
+          );
+        }
 
         await auditLogger.log({
           module: DISPATCH_MODULE,

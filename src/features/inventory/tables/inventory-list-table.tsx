@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import { DataTableShell } from "@/components/shared";
@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query";
-import { matchesStockStatusFilter } from "../mappers";
 import { InventoryStockFilterChips } from "../components";
 import {
   useInventoryFilterOptions,
@@ -84,10 +83,7 @@ export function InventoryListTable({
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-    return items.filter((item) => matchesStockStatusFilter(item, stockStatus));
-  }, [data?.items, stockStatus]);
+  const rows = data?.items ?? [];
 
   const columns = getInventoryTableColumns({
     params,
@@ -107,7 +103,6 @@ export function InventoryListTable({
 
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() });
-    void refetch();
   };
 
   const hasFilters =

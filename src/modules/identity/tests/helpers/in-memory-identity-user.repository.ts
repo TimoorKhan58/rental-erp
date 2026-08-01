@@ -20,6 +20,7 @@ import {
   MANAGER_ROLE_ID,
   OWNER_ROLE_ID,
   VIEWER_ROLE_ID,
+  WORKER_ROLE_ID,
   buildIdentityUserEntity,
 } from "./identity-user.fixtures";
 
@@ -156,6 +157,7 @@ export class InMemoryRoleRepository implements IRoleRepository {
   private readonly roles: Role[] = [
     Role.reconstitute({ id: OWNER_ROLE_ID, name: USER_ROLES.OWNER }),
     Role.reconstitute({ id: MANAGER_ROLE_ID, name: USER_ROLES.MANAGER }),
+    Role.reconstitute({ id: WORKER_ROLE_ID, name: USER_ROLES.WORKER }),
     Role.reconstitute({ id: VIEWER_ROLE_ID, name: USER_ROLES.VIEWER }),
   ];
 

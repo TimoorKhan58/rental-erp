@@ -20,6 +20,9 @@ export async function GET(request: NextRequest) {
     response.headers.append("set-cookie", cookie);
   }
 
+  response.headers.set("Cache-Control", "no-store, private");
+  response.headers.set("Pragma", "no-cache");
+
   return response;
 }
 

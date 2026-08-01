@@ -15,6 +15,23 @@ interface StoredRentalOrder {
   record: ReturnType<RentalOrder["toProps"]>;
 }
 
+function deriveReservationStatus(order: RentalOrder): "not-started" | "partial" | "complete" {
+  const totalReserved = order.items.reduce(
+    (sum, item) => sum + item.reservedQuantity,
+    0,
+  );
+
+  if (totalReserved <= 0) {
+    return "not-started";
+  }
+
+  if (order.items.every((item) => item.reservedQuantity >= item.quantity)) {
+    return "complete";
+  }
+
+  return "partial";
+}
+
 export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
   private readonly store = new Map<string, StoredRentalOrder>();
 
@@ -86,6 +103,12 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     if (query.eventTo !== undefined) {
       const eventTo = query.eventTo;
       items = items.filter((item) => item.startDate.getTime() <= eventTo.getTime());
+    }
+
+    if (query.reservationStatus !== undefined) {
+      items = items.filter(
+        (item) => deriveReservationStatus(item) === query.reservationStatus,
+      );
     }
 
     if (query.search) {

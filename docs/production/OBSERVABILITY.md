@@ -29,7 +29,7 @@ Domain **audit logs** (database) remain separate from application structured log
 | Probe | Path | Checks | Failure |
 |-------|------|--------|---------|
 | Liveness | `GET /api/health` or `/api/health/live` | Process up | 5xx only if process broken |
-| Readiness | `GET /api/health/ready` | Config + Prisma client + DB (`SELECT 1` + migrations) | 503 |
+| Readiness | `GET /api/health/ready` | Config + Prisma client + DB (`SELECT 1` + migrations); fails if migration metadata check fails | 503 |
 | Startup | `GET /api/health/startup` | Config + Prisma client (no DB round-trip) | 503 |
 
 Keep probes lightweight. Do not put business logic behind health routes.
@@ -45,6 +45,8 @@ Included series (process-local):
 - `process_uptime_seconds`, memory/heap gauges, CPU time, `nodejs_eventloop_lag_seconds`
 
 Optional auth: `METRICS_BEARER_TOKEN` → `Authorization: Bearer <token>`.
+
+**Production / staging:** when `ENABLE_METRICS=true` (default), `METRICS_BEARER_TOKEN` is **required** — the process fails fast at startup if it is empty. Generate with `openssl rand -hex 32`, or set `ENABLE_METRICS=false` until scrapers are ready. The Compose `migrate` profile forces `ENABLE_METRICS=false` so migrations are not blocked by an empty metrics token.
 
 **Note:** Counters are per Node process. Behind multiple replicas, scrape each instance or use a pull agent sidecar.
 

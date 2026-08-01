@@ -155,9 +155,17 @@ npm run docker:prod:down
 
 If the database is external:
 
-1. Set `DATABASE_URL` in `.env.production` to the managed instance.
-2. Remove or comment out the `db` service and `depends_on` for `db` in a private override file (do not commit secrets).
-3. Keep using the `migrate` profile against the managed URL.
+1. Set `DATABASE_URL` in `.env.production` to the managed instance (`sslmode=require` as needed).
+2. Use the managed-db override (Compose **v2.24+**):
+
+```bash
+cp docker-compose.managed-db.override.example.yml docker-compose.managed-db.override.yml
+docker compose -f docker-compose.prod.yml -f docker-compose.managed-db.override.yml \
+  --env-file .env.production up --build -d
+```
+
+3. Or copy `docker-compose.prod.yml` privately and remove the `db` service plus every `depends_on: db` block.
+4. Keep using the `migrate` profile against the managed URL.
 
 ---
 
@@ -182,18 +190,37 @@ Do **not** run `migrate dev` against production databases.
 
 ## Health Checks
 
-- HTTP: `GET /api/health` → `{ status: "ok", service: "rental-erp", timestamp }`
+| Endpoint | Purpose | Used by |
+|----------|---------|---------|
+| `GET /api/health` | Liveness (process up) | Dockerfile `HEALTHCHECK`, Nginx edge probe |
+| `GET /api/health/live` | Liveness alias | Ops |
+| `GET /api/health/ready` | Readiness (config + DB + migrations) | **Compose `app` healthcheck** (gates Nginx) |
+| `GET /api/health/startup` | Config + Prisma client | Ops |
+
 - Unauthenticated; excluded from business RBAC
-- Wired into Dockerfile `HEALTHCHECK` and Compose `healthcheck` blocks
 - Postgres uses `pg_isready`
+- App container `stop_grace_period: 30s` allows Next.js to finish in-flight work on SIGTERM
 
 Manual check:
 
 ```bash
 curl -s http://localhost:3000/api/health
+curl -s http://localhost:3000/api/health/ready
 docker inspect --format='{{json .State.Health}}' <container>
 ```
 
+### Uploads volume ownership
+
+The production stack runs a one-shot `uploads-init` service that `chown`s the `app_uploads` volume to uid/gid `1001` (non-root `nextjs` user) before `app` starts. If you still see `permission denied` on uploads, recreate the volume after stopping the stack (data loss for files in that volume).
+
+### Lab TLS certificates
+
+```bash
+npm run certs:lab
+# or: NGINX_SERVER_NAME=erp.example.com npm run certs:lab
+```
+
+Self-signed only — replace with a real CA certificate before go-live. Nginx refuses to start without `nginx/certs/fullchain.pem` and `privkey.pem`.
 ---
 
 ## Networking & Volumes
@@ -214,7 +241,8 @@ docker inspect --format='{{json .State.Health}}' <container>
 |----------|---------|
 | Network `rental-erp` | Internal bridge |
 | Volume `postgres_data` | DB persistence (if self-hosted) |
-| Volume `app_uploads` | Upload persistence |
+| Volume `app_uploads` | Upload persistence (chowned by `uploads-init`) |
+| Service `uploads-init` | One-shot uid 1001 ownership for uploads |
 
 Postgres ports are published in **dev** only. The production example keeps Postgres internal.
 
@@ -251,7 +279,10 @@ docker compose build --no-cache
 | `Invalid environment configuration` | Missing/short `BETTER_AUTH_SECRET` or empty `DATABASE_URL` | Fix `.env.docker` / `.env.production` |
 | App unhealthy / connection refused to DB | DB not ready or wrong host | Use hostname `db` inside Compose; wait for health |
 | Prisma client missing after bind mount | Host overwrote `src/generated` | Entrypoint runs `prisma generate`; restart app |
-| `permission denied` on uploads | Volume ownership | App runs as uid 1001; recreate volume if needed |
+| `permission denied` on uploads | Volume ownership | `uploads-init` chowns to uid 1001; recreate volume if needed |
+| App exits: `METRICS_BEARER_TOKEN is required` | Metrics enabled without token | Set token or `ENABLE_METRICS=false` |
+| Nginx exits immediately | Missing TLS PEMs | Place certs or run `npm run certs:lab` |
+| `npm run docker:prod` missing vars | Env file not loaded | Scripts now pass `--env-file .env.production`; ensure the file exists |
 | CRLF script errors on Windows | Shell scripts checked out as CRLF | `.gitattributes` forces LF for `scripts/*.sh`; re-checkout scripts |
 | Docker Desktop engine / WSL errors | Daemon not running or WSL disk issue | Start Docker Desktop; if VHDX errors persist, restart Docker Desktop/WSL and retry |
 | Port 3000 / 5432 in use | Host conflict | Set `APP_PORT` / `POSTGRES_PORT` in env file (e.g. `POSTGRES_PORT=5433`) |

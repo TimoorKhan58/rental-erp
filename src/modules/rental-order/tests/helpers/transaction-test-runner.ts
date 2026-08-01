@@ -1,5 +1,6 @@
 import type { RentalOrderWriteScope } from "@/modules/rental-order/application/services/rental-order-transaction.runner";
 import type { IRentalOrderTransactionRunner } from "@/modules/rental-order/application/services/rental-order-transaction.runner";
+import type { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
 
@@ -16,6 +17,7 @@ export function createPassThroughTransactionRunner(
 
 export function createRollbackTransactionRunner(
   rentalOrderRepository: InMemoryRentalOrderRepository,
+  dispatchRepository: InMemoryDispatchRepository,
   inventoryRepository: InMemoryInventoryRepository,
   stockMovementRepository: InMemoryStockMovementRepository,
   auditLogger: MockAuditLogger,
@@ -24,6 +26,7 @@ export function createRollbackTransactionRunner(
   return {
     run: async (operation) => {
       const rentalOrderSnapshot = rentalOrderRepository.snapshot();
+      const dispatchSnapshot = dispatchRepository.snapshot();
       const inventorySnapshot = inventoryRepository.snapshot();
       const stockMovementSnapshot = stockMovementRepository.snapshot();
       const auditSnapshot = auditLogger.snapshot();
@@ -31,6 +34,7 @@ export function createRollbackTransactionRunner(
       try {
         return await operation({
           rentalOrderRepository,
+          dispatchRepository,
           inventoryRepository,
           stockMovementRepository,
           auditLogger,
@@ -38,6 +42,7 @@ export function createRollbackTransactionRunner(
         });
       } catch (error) {
         rentalOrderRepository.restore(rentalOrderSnapshot);
+        dispatchRepository.restore(dispatchSnapshot);
         inventoryRepository.restore(inventorySnapshot);
         stockMovementRepository.restore(stockMovementSnapshot);
         auditLogger.restore(auditSnapshot);

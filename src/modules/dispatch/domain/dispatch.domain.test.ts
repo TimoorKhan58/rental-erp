@@ -230,10 +230,52 @@ describe("Dispatch rules", () => {
     ).toThrow(DispatchInvalidItemError);
   });
 
+  it("rejects quantity exceeding remaining reserved after prior dispatches", () => {
+    expect(() =>
+      validateDispatchItemsAgainstRentalOrder(
+        [{ productId: PRODUCT_ID, rentalOrderItemId: ITEM_ID, quantity: 6 }],
+        [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 10,
+            dailyRate: 150,
+            reservedQuantity: 10,
+            ...LINE_PERIOD,
+          },
+        ],
+        new Map([[ITEM_ID, 5]]),
+      ),
+    ).toThrow(DispatchInvalidItemError);
+  });
+
+  it("accepts remaining reserved quantity after prior dispatches", () => {
+    expect(() =>
+      validateDispatchItemsAgainstRentalOrder(
+        [{ productId: PRODUCT_ID, rentalOrderItemId: ITEM_ID, quantity: 5 }],
+        [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 10,
+            dailyRate: 150,
+            reservedQuantity: 10,
+            ...LINE_PERIOD,
+          },
+        ],
+        new Map([[ITEM_ID, 5]]),
+      ),
+    ).not.toThrow();
+  });
+
   it("rejects ineligible rental order status", () => {
     expect(() => assertRentalOrderEligibleForDispatch("DRAFT")).toThrow(
       DispatchInvalidItemError,
     );
+  });
+
+  it("allows ON_RENT rental order for further partial dispatch", () => {
+    expect(() => assertRentalOrderEligibleForDispatch("ON_RENT")).not.toThrow();
   });
 });
 

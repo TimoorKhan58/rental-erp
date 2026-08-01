@@ -106,13 +106,20 @@ export class ReceivePurchaseOrderService {
           },
         );
 
+        const inventories = await inventoryRepository.findByProductsAndWarehouse(
+          data.items.map((item) => toProductId(item.productId)),
+          existing.warehouseId,
+        );
+        const inventoryByProductId = new Map(
+          inventories.map((inventory) => [inventory.productId, inventory]),
+        );
+
         for (const receiveItem of data.items) {
-          const inventory = await inventoryRepository.findByProductAndWarehouse(
+          const inventory = inventoryByProductId.get(
             toProductId(receiveItem.productId),
-            existing.warehouseId,
           );
 
-          if (inventory === null) {
+          if (inventory === undefined) {
             throw new NotFoundError({
               message: "Inventory not found for product and warehouse",
               details: {

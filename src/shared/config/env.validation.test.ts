@@ -25,6 +25,7 @@ describe("environment validation", () => {
       expect(result.data.APP_ENV).toBe("local");
       expect(result.data.SECURE_COOKIES).toBe(false);
       expect(result.data.ENABLE_SECURITY_HEADERS).toBe(false);
+      expect(result.data.AUTH_COOKIE_CACHE_MAX_AGE_SECONDS).toBe(0);
     }
   });
 
@@ -108,6 +109,7 @@ describe("environment validation", () => {
       BETTER_AUTH_URL: "https://erp.example.com",
       DATABASE_URL: "postgresql://user:pass@db:5432/rental_erp",
       BETTER_AUTH_SECRET: "prod-unique-secret-value-32chars-ok!!",
+      METRICS_BEARER_TOKEN: "prod-metrics-token",
     });
 
     expect(result.success).toBe(true);
@@ -119,5 +121,36 @@ describe("environment validation", () => {
       expect(result.data.ENABLE_SECURITY_HEADERS).toBe(true);
       expect(result.data.ENABLE_HSTS).toBe(true);
     }
+  });
+
+  it("requires metrics bearer token in hardened env when metrics enabled", () => {
+    const result = parseEnvResult({
+      NODE_ENV: "production",
+      APP_ENV: "production",
+      APP_URL: "https://erp.example.com",
+      BETTER_AUTH_URL: "https://erp.example.com",
+      DATABASE_URL: "postgresql://user:pass@db:5432/rental_erp",
+      BETTER_AUTH_SECRET: "prod-unique-secret-value-32chars-ok!!",
+      ENABLE_METRICS: "true",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.message).toContain("METRICS_BEARER_TOKEN");
+    }
+  });
+
+  it("allows hardened env metrics when explicitly disabled", () => {
+    const result = parseEnvResult({
+      NODE_ENV: "production",
+      APP_ENV: "production",
+      APP_URL: "https://erp.example.com",
+      BETTER_AUTH_URL: "https://erp.example.com",
+      DATABASE_URL: "postgresql://user:pass@db:5432/rental_erp",
+      BETTER_AUTH_SECRET: "prod-unique-secret-value-32chars-ok!!",
+      ENABLE_METRICS: "false",
+    });
+
+    expect(result.success).toBe(true);
   });
 });

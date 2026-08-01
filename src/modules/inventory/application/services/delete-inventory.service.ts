@@ -20,25 +20,30 @@ export class DeleteInventoryService {
     const inventoryId = toInventoryId(id);
 
     await this.transactionRunner.run(async ({ repository, auditLogger }) => {
-      const existing = await repository.findById(inventoryId);
+      const existing = await repository.findByIdForUpdate(inventoryId);
 
       if (existing === null) {
+        await repository.unlockInventory(inventoryId);
         throw new NotFoundError({
           message: "Inventory not found",
           details: { id },
         });
       }
 
-      await repository.delete(inventoryId);
+      try {
+        await repository.delete(inventoryId);
 
-      await auditLogger.log({
-        module: INVENTORY_MODULE,
-        entityName: INVENTORY_ENTITY_NAME,
-        recordId: existing.id,
-        action: "DELETE",
-        status: "SUCCESS",
-        oldValues: toInventoryAuditValues(existing),
-      });
+        await auditLogger.log({
+          module: INVENTORY_MODULE,
+          entityName: INVENTORY_ENTITY_NAME,
+          recordId: existing.id,
+          action: "DELETE",
+          status: "SUCCESS",
+          oldValues: toInventoryAuditValues(existing),
+        });
+      } finally {
+        await repository.unlockInventory(inventoryId);
+      }
     });
   }
 }

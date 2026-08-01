@@ -57,7 +57,6 @@ export async function handleCreatePayment(
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
   const body = await request.json();
-  const createInput = parseRequest(CreatePaymentSchema, body);
 
   const result = await runPaymentApiRoute({
     request,
@@ -65,8 +64,10 @@ export async function handleCreatePayment(
     httpMethod: "POST",
     permission: PERMISSIONS.payments.create,
     resolveServices,
-    handler: async (_ctx, services) =>
-      services.createPayment.execute(createInput),
+    handler: async (_ctx, services) => {
+      const createInput = parseRequest(CreatePaymentSchema, body);
+      return services.createPayment.execute(createInput);
+    },
   });
 
   if (result.status === 200 && "data" in result.body) {

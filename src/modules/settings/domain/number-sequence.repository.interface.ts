@@ -4,6 +4,7 @@ import type { NumberSequence } from "./number-sequence.entity";
 import type { DocumentType } from "./settings.constants";
 import type {
   GeneratedNumberResult,
+  GenerateNextNumberOptions,
   UpdateNumberSequenceData,
 } from "./number-sequence.types";
 
@@ -15,5 +16,8 @@ export interface INumberSequenceRepository {
     id: DocumentSequenceId,
     data: UpdateNumberSequenceData,
   ): Promise<NumberSequence>;
-  generateNextNumber(documentType: DocumentType): Promise<GeneratedNumberResult>;
+  generateNextNumber(
+    documentType: DocumentType,
+    options?: GenerateNextNumberOptions,
+  ): Promise<GeneratedNumberResult>;
 }

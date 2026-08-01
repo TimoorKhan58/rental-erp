@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { LoginForm } from "@/components/shared/login-form";
 import { getServerSession } from "@/lib/auth/session";
+import { resolveActiveSessionUser } from "@/shared/infrastructure/auth";
 import { getOrganizationName } from "@/lib/branding/get-organization-name";
 
 export default async function LoginPage() {
@@ -10,6 +11,13 @@ export default async function LoginPage() {
   const organizationName = await getOrganizationName();
 
   if (session) {
+    const activeUser = await resolveActiveSessionUser(session);
+
+    if (activeUser === null) {
+      // Clear stale inactive/unlinked session via the route handler.
+      redirect("/logout");
+    }
+
     redirect("/");
   }
 

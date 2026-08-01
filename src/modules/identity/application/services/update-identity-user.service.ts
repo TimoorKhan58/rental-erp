@@ -14,8 +14,10 @@ import {
 import type { IIdentityTransactionRunner } from "./identity-transaction.runner";
 import type { UserId } from "@/shared/domain/ids";
 import { parseRequest } from "@/shared/application/validation";
+import { isUserRole } from "@/shared/application/authorization/types";
 import {
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -23,7 +25,11 @@ import {
   IdentityUserInvariantError,
   IdentityUserStateError,
 } from "@/modules/identity/domain/identity-user.errors";
-import { assertCanDeactivateUser } from "@/modules/identity/domain/identity-user.rules";
+import {
+  assertCanAdministerOwnerTarget,
+  assertCanChangeUserRole,
+  assertCanDeactivateUser,
+} from "@/modules/identity/domain/identity-user.rules";
 import { USER_ROLES } from "@/constants/roles";
 
 export class UpdateIdentityUserService {
@@ -72,28 +78,82 @@ export class UpdateIdentityUserService {
           });
         }
 
-        roleId = role.id;
-        roleName = role.name;
-      }
+        if (scope.actorRole === undefined || !isUserRole(scope.actorRole)) {
+          throw new ForbiddenError({
+            message: "Authenticated actor role is required to update roles",
+          });
+        }
 
-      if (data.isActive === false && existing.isActive) {
         const activeOwnerCount = await scope.userRepository.countActiveByRole(
           USER_ROLES.OWNER,
         );
 
         try {
-          assertCanDeactivateUser({
-            targetUserId: existing.id,
-            actorUserId: scope.actorUserId ?? "",
-            targetRole: existing.roleName,
+          assertCanChangeUserRole({
+            actorRole: scope.actorRole,
+            currentRole: existing.roleName,
+            nextRole: data.role,
             activeOwnerCount,
           });
         } catch (error) {
           if (error instanceof IdentityUserStateError) {
-            throw new UnprocessableError({ message: error.message });
+            throw new ForbiddenError({ message: error.message });
           }
 
           throw error;
+        }
+
+        roleId = role.id;
+        roleName = role.name;
+      }
+
+      if (data.isActive !== undefined && data.isActive !== existing.isActive) {
+        if (scope.actorRole === undefined || !isUserRole(scope.actorRole)) {
+          throw new ForbiddenError({
+            message: "Authenticated actor role is required to change user status",
+          });
+        }
+
+        try {
+          assertCanAdministerOwnerTarget({
+            actorRole: scope.actorRole,
+            targetRole: existing.roleName,
+            actionDescription: data.isActive
+              ? "activate an owner account"
+              : "deactivate an owner account",
+          });
+        } catch (error) {
+          if (error instanceof IdentityUserStateError) {
+            throw new ForbiddenError({ message: error.message });
+          }
+
+          throw error;
+        }
+
+        if (data.isActive === false && existing.isActive) {
+          const activeOwnerCount = await scope.userRepository.countActiveByRole(
+            USER_ROLES.OWNER,
+          );
+
+          try {
+            assertCanDeactivateUser({
+              targetUserId: existing.id,
+              actorUserId: scope.actorUserId ?? "",
+              actorRole: scope.actorRole,
+              targetRole: existing.roleName,
+              activeOwnerCount,
+            });
+          } catch (error) {
+            if (error instanceof IdentityUserStateError) {
+              if (error.message.startsWith("Only owners")) {
+                throw new ForbiddenError({ message: error.message });
+              }
+
+              throw new UnprocessableError({ message: error.message });
+            }
+
+            throw error;
+          }
         }
       }
 
@@ -127,7 +187,9 @@ export class UpdateIdentityUserService {
           erpUserId: updated.id,
         });
 
-        if (data.isActive === false) {
+        const roleChanged = existing.roleName !== updated.roleName;
+
+        if (data.isActive === false || roleChanged) {
           await scope.authGateway.revokeSessions(existing.authUserId);
         }
       }

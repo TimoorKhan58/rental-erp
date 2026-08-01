@@ -1,7 +1,8 @@
 import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
-import { Dispatch } from "@/modules/dispatch/domain";
 import {
+  buildPriorDispatchedQuantities,
+  Dispatch,
   DispatchInvariantError,
 } from "@/modules/dispatch/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -87,8 +88,6 @@ export class CreateDispatchService {
           });
         }
 
-        validateRentalOrderForDispatch(rentalOrder, createData.items);
-
         const existing = await dispatchRepository.findByDispatchNumber(
           createData.dispatchNumber,
         );
@@ -99,6 +98,19 @@ export class CreateDispatchService {
             details: { dispatchNumber: createData.dispatchNumber },
           });
         }
+
+        const priorDispatches = await dispatchRepository.findPaged({
+          page: 1,
+          pageSize: 100,
+          rentalOrderId: rentalOrder.id,
+          sortOrder: "desc",
+        });
+
+        validateRentalOrderForDispatch(
+          rentalOrder,
+          createData.items,
+          buildPriorDispatchedQuantities(priorDispatches.items),
+        );
 
         const dispatch = await dispatchRepository.create(createData);
 

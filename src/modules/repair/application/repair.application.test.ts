@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 
 import { buildReservedRentalOrderEntity } from "@/modules/dispatch/tests/helpers/dispatch.fixtures";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
@@ -91,7 +92,7 @@ describe("CreateRepairService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -119,7 +120,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -138,7 +139,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -162,7 +163,7 @@ describe("CreateRepairService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -188,7 +189,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -211,7 +212,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -234,7 +235,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         undefined,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -259,7 +260,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -282,7 +283,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -308,7 +309,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -334,7 +335,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -358,7 +359,7 @@ describe("CreateRepairService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -924,7 +925,7 @@ describe("CreateRepairService prior repair aggregation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -961,7 +962,7 @@ describe("CreateRepairService prior repair aggregation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute({
@@ -999,7 +1000,7 @@ describe("CreateRepairService prior repair aggregation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute({
@@ -1027,7 +1028,7 @@ describe("CreateRepairService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -1052,7 +1053,7 @@ describe("CreateRepairService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(

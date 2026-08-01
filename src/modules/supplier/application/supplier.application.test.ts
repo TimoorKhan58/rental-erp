@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 
 import { CreateSupplierService } from "@/modules/supplier/application/services/create-supplier.service";
 import { DeleteSupplierService } from "@/modules/supplier/application/services/delete-supplier.service";
@@ -32,7 +33,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute(VALID_CREATE_INPUT);
@@ -47,7 +48,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(
@@ -61,7 +62,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -74,7 +75,7 @@ describe("CreateSupplierService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -211,7 +212,7 @@ describe("Supplier application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -259,7 +260,7 @@ describe("Supplier application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -276,7 +277,7 @@ describe("Supplier application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createRollbackTransactionRunner(repository, auditLogger),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -291,7 +292,7 @@ describe("Supplier application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateSupplierService(
       createRollbackTransactionRunner(repository, auditLogger),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(

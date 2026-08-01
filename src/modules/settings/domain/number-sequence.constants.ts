@@ -15,6 +15,8 @@ export const DOCUMENT_TYPE_PREFIXES: Record<DocumentType, string> = {
   PURCHASE_ORDER: "PO-",
   RETURN: "RET-",
   MAINTENANCE: "MNT-",
+  /** Base prefix; yearly invoice allocation uses `INV-{year}-`. */
+  RENTAL_INVOICE: "INV-",
 };
 
 export const DEFAULT_SEQUENCE_PADDING_LENGTH = 3;

@@ -18,6 +18,11 @@ export interface IdentityUserDto {
   updatedAt: string;
 }
 
+/** Create-user result: identity fields plus invite delivery visibility. */
+export interface CreateIdentityUserResultDto extends IdentityUserDto {
+  invitationDelivered: boolean;
+}
+
 export interface IdentityUserPermissionsDto {
   userId: string;
   role: UserRole;

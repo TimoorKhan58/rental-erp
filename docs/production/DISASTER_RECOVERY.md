@@ -19,14 +19,14 @@ This page **indexes and verifies** DR assets created in earlier phases. It does 
 
 ---
 
-## RTO / RPO (operator-owned)
+## RTO / RPO (operational targets)
 
 Record targets for this deployment (examples only):
 
-| Metric | Target (fill in) | Notes |
-|--------|------------------|-------|
-| **RPO** | e.g. ≤ 24 h | Driven by backup frequency (`scripts/db/backup.*` + off-host copy) |
-| **RTO** | e.g. ≤ 4 h | Restore + migrate catch-up + DNS/Compose restart |
+| Metric | Initial Target | Notes |
+|--------|----------------|-------|
+| **RPO** | ≤ 24 h | Driven by backup frequency (`scripts/db/backup.*` + off-host copy) |
+| **RTO** | ≤ 4 h | Restore + migrate catch-up + DNS/Compose restart |
 
 Assumptions from Phase 8-006: no managed multi-AZ failover ships in-repo; recovery is **backup restore** oriented.
 
@@ -46,4 +46,4 @@ Assumptions from Phase 8-006: no managed multi-AZ failover ships in-repo; recove
 - [ ] Backup automation owner named
 - [ ] Off-host retention confirmed
 - [ ] Restore runbook accessible to on-call
-- [ ] RTO/RPO written above (or in the ops wiki) and accepted by stakeholders
+- [ ] RTO/RPO accepted by stakeholders and reviewed quarterly

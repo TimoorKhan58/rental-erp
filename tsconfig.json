@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -23,18 +27,42 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/components/*": ["./src/components/*"],
-      "@/lib/*": ["./src/lib/*"],
-      "@/config/*": ["./src/config/*"],
-      "@/constants/*": ["./src/constants/*"],
-      "@/types/*": ["./src/types/*"],
-      "@/hooks/*": ["./src/hooks/*"],
-      "@/providers/*": ["./src/providers/*"],
-      "@/layouts/*": ["./src/layouts/*"],
-      "@/services/*": ["./src/services/*"],
-      "@/features/*": ["./src/features/*"],
-      "@/design-system/*": ["./src/components/design-system/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
+      ],
+      "@/config/*": [
+        "./src/config/*"
+      ],
+      "@/constants/*": [
+        "./src/constants/*"
+      ],
+      "@/types/*": [
+        "./src/types/*"
+      ],
+      "@/hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@/providers/*": [
+        "./src/providers/*"
+      ],
+      "@/layouts/*": [
+        "./src/layouts/*"
+      ],
+      "@/services/*": [
+        "./src/services/*"
+      ],
+      "@/features/*": [
+        "./src/features/*"
+      ],
+      "@/design-system/*": [
+        "./src/components/design-system/*"
+      ]
     }
   },
   "include": [
@@ -43,7 +71,10 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next/dev/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

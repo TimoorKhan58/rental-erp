@@ -124,6 +124,27 @@ export class PrismaReturnRepository implements IReturnRepository {
     ).then((records) => records.map(toReturnDomain));
   }
 
+  findByDispatchIds(dispatchIds: DispatchId[]): Promise<Return[]> {
+    if (dispatchIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return repositoryFindMany(
+      this.runner,
+      (db) =>
+        db.returnInspection.findMany({
+          where: {
+            dispatchId: {
+              in: dispatchIds,
+            },
+          },
+          include: RETURN_INCLUDE,
+          orderBy: { createdAt: "desc" },
+        }),
+      { model: MODEL, operation: "findByDispatchIds" },
+    ).then((records) => records.map(toReturnDomain));
+  }
+
   findPaged(query: ReturnListQuery): Promise<PaginatedResult<Return>> {
     const filter: Record<string, unknown> = {};
 

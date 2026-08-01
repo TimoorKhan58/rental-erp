@@ -39,94 +39,100 @@ export async function executeCreateStockMovementInScope(
     });
   }
 
-  const inventory = await inventoryRepository.findById(
-    toInventoryId(input.inventoryId),
-  );
+  const inventoryId = toInventoryId(input.inventoryId);
+  const inventory = await inventoryRepository.findByIdForUpdate(inventoryId);
 
   if (inventory === null) {
+    await inventoryRepository.unlockInventory(inventoryId);
     throw new NotFoundError({
       message: "Inventory not found",
       details: { inventoryId: input.inventoryId },
     });
   }
 
-  if (!inventory.isActive) {
-    throw new UnprocessableError({
-      message: "Inventory is inactive",
-      details: { inventoryId: input.inventoryId },
-    });
-  }
-
-  let effect;
-
   try {
-    effect = computeMovementEffect(
-      inventory,
-      input.movementType,
-      input.quantity,
-    );
-  } catch (error) {
-    if (error instanceof StockMovementInsufficientQuantityError) {
+    if (!inventory.isActive) {
       throw new UnprocessableError({
-        message: error.message,
-        details: {
-          movementType: error.movementType,
-          requestedQuantity: error.requestedQuantity,
-          availableQuantity: error.availableQuantity,
-        },
+        message: "Inventory is inactive",
+        details: { inventoryId: input.inventoryId },
       });
     }
 
-    throw error;
-  }
+    let effect;
 
-  try {
-    Inventory.reconstitute({
-      ...inventory.toProps(),
+    try {
+      effect = computeMovementEffect(
+        inventory,
+        input.movementType,
+        input.quantity,
+      );
+    } catch (error) {
+      if (error instanceof StockMovementInsufficientQuantityError) {
+        throw new UnprocessableError({
+          message: error.message,
+          details: {
+            movementType: error.movementType,
+            requestedQuantity: error.requestedQuantity,
+            availableQuantity: error.availableQuantity,
+          },
+        });
+      }
+
+      throw error;
+    }
+
+    try {
+      Inventory.reconstitute({
+        ...inventory.toProps(),
+        quantityOnHand: effect.quantityOnHand,
+        reservedQuantity: effect.reservedQuantity,
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      if (error instanceof InventoryInvariantError) {
+        throw new UnprocessableError({
+          message: error.message,
+          details: { field: error.field },
+        });
+      }
+
+      throw error;
+    }
+
+    await inventoryRepository.update(inventory.id, {
       quantityOnHand: effect.quantityOnHand,
       reservedQuantity: effect.reservedQuantity,
-      updatedAt: new Date(),
     });
-  } catch (error) {
-    if (error instanceof InventoryInvariantError) {
-      throw new UnprocessableError({
-        message: error.message,
-        details: { field: error.field },
-      });
-    }
 
-    throw error;
+    const movement = await stockMovementRepository.create(
+      toCreateStockMovementData(
+        input,
+        {
+          id: inventory.id,
+          productId: inventory.productId,
+          warehouseId: inventory.warehouseId,
+        },
+        {
+          previousQuantity: effect.previousQuantity,
+          newQuantity: effect.newQuantity,
+        },
+        toUserId(userId),
+      ),
+    );
+
+    await auditLogger.log({
+      module: STOCK_MOVEMENT_MODULE,
+      entityName: STOCK_MOVEMENT_ENTITY_NAME,
+      recordId: movement.id,
+      action: "CREATE",
+      status: "SUCCESS",
+      newValues: toStockMovementAuditValues(movement),
+    });
+
+    return movement;
+  } finally {
+    // In-memory doubles release here. Prisma is a no-op — Postgres keeps
+    // SELECT FOR UPDATE until the Unit of Work transaction ends.
+    await inventoryRepository.unlockInventory(inventory.id);
   }
-
-  await inventoryRepository.update(inventory.id, {
-    quantityOnHand: effect.quantityOnHand,
-    reservedQuantity: effect.reservedQuantity,
-  });
-
-  const movement = await stockMovementRepository.create(
-    toCreateStockMovementData(
-      input,
-      {
-        id: inventory.id,
-        productId: inventory.productId,
-        warehouseId: inventory.warehouseId,
-      },
-      {
-        previousQuantity: effect.previousQuantity,
-        newQuantity: effect.newQuantity,
-      },
-      toUserId(userId),
-    ),
-  );
-
-  await auditLogger.log({
-    module: STOCK_MOVEMENT_MODULE,
-    entityName: STOCK_MOVEMENT_ENTITY_NAME,
-    recordId: movement.id,
-    action: "CREATE",
-    status: "SUCCESS",
-    newValues: toStockMovementAuditValues(movement),
-  });
-
-  return movement;
 }

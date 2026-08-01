@@ -1,3 +1,4 @@
+import type { UserRole } from "@/constants/roles";
 import type { IIdentityTransactionRunner } from "@/modules/identity/application/services/identity-transaction.runner";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
@@ -11,6 +12,7 @@ import {
 export function createIdentityTransactionRunner(
   deps: SharedDeps,
   actorUserId?: string,
+  actorRole?: UserRole,
 ): IIdentityTransactionRunner {
   return {
     run: (operation) =>
@@ -21,6 +23,7 @@ export function createIdentityTransactionRunner(
           authGateway: createBetterAuthCredentialGatewayFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           actorUserId,
+          actorRole,
         }),
       ),
   };

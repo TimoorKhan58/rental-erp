@@ -32,28 +32,33 @@ export class UpdateInventoryService {
     const updateData = toUpdateInventoryData(data);
 
     return this.transactionRunner.run(async ({ repository, auditLogger }) => {
-      const existing = await repository.findById(inventoryId);
+      const existing = await repository.findByIdForUpdate(inventoryId);
 
       if (existing === null) {
+        await repository.unlockInventory(inventoryId);
         throw new NotFoundError({
           message: "Inventory not found",
           details: { id },
         });
       }
 
-      const updated = await repository.update(inventoryId, updateData);
+      try {
+        const updated = await repository.update(inventoryId, updateData);
 
-      await auditLogger.log({
-        module: INVENTORY_MODULE,
-        entityName: INVENTORY_ENTITY_NAME,
-        recordId: updated.id,
-        action: "UPDATE",
-        status: "SUCCESS",
-        oldValues: toInventoryAuditValues(existing),
-        newValues: toInventoryAuditValues(updated),
-      });
+        await auditLogger.log({
+          module: INVENTORY_MODULE,
+          entityName: INVENTORY_ENTITY_NAME,
+          recordId: updated.id,
+          action: "UPDATE",
+          status: "SUCCESS",
+          oldValues: toInventoryAuditValues(existing),
+          newValues: toInventoryAuditValues(updated),
+        });
 
-      return toInventoryDto(updated);
+        return toInventoryDto(updated);
+      } finally {
+        await repository.unlockInventory(inventoryId);
+      }
     });
   }
 }

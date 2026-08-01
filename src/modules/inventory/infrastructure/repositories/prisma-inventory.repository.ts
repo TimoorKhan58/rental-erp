@@ -1,9 +1,10 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import type { InventoryListQuery } from "@/modules/inventory/domain/inventory-list.query";
 import type { InventoryId, ProductId, WarehouseId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
+  buildPaginationMeta,
   createRepositoryQuerySpec,
   repositoryCreate,
   repositoryDelete,
@@ -31,6 +32,8 @@ const MODEL = "Inventory";
 const DEFAULT_ORDER_BY: Prisma.InventoryOrderByWithRelationInput = {
   createdAt: "desc",
 };
+
+type InventoryStockStatus = NonNullable<InventoryListQuery["stockStatus"]>;
 
 function buildInventoryFilter(query: InventoryListQuery): Record<string, unknown> {
   const filter: Record<string, unknown> = {};
@@ -80,6 +83,36 @@ function mapInventorySort(
   return sort as Prisma.InventoryOrderByWithRelationInput;
 }
 
+/**
+ * Push stock-status predicates into SQL so list pages can paginate in the DB.
+ * Available qty = quantityOnHand - reservedQuantity.
+ */
+function buildStockStatusSql(stockStatus: InventoryStockStatus): Prisma.Sql {
+  switch (stockStatus) {
+    case "out-of-stock":
+      return Prisma.sql`("quantityOnHand" - "reservedQuantity") <= 0`;
+    case "low-stock":
+      return Prisma.sql`("quantityOnHand" - "reservedQuantity") > 0 AND "minimumStock" > 0 AND ("quantityOnHand" - "reservedQuantity") <= "minimumStock"`;
+    case "overstock":
+      return Prisma.sql`"maximumStock" IS NOT NULL AND "quantityOnHand" > "maximumStock" AND ("quantityOnHand" - "reservedQuantity") > 0 AND NOT ("minimumStock" > 0 AND ("quantityOnHand" - "reservedQuantity") <= "minimumStock")`;
+    case "in-stock":
+      return Prisma.sql`("quantityOnHand" - "reservedQuantity") > 0 AND NOT ("minimumStock" > 0 AND ("quantityOnHand" - "reservedQuantity") <= "minimumStock") AND NOT ("maximumStock" IS NOT NULL AND "quantityOnHand" > "maximumStock")`;
+  }
+}
+
+type InventorySqlRow = {
+  id: string;
+  productId: string;
+  warehouseId: string;
+  quantityOnHand: number;
+  reservedQuantity: number;
+  minimumStock: number;
+  maximumStock: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export class PrismaInventoryRepository implements IInventoryRepository {
   constructor(private readonly runner: RepositoryRunner) {}
 
@@ -92,6 +125,31 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         }),
       { model: MODEL, operation: "findById" },
     ).then((record) => (record ? toInventoryDomain(record) : null));
+  }
+
+  findByIdForUpdate(id: InventoryId): Promise<Inventory | null> {
+    return this.runner
+      .run(
+        async (db) => {
+          const rows = await db.$queryRaw<InventorySqlRow[]>`
+            SELECT i.id, i."productId", i."warehouseId", i."quantityOnHand",
+                   i."reservedQuantity", i."minimumStock", i."maximumStock",
+                   i."isActive", i."createdAt", i."updatedAt"
+            FROM "inventory" i
+            WHERE i.id = ${String(id)}::uuid
+            FOR UPDATE
+          `;
+
+          return rows[0] ?? null;
+        },
+        { model: MODEL, operation: "findByIdForUpdate" },
+      )
+      .then((record) => (record ? toInventoryDomain(record) : null));
+  }
+
+  unlockInventory(_id: InventoryId): Promise<void> {
+    // Row lock is released automatically when the Unit of Work transaction ends.
+    return Promise.resolve();
   }
 
   findByProductAndWarehouse(
@@ -113,12 +171,40 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     ).then((record) => (record ? toInventoryDomain(record) : null));
   }
 
+  findByProductsAndWarehouse(
+    productIds: ProductId[],
+    warehouseId: WarehouseId,
+  ): Promise<Inventory[]> {
+    if (productIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    const uniqueIds = [...new Set(productIds)];
+
+    return this.runner
+      .run(
+        (db) =>
+          db.inventory.findMany({
+            where: {
+              warehouseId,
+              productId: { in: uniqueIds },
+            },
+          }),
+        { model: MODEL, operation: "findByProductsAndWarehouse" },
+      )
+      .then((records) => records.map(toInventoryDomain));
+  }
+
   async findPaged(
     query: InventoryListQuery,
   ): Promise<PaginatedResult<Inventory>> {
     const filter = buildInventoryFilter(query);
     const hasFilter = Object.keys(filter).length > 0;
     const searchWhere = buildInventorySearchClause(query.search);
+
+    if (query.stockStatus !== undefined) {
+      return this.findPagedByStockStatus(query, filter);
+    }
 
     const result = await runRepositoryPagedQuery(
       this.runner,
@@ -153,6 +239,109 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     return {
       items: result.items.map(toInventoryDomain),
       meta: result.meta,
+    };
+  }
+
+  private async findPagedByStockStatus(
+    query: InventoryListQuery,
+    filter: Record<string, unknown>,
+  ): Promise<PaginatedResult<Inventory>> {
+    const stockStatus = query.stockStatus!;
+    const skip = (query.page - 1) * query.pageSize;
+    const take = query.pageSize;
+    const sortField = query.sortBy ?? "createdAt";
+    const sortOrder = query.sortOrder ?? "desc";
+    const allowedSort = new Set([
+      "createdAt",
+      "updatedAt",
+      "quantityOnHand",
+      "reservedQuantity",
+      "minimumStock",
+      "maximumStock",
+      "productId",
+      "warehouseId",
+      "isActive",
+    ]);
+    const safeSortField = allowedSort.has(sortField) ? sortField : "createdAt";
+    const orderDirection =
+      sortOrder === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+    const orderColumn = Prisma.raw(`i."${safeSortField}"`);
+
+    const conditions: Prisma.Sql[] = [buildStockStatusSql(stockStatus)];
+
+    if (filter.productId !== undefined) {
+      conditions.push(
+        Prisma.sql`i."productId" = ${String(filter.productId)}::uuid`,
+      );
+    }
+    if (filter.warehouseId !== undefined) {
+      conditions.push(
+        Prisma.sql`i."warehouseId" = ${String(filter.warehouseId)}::uuid`,
+      );
+    }
+    if (filter.isActive !== undefined) {
+      conditions.push(Prisma.sql`i."isActive" = ${Boolean(filter.isActive)}`);
+    }
+
+    const searchTerm = query.search?.trim();
+    const needsSearchJoin =
+      searchTerm !== undefined && searchTerm.length > 0;
+    if (needsSearchJoin) {
+      const like = `%${searchTerm}%`;
+      conditions.push(
+        Prisma.sql`(
+          p."productCode" ILIKE ${like}
+          OR p.name ILIKE ${like}
+          OR w."warehouseCode" ILIKE ${like}
+          OR w.name ILIKE ${like}
+          OR (
+            ${searchTerm}::text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            AND (i."productId"::text = ${searchTerm} OR i."warehouseId"::text = ${searchTerm})
+          )
+        )`,
+      );
+    }
+
+    const whereSql = Prisma.join(conditions, " AND ");
+    const joinSql = needsSearchJoin
+      ? Prisma.sql`
+          INNER JOIN "products" p ON p.id = i."productId"
+          INNER JOIN "warehouses" w ON w.id = i."warehouseId"
+        `
+      : Prisma.empty;
+
+    const { rows, total } = await this.runner.run(
+      async (db) => {
+        const [pagedRows, countRows] = await Promise.all([
+          db.$queryRaw<InventorySqlRow[]>`
+            SELECT i.id, i."productId", i."warehouseId", i."quantityOnHand",
+                   i."reservedQuantity", i."minimumStock", i."maximumStock",
+                   i."isActive", i."createdAt", i."updatedAt"
+            FROM "inventory" i
+            ${joinSql}
+            WHERE ${whereSql}
+            ORDER BY ${orderColumn} ${orderDirection}
+            LIMIT ${take} OFFSET ${skip}
+          `,
+          db.$queryRaw<Array<{ count: bigint }>>`
+            SELECT COUNT(*)::bigint AS count
+            FROM "inventory" i
+            ${joinSql}
+            WHERE ${whereSql}
+          `,
+        ]);
+
+        return {
+          rows: pagedRows,
+          total: Number(countRows[0]?.count ?? 0),
+        };
+      },
+      { model: MODEL, operation: "findPaged" },
+    );
+
+    return {
+      items: rows.map(toInventoryDomain),
+      meta: buildPaginationMeta(query.page, query.pageSize, total),
     };
   }
 

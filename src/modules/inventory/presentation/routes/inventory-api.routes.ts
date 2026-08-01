@@ -27,7 +27,6 @@ export async function handleListInventory(
   resolveServices: InventoryServiceResolver,
 ): Promise<Response> {
   const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListInventorySchema, query);
 
   const result = await runInventoryApiRoute({
     request,
@@ -35,7 +34,10 @@ export async function handleListInventory(
     httpMethod: "GET",
     permission: PERMISSIONS.inventory.read,
     resolveServices,
-    handler: async (_ctx, services) => services.listInventory.execute(listInput),
+    handler: async (_ctx, services) => {
+      const listInput = parseRequest(ListInventorySchema, query);
+      return services.listInventory.execute(listInput);
+    },
   });
 
   if (result.status === 200 && "data" in result.body) {

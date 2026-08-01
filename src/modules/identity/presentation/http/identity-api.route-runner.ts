@@ -23,7 +23,11 @@ export interface IdentityApiRouteOptions<T> {
   request: NextRequest;
   route: string;
   httpMethod: string;
-  permission: Permission;
+  /**
+   * When omitted, only an authenticated active ERP session is required.
+   * Used for self endpoints such as GET /api/users/me.
+   */
+  permission?: Permission;
   resolveServices: (ctx: ExecutionContext) => IdentityApplicationServices;
   handler: (
     ctx: ExecutionContext,
@@ -41,7 +45,9 @@ export async function runIdentityApiRoute<T>(
   try {
     const { ctx } = await authenticateApiRequest(request, route, httpMethod);
 
-    assertPermission(ctx.request, permission);
+    if (permission !== undefined) {
+      assertPermission(ctx.request, permission);
+    }
 
     const services = resolveServices(ctx);
     const data = await handler(ctx, services);

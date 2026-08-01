@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { InMemoryCustomerRepository } from "@/modules/customer/tests/helpers/in-memory-customer.repository";
 import { buildCustomerEntity } from "@/modules/customer/tests/helpers/customer.fixtures";
@@ -234,6 +234,35 @@ describe("CreateRentalInvoiceService", () => {
     await expect(
       service.execute(VALID_CREATE_SERVICE_INPUT),
     ).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+
+  it("uses transaction runner override when provided", async () => {
+    const fallbackRunner = createPassThroughTransactionRunner({
+      rentalInvoiceRepository: new InMemoryRentalInvoiceRepository(),
+      rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
+      customerRepository: new InMemoryCustomerRepository(),
+      auditLogger: new MockAuditLogger(),
+      userId: undefined,
+    });
+    const service = new CreateRentalInvoiceService(fallbackRunner);
+    const overrideScope = createDefaultTestScope();
+    const overrideRunner = createPassThroughTransactionRunner({
+      rentalInvoiceRepository: overrideScope.rentalInvoiceRepository,
+      rentalOrderInvoiceLookup: overrideScope.rentalOrderInvoiceLookup,
+      customerRepository: overrideScope.customerRepository,
+      auditLogger: overrideScope.auditLogger,
+      userId: USER_ID,
+    });
+    const overrideRunSpy = vi.spyOn(overrideRunner, "run");
+
+    const result = await service.execute(
+      VALID_CREATE_SERVICE_INPUT,
+      overrideRunner,
+    );
+
+    expect(result.invoiceNumber).toBe("INV-2026-001");
+    expect(overrideRunSpy).toHaveBeenCalledOnce();
+    expect(overrideScope.rentalInvoiceRepository.count()).toBe(1);
   });
 
   it("rolls back create changes on audit failure", async () => {

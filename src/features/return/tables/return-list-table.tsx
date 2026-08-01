@@ -103,7 +103,6 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
 
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() });
-    void refetch();
   };
 
   const hasFilters =

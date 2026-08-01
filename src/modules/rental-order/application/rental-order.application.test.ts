@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 
 import { CancelRentalOrderService } from "@/modules/rental-order/application/services/cancel-rental-order.service";
 import { ConfirmRentalOrderService } from "@/modules/rental-order/application/services/confirm-rental-order.service";
@@ -12,6 +13,7 @@ import {
   RENTAL_ORDER_MODULE,
 } from "@/modules/rental-order/application/services/rental-order-service.constants";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
+import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
@@ -50,9 +52,11 @@ function createWriteScope(
   stockMovementRepository: InMemoryStockMovementRepository,
   auditLogger: MockAuditLogger,
   userId?: string,
+  dispatchRepository: InMemoryDispatchRepository = new InMemoryDispatchRepository(),
 ) {
   return createPassThroughTransactionRunner({
     rentalOrderRepository,
+    dispatchRepository,
     inventoryRepository,
     stockMovementRepository,
     auditLogger,
@@ -75,7 +79,7 @@ describe("CreateRentalOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -96,7 +100,7 @@ describe("CreateRentalOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -113,7 +117,7 @@ describe("CreateRentalOrderService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -131,7 +135,7 @@ describe("CreateRentalOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -276,22 +280,38 @@ describe("CancelRentalOrderService", () => {
     expect(result.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel when partially reserved", async () => {
+  it("cancels partially reserved order and releases inventory reservation", async () => {
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
     rentalOrderRepository.seed([buildPartiallyReservedConfirmedEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 4,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
     const service = new CancelRentalOrderService(
       createWriteScope(
         rentalOrderRepository,
-        new InMemoryInventoryRepository(),
-        new InMemoryStockMovementRepository(),
+        inventoryRepository,
+        stockMovementRepository,
         new MockAuditLogger(),
         USER_ID,
       ),
     );
 
-    await expect(
-      service.execute({ id: RENTAL_ORDER_ID }),
-    ).rejects.toBeInstanceOf(UnprocessableError);
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(result.items[0]?.reservedQuantity).toBe(0);
+    expect(stockMovementRepository.count()).toBe(1);
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.availableQuantity).toBe(50);
   });
 });
 
@@ -477,6 +497,7 @@ describe("ReserveRentalOrderService", () => {
     const service = new ReserveRentalOrderService(
       createRollbackTransactionRunner(
         rentalOrderRepository,
+        new InMemoryDispatchRepository(),
         inventoryRepository,
         stockMovementRepository,
         auditLogger,
@@ -572,7 +593,7 @@ describe("CreateRentalOrderService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(

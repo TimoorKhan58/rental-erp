@@ -34,6 +34,15 @@ const DEFAULT_ORDER_BY: Prisma.RentalOrderOrderByWithRelationInput = {
   createdAt: "desc",
 };
 
+const FULLY_RESERVED_ORDER_STATUSES: RentalOrder["status"][] = [
+  "RESERVED",
+  "DISPATCHED",
+  "ON_RENT",
+  "PARTIALLY_RETURNED",
+  "RETURNED",
+  "COMPLETED",
+];
+
 function mapRentalOrderFilter(
   filter: Record<string, unknown>,
 ): Prisma.RentalOrderWhereInput | undefined {
@@ -67,6 +76,33 @@ function mapRentalOrderFilter(
         : {}),
       lte: filter.eventTo as Date,
     };
+  }
+
+  if (filter.reservationStatus !== undefined) {
+    const reservationStatus = String(filter.reservationStatus);
+
+    if (reservationStatus === "not-started") {
+      where.items = {
+        none: {
+          reservedQuantity: { gt: 0 },
+        },
+      };
+    }
+
+    if (reservationStatus === "partial") {
+      where.status = "CONFIRMED";
+      where.items = {
+        some: {
+          reservedQuantity: { gt: 0 },
+        },
+      };
+    }
+
+    if (reservationStatus === "complete") {
+      where.status = {
+        in: FULLY_RESERVED_ORDER_STATUSES,
+      };
+    }
   }
 
   return Object.keys(where).length > 0 ? where : undefined;
@@ -132,6 +168,10 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
 
     if (query.eventTo !== undefined) {
       filter.eventTo = query.eventTo;
+    }
+
+    if (query.reservationStatus !== undefined) {
+      filter.reservationStatus = query.reservationStatus;
     }
 
     return runRepositoryPagedQuery(

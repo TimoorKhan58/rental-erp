@@ -418,7 +418,7 @@ describe("RentalInvoiceItem", () => {
 
     expect(item.productName).toBe("Banquet Chair");
     expect(item.numberOfDays).toBe(2);
-    expect(item.lineTotal).toBe(1125);
+    expect(item.lineTotal).toBe(1305);
   });
 
   it("validates items with indexed field errors", () => {

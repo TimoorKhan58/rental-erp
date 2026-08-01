@@ -31,7 +31,8 @@ export function useSettingsPermissions() {
     isLoading,
     canReadSettings: permissions.includes(PERMISSIONS.settings.read),
     canUpdateSettings: permissions.includes(PERMISSIONS.settings.update),
-    canReadProfile: permissions.includes(PERMISSIONS.identity.read),
+    /** Own profile is available to any authenticated session (via GET /users/me). */
+    canReadProfile: !isLoading && data !== undefined,
     canUpdateProfile: permissions.includes(PERMISSIONS.identity.update),
   };
 }

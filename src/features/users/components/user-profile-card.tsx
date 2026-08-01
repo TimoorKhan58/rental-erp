@@ -1,0 +1,99 @@
+"use client";
+
+import Link from "next/link";
+import {
+  ArrowLeftIcon,
+  KeyRoundIcon,
+  MailIcon,
+  PencilIcon,
+  UserCheckIcon,
+  UserXIcon,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { AppButton } from "@/components/design-system/button";
+import { ROUTES } from "@/config/routes";
+import { UserRoleBadge } from "./user-role-badge";
+import { UserStatusBadge } from "./user-status-badge";
+import type { IdentityUserResponse } from "../types";
+
+type UserProfileCardProps = {
+  user: IdentityUserResponse;
+  canUpdate: boolean;
+  canDisable: boolean;
+  onToggleStatus?: () => void;
+  onResetPassword?: () => void;
+};
+
+export function UserProfileCard({
+  user,
+  canUpdate,
+  canDisable,
+  onToggleStatus,
+  onResetPassword,
+}: UserProfileCardProps) {
+  return (
+    <Card className="overflow-hidden border-border bg-card shadow-soft-md">
+      <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-heading truncate text-2xl font-semibold tracking-tight">
+              {user.name}
+            </h1>
+            <UserStatusBadge isActive={user.isActive} />
+            <UserRoleBadge role={user.role} />
+          </div>
+          <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MailIcon className="size-3.5 shrink-0" aria-hidden="true" />
+            {user.email}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <AppButton
+            variant="outline"
+            size="sm"
+            leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
+            render={<Link href={ROUTES.users} />}
+          >
+            Back
+          </AppButton>
+          {canUpdate ? (
+            <AppButton
+              variant="outline"
+              size="sm"
+              leftIcon={<KeyRoundIcon className="size-4" aria-hidden="true" />}
+              onClick={onResetPassword}
+            >
+              Reset password
+            </AppButton>
+          ) : null}
+          {canDisable ? (
+            <AppButton
+              variant="outline"
+              size="sm"
+              leftIcon={
+                user.isActive ? (
+                  <UserXIcon className="size-4" aria-hidden="true" />
+                ) : (
+                  <UserCheckIcon className="size-4" aria-hidden="true" />
+                )
+              }
+              onClick={onToggleStatus}
+            >
+              {user.isActive ? "Disable" : "Enable"}
+            </AppButton>
+          ) : null}
+          {canUpdate ? (
+            <AppButton
+              size="sm"
+              leftIcon={<PencilIcon className="size-4" aria-hidden="true" />}
+              render={<Link href={ROUTES.userEdit(user.id)} />}
+            >
+              Edit
+            </AppButton>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

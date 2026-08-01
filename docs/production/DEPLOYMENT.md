@@ -46,7 +46,7 @@ Allocate separate headroom for:
 1. Docker Engine 24+ and Compose v2  
 2. Git access to the release tag  
 3. TLS certificates for the public hostname (`nginx/certs/fullchain.pem`, `privkey.pem`) — see [REVERSE_PROXY.md](./REVERSE_PROXY.md)  
-4. Secrets ready (not committed): `BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, optional `METRICS_BEARER_TOKEN`
+4. Secrets ready (not committed): `BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, and **`METRICS_BEARER_TOKEN`** when `ENABLE_METRICS=true` (default)
 
 ```bash
 # Verify tooling
@@ -76,6 +76,7 @@ Minimum required for Compose production:
 | `SECURE_COOKIES=true` | Production cookies |
 | `ENABLE_SECURITY_HEADERS=false` | Prefer Nginx edge headers when proxy is used |
 | `ENABLE_HSTS=false` | HSTS emitted by Nginx on HTTPS |
+| `METRICS_BEARER_TOKEN` | **Required** when `ENABLE_METRICS=true` (default) — generate with `openssl rand -hex 32`, or set `ENABLE_METRICS=false` |
 
 Full catalog: [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md). Validate locally before cutover:
 
@@ -108,10 +109,19 @@ Nginx terminates TLS; the app listens on an internal network only.
 
 ### Managed Postgres (optional)
 
-1. Remove or disable the `db` service  
+1. Copy `docker-compose.managed-db.override.example.yml` → `docker-compose.managed-db.override.yml` (gitignored private copy), **or** remove the `db` service and every `depends_on: db` block from a private compose file  
 2. Point `DATABASE_URL` at the managed instance (`sslmode=require` as required)  
 3. Ensure the app network can reach the managed host  
-4. Migrations still run via the `migrate` profile against that URL
+4. Migrations still run via the `migrate` profile against that URL  
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.managed-db.override.yml \
+  --env-file .env.production --profile migrate run --rm migrate
+docker compose -f docker-compose.prod.yml -f docker-compose.managed-db.override.yml \
+  --env-file .env.production up -d app nginx
+```
+
+Requires Docker Compose **v2.24+** for `!override` merge tags.
 
 ---
 
@@ -139,7 +149,20 @@ Render does **not** run migrations unless you configure them. For the existing w
 3. **Start Command:** `npm run start`  
    (`next start` — standalone output is Docker-only via `DOCKER_BUILD=1`)
 
-Required env on Render: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `APP_URL`, `BETTER_AUTH_URL` (HTTPS), `APP_ENV=production`, `NODE_ENV=production`.
+Required env on Render:
+
+| Variable | Notes |
+|----------|-------|
+| `DATABASE_URL` | Managed Postgres URL (`sslmode=require` as required) |
+| `BETTER_AUTH_SECRET` | ≥ 32 chars, non-placeholder |
+| `APP_URL` / `BETTER_AUTH_URL` | Public **HTTPS** origin |
+| `APP_ENV=production` | Hardened validation |
+| `NODE_ENV=production` | |
+| `METRICS_BEARER_TOKEN` | **Required** unless `ENABLE_METRICS=false` |
+| `ENABLE_EMAIL` + SMTP_* | Required for invite / password-reset delivery |
+
+Render health check path: prefer `/api/health` (liveness) or `/api/health/ready` (readiness — use after migrate).  
+Local uploads (`UPLOAD_PATH`) need a **persistent disk**; ephemeral filesystem loses files on redeploy.
 
 ---
 
@@ -156,14 +179,23 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d db
 docker compose -f docker-compose.prod.yml --env-file .env.production \
   --profile migrate run --rm migrate
 
-# 4) Start application + Nginx
+# 4) Start application + Nginx (uploads-init runs automatically)
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d app nginx
 
 # 5) Status
 docker compose -f docker-compose.prod.yml --env-file .env.production ps
 ```
 
-Convenience scripts (from package.json): `npm run docker:prod` / `docker:prod:down` (still require a valid `.env.production` and certs).
+Convenience scripts (pass `--env-file .env.production` automatically):
+
+| Script | Equivalent |
+|--------|------------|
+| `npm run docker:prod` | `up --build` (foreground) |
+| `npm run docker:prod:down` | `down` |
+| `npm run docker:prod:migrate` | `--profile migrate run --rm migrate` |
+| `npm run certs:lab` | Self-signed PEMs for dress rehearsal only |
+
+TLS: place real PEMs in `nginx/certs/`, or run `npm run certs:lab` for lab-only rehearsal. Nginx **will not start** without both files.
 
 ---
 

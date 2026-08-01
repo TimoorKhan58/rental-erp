@@ -7,11 +7,19 @@ import { z } from "zod";
 
 import { INVENTORY_SORT_FIELDS } from "@/modules/inventory/domain/inventory.constants";
 
+const StockStatusFilterSchema = z.enum([
+  "in-stock",
+  "low-stock",
+  "out-of-stock",
+  "overstock",
+]);
+
 export const ListInventorySchema = PaginationSchema.extend({
   isActive: BooleanStringSchema.optional(),
   productId: UUIDSchema.optional(),
   warehouseId: UUIDSchema.optional(),
   sortBy: z.enum(INVENTORY_SORT_FIELDS).optional(),
+  stockStatus: StockStatusFilterSchema.optional(),
 }).superRefine((value, ctx) => {
   if (value.search !== undefined && value.search.length > 200) {
     ctx.addIssue({

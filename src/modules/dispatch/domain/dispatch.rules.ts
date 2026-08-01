@@ -102,14 +102,54 @@ export function assertRentalOrderEligibleForDispatch(
 ): void {
   if (!(ELIGIBLE_RENTAL_ORDER_STATUSES as readonly string[]).includes(status)) {
     throw new DispatchInvalidItemError(
-      `Rental order must be CONFIRMED or RESERVED to create dispatch (current: ${status})`,
+      `Rental order must be CONFIRMED, RESERVED, DISPATCHED, or ON_RENT to create dispatch (current: ${status})`,
     );
   }
+}
+
+/**
+ * Sum quantities already allocated on non-cancelled dispatches, keyed by
+ * rental order item id (falls back to product id when item id is absent).
+ */
+export function buildPriorDispatchedQuantities(
+  dispatches: Array<{
+    id: string;
+    status: string;
+    items: Array<{
+      rentalOrderItemId: string | null;
+      productId: string;
+      quantity: number;
+    }>;
+  }>,
+  excludeDispatchId?: string,
+): Map<string, number> {
+  const map = new Map<string, number>();
+
+  for (const dispatch of dispatches) {
+    if (dispatch.status === "CANCELLED") {
+      continue;
+    }
+
+    if (
+      excludeDispatchId !== undefined &&
+      dispatch.id === excludeDispatchId
+    ) {
+      continue;
+    }
+
+    for (const item of dispatch.items) {
+      const key = item.rentalOrderItemId ?? item.productId;
+      map.set(key, (map.get(key) ?? 0) + item.quantity);
+    }
+  }
+
+  return map;
 }
 
 export function validateDispatchItemsAgainstRentalOrder(
   dispatchItems: CreateDispatchItemData[],
   rentalOrderItems: RentalOrderItemProps[],
+  priorDispatchedByItem: Map<string, number> = new Map(),
 ): void {
   for (const dispatchItem of dispatchItems) {
     const rentalItem = findRentalOrderItem(
@@ -124,9 +164,15 @@ export function validateDispatchItemsAgainstRentalOrder(
       );
     }
 
-    if (dispatchItem.quantity > rentalItem.reservedQuantity) {
+    const priorDispatched =
+      priorDispatchedByItem.get(rentalItem.id) ??
+      priorDispatchedByItem.get(rentalItem.productId) ??
+      0;
+    const remainingReserved = rentalItem.reservedQuantity - priorDispatched;
+
+    if (dispatchItem.quantity > remainingReserved) {
       throw new DispatchInvalidItemError(
-        "Dispatch quantity exceeds reserved quantity",
+        "Dispatch quantity exceeds remaining reserved quantity",
         dispatchItem.productId,
       );
     }

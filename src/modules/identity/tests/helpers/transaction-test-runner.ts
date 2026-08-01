@@ -58,6 +58,7 @@ export function createRollbackIdentityTransactionRunner(
   authGateway: MockIdentityAuthGateway,
   auditLogger: MockAuditLogger,
   actorUserId?: string,
+  actorRole?: IdentityWriteScope["actorRole"],
 ): IIdentityTransactionRunner {
   return {
     run: async (operation) => {
@@ -74,6 +75,7 @@ export function createRollbackIdentityTransactionRunner(
           authGateway,
           auditLogger,
           actorUserId,
+          actorRole,
         });
       } catch (error) {
         userRepository.restore(userSnapshot);

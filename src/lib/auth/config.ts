@@ -6,6 +6,13 @@ import prisma from "@/lib/prisma";
 import { appConfig } from "@/shared/config/app.config";
 import { authConfig } from "@/shared/config/auth.config";
 import { securityConfig } from "@/shared/config/security.config";
+import { assertAuthUserMayCreateSession } from "@/shared/infrastructure/auth";
+import {
+  isInvitationPasswordSetupUrl,
+  sendInvitationEmail,
+  sendPasswordResetEmail,
+  sendVerificationEmailMessage,
+} from "@/shared/infrastructure/email";
 
 const trustedOrigins = Array.from(
   new Set(
@@ -28,8 +35,48 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
     minPasswordLength: authConfig.minPasswordLength,
+    /**
+     * Keep login open for unverified users until a later Phase 15B step.
+     * System Settings `requireEmailVerification` remains unwired.
+     */
+    requireEmailVerification: false,
+    /**
+     * Enables Better Auth `/request-password-reset`.
+     * Tokens are stored in AuthVerification; delivery uses SMTP when ENABLE_EMAIL is on.
+     */
+    sendResetPassword: async ({ user, url }) => {
+      if (isInvitationPasswordSetupUrl(url)) {
+        await sendInvitationEmail({
+          email: user.email,
+          name: user.name,
+          url,
+        });
+        return;
+      }
+
+      await sendPasswordResetEmail({
+        email: user.email,
+        name: user.name,
+        url,
+      });
+    },
+    /** Match admin reset behavior: invalidate existing sessions after self-service reset. */
+    revokeSessionsOnPasswordReset: true,
   },
-  disabledPaths: ["/sign-up/email"],
+  /**
+   * Enables Better Auth `/send-verification-email` and `/verify-email`.
+   * Tokens are signed JWTs (not AuthVerification rows); delivery uses SMTP when ENABLE_EMAIL is on.
+   */
+  emailVerification: {
+    expiresIn: 60 * 60 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendVerificationEmailMessage({
+        email: user.email,
+        name: user.name,
+        url,
+      });
+    },
+  },
   // Prisma models are Auth* because `User`/`Account` are ERP entities.
   // modelName must match Prisma client keys (camelCase).
   user: {
@@ -53,7 +100,7 @@ export const auth = betterAuth({
     expiresIn: authConfig.session.expiresInSeconds,
     updateAge: authConfig.session.updateAgeSeconds,
     cookieCache: {
-      enabled: true,
+      enabled: authConfig.session.cookieCacheMaxAgeSeconds > 0,
       maxAge: authConfig.session.cookieCacheMaxAgeSeconds,
     },
   },
@@ -62,6 +109,19 @@ export const auth = betterAuth({
   },
   verification: {
     modelName: "authVerification",
+  },
+  /**
+   * Block session creation when the AuthUser is not linked to an active ERP User.
+   * Matches API auth policy in resolveActiveSessionUser / authenticateApiRequest.
+   */
+  databaseHooks: {
+    session: {
+      create: {
+        async before(session) {
+          await assertAuthUserMayCreateSession(session.userId);
+        },
+      },
+    },
   },
   /**
    * Built-in Better Auth rate limiting (in-memory per process).

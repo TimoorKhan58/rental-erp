@@ -9,7 +9,6 @@ import {
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 
 import {
-  ITEM_ID,
   PRODUCT_ID,
   buildConfirmedRentalOrderEntity,
   buildPartiallyReservedConfirmedEntity,
@@ -49,24 +48,15 @@ describe("status transition guards", () => {
   });
 
   it("assertCanCancel allows confirmed with no reservations", () => {
-    expect(() =>
-      assertCanCancel("CONFIRMED", [
-        {
-          id: ITEM_ID,
-          productId: PRODUCT_ID,
-          quantity: 10,
-          dailyRate: 10,
-          reservedQuantity: 0,
-          startDate: new Date("2026-02-01T00:00:00.000Z"),
-          endDate: new Date("2026-02-05T00:00:00.000Z"),
-          numberOfDays: 4,
-        },
-      ]),
-    ).not.toThrow();
+    expect(() => assertCanCancel("CONFIRMED")).not.toThrow();
   });
 
-  it("assertCanCancel rejects reserved status", () => {
-    expect(() => assertCanCancel("RESERVED", [])).toThrow(
+  it("assertCanCancel allows reserved status (release handled by cancel service)", () => {
+    expect(() => assertCanCancel("RESERVED")).not.toThrow();
+  });
+
+  it("assertCanCancel rejects on-rent status", () => {
+    expect(() => assertCanCancel("ON_RENT")).toThrow(
       RentalOrderInvalidStatusError,
     );
   });
@@ -93,20 +83,18 @@ describe("rental order entity edge cases", () => {
     expect(cancelled.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel on partially reserved entity", () => {
+  it("allows cancel on partially reserved entity at domain level", () => {
     const partial = buildPartiallyReservedConfirmedEntity();
+    const cancelled = partial.withCancelled();
 
-    expect(() => partial.withCancelled()).toThrow(
-      RentalOrderInvalidStatusError,
-    );
+    expect(cancelled.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel on fully reserved entity", () => {
+  it("allows cancel on fully reserved entity at domain level", () => {
     const reserved = buildReservedRentalOrderEntity();
+    const cancelled = reserved.withCancelled();
 
-    expect(() => reserved.withCancelled()).toThrow(
-      RentalOrderInvalidStatusError,
-    );
+    expect(cancelled.status).toBe("CANCELLED");
   });
 
   it("normalizes optional remarks to null", () => {

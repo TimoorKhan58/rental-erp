@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 
 import { CancelDispatchService } from "@/modules/dispatch/application/services/cancel-dispatch.service";
 import { CompleteDispatchService } from "@/modules/dispatch/application/services/complete-dispatch.service";
@@ -36,6 +37,7 @@ import type { CreateDispatchInput } from "@/modules/dispatch/application/schemas
 
 import {
   DISPATCH_ID,
+  ITEM_ID,
   OTHER_DISPATCH_ID,
   RENTAL_ORDER_ID,
   VALID_CREATE_INPUT,
@@ -86,7 +88,7 @@ describe("CreateDispatchService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -109,7 +111,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -127,7 +129,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -148,7 +150,7 @@ describe("CreateDispatchService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -171,7 +173,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -191,7 +193,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -211,7 +213,7 @@ describe("CreateDispatchService", () => {
         new MockAuditLogger(),
         undefined,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -383,6 +385,9 @@ describe("CompleteDispatchService", () => {
     expect(inventory?.quantityOnHand).toBe(45);
     expect(inventory?.reservedQuantity).toBe(0);
     expect(inventory?.availableQuantity).toBe(45);
+
+    const rentalOrder = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(rentalOrder?.status).toBe("ON_RENT");
   });
 
   it("rejects complete when not ready", async () => {
@@ -665,7 +670,7 @@ describe("CreateDispatchService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
@@ -691,13 +696,52 @@ describe("CreateDispatchService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     await expect(
       service.execute({
         ...VALID_CREATE_SERVICE_INPUT,
         items: [{ productId: PRODUCT_ID, quantity: 11 }],
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+
+  it("rejects over-dispatch when prior non-cancelled dispatch already used reserved qty", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        status: "COMPLETED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 10,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
+    );
+
+    await expect(
+      service.execute({
+        ...VALID_CREATE_SERVICE_INPUT,
+        dispatchNumber: "DSP-2026-002",
+        items: [{ productId: PRODUCT_ID, rentalOrderItemId: ITEM_ID, quantity: 1 }],
       }),
     ).rejects.toBeInstanceOf(UnprocessableError);
   });
@@ -718,7 +762,7 @@ describe("CreateDispatchService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
     );
 
     const result = await service.execute({

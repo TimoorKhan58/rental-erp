@@ -50,6 +50,7 @@ model AuthSession {
   userId    String
   user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -69,6 +70,8 @@ model AuthAccount {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@index([userId])
+  @@index([userId, providerId])
   @@map("account")
 }
 
@@ -461,6 +464,8 @@ model InventoryTransaction {
   @@index([warehouseId])
   @@index([movementType])
   @@index([createdAt])
+  @@index([createdById])
+  @@index([referenceType, referenceId])
   @@map("inventory_transactions")
 }
 
@@ -492,6 +497,7 @@ model PurchaseOrder {
   @@index([status])
   @@index([supplierId])
   @@index([warehouseId])
+  @@index([orderDate])
   @@map("purchase_orders")
 }
 
@@ -560,6 +566,8 @@ model RentalOrder {
   @@index([customerId, status])
   @@index([eventStartDate])
   @@index([eventEndDate])
+  @@index([bookingDate])
+  @@index([createdAt])
   @@map("rental_orders")
 }
 
@@ -650,6 +658,7 @@ model DispatchItem {
 
   @@index([dispatchId])
   @@index([productId])
+  @@index([rentalOrderItemId])
   @@map("dispatch_items")
 }
 
@@ -705,6 +714,8 @@ model ReturnInspectionItem {
   damageCharge       Decimal          @db.Decimal(12, 2)
   notes              String?
 
+  @@index([returnInspectionId])
+  @@index([rentalOrderItemId])
   @@map("return_inspection_items")
 }
 
@@ -1126,6 +1137,7 @@ enum DocumentType {
   PURCHASE_ORDER
   RETURN
   MAINTENANCE
+  RENTAL_INVOICE
 }
 
 model CompanySetting {
@@ -1412,6 +1424,8 @@ model NotificationRecipient {
 
   @@index([userId])
   @@index([isRead])
+  @@index([notificationId])
+  @@index([userId, isRead])
   @@map("notification_recipients")
 }
 

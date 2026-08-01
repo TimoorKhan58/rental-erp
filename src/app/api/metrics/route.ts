@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 
+import { appConfig } from "@/shared/config/app.config";
 import { observabilityConfig } from "@/shared/config/observability.config";
 import { renderPrometheusMetrics } from "@/shared/infrastructure/observability/prometheus-registry";
 
 /**
  * Prometheus-compatible metrics scrape endpoint.
- * Optional bearer token via METRICS_BEARER_TOKEN.
+ * Bearer token via METRICS_BEARER_TOKEN (required in staging/production).
  * Disable with ENABLE_METRICS=false.
  */
 export const dynamic = "force-dynamic";
@@ -14,7 +15,8 @@ export const runtime = "nodejs";
 function isAuthorized(request: Request): boolean {
   const token = observabilityConfig.metrics.bearerToken;
   if (!token) {
-    return true;
+    // Fail closed in hardened / production Node; open only for local/dev scrape DX.
+    return !appConfig.isHardened && !appConfig.isProduction;
   }
 
   const header = request.headers.get("authorization")?.trim();

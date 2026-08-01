@@ -31,6 +31,11 @@
 .env.production
 .env.staging
 
+# Private Compose overrides (managed DB, host-specific) — keep the *.example.yml tracked
+docker-compose.managed-db.override.yml
+docker-compose.*.override.yml
+!docker-compose.managed-db.override.example.yml
+
 # TLS private material (placeholders/docs under nginx/certs stay tracked)
 nginx/certs/*.pem
 nginx/certs/*.key

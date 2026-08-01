@@ -8,7 +8,12 @@ import {
 import type { IIdentityTransactionRunner } from "./identity-transaction.runner";
 import type { UserId } from "@/shared/domain/ids";
 import { parseRequest } from "@/shared/application/validation";
-import { NotFoundError, UnprocessableError } from "@/shared/infrastructure/errors";
+import { isUserRole } from "@/shared/application/authorization/types";
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnprocessableError,
+} from "@/shared/infrastructure/errors";
 import { IdentityUserStateError } from "@/modules/identity/domain/identity-user.errors";
 import { assertCanDeactivateUser } from "@/modules/identity/domain/identity-user.rules";
 import { USER_ROLES } from "@/constants/roles";
@@ -35,6 +40,12 @@ export class DeactivateIdentityUserService {
         return;
       }
 
+      if (scope.actorRole === undefined || !isUserRole(scope.actorRole)) {
+        throw new ForbiddenError({
+          message: "Authenticated actor role is required to deactivate users",
+        });
+      }
+
       const activeOwnerCount = await scope.userRepository.countActiveByRole(
         USER_ROLES.OWNER,
       );
@@ -43,18 +54,25 @@ export class DeactivateIdentityUserService {
         assertCanDeactivateUser({
           targetUserId: existing.id,
           actorUserId: scope.actorUserId ?? "",
+          actorRole: scope.actorRole,
           targetRole: existing.roleName,
           activeOwnerCount,
         });
       } catch (error) {
         if (error instanceof IdentityUserStateError) {
+          if (error.message.startsWith("Only owners")) {
+            throw new ForbiddenError({ message: error.message });
+          }
+
           throw new UnprocessableError({ message: error.message });
         }
 
         throw error;
       }
 
-      const updated = await scope.userRepository.update(id as UserId, { isActive: false });
+      const updated = await scope.userRepository.update(id as UserId, {
+        isActive: false,
+      });
 
       if (existing.authUserId !== null) {
         await scope.authGateway.revokeSessions(existing.authUserId);

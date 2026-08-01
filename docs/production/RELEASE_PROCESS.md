@@ -49,7 +49,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.production config > /d
 - [ ] CI workflows green on the release commit (`ci`, `pull-request` as applicable)
 - [ ] Changelog / release notes drafted (features, fixes, ops notes, migration notes)
 - [ ] Database migrations reviewed; staging applied successfully
-- [ ] Backup of target DB completed and verified non-empty
+- [ ] Backup of target DB completed with checksum manifest verified
 - [ ] Secrets/env diffs reviewed (no accidental secret commits)
 - [ ] Security headers / TLS still valid on staging
 - [ ] Rollback owner identified ([ROLLBACK.md](./ROLLBACK.md))
@@ -89,6 +89,12 @@ Record image IDs: `docker images --digests | grep rental`
 7. Announce completion / monitor alerts  
 
 Detailed steps: [DEPLOYMENT.md](./DEPLOYMENT.md) · [runbooks/UPDATE_APPLICATION.md](./runbooks/UPDATE_APPLICATION.md)
+
+Guarded migration option:
+
+```bash
+npm run db:migrate:safe
+```
 
 ---
 

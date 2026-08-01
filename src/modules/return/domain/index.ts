@@ -27,9 +27,9 @@ export {
   assertCanReceive,
   assertCanUpdate,
   assertDispatchEligibleForReturn,
+  assertInspectionComplete,
   applyInspectionToItems,
   computeRestockQuantity,
-  computeReleaseQuantity,
   validateReturnItems,
   validateReturnItemsAgainstDispatch,
 } from "./return.rules";

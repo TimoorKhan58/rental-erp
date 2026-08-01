@@ -17,6 +17,14 @@ export {
 export { cacheConfig, type CacheConfig } from "@/shared/config/cache.config";
 export { featureFlags, type FeatureFlags } from "@/shared/config/features.config";
 export { apiConfig, type ApiConfig } from "./api";
-export { PROTECTED_ROUTE_PREFIXES, PUBLIC_ROUTES, ROUTES, type AppRoute, type RouteConfig } from "./routes";
+export {
+  PROTECTED_ROUTE_PREFIXES,
+  PUBLIC_API_EXACT_PATHS,
+  PUBLIC_API_PATH_PREFIXES,
+  PUBLIC_ROUTES,
+  ROUTES,
+  type AppRoute,
+  type RouteConfig,
+} from "./routes";
 export { THEME_OPTIONS, THEME_STORAGE_KEY, type ThemeOption } from "./theme";
 export { designTokens, type DesignTokens } from "./design-tokens";

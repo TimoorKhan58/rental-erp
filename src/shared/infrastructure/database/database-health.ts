@@ -43,7 +43,7 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthResult> {
       latest = rows[0]?.migration_name;
     } catch (migrationError) {
       return {
-        ok: true,
+        ok: false,
         prisma: "ok",
         connectivity: "ok",
         migrations: {

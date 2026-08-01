@@ -98,7 +98,10 @@ export function FormField<
           >
             <div className={cn("space-y-2", className)}>
               {label ? (
-                <Label htmlFor={id} className={error ? "text-destructive" : undefined}>
+                <Label
+                  htmlFor={String(name)}
+                  className={error ? "text-destructive" : undefined}
+                >
                   {label}
                 </Label>
               ) : null}

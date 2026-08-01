@@ -55,11 +55,23 @@ export async function syncRentalOrderStatusFromReturns(
   const returnedByItem = new Map<string, number>();
   let hasAnyReturn = false;
   let allReturnsCompleted = true;
+  const completedDispatchIds = completedDispatches.map((dispatch) => dispatch.id);
+  const returns = await deps.returnRepository.findByDispatchIds(completedDispatchIds);
+  const returnsByDispatchId = new Map<string, typeof returns>();
+
+  for (const returnRecord of returns) {
+    const dispatchReturns = returnsByDispatchId.get(returnRecord.dispatchId);
+    if (dispatchReturns) {
+      dispatchReturns.push(returnRecord);
+      continue;
+    }
+    returnsByDispatchId.set(returnRecord.dispatchId, [returnRecord]);
+  }
 
   for (const dispatch of completedDispatches) {
-    const returns = await deps.returnRepository.findByDispatchId(dispatch.id);
+    const dispatchReturns = returnsByDispatchId.get(dispatch.id) ?? [];
 
-    for (const returnRecord of returns) {
+    for (const returnRecord of dispatchReturns) {
       if (returnRecord.status === "CANCELLED") {
         continue;
       }

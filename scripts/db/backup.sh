@@ -36,9 +36,21 @@ pg_dump --dbname="$DATABASE_URL" --format=plain --no-owner --no-acl \
 BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
 echo "[backup] Completed (${BYTES} bytes): ${TARGET}"
 
+CHECKSUM_FILE="${TARGET}.sha256"
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256sum "$TARGET" > "$CHECKSUM_FILE"
+elif command -v shasum >/dev/null 2>&1; then
+  shasum -a 256 "$TARGET" > "$CHECKSUM_FILE"
+else
+  echo "[backup] ERROR: sha256sum/shasum is required for backup integrity manifest" >&2
+  exit 1
+fi
+echo "[backup] Wrote checksum manifest: ${CHECKSUM_FILE}"
+
 if [[ "$BACKUP_RETENTION_DAYS" != "0" ]]; then
   echo "[backup] Pruning backups older than ${BACKUP_RETENTION_DAYS} day(s) in ${BACKUP_DIR}"
   find "$BACKUP_DIR" -type f -name 'rental-erp_*.sql.gz' -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete || true
+  find "$BACKUP_DIR" -type f -name 'rental-erp_*.sql.gz.sha256' -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete || true
 fi
 
 echo "[backup] Done"

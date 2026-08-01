@@ -152,6 +152,25 @@ describe("Inventory validation schemas", () => {
     expect(result.sortBy).toBe("quantityOnHand");
   });
 
+  it("accepts stockStatus filter", () => {
+    const result = parseRequest(ListInventorySchema, {
+      page: 1,
+      pageSize: 20,
+      stockStatus: "low-stock",
+    });
+    expect(result.stockStatus).toBe("low-stock");
+  });
+
+  it("rejects invalid stockStatus filter", () => {
+    expect(() =>
+      parseRequest(ListInventorySchema, {
+        page: 1,
+        pageSize: 20,
+        stockStatus: "unknown-status",
+      }),
+    ).toThrow();
+  });
+
   it("rejects invalid pagination page", () => {
     expect(() =>
       parseRequest(ListInventorySchema, { page: 0, pageSize: 20 }),

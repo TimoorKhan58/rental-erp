@@ -1,4 +1,5 @@
 import type { IRentalInvoiceTransactionRunner } from "@/modules/rental-invoice/application/services/rental-invoice-transaction.runner";
+import type { RepositoryUnitOfWorkContext } from "@/shared/infrastructure/database";
 import { createCustomerRepositoryFromUnitOfWork } from "@/modules/customer/infrastructure/factories/create-customer.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
@@ -29,5 +30,25 @@ export function createRentalInvoiceTransactionRunner(
           userId: options.userId,
         }),
       ),
+  };
+}
+
+export function createRentalInvoiceTransactionRunnerFromUnitOfWorkContext(
+  context: RepositoryUnitOfWorkContext,
+  options: CreateRentalInvoiceTransactionRunnerOptions = {},
+): IRentalInvoiceTransactionRunner {
+  return {
+    run: (operation) =>
+      operation({
+        rentalInvoiceRepository: createRentalInvoiceRepositoryFromUnitOfWork(
+          context,
+        ),
+        rentalOrderInvoiceLookup: createRentalOrderInvoiceLookupFromUnitOfWork(
+          context,
+        ),
+        customerRepository: createCustomerRepositoryFromUnitOfWork(context),
+        auditLogger: context.deps.auditLogger,
+        userId: options.userId,
+      }),
   };
 }

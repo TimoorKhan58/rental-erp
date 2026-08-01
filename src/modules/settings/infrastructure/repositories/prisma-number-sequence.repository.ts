@@ -8,6 +8,7 @@ import {
   repositoryUpdate,
 } from "@/shared/infrastructure/database";
 
+import type { EnsureActiveCompanySettingsService } from "@/modules/settings/application/services/ensure-active-company-settings.service";
 import {
   DEFAULT_SEQUENCE_STARTING_NUMBER,
   DOCUMENT_TYPE_PREFIXES,
@@ -15,13 +16,16 @@ import {
 import { NumberSequence } from "@/modules/settings/domain/number-sequence.entity";
 import { NumberSequenceNotFoundError } from "@/modules/settings/domain/number-sequence.errors";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
-import { assertCanGenerate } from "@/modules/settings/domain/number-sequence.rules";
-import type { EnsureActiveCompanySettingsService } from "@/modules/settings/application/services/ensure-active-company-settings.service";
-import type { DocumentType } from "@/modules/settings/domain/settings.constants";
+import {
+  assertCanGenerate,
+  formatDocumentNumber,
+} from "@/modules/settings/domain/number-sequence.rules";
 import type {
   GeneratedNumberResult,
+  GenerateNextNumberOptions,
   UpdateNumberSequenceData,
 } from "@/modules/settings/domain/number-sequence.types";
+import type { DocumentType } from "@/modules/settings/domain/settings.constants";
 
 import {
   toNumberSequenceDomain,
@@ -123,10 +127,13 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
     ).then(toNumberSequenceDomain);
   }
 
-  generateNextNumber(documentType: DocumentType): Promise<GeneratedNumberResult> {
+  generateNextNumber(
+    documentType: DocumentType,
+    options?: GenerateNextNumberOptions,
+  ): Promise<GeneratedNumberResult> {
     return this.runner.run(async (db) => {
       const execute = (client: DbClient) =>
-        this.generateNextNumberInTransaction(client, documentType);
+        this.generateNextNumberInTransaction(client, documentType, options);
 
       if (isPrismaClient(db)) {
         return db.$transaction((tx) => execute(tx));
@@ -139,6 +146,7 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
   private async generateNextNumberInTransaction(
     db: DbClient,
     documentType: DocumentType,
+    options?: GenerateNextNumberOptions,
   ): Promise<GeneratedNumberResult> {
     await this.ensureActiveCompanySettings.execute();
 
@@ -151,6 +159,11 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
     if (companySetting === null) {
       throw new Error("Company settings bootstrap failed");
     }
+
+    const createPrefix =
+      options?.prefix ?? DOCUMENT_TYPE_PREFIXES[documentType];
+    const createPadding =
+      options?.paddingLength ?? AUTO_CREATE_PADDING_LENGTH;
 
     let record = await db.documentSequence.findUnique({
       where: {
@@ -165,10 +178,10 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
       const created = NumberSequence.create({
         companySettingId: companySetting.id as never,
         documentType,
-        prefix: DOCUMENT_TYPE_PREFIXES[documentType],
+        prefix: createPrefix,
         startingNumber: DEFAULT_SEQUENCE_STARTING_NUMBER,
         currentNumber: DEFAULT_SEQUENCE_STARTING_NUMBER,
-        paddingLength: AUTO_CREATE_PADDING_LENGTH,
+        paddingLength: createPadding,
       });
 
       record = await db.documentSequence.create({
@@ -188,24 +201,62 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
       throw new NumberSequenceNotFoundError(documentType);
     }
 
-    const sequence = toNumberSequenceDomain(record);
+    // Serialize concurrent allocators on this sequence row until UoW/tx ends.
+    await db.$queryRaw`
+      SELECT id
+      FROM "document_sequences"
+      WHERE id = ${record.id}::uuid
+      FOR UPDATE
+    `;
 
-    assertCanGenerate({
-      prefix: sequence.prefix,
-      startingNumber: sequence.startingNumber,
-      currentNumber: sequence.currentNumber,
-      paddingLength: sequence.paddingLength,
+    const locked = await db.documentSequence.findUnique({
+      where: { id: record.id },
     });
 
-    const number = sequence.currentNumber;
-    const formattedNumber = sequence.formatNumber(number);
-    const nextSequence = sequence.withNextNumber(number);
+    if (locked === null) {
+      throw new NumberSequenceNotFoundError(documentType);
+    }
+
+    record = locked;
+
+    let prefix = record.prefix;
+    let currentNumber = record.currentNumber;
+    const updateData: {
+      currentNumber: number;
+      prefix?: string;
+    } = {
+      currentNumber: record.currentNumber + 1,
+    };
+
+    if (
+      options?.prefix !== undefined &&
+      options.resetWhenPrefixChanges === true &&
+      record.prefix !== options.prefix
+    ) {
+      prefix = options.prefix;
+      currentNumber = record.startingNumber;
+      updateData.prefix = prefix;
+      updateData.currentNumber = currentNumber + 1;
+    }
+
+    assertCanGenerate({
+      prefix,
+      startingNumber: record.startingNumber,
+      currentNumber,
+      paddingLength: record.paddingLength,
+    });
+
+    const number = currentNumber;
+    const formattedNumber = formatDocumentNumber(
+      prefix,
+      number,
+      record.paddingLength,
+      record.suffix,
+    );
 
     const saved = await db.documentSequence.update({
       where: { id: record.id },
-      data: {
-        currentNumber: nextSequence.currentNumber,
-      },
+      data: updateData,
     });
 
     const savedDomain = toNumberSequenceDomain(saved);

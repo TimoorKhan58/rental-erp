@@ -62,12 +62,25 @@ export function buildCompletedReturnForRepair(
     damagedQuantity?: number;
     goodQuantity?: number;
     lostQuantity?: number;
+    missingQuantity?: number;
   } = {},
 ): Return {
+  const returnedQuantity = 5;
+  const damagedQuantity = options.damagedQuantity ?? 2;
+  const lostQuantity = options.lostQuantity ?? 0;
+  const missingQuantity = options.missingQuantity ?? 0;
+  const goodQuantity =
+    options.goodQuantity ??
+    Math.max(
+      0,
+      returnedQuantity - damagedQuantity - lostQuantity - missingQuantity,
+    );
+
   return buildInspectedReturnEntity({
-    damagedQuantity: options.damagedQuantity ?? 2,
-    goodQuantity: options.goodQuantity ?? 3,
-    lostQuantity: options.lostQuantity ?? 0,
+    damagedQuantity,
+    goodQuantity,
+    lostQuantity,
+    missingQuantity,
   }).withCompleted();
 }
 

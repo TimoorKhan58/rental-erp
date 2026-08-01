@@ -115,7 +115,7 @@ export class RentalOrder implements Entity<RentalOrderId> {
   }
 
   withCancelled(): RentalOrder {
-    assertCanCancel(this.status, this.items);
+    assertCanCancel(this.status);
 
     return RentalOrder.reconstitute({
       ...this.toProps(),

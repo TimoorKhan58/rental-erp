@@ -1,3 +1,4 @@
+import type { UserRole } from "@/constants/roles";
 import type { IIdentityUserRepository } from "@/modules/identity/domain/identity-user.repository.interface";
 import type { IRoleRepository } from "@/modules/identity/domain/identity-user.repository.interface";
 import type { IIdentityAuthGateway } from "./identity-auth.gateway.interface";
@@ -9,6 +10,7 @@ export interface IdentityWriteScope {
   readonly authGateway: IIdentityAuthGateway;
   readonly auditLogger: IAuditLogger;
   readonly actorUserId?: string;
+  readonly actorRole?: UserRole;
 }
 
 export interface IIdentityTransactionRunner {

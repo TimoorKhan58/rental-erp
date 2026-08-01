@@ -153,15 +153,27 @@ export function applyInspectionToItems(
     throw new ReturnInvalidItemError("At least one item must be provided for inspect");
   }
 
-  const inspectMap = new Map(
-    inspectItems.map((item) => [item.rentalOrderItemId, item]),
-  );
+  const inspectMap = new Map<string, InspectReturnItemData>();
 
-  return items.map((item) => {
+  for (const inspectItem of inspectItems) {
+    if (inspectMap.has(inspectItem.rentalOrderItemId)) {
+      throw new ReturnInvalidItemError(
+        "Duplicate inspection item",
+        inspectItem.rentalOrderItemId,
+      );
+    }
+
+    inspectMap.set(inspectItem.rentalOrderItemId, inspectItem);
+  }
+
+  const updatedItems = items.map((item) => {
     const inspectItem = inspectMap.get(item.rentalOrderItemId);
 
     if (inspectItem === undefined) {
-      return item;
+      throw new ReturnInvalidItemError(
+        "Inspection is missing for returned item",
+        item.rentalOrderItemId,
+      );
     }
 
     inspectMap.delete(item.rentalOrderItemId);
@@ -203,6 +215,50 @@ export function applyInspectionToItems(
           : item.notes,
     };
   });
+
+  if (inspectMap.size > 0) {
+    const unknownId = inspectMap.keys().next().value as string;
+    throw new ReturnInvalidItemError("Unknown inspection item", unknownId);
+  }
+
+  return updatedItems;
+}
+
+/**
+ * Defense-in-depth before completion: every returned line must be fully
+ * accounted for as good + damaged + lost + missing.
+ */
+export function assertInspectionComplete(items: ReturnItemProps[]): void {
+  if (items.length === 0) {
+    throw new ReturnInvalidItemError("Return must have at least one inspected item");
+  }
+
+  for (const item of items) {
+    if (
+      item.goodQuantity < 0 ||
+      item.damagedQuantity < 0 ||
+      item.lostQuantity < 0 ||
+      item.missingQuantity < 0
+    ) {
+      throw new ReturnInvalidItemError(
+        "Inspection quantities cannot be negative",
+        item.rentalOrderItemId,
+      );
+    }
+
+    const total =
+      item.goodQuantity +
+      item.damagedQuantity +
+      item.lostQuantity +
+      item.missingQuantity;
+
+    if (total !== item.returnedQuantity) {
+      throw new ReturnInvalidItemError(
+        "Inspection quantities must sum to returned quantity",
+        item.rentalOrderItemId,
+      );
+    }
+  }
 }
 
 export function normalizeReturnProps(props: ReturnProps): ReturnProps {
@@ -230,9 +286,4 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 
 export function computeRestockQuantity(item: ReturnItemProps): number {
   return item.goodQuantity;
-}
-
-/** Qty whose rental reservation should clear when the return is completed. */
-export function computeReleaseQuantity(item: ReturnItemProps): number {
-  return item.returnedQuantity;
 }

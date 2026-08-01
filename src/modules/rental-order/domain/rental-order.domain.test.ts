@@ -144,9 +144,19 @@ describe("RentalOrder entity", () => {
     expect(cancelled.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel when reserved", () => {
+  it("cancels confirmed rental order that still has reservations", () => {
     const order = buildRentalOrderEntity({
       status: "CONFIRMED",
+      reservedQuantity: 5,
+    });
+    const cancelled = order.withCancelled();
+
+    expect(cancelled.status).toBe("CANCELLED");
+  });
+
+  it("rejects cancel when already on rent", () => {
+    const order = buildRentalOrderEntity({
+      status: "ON_RENT",
       reservedQuantity: 5,
     });
 

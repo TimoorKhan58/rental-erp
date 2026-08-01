@@ -475,7 +475,7 @@ export class PrismaFinancialReportRepository
           _sum: { amount: true },
         });
 
-        const expenseLines = await db.journalEntryLine.findMany({
+        const expenseLines = await db.journalEntryLine.aggregate({
           where: {
             account: { accountType: "EXPENSE" },
             journalEntry: {
@@ -485,7 +485,7 @@ export class PrismaFinancialReportRepository
                 : {}),
             },
           },
-          select: { debit: true },
+          _sum: { debit: true },
         });
 
         return [payments, expenseLines] as const;
@@ -497,10 +497,7 @@ export class PrismaFinancialReportRepository
       decimalToNumber(cashReceiptsRaw._sum.amount ?? 0),
     );
     const cashPayments = roundMoney(
-      cashPaymentsRaw.reduce(
-        (sum, line) => sum + decimalToNumber(line.debit),
-        0,
-      ),
+      decimalToNumber(cashPaymentsRaw._sum.debit ?? 0),
     );
     const adjustments = 0;
     const cashFromOperations = roundMoney(profitLoss.netProfit + adjustments);
@@ -593,14 +590,21 @@ export class PrismaFinancialReportRepository
       (db) =>
         db.account.findMany({
           orderBy: { accountCode: "asc" },
+          select: {
+            id: true,
+            accountCode: true,
+            name: true,
+            accountType: true,
+            isActive: true,
+          },
         }),
       { model: MODEL, operation: "getAccountBalanceAggregates.accounts" },
     );
 
-    const lines = await repositoryFindMany(
-      this.runner,
+    const lineGroups = await this.runner.run(
       (db) =>
-        db.journalEntryLine.findMany({
+        db.journalEntryLine.groupBy({
+          by: ["accountId"],
           where: {
             journalEntry: {
               status: FINANCIAL_REPORT_POSTED_STATUS,
@@ -609,8 +613,7 @@ export class PrismaFinancialReportRepository
                 : {}),
             },
           },
-          select: {
-            accountId: true,
+          _sum: {
             debit: true,
             credit: true,
           },
@@ -619,13 +622,11 @@ export class PrismaFinancialReportRepository
     );
 
     const totals = new Map<string, { debit: number; credit: number }>();
-    for (const line of lines) {
-      const current = totals.get(line.accountId) ?? { debit: 0, credit: 0 };
-      current.debit = roundMoney(current.debit + decimalToNumber(line.debit));
-      current.credit = roundMoney(
-        current.credit + decimalToNumber(line.credit),
-      );
-      totals.set(line.accountId, current);
+    for (const group of lineGroups) {
+      totals.set(group.accountId, {
+        debit: roundMoney(decimalToNumber(group._sum.debit ?? 0)),
+        credit: roundMoney(decimalToNumber(group._sum.credit ?? 0)),
+      });
     }
 
     return accounts.map((account) => {

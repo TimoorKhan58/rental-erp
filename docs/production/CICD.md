@@ -43,8 +43,10 @@ flowchart TD
 7. TypeScript (`npm run typecheck`)
 8. Unit tests (`npm test`)
 9. Config checks (`npm run config:check`)
-10. Production build (`npm run build`) — CI/PR/release
-11. Docker production image build (`Dockerfile` target `runner`) — **push disabled**
+10. Secrets scan (`npm run secrets:scan`)
+11. Dependency audit (`npm run audit:ci`)
+12. Production build (`npm run build`) — CI/PR/release
+13. Docker production image build (`Dockerfile` target `runner`) — **push disabled**
 
 Any failing step fails the job/workflow immediately.
 

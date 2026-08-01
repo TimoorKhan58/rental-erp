@@ -172,8 +172,9 @@ const envObjectSchema = z
     AUTH_COOKIE_CACHE_MAX_AGE_SECONDS: z.coerce
       .number()
       .int()
-      .positive()
-      .default(60 * 5),
+      .min(0)
+      // Default off: cookie cache can outlive DB session revocation (role/password reset).
+      .default(0),
     AUTH_MIN_PASSWORD_LENGTH: z.coerce.number().int().min(8).default(8),
     AUTH_TRUSTED_ORIGINS: commaSeparatedListSchema.default([]),
     AUTH_RATE_LIMIT_ENABLED: optionalBooleanEnvSchema,
@@ -276,6 +277,21 @@ const envObjectSchema = z
         code: "custom",
         path: ["BETTER_AUTH_URL"],
         message: "BETTER_AUTH_URL must use HTTPS in staging and production",
+      });
+    }
+
+    const metricsEnabled = data.ENABLE_METRICS ?? true;
+    if (
+      isHardened &&
+      metricsEnabled &&
+      (data.METRICS_BEARER_TOKEN === undefined ||
+        data.METRICS_BEARER_TOKEN.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["METRICS_BEARER_TOKEN"],
+        message:
+          "METRICS_BEARER_TOKEN is required when metrics are enabled in staging/production",
       });
     }
 

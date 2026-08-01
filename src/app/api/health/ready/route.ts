@@ -12,6 +12,23 @@ export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
   const snapshot = await checkReadinessHealth();
+  const sanitizedChecks = {
+    configuration: { ok: snapshot.checks.configuration.ok },
+    prisma: { ok: snapshot.checks.prisma.ok },
+    ...(snapshot.checks.database
+      ? {
+          database: {
+            ok: snapshot.checks.database.ok,
+            prisma: snapshot.checks.database.prisma,
+            connectivity: snapshot.checks.database.connectivity,
+            migrations: {
+              ok: snapshot.checks.database.migrations.ok,
+              appliedCount: snapshot.checks.database.migrations.appliedCount,
+            },
+          },
+        }
+      : {}),
+  };
 
   return NextResponse.json(
     {
@@ -20,7 +37,7 @@ export async function GET(): Promise<NextResponse> {
       service: snapshot.service,
       timestamp: snapshot.timestamp,
       uptimeSeconds: snapshot.uptimeSeconds,
-      checks: snapshot.checks,
+      checks: sanitizedChecks,
     },
     {
       status: snapshot.ok ? 200 : 503,

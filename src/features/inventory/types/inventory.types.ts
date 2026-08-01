@@ -43,6 +43,7 @@ export type ListInventoryParams = {
   productId?: string;
   warehouseId?: string;
   isActive?: boolean;
+  stockStatus?: StockStatusFilter;
 };
 
 export type CreateInventoryPayload = {

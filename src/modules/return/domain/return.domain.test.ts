@@ -10,7 +10,7 @@ import {
 import {
   applyInspectionToItems,
   assertDispatchEligibleForReturn,
-  computeReleaseQuantity,
+  assertInspectionComplete,
   computeRestockQuantity,
   validateReturnDate,
   validateReturnItems,
@@ -19,8 +19,10 @@ import {
 
 import {
   ITEM_ID,
+  OTHER_ITEM_ID,
   buildCreateReturnData,
   buildInspectedReturnEntity,
+  buildMultiItemReceivedReturnEntity,
   buildReceivedReturnEntity,
   buildReturnEntity,
 } from "../tests/helpers/return.fixtures";
@@ -304,6 +306,118 @@ describe("Return rules", () => {
     ).toThrow(ReturnInvalidItemError);
   });
 
+  it("rejects partial inspection when a returned line is missing", () => {
+    const multiItem = buildMultiItemReceivedReturnEntity();
+
+    expect(() =>
+      applyInspectionToItems(multiItem.items, [
+        {
+          rentalOrderItemId: ITEM_ID,
+          goodQuantity: 5,
+          damagedQuantity: 0,
+          lostQuantity: 0,
+          missingQuantity: 0,
+        },
+      ]),
+    ).toThrow(ReturnInvalidItemError);
+  });
+
+  it("rejects unknown inspection item ids", () => {
+    expect(() =>
+      applyInspectionToItems(buildReceivedReturnEntity().items, [
+        {
+          rentalOrderItemId: ITEM_ID,
+          goodQuantity: 5,
+          damagedQuantity: 0,
+          lostQuantity: 0,
+          missingQuantity: 0,
+        },
+        {
+          rentalOrderItemId: OTHER_ITEM_ID,
+          goodQuantity: 1,
+          damagedQuantity: 0,
+          lostQuantity: 0,
+          missingQuantity: 0,
+        },
+      ]),
+    ).toThrow(ReturnInvalidItemError);
+  });
+
+  it("rejects duplicate inspection item ids", () => {
+    expect(() =>
+      applyInspectionToItems(buildReceivedReturnEntity().items, [
+        {
+          rentalOrderItemId: ITEM_ID,
+          goodQuantity: 3,
+          damagedQuantity: 2,
+          lostQuantity: 0,
+          missingQuantity: 0,
+        },
+        {
+          rentalOrderItemId: ITEM_ID,
+          goodQuantity: 5,
+          damagedQuantity: 0,
+          lostQuantity: 0,
+          missingQuantity: 0,
+        },
+      ]),
+    ).toThrow(ReturnInvalidItemError);
+  });
+
+  it("accepts complete multi-line inspection", () => {
+    const multiItem = buildMultiItemReceivedReturnEntity();
+    const inspected = applyInspectionToItems(multiItem.items, [
+      {
+        rentalOrderItemId: ITEM_ID,
+        goodQuantity: 3,
+        damagedQuantity: 1,
+        lostQuantity: 1,
+        missingQuantity: 0,
+      },
+      {
+        rentalOrderItemId: OTHER_ITEM_ID,
+        goodQuantity: 2,
+        damagedQuantity: 0,
+        lostQuantity: 0,
+        missingQuantity: 0,
+      },
+    ]);
+
+    expect(inspected).toHaveLength(2);
+    expect(inspected[0]?.goodQuantity).toBe(3);
+    expect(inspected[1]?.goodQuantity).toBe(2);
+  });
+
+  it("assertInspectionComplete rejects incomplete inspected lines", () => {
+    const incomplete = buildInspectedReturnEntity({
+      goodQuantity: 0,
+      damagedQuantity: 0,
+      lostQuantity: 0,
+      missingQuantity: 0,
+    });
+
+    expect(() => assertInspectionComplete(incomplete.items)).toThrow(
+      ReturnInvalidItemError,
+    );
+  });
+
+  it("rejects complete when inspection totals do not cover returned quantity", () => {
+    const incomplete = Return.reconstitute({
+      ...buildInspectedReturnEntity().toProps(),
+      items: [
+        {
+          ...buildInspectedReturnEntity().items[0]!,
+          goodQuantity: 0,
+          damagedQuantity: 0,
+          lostQuantity: 0,
+          missingQuantity: 0,
+        },
+      ],
+    });
+
+    expect(() => incomplete.withCompleted()).toThrow(ReturnInvalidItemError);
+  });
+
   it("computes restock quantity from good quantity only", () => {
     const item = buildInspectedReturnEntity({
       goodQuantity: 3,
@@ -324,14 +438,14 @@ describe("Return rules", () => {
     expect(computeRestockQuantity(item)).toBe(0);
   });
 
-  it("computes release quantity from full returned quantity", () => {
+  it("computes restock quantity from good quantity only", () => {
     const item = buildInspectedReturnEntity({
       goodQuantity: 3,
       damagedQuantity: 1,
       lostQuantity: 1,
     }).items[0]!;
 
-    expect(computeReleaseQuantity(item)).toBe(item.returnedQuantity);
+    expect(computeRestockQuantity(item)).toBe(3);
   });
 });
 

@@ -14,8 +14,34 @@ interface StoredInventory {
   record: ReturnType<Inventory["toProps"]>;
 }
 
+function deriveInventoryStockStatus(item: {
+  quantityOnHand: number;
+  reservedQuantity: number;
+  minimumStock: number;
+  maximumStock: number | null;
+}): "in-stock" | "low-stock" | "out-of-stock" | "overstock" {
+  const availableQuantity = item.quantityOnHand - item.reservedQuantity;
+
+  if (availableQuantity <= 0) {
+    return "out-of-stock";
+  }
+
+  if (item.minimumStock > 0 && availableQuantity <= item.minimumStock) {
+    return "low-stock";
+  }
+
+  if (item.maximumStock !== null && item.quantityOnHand > item.maximumStock) {
+    return "overstock";
+  }
+
+  return "in-stock";
+}
+
 export class InMemoryInventoryRepository implements IInventoryRepository {
   private readonly store = new Map<string, StoredInventory>();
+  /** Simulates SELECT FOR UPDATE: queue waiters, hold until unlockInventory. */
+  private readonly lockTails = new Map<string, Promise<void>>();
+  private readonly lockReleases = new Map<string, () => void>();
 
   snapshot(): Map<string, StoredInventory> {
     return new Map(
@@ -48,6 +74,33 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
     );
   }
 
+  async findByIdForUpdate(id: InventoryId): Promise<Inventory | null> {
+    const previous = this.lockTails.get(id) ?? Promise.resolve();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    this.lockTails.set(
+      id,
+      previous.then(() => gate),
+    );
+    await previous;
+    this.lockReleases.set(id, release);
+
+    return this.findById(id);
+  }
+
+  unlockInventory(id: InventoryId): Promise<void> {
+    const release = this.lockReleases.get(id);
+    if (release !== undefined) {
+      this.lockReleases.delete(id);
+      release();
+    }
+
+    return Promise.resolve();
+  }
+
   findByProductAndWarehouse(
     productId: ProductId,
     warehouseId: WarehouseId,
@@ -62,6 +115,25 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
     }
 
     return Promise.resolve(null);
+  }
+
+  findByProductsAndWarehouse(
+    productIds: ProductId[],
+    warehouseId: WarehouseId,
+  ): Promise<Inventory[]> {
+    const idSet = new Set(productIds);
+    const matches: Inventory[] = [];
+
+    for (const stored of this.store.values()) {
+      if (
+        idSet.has(stored.record.productId as ProductId) &&
+        stored.record.warehouseId === warehouseId
+      ) {
+        matches.push(Inventory.reconstitute(stored.record));
+      }
+    }
+
+    return Promise.resolve(matches);
   }
 
   async findPaged(
@@ -81,6 +153,12 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
 
     if (query.isActive !== undefined) {
       items = items.filter((item) => item.isActive === query.isActive);
+    }
+
+    if (query.stockStatus !== undefined) {
+      items = items.filter(
+        (item) => deriveInventoryStockStatus(item) === query.stockStatus,
+      );
     }
 
     if (query.search) {

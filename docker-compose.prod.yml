@@ -1,11 +1,14 @@
 name: rental-erp-prod
 
-# Production example Compose stack with Nginx reverse proxy (Phase 8-005).
+# Production example Compose stack with Nginx reverse proxy (Phase 8-005 / Phase 20 RC1).
 # Copy `.env.production.example` → `.env.production` and set real secrets + TLS certs.
-# Managed Postgres: remove the `db` service and set DATABASE_URL externally.
+# Managed Postgres: use `docker-compose.managed-db.override.example.yml` (see DOCKER.md).
 #
 # Public ports: HTTP ${HTTP_PORT:-80}, HTTPS ${HTTPS_PORT:-443}
 # App and database ports are internal only.
+#
+# Always pass Compose interpolation secrets via --env-file (npm run docker:prod does this):
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up --build -d
 
 services:
   db:
@@ -47,6 +50,9 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       APP_URL: ${APP_URL:?APP_URL is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://erp.example.com}
+      # Migrate job loads env schema via prisma.config — disable metrics so an empty
+      # METRICS_BEARER_TOKEN does not block prisma migrate deploy.
+      ENABLE_METRICS: "false"
       WAIT_FOR_DB: "true"
       RUN_MIGRATIONS: "false"
     depends_on:
@@ -55,6 +61,17 @@ services:
     networks:
       - data
     restart: "no"
+
+  # One-shot: ensure named upload volume is writable by non-root app (uid/gid 1001).
+  uploads-init:
+    image: busybox:1.36
+    user: "0:0"
+    volumes:
+      - app_uploads:/app/uploads
+    command: ["sh", "-c", "mkdir -p /app/uploads && chown -R 1001:1001 /app/uploads"]
+    restart: "no"
+    networks:
+      - app
 
   app:
     build:
@@ -68,6 +85,7 @@ services:
         BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
         APP_ENV: local
     restart: unless-stopped
+    stop_grace_period: 30s
     # Application is internal-only — Nginx is the public entrypoint.
     expose:
       - "3000"
@@ -83,6 +101,7 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
       UPLOAD_STORAGE: ${UPLOAD_STORAGE:-local}
       UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}
       ENABLE_EMAIL: ${ENABLE_EMAIL:-false}
@@ -94,23 +113,31 @@ services:
       ENABLE_SECURITY_HEADERS: ${ENABLE_SECURITY_HEADERS:-false}
       ENABLE_HSTS: ${ENABLE_HSTS:-false}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      ENABLE_METRICS: ${ENABLE_METRICS:-true}
+      # Required when ENABLE_METRICS=true under APP_ENV=staging|production (fail-fast).
+      METRICS_BEARER_TOKEN: ${METRICS_BEARER_TOKEN:-}
+      ERROR_TRACKER_PROVIDER: ${ERROR_TRACKER_PROVIDER:-none}
     volumes:
       - app_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
+      uploads-init:
+        condition: service_completed_successfully
+    # Readiness gate for Nginx depends_on — DB + migrations must succeed.
+    # Dockerfile HEALTHCHECK remains liveness (/api/health) for restart loops.
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:3000/api/health/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 60s
     networks:
       - app
       - data
@@ -120,6 +147,7 @@ services:
       context: .
       dockerfile: Dockerfile.nginx
     restart: unless-stopped
+    stop_grace_period: 15s
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
