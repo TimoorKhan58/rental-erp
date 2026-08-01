@@ -9,6 +9,9 @@
  *
  * Production mode (non-interactive):
  *   Set ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_ROLE.
+ *
+ * Creates the user without sending an invitation email, then sets the
+ * known bootstrap password via the existing admin password-reset path.
  */
 import "dotenv/config";
 import { stdin as input, stdout as output } from "node:process";
@@ -151,10 +154,15 @@ async function bootstrapAdministrator(
     const user = await services.createIdentityUser.execute({
       name,
       email,
-      password,
       role,
       isActive: true,
+      sendInvitation: false,
     });
+
+    await services.resetIdentityUserPassword.execute(
+      { id: user.id },
+      { password },
+    );
 
     console.log("\nAdministrator created successfully.");
     console.log(`  ERP user id: ${user.id}`);

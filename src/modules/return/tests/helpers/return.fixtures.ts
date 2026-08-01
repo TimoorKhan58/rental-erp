@@ -27,6 +27,8 @@ export const RETURN_ID =
 export const OTHER_RETURN_ID =
   "ee0e8400-e29b-41d4-a716-446655440001" as ReturnInspectionId;
 
+export const OTHER_ITEM_ID = "dd0e8400-e29b-41d4-a716-446655440099";
+
 export const VALID_CREATE_INPUT = {
   returnNumber: "RTN-2026-001",
   rentalOrderId: RENTAL_ORDER_ID,
@@ -137,6 +139,33 @@ export function buildInspectedReturnEntity(
       lostQuantity,
       missingQuantity,
     })),
+    updatedAt: now,
+  });
+}
+
+/** Two-line received return for inspection-completeness scenarios. */
+export function buildMultiItemReceivedReturnEntity(): Return {
+  const now = new Date("2026-01-18T10:00:00.000Z");
+  const base = buildReceivedReturnEntity();
+  const first = base.items[0]!;
+
+  return Return.reconstitute({
+    ...base.toProps(),
+    items: [
+      { ...first, id: ITEM_ID, rentalOrderItemId: ITEM_ID, returnedQuantity: 5 },
+      {
+        ...first,
+        id: OTHER_ITEM_ID,
+        rentalOrderItemId: OTHER_ITEM_ID,
+        dispatchItemId: OTHER_ITEM_ID,
+        returnedQuantity: 2,
+        goodQuantity: 0,
+        damagedQuantity: 0,
+        lostQuantity: 0,
+        missingQuantity: 0,
+        notes: null,
+      },
+    ],
     updatedAt: now,
   });
 }

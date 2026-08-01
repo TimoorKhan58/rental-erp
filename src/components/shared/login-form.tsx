@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
@@ -14,18 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-
-function sanitizeCallbackUrl(value: string | null): string {
-  if (value === null || value.length === 0) {
-    return "/";
-  }
-
-  if (!value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-
-  return value;
-}
+import { sanitizeCallbackUrl } from "@/shared/infrastructure/auth/sanitize-callback-url";
 
 export function LoginForm() {
   const router = useRouter();
@@ -100,6 +90,14 @@ export function LoginForm() {
               minLength={8}
               className="h-10 border-border/60 bg-muted/30 focus-visible:bg-card"
             />
+            <p className="text-right text-sm">
+              <Link
+                href="/forgot-password"
+                className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </p>
           </div>
           {error && (
             <p

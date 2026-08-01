@@ -46,6 +46,8 @@ Included series (process-local):
 
 Optional auth: `METRICS_BEARER_TOKEN` → `Authorization: Bearer <token>`.
 
+**Production / staging:** when `ENABLE_METRICS=true` (default), `METRICS_BEARER_TOKEN` is **required** — the process fails fast at startup if it is empty. Generate with `openssl rand -hex 32`, or set `ENABLE_METRICS=false` until scrapers are ready. The Compose `migrate` profile forces `ENABLE_METRICS=false` so migrations are not blocked by an empty metrics token.
+
 **Note:** Counters are per Node process. Behind multiple replicas, scrape each instance or use a pull agent sidecar.
 
 ## Structured logging

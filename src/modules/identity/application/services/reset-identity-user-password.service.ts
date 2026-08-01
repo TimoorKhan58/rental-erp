@@ -14,7 +14,14 @@ import {
 import type { IIdentityTransactionRunner } from "./identity-transaction.runner";
 import type { UserId } from "@/shared/domain/ids";
 import { parseRequest } from "@/shared/application/validation";
-import { NotFoundError, UnprocessableError } from "@/shared/infrastructure/errors";
+import { isUserRole } from "@/shared/application/authorization/types";
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnprocessableError,
+} from "@/shared/infrastructure/errors";
+import { IdentityUserStateError } from "@/modules/identity/domain/identity-user.errors";
+import { assertCanResetUserPassword } from "@/modules/identity/domain/identity-user.rules";
 
 export class ResetIdentityUserPasswordService {
   constructor(
@@ -36,6 +43,25 @@ export class ResetIdentityUserPasswordService {
           message: "User not found",
           details: { id },
         });
+      }
+
+      if (scope.actorRole === undefined || !isUserRole(scope.actorRole)) {
+        throw new ForbiddenError({
+          message: "Authenticated actor role is required to reset passwords",
+        });
+      }
+
+      try {
+        assertCanResetUserPassword({
+          actorRole: scope.actorRole,
+          targetRole: existing.roleName,
+        });
+      } catch (error) {
+        if (error instanceof IdentityUserStateError) {
+          throw new ForbiddenError({ message: error.message });
+        }
+
+        throw error;
       }
 
       if (existing.authUserId === null) {

@@ -4,7 +4,11 @@ import { PERMISSIONS } from "@/shared/application/authorization";
 import { USER_ROLES } from "@/constants/roles";
 import type { UserRole } from "@/constants/roles";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
-import { createMockAuthSession } from "@/shared/infrastructure/auth/test-session.factory";
+import {
+  createMockAuthSession,
+  TEST_ERP_USER_ID,
+} from "@/shared/infrastructure/auth/test-session.factory";
+import prisma from "@/lib/prisma";
 
 import { runIdentityApiRoute } from "@/modules/identity/presentation/http/identity-api.route-runner";
 import {
@@ -30,6 +34,11 @@ vi.mock("@/lib/auth", () => ({
 
 function mockSession(role: UserRole) {
   getSessionMock.mockResolvedValue(createMockAuthSession(role));
+  vi.mocked(prisma.user.findUnique).mockResolvedValue({
+    id: TEST_ERP_USER_ID,
+    isActive: true,
+    role: { name: role },
+  } as never);
 }
 
 import { VALID_CREATE_INPUT } from "@/modules/identity/tests/helpers/identity-user.fixtures";
@@ -112,6 +121,20 @@ describe("runIdentityApiRoute authorization", () => {
     });
   });
 
+  it("allows authenticated workers when no permission is required", async () => {
+    mockSession(USER_ROLES.WORKER);
+
+    const result = await runIdentityApiRoute({
+      request: createMockNextRequest(),
+      route: "/api/users/me",
+      httpMethod: "GET",
+      resolveServices: () => createMockServices() as unknown as IdentityApplicationServices,
+      handler: async () => ({ ok: true }),
+    });
+
+    expect(result.status).toBe(200);
+  });
+
   it("allows owner to list users", async () => {
     mockSession(USER_ROLES.OWNER);
     const services = createMockServices();
@@ -163,6 +186,21 @@ describe("identity API handlers", () => {
     expect(body.data.items).toEqual([]);
   });
 
+  it("handleListIdentityUsers forbids Worker without identity.read", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+
+    const response = await handleListIdentityUsers(
+      createMockNextRequest({
+        url: "http://localhost:3000/api/users?page=1&pageSize=20&sortOrder=asc",
+      }),
+      () => services as unknown as IdentityApplicationServices,
+    );
+
+    expect(response.status).toBe(403);
+    expect(services.listIdentityUsers.execute).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid create payload", async () => {
     mockSession(USER_ROLES.OWNER);
 
@@ -204,6 +242,32 @@ describe("identity API handlers", () => {
     );
   });
 
+  it("handleGetIdentityUserProfile allows Worker without identity.read", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+    services.getIdentityUserProfile.execute.mockResolvedValue({
+      id: "00000000-0000-4000-8000-000000000099",
+      name: "Worker User",
+      email: "worker@example.com",
+      roleId: "00000000-0000-4000-8000-000000000003",
+      role: USER_ROLES.WORKER,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      permissions: ["customers:read", "dashboard:read"],
+    });
+
+    const response = await handleGetIdentityUserProfile(
+      createMockNextRequest({ url: "http://localhost:3000/api/users/me" }),
+      () => services as unknown as IdentityApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.getIdentityUserProfile.execute).toHaveBeenCalledWith(
+      "00000000-0000-4000-8000-000000000099",
+    );
+  });
+
   it("handleCreateIdentityUser delegates to service with valid input", async () => {
     mockSession(USER_ROLES.OWNER);
     const services = createMockServices();
@@ -211,6 +275,7 @@ describe("identity API handlers", () => {
       id: "new-user",
       ...VALID_CREATE_INPUT,
       roleId: "00000000-0000-4000-8000-000000000002",
+      invitationDelivered: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -225,7 +290,12 @@ describe("identity API handlers", () => {
       () => services as unknown as IdentityApplicationServices,
     );
 
+    const body = await readJsonResponse<{
+      data: { id: string; invitationDelivered: boolean };
+    }>(response);
+
     expect(response.status).toBe(200);
+    expect(body.data.invitationDelivered).toBe(true);
     expect(services.createIdentityUser.execute).toHaveBeenCalledOnce();
   });
 });

@@ -25,6 +25,7 @@ describe("environment validation", () => {
       expect(result.data.APP_ENV).toBe("local");
       expect(result.data.SECURE_COOKIES).toBe(false);
       expect(result.data.ENABLE_SECURITY_HEADERS).toBe(false);
+      expect(result.data.AUTH_COOKIE_CACHE_MAX_AGE_SECONDS).toBe(0);
     }
   });
 

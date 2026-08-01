@@ -19,7 +19,11 @@ export type {
   IRoleRepository,
 } from "./identity-user.repository.interface";
 export {
+  assertCanAdministerOwnerTarget,
+  assertCanAssignRole,
+  assertCanChangeUserRole,
   assertCanDeactivateUser,
+  assertCanResetUserPassword,
   assertUserIsActive,
 } from "./identity-user.rules";
 export type {

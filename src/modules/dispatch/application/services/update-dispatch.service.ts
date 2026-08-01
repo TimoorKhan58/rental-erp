@@ -1,4 +1,5 @@
 import {
+  buildPriorDispatchedQuantities,
   DispatchInvalidStatusError,
   DispatchInvariantError,
   validateDispatchItems,
@@ -96,7 +97,21 @@ export class UpdateDispatchService {
             });
           }
 
-          validateRentalOrderForDispatch(rentalOrder, updateData.items);
+          const priorDispatches = await dispatchRepository.findPaged({
+            page: 1,
+            pageSize: 100,
+            rentalOrderId: existing.rentalOrderId,
+            sortOrder: "desc",
+          });
+
+          validateRentalOrderForDispatch(
+            rentalOrder,
+            updateData.items,
+            buildPriorDispatchedQuantities(
+              priorDispatches.items,
+              existing.id,
+            ),
+          );
         }
 
         const previousValues = toDispatchAuditValues(existing);

@@ -12,6 +12,8 @@ const SECRET_ENV_KEYS = new Set([
   "DATABASE_URL",
   "BETTER_AUTH_SECRET",
   "SMTP_PASSWORD",
+  "METRICS_BEARER_TOKEN",
+  "ERROR_TRACKER_DSN",
 ]);
 
 function formatZodError(error: ZodError): string {

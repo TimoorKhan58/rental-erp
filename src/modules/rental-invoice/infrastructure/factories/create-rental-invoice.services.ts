@@ -15,6 +15,7 @@ import type { IRentalInvoiceService } from "@/modules/rental-invoice/application
 import { UpdateRentalInvoiceService } from "@/modules/rental-invoice/application/services/update-rental-invoice.service";
 import { VoidRentalInvoiceService } from "@/modules/rental-invoice/application/services/void-rental-invoice.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
+import { createNumberSequenceRepositoryFromUnitOfWork } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
 import { createProductRepositoryFromUnitOfWork } from "@/modules/product/infrastructure/factories/create-product.repository";
 import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
@@ -53,6 +54,7 @@ export function createRentalInvoiceApplicationServices(
       returnRepository: createReturnRepositoryFromUnitOfWork(context),
       rentalInvoiceRepository: createRentalInvoiceRepositoryFromUnitOfWork(context),
       productRepository: createProductRepositoryFromUnitOfWork(context),
+      numberSequences: createNumberSequenceRepositoryFromUnitOfWork(context),
       transactionRunner:
         createRentalInvoiceTransactionRunnerFromUnitOfWorkContext(context, {
           userId: options.userId,

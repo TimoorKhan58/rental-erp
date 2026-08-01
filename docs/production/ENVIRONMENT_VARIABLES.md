@@ -79,7 +79,7 @@ When `APP_ENV` is omitted it defaults from `NODE_ENV` (`production` → `product
 | `BETTER_AUTH_URL` | No | `APP_URL` | Better Auth base URL |
 | `AUTH_SESSION_EXPIRES_IN_SECONDS` | No | `604800` | Session lifetime (7 days) |
 | `AUTH_SESSION_UPDATE_AGE_SECONDS` | No | `86400` | Session refresh window (1 day) |
-| `AUTH_COOKIE_CACHE_MAX_AGE_SECONDS` | No | `300` | Cookie cache TTL (5 minutes) |
+| `AUTH_COOKIE_CACHE_MAX_AGE_SECONDS` | No | `0` | Cookie cache TTL seconds (`0` = disabled; Better Auth cookie cache off by default) |
 | `AUTH_MIN_PASSWORD_LENGTH` | No | `8` | Minimum password length |
 | `AUTH_TRUSTED_ORIGINS` | No | empty | Extra CSRF/redirect origins (comma-separated) |
 | `AUTH_RATE_LIMIT_ENABLED` | No | `true` | Enable Better Auth rate limiting |
@@ -111,7 +111,7 @@ When `APP_ENV` is omitted it defaults from `NODE_ENV` (`production` → `product
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `ENABLE_METRICS` | No | `true` | Expose Prometheus text at `GET /api/metrics` |
-| `METRICS_BEARER_TOKEN` | No | — | Optional bearer token required for metrics scrape |
+| `METRICS_BEARER_TOKEN` | **Conditional** | — | **Required** in staging/production when `ENABLE_METRICS=true` (fail-fast at startup). Generate with `openssl rand -hex 32`. Set `ENABLE_METRICS=false` to defer. |
 | `ERROR_TRACKER_PROVIDER` | No | `none` | `none` \| `sentry` \| `datadog` \| `newrelic` \| `azure` \| `otlp` |
 | `ERROR_TRACKER_DSN` | No | — | Vendor DSN / connection string (never commit) |
 

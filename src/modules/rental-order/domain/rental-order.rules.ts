@@ -229,7 +229,6 @@ export function assertCanReserve(status: RentalOrderStatus): void {
 }
 
 const NON_CANCELLABLE_STATUSES: RentalOrderStatus[] = [
-  "RESERVED",
   "DISPATCHED",
   "ON_RENT",
   "PARTIALLY_RETURNED",
@@ -238,15 +237,8 @@ const NON_CANCELLABLE_STATUSES: RentalOrderStatus[] = [
   "CANCELLED",
 ];
 
-export function assertCanCancel(
-  status: RentalOrderStatus,
-  items: RentalOrderItemProps[],
-): void {
+export function assertCanCancel(status: RentalOrderStatus): void {
   if (NON_CANCELLABLE_STATUSES.includes(status)) {
-    throw new RentalOrderInvalidStatusError(status, "cancel");
-  }
-
-  if (items.some((item) => item.reservedQuantity > 0)) {
     throw new RentalOrderInvalidStatusError(status, "cancel");
   }
 }

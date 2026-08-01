@@ -7,6 +7,7 @@ export const queryKeys = {
   auth: {
     all: ["app", "auth"] as const,
     session: () => [...queryKeys.auth.all, "session"] as const,
+    sessions: () => [...queryKeys.auth.all, "sessions"] as const,
     me: () => [...queryKeys.auth.all, "me"] as const,
   },
   lists: () => [...queryKeys.all, "list"] as const,
@@ -209,6 +210,20 @@ export const queryKeys = {
     all: ["app", "settings"] as const,
     detail: () => [...queryKeys.settings.all, "detail"] as const,
     profile: () => [...queryKeys.settings.all, "profile"] as const,
+  },
+  users: {
+    all: ["app", "users"] as const,
+    lists: () => [...queryKeys.users.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.users.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.users.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.users.details(), id] as const,
+    permissions: (id: string) =>
+      [...queryKeys.users.all, "permissions", id] as const,
+  },
+  roles: {
+    all: ["app", "roles"] as const,
+    list: () => [...queryKeys.roles.all, "list"] as const,
   },
   permissions: {
     me: () => ["app", "permissions", "me"] as const,

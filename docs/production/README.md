@@ -1,6 +1,6 @@
-# Production Documentation Index — Phase 8
+# Production Documentation Index — Phase 8 / Phase 20 RC1
 
-Central index for Rental ERP production engineering (Phases 8-001 → 8-010).
+Central index for Rental ERP production engineering (Phases 8-001 → 8-010) and **Phase 20 RC1 production deployment validation**.
 
 ---
 
@@ -8,12 +8,15 @@ Central index for Rental ERP production engineering (Phases 8-001 → 8-010).
 
 | Document | Description |
 |----------|-------------|
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Server sizing, Compose deploy, TLS, migrate, health |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Server sizing, Compose deploy, TLS, migrate, health, Render |
 | [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) | Versioning, tagging, approval, post-release checks |
 | [ROLLBACK.md](./ROLLBACK.md) | App/image/config/DB rollback |
-| [SMOKE_TESTS.md](./SMOKE_TESTS.md) | Module-by-module smoke checklist |
-| [PRODUCTION_VALIDATION.md](./PRODUCTION_VALIDATION.md) | Final go-live gate checklist |
+| [SMOKE_TESTS.md](./SMOKE_TESTS.md) | Module + Phase 20 RC1 ops smoke checklist |
+| [PRODUCTION_VALIDATION.md](./PRODUCTION_VALIDATION.md) | Final go-live + RC1 operator gates |
 | [DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md) | DR index, RTO/RPO, testing gate |
+| [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) | Full env catalog (metrics token required in prod) |
+| [DOCKER.md](./DOCKER.md) | Images, Compose, health/readiness, lab certs |
+| [PHASE_20_RC1_DEPLOYMENT_VALIDATION.md](./PHASE_20_RC1_DEPLOYMENT_VALIDATION.md) | Phase 20 RC1 audit outcomes and fixes |
 
 ---
 

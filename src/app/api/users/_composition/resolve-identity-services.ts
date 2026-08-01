@@ -1,5 +1,6 @@
 import { createIdentityApplicationServices } from "@/modules/identity/infrastructure/factories/create-identity.services";
 import type { IdentityServiceResolver } from "@/modules/identity/presentation/routes/identity-api.routes";
+import { isUserRole } from "@/shared/application/authorization/types";
 import { createSharedDepsFromExecutionContext } from "@/shared/infrastructure/di/shared-deps";
 
 export const resolveIdentityApplicationServices: IdentityServiceResolver = (
@@ -8,4 +9,7 @@ export const resolveIdentityApplicationServices: IdentityServiceResolver = (
   createIdentityApplicationServices(
     createSharedDepsFromExecutionContext(ctx),
     ctx.request.userId,
+    ctx.request.role !== undefined && isUserRole(ctx.request.role)
+      ? ctx.request.role
+      : undefined,
   );

@@ -12,6 +12,7 @@ import {
   assertCanInspect,
   assertCanReceive,
   assertCanUpdate,
+  assertInspectionComplete,
   normalizeReturnProps,
   validateReturnDate,
   validateReturnItems,
@@ -131,6 +132,7 @@ export class Return implements Entity<ReturnInspectionId> {
 
   withCompleted(): Return {
     assertCanComplete(this.status);
+    assertInspectionComplete(this.items);
     const now = new Date();
 
     return Return.reconstitute({

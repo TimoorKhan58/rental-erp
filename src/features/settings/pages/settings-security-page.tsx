@@ -8,7 +8,11 @@ import {
 } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { SettingsSubNav } from "../components";
-import { SecurityForm } from "../forms";
+import {
+  ChangePasswordForm,
+} from "../forms/change-password-form";
+import { ActiveSessionsPanel } from "../forms/active-sessions-panel";
+import { SecurityForm } from "../forms/security-form";
 import {
   useSecuritySettings,
   useSettingsPermissions,
@@ -16,7 +20,13 @@ import {
 } from "../hooks";
 import type { UpdateSecurityFormValues } from "../schemas";
 
-export function SettingsSecurityPage() {
+type SettingsSecurityPageProps = {
+  minPasswordLength: number;
+};
+
+export function SettingsSecurityPage({
+  minPasswordLength,
+}: SettingsSecurityPageProps) {
   const { canReadSettings, canUpdateSettings, isLoading: permissionsLoading } =
     useSettingsPermissions();
   const { data: security, isLoading, isError, error, refetch } =
@@ -27,26 +37,6 @@ export function SettingsSecurityPage() {
     return (
       <PageContainer>
         <LoadingState label="Loading security settings..." />
-      </PageContainer>
-    );
-  }
-
-  if (!canReadSettings) {
-    return (
-      <PageContainer>
-        <AccessDeniedState description="You do not have permission to view security settings." />
-      </PageContainer>
-    );
-  }
-
-  if (isError || !security) {
-    return (
-      <PageContainer>
-        <QueryErrorState
-          title="Failed to load security settings"
-          description={error?.message ?? "An error occurred."}
-          onRetry={() => void refetch()}
-        />
       </PageContainer>
     );
   }
@@ -72,7 +62,7 @@ export function SettingsSecurityPage() {
     <PageContainer>
       <PageHeader
         title="Security"
-        description="Password and session policy fields from system settings."
+        description="Manage your password, signed-in devices, and organization security policy."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },
@@ -80,12 +70,26 @@ export function SettingsSecurityPage() {
         ]}
       />
       <SettingsSubNav />
-      <SecurityForm
-        security={security}
-        canUpdate={canUpdateSettings}
-        isSubmitting={updateSettings.isPending}
-        onSubmit={handleSubmit}
-      />
+      <div className="space-y-6">
+        <ChangePasswordForm minPasswordLength={minPasswordLength} />
+        <ActiveSessionsPanel />
+        {!canReadSettings ? (
+          <AccessDeniedState description="You do not have permission to view organization security settings." />
+        ) : isError || !security ? (
+          <QueryErrorState
+            title="Failed to load security settings"
+            description={error?.message ?? "An error occurred."}
+            onRetry={() => void refetch()}
+          />
+        ) : (
+          <SecurityForm
+            security={security}
+            canUpdate={canUpdateSettings}
+            isSubmitting={updateSettings.isPending}
+            onSubmit={handleSubmit}
+          />
+        )}
+      </div>
     </PageContainer>
   );
 }

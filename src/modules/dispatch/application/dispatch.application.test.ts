@@ -37,6 +37,7 @@ import type { CreateDispatchInput } from "@/modules/dispatch/application/schemas
 
 import {
   DISPATCH_ID,
+  ITEM_ID,
   OTHER_DISPATCH_ID,
   RENTAL_ORDER_ID,
   VALID_CREATE_INPUT,
@@ -384,6 +385,9 @@ describe("CompleteDispatchService", () => {
     expect(inventory?.quantityOnHand).toBe(45);
     expect(inventory?.reservedQuantity).toBe(0);
     expect(inventory?.availableQuantity).toBe(45);
+
+    const rentalOrder = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(rentalOrder?.status).toBe("ON_RENT");
   });
 
   it("rejects complete when not ready", async () => {
@@ -699,6 +703,45 @@ describe("CreateDispatchService domain validation", () => {
       service.execute({
         ...VALID_CREATE_SERVICE_INPUT,
         items: [{ productId: PRODUCT_ID, quantity: 11 }],
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+
+  it("rejects over-dispatch when prior non-cancelled dispatch already used reserved qty", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        status: "COMPLETED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 10,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      { generateNextNumber: vi.fn() } as unknown as INumberSequenceRepository,
+    );
+
+    await expect(
+      service.execute({
+        ...VALID_CREATE_SERVICE_INPUT,
+        dispatchNumber: "DSP-2026-002",
+        items: [{ productId: PRODUCT_ID, rentalOrderItemId: ITEM_ID, quantity: 1 }],
       }),
     ).rejects.toBeInstanceOf(UnprocessableError);
   });

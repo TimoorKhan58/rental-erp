@@ -3,7 +3,7 @@ import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/renta
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
   ReturnInvalidStatusError,
-  computeReleaseQuantity,
+  ReturnInvalidItemError,
   computeRestockQuantity,
 } from "@/modules/return/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -85,10 +85,47 @@ export class CompleteReturnService {
             });
           }
 
+          if (error instanceof ReturnInvalidItemError) {
+            throw new UnprocessableError({
+              message: error.message,
+              details:
+                error.rentalOrderItemId !== undefined
+                  ? { rentalOrderItemId: error.rentalOrderItemId }
+                  : undefined,
+            });
+          }
+
           throw error;
         }
 
         const previousValues = toReturnAuditValues(existing);
+
+        const productIdsForStock = existing.items
+          .filter((item) => computeRestockQuantity(item) > 0)
+          .map((item) => {
+            const rentalItem = rentalOrder.items.find(
+              (orderItem) => orderItem.id === item.rentalOrderItemId,
+            );
+            return rentalItem !== undefined
+              ? toProductId(rentalItem.productId)
+              : null;
+          })
+          .filter((productId): productId is ReturnType<typeof toProductId> =>
+            productId !== null,
+          );
+
+        const inventories = await inventoryRepository.findByProductsAndWarehouse(
+          productIdsForStock,
+          rentalOrder.warehouseId,
+        );
+        const inventoryByProductId = new Map(
+          inventories.map((inventory) => [
+            inventory.productId,
+            {
+              id: inventory.id,
+            },
+          ]),
+        );
 
         for (const item of existing.items) {
           const rentalItem = rentalOrder.items.find(
@@ -102,16 +139,16 @@ export class CompleteReturnService {
             });
           }
 
-          const releaseQuantity = computeReleaseQuantity(item);
           const restockQuantity = computeRestockQuantity(item);
 
-          if (releaseQuantity > 0 || restockQuantity > 0) {
-            const inventory = await inventoryRepository.findByProductAndWarehouse(
+          // Reservation RELEASE is owned by complete-dispatch (and cancel).
+          // Returning must not release leftover reserves for undispached qty.
+          if (restockQuantity > 0) {
+            const inventory = inventoryByProductId.get(
               toProductId(rentalItem.productId),
-              rentalOrder.warehouseId,
             );
 
-            if (inventory === null) {
+            if (inventory === undefined) {
               throw new NotFoundError({
                 message: "Inventory not found for product and warehouse",
                 details: {
@@ -121,41 +158,22 @@ export class CompleteReturnService {
               });
             }
 
-            const movementScope = {
-              stockMovementRepository,
-              inventoryRepository,
-              auditLogger,
-              userId,
-            };
-
-            // Clear any leftover reservation so returned stock becomes available.
-            // (Dispatch usually releases first; this covers partial / leftover reserve.)
-            const releaseNow = Math.min(
-              releaseQuantity,
-              inventory.reservedQuantity,
-            );
-
-            if (releaseNow > 0) {
-              await executeCreateStockMovementInScope(movementScope, {
-                inventoryId: inventory.id,
-                movementType: "RELEASE",
-                quantity: releaseNow,
-                referenceType: RENTAL_ORDER_REFERENCE_TYPE,
-                referenceId: rentalOrder.id,
-                remarks: `Released reservation for return ${existing.returnNumber} on rental order ${rentalOrder.orderNumber}`,
-              });
-            }
-
-            if (restockQuantity > 0) {
-              await executeCreateStockMovementInScope(movementScope, {
+            await executeCreateStockMovementInScope(
+              {
+                stockMovementRepository,
+                inventoryRepository,
+                auditLogger,
+                userId,
+              },
+              {
                 inventoryId: inventory.id,
                 movementType: "IN",
                 quantity: restockQuantity,
                 referenceType: RENTAL_ORDER_REFERENCE_TYPE,
                 referenceId: rentalOrder.id,
                 remarks: `Returned for rental order ${rentalOrder.orderNumber} (${item.goodQuantity} good, ${item.damagedQuantity} damaged)`,
-              });
-            }
+              },
+            );
           }
 
           if (item.lostQuantity > 0) {

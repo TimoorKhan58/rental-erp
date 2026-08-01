@@ -183,14 +183,16 @@ export class PrismaReportingRepository implements IReportingRepository {
       totalSuppliers,
       totalProducts,
       totalWarehouses,
-      inventories,
-      rentalOrders,
-      dispatches,
-      returns,
-      repairs,
-      maintenances,
-      purchaseOrders,
-      invoices,
+      inventoryTotals,
+      inventoryValueRows,
+      rentalStatusGroups,
+      durationRows,
+      dispatchStatusGroups,
+      returnStatusGroups,
+      repairStatusGroups,
+      maintenanceStatusGroups,
+      poStatusGroups,
+      invoiceStatusGroups,
       revenueThisMonth,
       paymentsThisMonth,
     ] = await this.runner.run(
@@ -200,14 +202,16 @@ export class PrismaReportingRepository implements IReportingRepository {
           suppliers,
           products,
           warehouses,
-          inventoryRows,
-          orderRows,
-          dispatchRows,
-          returnRows,
-          repairRows,
-          maintenanceRows,
-          poRows,
-          invoiceRows,
+          inventoryAgg,
+          inventoryValues,
+          rentalGroups,
+          durations,
+          dispatchGroups,
+          returnGroups,
+          repairGroups,
+          maintenanceGroups,
+          poGroups,
+          invoiceGroups,
           monthlyRevenue,
           monthlyPayments,
         ] = await Promise.all([
@@ -215,27 +219,55 @@ export class PrismaReportingRepository implements IReportingRepository {
           db.supplier.count({ where: { isActive: true } }),
           db.product.count({ where: { isActive: true } }),
           db.warehouse.count({ where: { isActive: true } }),
+          db.inventory.aggregate({
+            where: { isActive: true },
+            _sum: {
+              quantityOnHand: true,
+              reservedQuantity: true,
+            },
+          }),
           db.inventory.findMany({
             where: { isActive: true },
             select: {
               quantityOnHand: true,
-              reservedQuantity: true,
               product: { select: { purchaseCost: true } },
             },
           }),
+          db.rentalOrder.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
           db.rentalOrder.findMany({
+            where: { status: { not: "CANCELLED" } },
             select: {
-              status: true,
               eventStartDate: true,
               eventEndDate: true,
             },
           }),
-          db.dispatch.findMany({ select: { status: true } }),
-          db.returnInspection.findMany({ select: { status: true } }),
-          db.repair.findMany({ select: { status: true } }),
-          db.maintenance.findMany({ select: { status: true } }),
-          db.purchaseOrder.findMany({ select: { status: true } }),
-          db.rentalInvoice.findMany({ select: { status: true } }),
+          db.dispatch.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.returnInspection.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.repair.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.maintenance.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.purchaseOrder.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.rentalInvoice.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
           db.rentalInvoice.aggregate({
             where: {
               status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] },
@@ -257,14 +289,16 @@ export class PrismaReportingRepository implements IReportingRepository {
           suppliers,
           products,
           warehouses,
-          inventoryRows,
-          orderRows,
-          dispatchRows,
-          returnRows,
-          repairRows,
-          maintenanceRows,
-          poRows,
-          invoiceRows,
+          inventoryAgg,
+          inventoryValues,
+          rentalGroups,
+          durations,
+          dispatchGroups,
+          returnGroups,
+          repairGroups,
+          maintenanceGroups,
+          poGroups,
+          invoiceGroups,
           monthlyRevenue,
           monthlyPayments,
         ] as const;
@@ -272,13 +306,10 @@ export class PrismaReportingRepository implements IReportingRepository {
       { model: MODEL, operation: "getDashboard" },
     );
 
-    let inventoryQuantity = 0;
-    let reservedQuantity = 0;
+    const inventoryQuantity = inventoryTotals._sum.quantityOnHand ?? 0;
+    const reservedQuantity = inventoryTotals._sum.reservedQuantity ?? 0;
     let inventoryValue = 0;
-
-    for (const row of inventories) {
-      inventoryQuantity += row.quantityOnHand;
-      reservedQuantity += row.reservedQuantity;
+    for (const row of inventoryValueRows) {
       inventoryValue = roundMoney(
         inventoryValue +
           calculateInventoryValue(
@@ -293,10 +324,26 @@ export class PrismaReportingRepository implements IReportingRepository {
       reservedQuantity,
     );
 
-    const nonCancelledOrders = rentalOrders.filter(
-      (order) => order.status !== "CANCELLED",
+    const statusCount = (
+      groups: Array<{ status: string; _count: { _all: number } }>,
+      status: string,
+    ): number =>
+      groups.find((group) => group.status === status)?._count._all ?? 0;
+
+    const statusCountIn = (
+      groups: Array<{ status: string; _count: { _all: number } }>,
+      statuses: string[],
+    ): number =>
+      groups
+        .filter((group) => statuses.includes(group.status))
+        .reduce((sum, group) => sum + group._count._all, 0);
+
+    const rentalOrders = rentalStatusGroups.reduce(
+      (sum, group) => sum + group._count._all,
+      0,
     );
-    const durationValues = nonCancelledOrders.map((order) =>
+
+    const durationValues = durationRows.map((order) =>
       calculateRentalDurationDays(order.eventStartDate, order.eventEndDate),
     );
 
@@ -309,42 +356,31 @@ export class PrismaReportingRepository implements IReportingRepository {
       inventoryQuantity,
       reservedQuantity,
       availableQuantity,
-      rentalOrders: rentalOrders.length,
-      confirmedOrders: rentalOrders.filter((order) => order.status === "CONFIRMED")
-        .length,
-      reservedOrders: rentalOrders.filter((order) => order.status === "RESERVED")
-        .length,
-      completedRentals: rentalOrders.filter(
-        (order) => order.status === "COMPLETED",
-      ).length,
-      dispatchesReady: dispatches.filter(
-        (dispatch) => dispatch.status === "READY",
-      ).length,
-      dispatchesInProgress: dispatches.filter(
-        (dispatch) => dispatch.status === "DISPATCHED",
-      ).length,
-      pendingReturns: returns.filter(
-        (row) => row.status === "DRAFT" || row.status === "RECEIVED",
-      ).length,
-      repairsPending: repairs.filter((row) => row.status === "PENDING").length,
-      repairsInProgress: repairs.filter((row) => row.status === "IN_PROGRESS")
-        .length,
-      maintenanceScheduled: maintenances.filter(
-        (row) => row.status === "SCHEDULED",
-      ).length,
-      maintenanceInProgress: maintenances.filter(
-        (row) => row.status === "IN_PROGRESS",
-      ).length,
-      openPurchaseOrders: purchaseOrders.filter((row) =>
-        ["DRAFT", "APPROVED", "PARTIALLY_RECEIVED"].includes(row.status),
-      ).length,
-      completedPurchaseOrders: purchaseOrders.filter(
-        (row) => row.status === "RECEIVED",
-      ).length,
-      outstandingInvoices: invoices.filter((row) =>
-        ["ISSUED", "PARTIALLY_PAID"].includes(row.status),
-      ).length,
-      paidInvoices: invoices.filter((row) => row.status === "PAID").length,
+      rentalOrders,
+      confirmedOrders: statusCount(rentalStatusGroups, "CONFIRMED"),
+      reservedOrders: statusCount(rentalStatusGroups, "RESERVED"),
+      completedRentals: statusCount(rentalStatusGroups, "COMPLETED"),
+      dispatchesReady: statusCount(dispatchStatusGroups, "READY"),
+      dispatchesInProgress: statusCount(dispatchStatusGroups, "DISPATCHED"),
+      pendingReturns: statusCountIn(returnStatusGroups, ["DRAFT", "RECEIVED"]),
+      repairsPending: statusCount(repairStatusGroups, "PENDING"),
+      repairsInProgress: statusCount(repairStatusGroups, "IN_PROGRESS"),
+      maintenanceScheduled: statusCount(maintenanceStatusGroups, "SCHEDULED"),
+      maintenanceInProgress: statusCount(
+        maintenanceStatusGroups,
+        "IN_PROGRESS",
+      ),
+      openPurchaseOrders: statusCountIn(poStatusGroups, [
+        "DRAFT",
+        "APPROVED",
+        "PARTIALLY_RECEIVED",
+      ]),
+      completedPurchaseOrders: statusCount(poStatusGroups, "RECEIVED"),
+      outstandingInvoices: statusCountIn(invoiceStatusGroups, [
+        "ISSUED",
+        "PARTIALLY_PAID",
+      ]),
+      paidInvoices: statusCount(invoiceStatusGroups, "PAID"),
       revenueThisMonth: roundMoney(
         decimalToNumber(revenueThisMonth._sum.grandTotal),
       ),
@@ -358,34 +394,87 @@ export class PrismaReportingRepository implements IReportingRepository {
   async getInventoryReport(
     query: InventoryReportQuery,
   ): Promise<InventoryReport> {
+    const where: Prisma.InventoryWhereInput = {
+      ...(query.warehouseId !== undefined
+        ? { warehouseId: query.warehouseId }
+        : {}),
+      ...(query.dateFrom !== undefined || query.dateTo !== undefined
+        ? {
+            createdAt: {
+              ...(query.dateFrom !== undefined ? { gte: query.dateFrom } : {}),
+              ...(query.dateTo !== undefined ? { lte: query.dateTo } : {}),
+            },
+          }
+        : {}),
+      ...(query.lowStockOnly === true ? { minimumStock: { gt: 0 } } : {}),
+      ...(query.overstockOnly === true ? { maximumStock: { not: null } } : {}),
+      ...(query.search !== undefined && query.search.length > 0
+        ? {
+            OR: [
+              {
+                product: {
+                  productCode: {
+                    contains: query.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
+              {
+                product: {
+                  name: { contains: query.search, mode: "insensitive" },
+                },
+              },
+              {
+                warehouse: {
+                  warehouseCode: {
+                    contains: query.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
+              {
+                warehouse: {
+                  name: { contains: query.search, mode: "insensitive" },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
     const inventories = await repositoryFindMany(
       this.runner,
       (db) =>
         db.inventory.findMany({
-          include: {
-            product: true,
-            warehouse: true,
+          where,
+          select: {
+            id: true,
+            productId: true,
+            warehouseId: true,
+            quantityOnHand: true,
+            reservedQuantity: true,
+            minimumStock: true,
+            maximumStock: true,
+            createdAt: true,
+            product: {
+              select: {
+                productCode: true,
+                name: true,
+                purchaseCost: true,
+              },
+            },
+            warehouse: {
+              select: {
+                warehouseCode: true,
+                name: true,
+              },
+            },
           },
         }),
       { model: MODEL, operation: "getInventoryReport" },
     );
 
-    const preFiltered = inventories.filter((row) => {
-      if (query.warehouseId !== undefined && row.warehouseId !== query.warehouseId) {
-        return false;
-      }
-      if (!inDateRange(row.createdAt, query.dateFrom, query.dateTo)) {
-        return false;
-      }
-      return matchesSearch(
-        query.search,
-        row.product.productCode,
-        row.product.name,
-        row.warehouse.warehouseCode,
-      );
-    });
-
-    const mapped: InventoryReportLine[] = preFiltered.map((row) => {
+    const mapped: InventoryReportLine[] = inventories.map((row) => {
       const purchaseCost = decimalToNumber(row.product.purchaseCost);
       const availableQuantity = calculateAvailableQuantity(
         row.quantityOnHand,
@@ -466,13 +555,67 @@ export class PrismaReportingRepository implements IReportingRepository {
   }
 
   async getRentalReport(query: RentalReportQuery): Promise<RentalReport> {
+    const where: Prisma.RentalOrderWhereInput = {
+      ...(query.customerId !== undefined
+        ? { customerId: query.customerId }
+        : {}),
+      ...(query.warehouseId !== undefined
+        ? { warehouseId: query.warehouseId }
+        : {}),
+      ...(query.status !== undefined
+        ? { status: query.status as Prisma.RentalOrderWhereInput["status"] }
+        : {}),
+      ...(query.dateFrom !== undefined || query.dateTo !== undefined
+        ? {
+            bookingDate: {
+              ...(query.dateFrom !== undefined ? { gte: query.dateFrom } : {}),
+              ...(query.dateTo !== undefined ? { lte: query.dateTo } : {}),
+            },
+          }
+        : {}),
+      ...(query.search !== undefined && query.search.length > 0
+        ? {
+            OR: [
+              {
+                orderNumber: {
+                  contains: query.search,
+                  mode: "insensitive",
+                },
+              },
+              {
+                customer: {
+                  name: { contains: query.search, mode: "insensitive" },
+                },
+              },
+              {
+                warehouse: {
+                  name: { contains: query.search, mode: "insensitive" },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
     const orders = await repositoryFindMany(
       this.runner,
       (db) =>
         db.rentalOrder.findMany({
-          include: {
-            customer: true,
-            warehouse: true,
+          where,
+          select: {
+            id: true,
+            orderNumber: true,
+            customerId: true,
+            warehouseId: true,
+            status: true,
+            bookingDate: true,
+            eventStartDate: true,
+            eventEndDate: true,
+            expectedReturnDate: true,
+            actualReturnDate: true,
+            grandTotal: true,
+            customer: { select: { name: true } },
+            warehouse: { select: { name: true } },
           },
         }),
       { model: MODEL, operation: "getRentalReport" },
@@ -498,30 +641,8 @@ export class PrismaReportingRepository implements IReportingRepository {
       grandTotal: decimalToNumber(order.grandTotal),
     }));
 
-    const filtered = mapped.filter((line) => {
-      if (query.customerId !== undefined && line.customerId !== query.customerId) {
-        return false;
-      }
-      if (query.warehouseId !== undefined && line.warehouseId !== query.warehouseId) {
-        return false;
-      }
-      if (query.status !== undefined && line.status !== query.status) {
-        return false;
-      }
-      if (!inDateRange(line.bookingDate, query.dateFrom, query.dateTo)) {
-        return false;
-      }
-      return matchesSearch(
-        query.search,
-        line.orderNumber,
-        line.customerName,
-        line.warehouseName,
-        line.status,
-      );
-    });
-
     const sorted = sortByField(
-      filtered,
+      mapped,
       query.sortBy,
       query.sortOrder,
       {
@@ -539,12 +660,12 @@ export class PrismaReportingRepository implements IReportingRepository {
 
     return {
       lines: page.lines,
-      totalOrders: filtered.length,
+      totalOrders: mapped.length,
       totalRevenue: roundMoney(
-        filtered.reduce((sum, line) => sum + line.grandTotal, 0),
+        mapped.reduce((sum, line) => sum + line.grandTotal, 0),
       ),
-      averageDuration: average(filtered.map((line) => line.durationDays)),
-      statusCounts: countByStatus(filtered),
+      averageDuration: average(mapped.map((line) => line.durationDays)),
+      statusCounts: countByStatus(mapped),
       page: query.page,
       pageSize: query.pageSize,
       total: page.total,
@@ -1318,13 +1439,36 @@ export class PrismaReportingRepository implements IReportingRepository {
     const period = resolveReportPeriod(query);
     const reference = new Date();
 
+    const bookingDateFilter: Prisma.DateTimeFilter = {
+      gte: period.dateFrom,
+      lte: period.dateTo,
+    };
+
     const [products, orderItems, inventories, invoices] = await this.runner.run(
       async (db) => {
         const [productRows, itemRows, inventoryRows, invoiceRows] = await Promise.all([
-          db.product.findMany({ where: { isActive: true } }),
+          db.product.findMany({
+            where: { isActive: true },
+            select: {
+              id: true,
+              productCode: true,
+              name: true,
+              isRentable: true,
+              totalQuantity: true,
+            },
+          }),
           db.rentalOrderItem.findMany({
-            include: {
-              rentalOrder: true,
+            where: {
+              rentalOrder: {
+                bookingDate: bookingDateFilter,
+              },
+            },
+            select: {
+              productId: true,
+              rentalOrderId: true,
+              quantity: true,
+              numberOfDays: true,
+              lineTotal: true,
             },
           }),
           db.inventory.findMany({
@@ -1352,17 +1496,18 @@ export class PrismaReportingRepository implements IReportingRepository {
       { model: MODEL, operation: "getRentalInsights" },
     );
 
+    const itemsByProduct = new Map<string, typeof orderItems>();
+    for (const item of orderItems) {
+      const existing = itemsByProduct.get(item.productId);
+      if (existing === undefined) {
+        itemsByProduct.set(item.productId, [item]);
+      } else {
+        existing.push(item);
+      }
+    }
+
     const productLines: RentalInsightsProductLine[] = products.map((product) => {
-      const productItems = orderItems.filter((item) => {
-        if (item.productId !== product.id) {
-          return false;
-        }
-        return inDateRange(
-          item.rentalOrder.bookingDate,
-          period.dateFrom,
-          period.dateTo,
-        );
-      });
+      const productItems = itemsByProduct.get(product.id) ?? [];
 
       const rentalOrderIds = new Set(
         productItems.map((item) => item.rentalOrderId),

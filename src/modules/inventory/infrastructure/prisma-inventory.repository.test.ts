@@ -228,7 +228,19 @@ function createMockInventoryStore(initial: InventoryRecord[] = []) {
   };
 
   return {
-    db: { inventory } as unknown as DbClient,
+    db: {
+      inventory,
+      $queryRaw: vi.fn(async (strings: TemplateStringsArray, ...values: unknown[]) => {
+        const sql = strings.join("?");
+        if (sql.includes("FOR UPDATE") || sql.includes('FROM "inventory"')) {
+          const id = String(values[0] ?? "");
+          const match = records.get(id);
+          return match ? [cloneInventoryRecord(match)] : [];
+        }
+
+        return [];
+      }),
+    } as unknown as DbClient,
     store: records,
     inventory,
   };
@@ -266,6 +278,26 @@ describe("PrismaInventoryRepository", () => {
 
     expect(inventory?.quantityOnHand).toBe(100);
     expect(inventory?.availableQuantity).toBe(90);
+  });
+
+  it("finds inventory by id for update via SELECT FOR UPDATE", async () => {
+    const { db } = createMockInventoryStore([baseRecord]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const inventory = await repository.findByIdForUpdate(INVENTORY_ID);
+
+    expect(inventory?.id).toBe(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(100);
+    expect(db.$queryRaw).toHaveBeenCalled();
+  });
+
+  it("returns null from findByIdForUpdate when inventory is missing", async () => {
+    const { db } = createMockInventoryStore();
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const inventory = await repository.findByIdForUpdate(INVENTORY_ID);
+
+    expect(inventory).toBeNull();
   });
 
   it("finds inventory by product and warehouse", async () => {

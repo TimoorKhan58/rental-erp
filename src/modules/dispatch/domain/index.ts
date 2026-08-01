@@ -29,6 +29,7 @@ export {
   assertCanMarkReady,
   assertCanUpdate,
   assertRentalOrderEligibleForDispatch,
+  buildPriorDispatchedQuantities,
   validateDispatchItems,
   validateDispatchItemsAgainstRentalOrder,
 } from "./dispatch.rules";

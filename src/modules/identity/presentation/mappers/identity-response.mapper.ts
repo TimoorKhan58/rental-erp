@@ -1,4 +1,5 @@
 import type {
+  CreateIdentityUserResultDto,
   IdentityUserDto,
   IdentityUserPermissionsDto,
   IdentityUserProfileDto,
@@ -15,6 +16,10 @@ export interface IdentityUserResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface IdentityUserCreateResponse extends IdentityUserResponse {
+  invitationDelivered: boolean;
 }
 
 export interface IdentityUserProfileResponse extends IdentityUserResponse {
@@ -48,6 +53,15 @@ export function toIdentityUserResponse(dto: IdentityUserDto): IdentityUserRespon
     isActive: dto.isActive,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+  };
+}
+
+export function toIdentityUserCreateResponse(
+  dto: CreateIdentityUserResultDto,
+): IdentityUserCreateResponse {
+  return {
+    ...toIdentityUserResponse(dto),
+    invitationDelivered: dto.invitationDelivered,
   };
 }
 

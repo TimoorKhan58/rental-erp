@@ -14,9 +14,14 @@ export const IdentityUserIdParamSchema = z.object({
 export const CreateIdentityUserSchema = z.object({
   name: NonEmptyStringSchema.max(200),
   email: EmailSchema,
-  password: NonEmptyStringSchema.min(8).max(128),
   role: z.enum(USER_ROLE_LIST),
   isActive: z.boolean().optional(),
+  /**
+   * When true (default), send a Better Auth password-reset invitation email
+   * after provisioning. Bootstrap scripts may set false and set a password via
+   * admin reset instead.
+   */
+  sendInvitation: z.boolean().optional(),
 });
 
 export const UpdateIdentityUserSchema = z

@@ -29,3 +29,16 @@ export interface GeneratedNumberResult {
   readonly formattedNumber: string;
   readonly number: number;
 }
+
+/** Optional allocation controls used by year-scoped document numbers. */
+export interface GenerateNextNumberOptions {
+  /** Override stored prefix for this allocation (e.g. `INV-2026-`). */
+  readonly prefix?: string;
+  /**
+   * When true and `prefix` differs from the stored prefix, reset
+   * `currentNumber` to `startingNumber` (year rollover).
+   */
+  readonly resetWhenPrefixChanges?: boolean;
+  /** Padding used when auto-creating a missing sequence row. */
+  readonly paddingLength?: number;
+}

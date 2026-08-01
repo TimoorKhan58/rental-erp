@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import type { IdentityApplicationServices } from "@/modules/identity/application/services/identity-application-services.interface";
 import type {
+  CreateIdentityUserResultDto,
   IdentityUserDto,
   IdentityUserPermissionsDto,
   IdentityUserProfileDto,
@@ -20,6 +21,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import { UnauthorizedError } from "@/shared/infrastructure/errors";
 
 import {
+  toIdentityUserCreateResponse,
   toIdentityUserListResponse,
   toIdentityUserPermissionsResponse,
   toIdentityUserProfileResponse,
@@ -89,7 +91,9 @@ export async function handleCreateIdentityUser(
       ...result,
       body: {
         ...result.body,
-        data: toIdentityUserResponse(result.body.data as IdentityUserDto),
+        data: toIdentityUserCreateResponse(
+          result.body.data as CreateIdentityUserResultDto,
+        ),
       },
     });
   }
@@ -253,7 +257,8 @@ export async function handleGetIdentityUserProfile(
     request,
     route: IDENTITY_ROUTES.me,
     httpMethod: "GET",
-    permission: PERMISSIONS.identity.read,
+    // Self profile + permission bootstrap: any authenticated active ERP user.
+    // Do not require identity.read (Workers lack admin user-list permission).
     resolveServices,
     handler: async (ctx, services) => {
       if (ctx.request.userId === undefined) {

@@ -46,11 +46,10 @@ const QUICK_ACTION_LINKS = [
 
 export function Topbar() {
   const { openMobile } = useSidebar();
-  const { session, signOut } = useAuth();
+  const { session } = useAuth();
   const { organizationName } = useOrganizationName();
   const [search, setSearch] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
 
   const userName = session?.user.name ?? "Guest";
   const userInitials = session?.user.name ? getInitials(session.user.name) : "G";
@@ -170,14 +169,8 @@ export function Topbar() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {session ? (
-                <DropdownMenuItem
-                  disabled={signingOut}
-                  onClick={() => {
-                    setSigningOut(true);
-                    void signOut();
-                  }}
-                >
-                  {signingOut ? "Signing out..." : "Sign out"}
+                <DropdownMenuItem render={<Link href={ROUTES.logout} />}>
+                  Sign out
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem render={<Link href={ROUTES.login} />}>

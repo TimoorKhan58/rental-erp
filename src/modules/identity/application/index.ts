@@ -1,4 +1,5 @@
 export type {
+  CreateIdentityUserResultDto,
   IdentityUserDto,
   IdentityUserPermissionsDto,
   IdentityUserProfileDto,

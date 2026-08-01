@@ -54,14 +54,8 @@ export function assertCanGenerate(config: {
     );
   }
 
-  const maxNumberForPadding = 10 ** config.paddingLength - 1;
-
-  if (nextNumber > maxNumberForPadding) {
-    throw new NumberSequenceInvariantError(
-      `Next number exceeds maximum supported by padding length ${config.paddingLength}`,
-      "currentNumber",
-    );
-  }
+  // Numbers may exceed padding width (padStart keeps minimum width only),
+  // matching historical invoice formatting (INV-YYYY-1000 after 999).
 }
 
 export function assertValidStartingNumber(startingNumber: number): void {

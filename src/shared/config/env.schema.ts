@@ -172,8 +172,9 @@ const envObjectSchema = z
     AUTH_COOKIE_CACHE_MAX_AGE_SECONDS: z.coerce
       .number()
       .int()
-      .positive()
-      .default(60 * 5),
+      .min(0)
+      // Default off: cookie cache can outlive DB session revocation (role/password reset).
+      .default(0),
     AUTH_MIN_PASSWORD_LENGTH: z.coerce.number().int().min(8).default(8),
     AUTH_TRUSTED_ORIGINS: commaSeparatedListSchema.default([]),
     AUTH_RATE_LIMIT_ENABLED: optionalBooleanEnvSchema,

@@ -10,10 +10,15 @@ import { UnprocessableError } from "@/shared/infrastructure/errors";
 export function validateRentalOrderForDispatch(
   rentalOrder: RentalOrder,
   items: CreateDispatchItemData[],
+  priorDispatchedByItem: Map<string, number> = new Map(),
 ): void {
   try {
     assertRentalOrderEligibleForDispatch(rentalOrder.status);
-    validateDispatchItemsAgainstRentalOrder(items, rentalOrder.items);
+    validateDispatchItemsAgainstRentalOrder(
+      items,
+      rentalOrder.items,
+      priorDispatchedByItem,
+    );
   } catch (error) {
     if (error instanceof DispatchInvalidItemError) {
       throw new UnprocessableError({

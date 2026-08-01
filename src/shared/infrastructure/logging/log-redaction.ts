@@ -5,7 +5,7 @@ import type { LogLevel } from "@/shared/config/env.schema";
  * Never log secrets, tokens, passwords, or full connection strings.
  */
 const SENSITIVE_KEY_PATTERN =
-  /(password|passwd|secret|token|authorization|api[_-]?key|cookie|set-cookie|database_url|connectionstring|private[_-]?key|credit[_-]?card|ssn)/i;
+  /(password|passwd|secret|token|authorization|api[_-]?key|cookie|set-cookie|database_url|connectionstring|private[_-]?key|credit[_-]?card|ssn|session[_-]?id|reset[_-]?url|invite[_-]?url)/i;
 
 const REDACTED = "[REDACTED]";
 
@@ -32,8 +32,10 @@ export function redactSensitiveValue(key: string, value: unknown): unknown {
     return redactSensitiveFields(value as Record<string, unknown>);
   }
 
-  if (typeof value === "string" && looksLikeConnectionString(value)) {
-    return REDACTED;
+  if (typeof value === "string") {
+    if (looksLikeConnectionString(value) || looksLikeAuthUrl(value)) {
+      return REDACTED;
+    }
   }
 
   return value;
@@ -56,6 +58,14 @@ function looksLikeConnectionString(value: string): boolean {
     /^postgres(ql)?:\/\//i.test(value) ||
     /^mongodb(\+srv)?:\/\//i.test(value) ||
     /Bearer\s+[A-Za-z0-9\-._~+/]+=*/i.test(value)
+  );
+}
+
+/** Reset / invite / verify links that embed secrets in the query string. */
+function looksLikeAuthUrl(value: string): boolean {
+  return (
+    /[?&](token|callbackURL|redirectTo)=/i.test(value) ||
+    /\/(reset-password|verify-email)\?/i.test(value)
   );
 }
 

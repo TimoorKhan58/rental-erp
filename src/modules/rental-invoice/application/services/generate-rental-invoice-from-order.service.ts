@@ -26,6 +26,7 @@ import type { CreateRentalInvoiceService } from "./create-rental-invoice.service
 import { generateNextInvoiceNumber } from "./generate-invoice-number";
 import type { IRentalInvoiceRepository } from "../../domain/rental-invoice.repository.interface";
 import type { IRentalInvoiceTransactionRunner } from "./rental-invoice-transaction.runner";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 
 interface GenerateRentalInvoiceFromOrderScope {
   readonly rentalOrderRepository: IRentalOrderRepository;
@@ -33,6 +34,7 @@ interface GenerateRentalInvoiceFromOrderScope {
   readonly returnRepository: IReturnRepository;
   readonly rentalInvoiceRepository: IRentalInvoiceRepository;
   readonly productRepository: IProductRepository;
+  readonly numberSequences: INumberSequenceRepository;
   readonly transactionRunner: IRentalInvoiceTransactionRunner;
 }
 
@@ -64,6 +66,7 @@ export class GenerateRentalInvoiceFromOrderService {
         returnRepository,
         rentalInvoiceRepository,
         productRepository,
+        numberSequences,
         transactionRunner,
       } = this.scopeFactory.create(context, { userId: this.userId });
 
@@ -170,7 +173,7 @@ export class GenerateRentalInvoiceFromOrderService {
         });
       }
 
-      const invoiceNumber = await generateNextInvoiceNumber(rentalInvoiceRepository);
+      const invoiceNumber = await generateNextInvoiceNumber(numberSequences);
       const invoiceDate = new Date();
       const dueDate = new Date(invoiceDate);
       dueDate.setDate(dueDate.getDate() + 7);

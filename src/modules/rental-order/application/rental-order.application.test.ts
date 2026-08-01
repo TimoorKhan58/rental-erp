@@ -13,6 +13,7 @@ import {
   RENTAL_ORDER_MODULE,
 } from "@/modules/rental-order/application/services/rental-order-service.constants";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
+import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
@@ -51,9 +52,11 @@ function createWriteScope(
   stockMovementRepository: InMemoryStockMovementRepository,
   auditLogger: MockAuditLogger,
   userId?: string,
+  dispatchRepository: InMemoryDispatchRepository = new InMemoryDispatchRepository(),
 ) {
   return createPassThroughTransactionRunner({
     rentalOrderRepository,
+    dispatchRepository,
     inventoryRepository,
     stockMovementRepository,
     auditLogger,
@@ -277,22 +280,38 @@ describe("CancelRentalOrderService", () => {
     expect(result.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel when partially reserved", async () => {
+  it("cancels partially reserved order and releases inventory reservation", async () => {
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
     rentalOrderRepository.seed([buildPartiallyReservedConfirmedEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 4,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
     const service = new CancelRentalOrderService(
       createWriteScope(
         rentalOrderRepository,
-        new InMemoryInventoryRepository(),
-        new InMemoryStockMovementRepository(),
+        inventoryRepository,
+        stockMovementRepository,
         new MockAuditLogger(),
         USER_ID,
       ),
     );
 
-    await expect(
-      service.execute({ id: RENTAL_ORDER_ID }),
-    ).rejects.toBeInstanceOf(UnprocessableError);
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(result.items[0]?.reservedQuantity).toBe(0);
+    expect(stockMovementRepository.count()).toBe(1);
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.availableQuantity).toBe(50);
   });
 });
 
@@ -478,6 +497,7 @@ describe("ReserveRentalOrderService", () => {
     const service = new ReserveRentalOrderService(
       createRollbackTransactionRunner(
         rentalOrderRepository,
+        new InMemoryDispatchRepository(),
         inventoryRepository,
         stockMovementRepository,
         auditLogger,

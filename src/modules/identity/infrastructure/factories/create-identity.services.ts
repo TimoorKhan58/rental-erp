@@ -1,3 +1,4 @@
+import type { UserRole } from "@/constants/roles";
 import { CreateIdentityUserService } from "@/modules/identity/application/services/create-identity-user.service";
 import { DeactivateIdentityUserService } from "@/modules/identity/application/services/deactivate-identity-user.service";
 import { GetIdentityUserByIdService } from "@/modules/identity/application/services/get-identity-user-by-id.service";
@@ -19,10 +20,15 @@ import { createIdentityTransactionRunner } from "./create-identity-transaction.r
 export function createIdentityApplicationServices(
   deps: SharedDeps,
   actorUserId?: string,
+  actorRole?: UserRole,
 ): IdentityApplicationServices {
   const userRepository = createIdentityUserRepositoryFromSharedDeps(deps);
   const roleRepository = createRoleRepositoryFromSharedDeps(deps);
-  const transactionRunner = createIdentityTransactionRunner(deps, actorUserId);
+  const transactionRunner = createIdentityTransactionRunner(
+    deps,
+    actorUserId,
+    actorRole,
+  );
 
   return {
     createIdentityUser: new CreateIdentityUserService(transactionRunner),

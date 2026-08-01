@@ -76,9 +76,8 @@ export function SecurityForm({
           />
         </dl>
         <p className="mt-4 text-xs text-muted-foreground">
-          Self-service password change, active session management, and MFA are not
-          exposed by the current authentication APIs. Use an administrator password
-          reset when credential changes are required.
+          Use Change password and Active sessions above for your own credentials
+          and devices. MFA is not exposed by the current authentication APIs.
         </p>
       </SectionCard>
 

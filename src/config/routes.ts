@@ -5,6 +5,9 @@ export const ROUTES = {
   home: "/",
   login: "/login",
   logout: "/logout",
+  forgotPassword: "/forgot-password",
+  resetPassword: "/reset-password",
+  verifyEmail: "/verify-email",
   unauthorized: "/unauthorized",
 
   // Module routes
@@ -78,6 +81,10 @@ export const ROUTES = {
   auditDetail: (id: string) => `/audit/${id}`,
   notifications: "/notifications",
   notificationDetail: (id: string) => `/notifications/${id}`,
+  users: "/users",
+  usersNew: "/users/new",
+  userDetail: (id: string) => `/users/${id}`,
+  userEdit: (id: string) => `/users/${id}/edit`,
   settings: "/settings",
   settingsProfile: "/settings/profile",
   settingsCompany: "/settings/company",
@@ -87,7 +94,7 @@ export const ROUTES = {
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
 
-/** Routes that require an authenticated session. */
+/** Routes that require an authenticated session (UX prefixes). */
 export const PROTECTED_ROUTE_PREFIXES = [
   ROUTES.home,
   ROUTES.dashboard,
@@ -108,15 +115,28 @@ export const PROTECTED_ROUTE_PREFIXES = [
   ROUTES.reports,
   ROUTES.audit,
   ROUTES.notifications,
+  ROUTES.users,
   ROUTES.settings,
 ] as const;
 
-/** Routes accessible without authentication. */
+/**
+ * UX pages reachable without a session.
+ * Single source of truth for proxy public-page policy (see `isProxyPublicPath`).
+ */
 export const PUBLIC_ROUTES = [
   ROUTES.login,
   ROUTES.logout,
+  ROUTES.forgotPassword,
+  ROUTES.resetPassword,
+  ROUTES.verifyEmail,
   ROUTES.unauthorized,
 ] as const;
+
+/** API path prefixes that must remain reachable without a session. */
+export const PUBLIC_API_PATH_PREFIXES = ["/api/auth", "/api/health"] as const;
+
+/** Exact API paths that must remain reachable without a session. */
+export const PUBLIC_API_EXACT_PATHS = ["/api/metrics"] as const;
 
 export type RouteConfig = {
   path: AppRoute;

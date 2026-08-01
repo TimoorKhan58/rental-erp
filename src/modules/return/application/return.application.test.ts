@@ -40,11 +40,13 @@ import type { CreateReturnInput } from "@/modules/return/application/schemas/ret
 
 import {
   ITEM_ID,
+  OTHER_ITEM_ID,
   OTHER_RETURN_ID,
   RENTAL_ORDER_ID,
   RETURN_ID,
   VALID_CREATE_INPUT,
   buildInspectedReturnEntity,
+  buildMultiItemReceivedReturnEntity,
   buildReceivedReturnEntity,
   buildReturnEntity,
   buildReservedRentalOrderEntity,
@@ -524,10 +526,170 @@ describe("InspectReturnService", () => {
       ),
     ).rejects.toBeInstanceOf(UnprocessableError);
   });
+
+  it("rejects partial inspection missing a returned line", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildMultiItemReceivedReturnEntity()]);
+    const service = new InspectReturnService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        new InMemoryRentalOrderRepository(),
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute(
+        { id: RETURN_ID },
+        {
+          items: [
+            {
+              rentalOrderItemId: ITEM_ID,
+              goodQuantity: 5,
+              damagedQuantity: 0,
+              lostQuantity: 0,
+              missingQuantity: 0,
+            },
+          ],
+        },
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+
+    const unchanged = await returnRepository.findById(RETURN_ID);
+    expect(unchanged?.status).toBe("RECEIVED");
+    expect(unchanged?.items[0]?.goodQuantity).toBe(0);
+  });
+
+  it("rejects unknown inspection item ids", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildReceivedReturnEntity()]);
+    const service = new InspectReturnService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        new InMemoryRentalOrderRepository(),
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute(
+        { id: RETURN_ID },
+        {
+          items: [
+            {
+              rentalOrderItemId: ITEM_ID,
+              goodQuantity: 5,
+              damagedQuantity: 0,
+              lostQuantity: 0,
+              missingQuantity: 0,
+            },
+            {
+              rentalOrderItemId: OTHER_ITEM_ID,
+              goodQuantity: 1,
+              damagedQuantity: 0,
+              lostQuantity: 0,
+              missingQuantity: 0,
+            },
+          ],
+        },
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+
+  it("rejects duplicate inspection item ids", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildReceivedReturnEntity()]);
+    const service = new InspectReturnService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        new InMemoryRentalOrderRepository(),
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute(
+        { id: RETURN_ID },
+        {
+          items: [
+            {
+              rentalOrderItemId: ITEM_ID,
+              goodQuantity: 3,
+              damagedQuantity: 2,
+              lostQuantity: 0,
+              missingQuantity: 0,
+            },
+            {
+              rentalOrderItemId: ITEM_ID,
+              goodQuantity: 5,
+              damagedQuantity: 0,
+              lostQuantity: 0,
+              missingQuantity: 0,
+            },
+          ],
+        },
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+
+  it("accepts complete multi-line inspection", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildMultiItemReceivedReturnEntity()]);
+    const service = new InspectReturnService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        new InMemoryRentalOrderRepository(),
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute(
+      { id: RETURN_ID },
+      {
+        items: [
+          {
+            rentalOrderItemId: ITEM_ID,
+            goodQuantity: 3,
+            damagedQuantity: 1,
+            lostQuantity: 1,
+            missingQuantity: 0,
+          },
+          {
+            rentalOrderItemId: OTHER_ITEM_ID,
+            goodQuantity: 1,
+            damagedQuantity: 1,
+            lostQuantity: 0,
+            missingQuantity: 0,
+          },
+        ],
+      },
+    );
+
+    expect(result.status).toBe("INSPECTED");
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]?.goodQuantity).toBe(3);
+    expect(result.items[1]?.damagedQuantity).toBe(1);
+  });
 });
 
 describe("CompleteReturnService", () => {
-  it("completes inspected return with RELEASE then IN so stock becomes available", async () => {
+  it("completes inspected return with IN restock for good quantity only", async () => {
     const returnRepository = new InMemoryReturnRepository();
     returnRepository.seed([buildInspectedReturnEntity()]);
     const dispatchRepository = new InMemoryDispatchRepository();
@@ -562,7 +724,7 @@ describe("CompleteReturnService", () => {
 
     expect(result.status).toBe("COMPLETED");
     expect(result.completedAt).not.toBeNull();
-    expect(stockMovementRepository.count()).toBe(2);
+    expect(stockMovementRepository.count()).toBe(1);
 
     const movements = (
       await stockMovementRepository.findPaged({
@@ -571,17 +733,16 @@ describe("CompleteReturnService", () => {
         sortOrder: "desc",
       })
     ).items;
-    const release = movements.find((m) => m.movementType === "RELEASE");
     const restock = movements.find((m) => m.movementType === "IN");
-    expect(release?.quantity).toBe(5);
     expect(restock?.quantity).toBe(3);
     expect(restock?.referenceType).toBe(RENTAL_ORDER_REFERENCE_TYPE);
     expect(restock?.referenceId).toBe(RENTAL_ORDER_ID);
 
     const inventory = await inventoryRepository.findById(INVENTORY_ID);
     expect(inventory?.quantityOnHand).toBe(48);
-    expect(inventory?.reservedQuantity).toBe(0);
-    expect(inventory?.availableQuantity).toBe(48);
+    // Leftover reservation for undispached qty must remain untouched.
+    expect(inventory?.reservedQuantity).toBe(5);
+    expect(inventory?.availableQuantity).toBe(43);
   });
 
   it("restocks without RELEASE when reservation was already cleared at dispatch", async () => {
@@ -632,7 +793,7 @@ describe("CompleteReturnService", () => {
     expect(inventory?.availableQuantity).toBe(48);
   });
 
-  it("releases reservation for lost items and logs RETURN audit without restock IN", async () => {
+  it("logs RETURN audit for lost items without restock IN or RELEASE", async () => {
     const returnRepository = new InMemoryReturnRepository();
     returnRepository.seed([
       buildInspectedReturnEntity({
@@ -671,21 +832,12 @@ describe("CompleteReturnService", () => {
 
     await service.execute({ id: RETURN_ID });
 
-    expect(stockMovementRepository.count()).toBe(1);
-    const movement = (
-      await stockMovementRepository.findPaged({
-        page: 1,
-        pageSize: 10,
-        sortOrder: "desc",
-      })
-    ).items[0];
-    expect(movement?.movementType).toBe("RELEASE");
-    expect(movement?.quantity).toBe(5);
+    expect(stockMovementRepository.count()).toBe(0);
 
     const inventory = await inventoryRepository.findById(INVENTORY_ID);
     expect(inventory?.quantityOnHand).toBe(50);
-    expect(inventory?.reservedQuantity).toBe(0);
-    expect(inventory?.availableQuantity).toBe(50);
+    expect(inventory?.reservedQuantity).toBe(5);
+    expect(inventory?.availableQuantity).toBe(45);
 
     expect(
       auditLogger.entries.filter((entry) => entry.action === "RETURN"),
@@ -721,6 +873,51 @@ describe("CompleteReturnService", () => {
     await expect(service.execute({ id: RETURN_ID })).rejects.toBeInstanceOf(
       UnprocessableError,
     );
+  });
+
+  it("rejects complete when inspection is incomplete and creates no stock movements", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    const incomplete = buildInspectedReturnEntity({
+      goodQuantity: 0,
+      damagedQuantity: 0,
+      lostQuantity: 0,
+      missingQuantity: 0,
+    });
+    returnRepository.seed([incomplete]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 45,
+        reservedQuantity: 5,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CompleteReturnService(
+      createWriteScope(
+        returnRepository,
+        new InMemoryDispatchRepository(),
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(service.execute({ id: RETURN_ID })).rejects.toBeInstanceOf(
+      UnprocessableError,
+    );
+
+    expect(stockMovementRepository.count()).toBe(0);
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.quantityOnHand).toBe(45);
+    const unchanged = await returnRepository.findById(RETURN_ID);
+    expect(unchanged?.status).toBe("INSPECTED");
   });
 
   it("rejects complete when inventory is missing", async () => {

@@ -8,6 +8,9 @@
 # How to supply certificates:
 #   1. Organization / purchased cert: copy PEM files here with the names above.
 #   2. Let's Encrypt (certbot): see docs/production/REVERSE_PROXY.md
+#   3. Lab / dress rehearsal only: `npm run certs:lab` (self-signed; browsers will warn)
+#
+# The Nginx container **refuses to start** until both PEMs exist (see scripts/nginx-entrypoint.sh).
 #
 # Example (local only — never commit):
 #   cp /etc/letsencrypt/live/erp.example.com/fullchain.pem ./fullchain.pem

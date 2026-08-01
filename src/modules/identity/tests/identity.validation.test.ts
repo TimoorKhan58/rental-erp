@@ -9,23 +9,21 @@ import { ListIdentityUsersSchema } from "@/modules/identity/application/schemas/
 import { USER_ROLES } from "@/constants/roles";
 
 describe("CreateIdentityUserSchema", () => {
-  it("accepts valid input", () => {
+  it("accepts valid input without a client password", () => {
     const result = CreateIdentityUserSchema.safeParse({
       name: "Jane Admin",
       email: "jane@example.com",
-      password: "password123",
       role: USER_ROLES.MANAGER,
     });
 
     expect(result.success).toBe(true);
   });
 
-  it("rejects short passwords", () => {
+  it("rejects unknown roles", () => {
     const result = CreateIdentityUserSchema.safeParse({
       name: "Jane Admin",
       email: "jane@example.com",
-      password: "short",
-      role: USER_ROLES.MANAGER,
+      role: "superadmin",
     });
 
     expect(result.success).toBe(false);

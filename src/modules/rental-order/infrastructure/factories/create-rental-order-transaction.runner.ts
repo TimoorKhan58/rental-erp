@@ -1,4 +1,5 @@
 import type { IRentalOrderTransactionRunner } from "@/modules/rental-order/application/services/rental-order-transaction.runner";
+import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
 import { createInventoryRepositoryFromUnitOfWork } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
 import { createStockMovementRepositoryFromUnitOfWork } from "@/modules/stock-movement/infrastructure/factories/create-stock-movement.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -21,6 +22,7 @@ export function createRentalOrderTransactionRunner(
           rentalOrderRepository: createRentalOrderRepositoryFromUnitOfWork(
             context,
           ),
+          dispatchRepository: createDispatchRepositoryFromUnitOfWork(context),
           inventoryRepository: createInventoryRepositoryFromUnitOfWork(context),
           stockMovementRepository: createStockMovementRepositoryFromUnitOfWork(
             context,

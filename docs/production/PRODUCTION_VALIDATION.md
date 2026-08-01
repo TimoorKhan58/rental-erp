@@ -15,8 +15,9 @@ Final go-live validation. Complete before declaring the environment **production
 - [ ] `SECURE_COOKIES=true`
 - [ ] Header ownership decided (`ENABLE_SECURITY_HEADERS` / Nginx) — see [SECURITY_HARDENING.md](./SECURITY_HARDENING.md)
 - [ ] `TRUSTED_PROXIES` set if audit IPs must use `X-Forwarded-For`
-- [ ] `METRICS_BEARER_TOKEN` set if `/api/metrics` is reachable beyond private scrapers
+- [ ] `METRICS_BEARER_TOKEN` set when `ENABLE_METRICS=true` (required — app will not start without it)
 - [ ] `npm run config:check` (or equivalent) succeeded on release artifact
+- [ ] TLS PEMs present in `nginx/certs/` (or lab certs via `npm run certs:lab` for rehearsal only)
 
 Ref: [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) · [CONFIGURATION_GUIDE.md](./CONFIGURATION_GUIDE.md)
 
@@ -106,3 +107,22 @@ Ref: [SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md)
 | Technical | | | |
 | Security | | | |
 | Product | | | |
+
+---
+
+## Phase 20 RC1 — Operator deployment gates
+
+Complete in addition to the checklist above before declaring **RC1 production-ready**:
+
+- [ ] Fresh install path: empty DB → migrate profile → app + nginx healthy
+- [ ] Existing DB path: `prisma migrate status` clean; migrate-safe / backup-first rehearsal on non-prod
+- [ ] Admin bootstrap via `npm run create:admin` / [runbooks/ADMIN_BOOTSTRAP.md](./runbooks/ADMIN_BOOTSTRAP.md)
+- [ ] SMTP: either `ENABLE_EMAIL=false` documented as soft-launch, or SMTP verified with invite/reset
+- [ ] Login + dashboard load
+- [ ] Invite flow exercised (or deferred with SMTP owner)
+- [ ] `GET /api/health` and `GET /api/health/ready` = 200
+- [ ] `GET /api/metrics` with bearer (or explicitly disabled)
+- [ ] Backup procedure documented and owner assigned ([runbooks/BACKUP.md](./runbooks/BACKUP.md))
+- [ ] Restore procedure rehearsed on non-prod ([runbooks/RESTORE.md](./runbooks/RESTORE.md))
+- [ ] Rolling restart: recreate `app` → readiness returns 200 within grace window
+- [ ] [SMOKE_TESTS.md](./SMOKE_TESTS.md) Phase 20 minimal set passed

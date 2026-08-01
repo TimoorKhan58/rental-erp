@@ -1,41 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { ROUTES } from "@/config/routes";
 import { auth } from "@/lib/auth";
+import {
+  resolveActiveSessionUser,
+} from "@/shared/infrastructure/auth";
+import { isProxyPublicPath } from "@/shared/infrastructure/auth/proxy-public-path";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/logout", "/unauthorized"]);
+async function redirectToLogin(
+  request: NextRequest,
+  pathname: string,
+  options?: { clearSession?: boolean },
+): Promise<NextResponse> {
+  const loginUrl = new URL(ROUTES.login, request.url);
 
-function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.has(pathname)) {
-    return true;
+  if (pathname !== ROUTES.login && pathname !== ROUTES.logout) {
+    loginUrl.searchParams.set("callbackUrl", pathname);
   }
 
-  if (pathname.startsWith("/api/auth")) {
-    return true;
+  const response = NextResponse.redirect(loginUrl);
+  response.headers.set("Cache-Control", "no-store, private");
+  response.headers.set("Pragma", "no-cache");
+
+  if (options?.clearSession) {
+    const signOutResponse = await auth.api.signOut({
+      headers: await headers(),
+      asResponse: true,
+    });
+
+    for (const cookie of signOutResponse.headers.getSetCookie()) {
+      response.headers.append("set-cookie", cookie);
+    }
   }
 
-  // Liveness / readiness / metrics must remain reachable without a session.
-  if (pathname.startsWith("/api/health")) {
-    return true;
-  }
-
-  if (pathname === "/api/metrics") {
-    return true;
-  }
-
-  return false;
+  return response;
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isPublicPath(pathname)) {
-    if (pathname === "/login") {
+  if (isProxyPublicPath(pathname)) {
+    if (pathname === ROUTES.login) {
       const session = await auth.api.getSession({
         headers: await headers(),
       });
 
       if (session) {
-        return NextResponse.redirect(new URL("/", request.url));
+        const activeUser = await resolveActiveSessionUser(session);
+
+        if (activeUser !== null) {
+          return NextResponse.redirect(new URL(ROUTES.dashboard, request.url));
+        }
+
+        // Stale inactive/unlinked session must not bounce to the app shell.
+        return redirectToLogin(request, pathname, { clearSession: true });
       }
     }
 
@@ -47,9 +65,13 @@ export async function proxy(request: NextRequest) {
   });
 
   if (!session) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    return redirectToLogin(request, pathname);
+  }
+
+  const activeUser = await resolveActiveSessionUser(session);
+
+  if (activeUser === null) {
+    return redirectToLogin(request, pathname, { clearSession: true });
   }
 
   return NextResponse.next();

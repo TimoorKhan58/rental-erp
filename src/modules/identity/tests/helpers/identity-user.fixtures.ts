@@ -5,14 +5,17 @@ import type { RoleId, UserId } from "@/shared/domain/ids";
 
 export const USER_ID = "10000000-0000-4000-8000-000000000001" as UserId;
 export const OTHER_USER_ID = "10000000-0000-4000-8000-000000000002" as UserId;
+export const WORKER_USER_ID = "10000000-0000-4000-8000-000000000003" as UserId;
+export const SECOND_OWNER_USER_ID =
+  "10000000-0000-4000-8000-000000000004" as UserId;
 export const OWNER_ROLE_ID = "00000000-0000-4000-8000-000000000001" as RoleId;
 export const MANAGER_ROLE_ID = "00000000-0000-4000-8000-000000000002" as RoleId;
+export const WORKER_ROLE_ID = "00000000-0000-4000-8000-000000000003" as RoleId;
 export const VIEWER_ROLE_ID = "00000000-0000-4000-8000-000000000005" as RoleId;
 
 export const VALID_CREATE_INPUT = {
   name: "Jane Admin",
   email: "jane.admin@example.com",
-  password: "password123",
   role: USER_ROLES.MANAGER,
   isActive: true,
 } as const;

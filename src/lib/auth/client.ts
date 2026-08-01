@@ -15,6 +15,17 @@ export const authClient = createAuthClient({
   baseURL: resolveClientBaseUrl(),
 });
 
-export const { signIn, signOut, useSession } = authClient;
+export const {
+  signIn,
+  signOut,
+  useSession,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
+  listSessions,
+  revokeSession,
+  revokeOtherSessions,
+  sendVerificationEmail,
+} = authClient;
 
 export type AuthClientSession = typeof auth.$Infer.Session;

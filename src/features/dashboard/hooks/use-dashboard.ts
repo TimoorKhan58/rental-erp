@@ -10,8 +10,9 @@ export function useBusinessPulse() {
   return useQuery({
     queryKey: queryKeys.dashboard.summary(),
     queryFn: fetchBusinessPulse,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 5 * 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
   });
 }
 

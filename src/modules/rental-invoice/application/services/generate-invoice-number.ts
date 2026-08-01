@@ -1,27 +1,29 @@
-import type { IRentalInvoiceRepository } from "@/modules/rental-invoice/domain/rental-invoice.repository.interface";
+import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
+import { DEFAULT_SEQUENCE_PADDING_LENGTH } from "@/modules/settings/domain/number-sequence.constants";
 
+/** Historical invoice format: INV-{year}-{n} with minimum 3-digit padding. */
+export const RENTAL_INVOICE_SEQUENCE_PADDING = DEFAULT_SEQUENCE_PADDING_LENGTH;
+
+export function buildInvoiceNumberYearPrefix(year: number): string {
+  return `INV-${year}-`;
+}
+
+/**
+ * Allocates the next rental invoice number via DocumentSequence.
+ * Uses year-scoped prefixes (`INV-2026-`) with atomic row locking and
+ * automatic counter reset on year change.
+ */
 export async function generateNextInvoiceNumber(
-  repository: IRentalInvoiceRepository,
+  numberSequences: INumberSequenceRepository,
   referenceDate = new Date(),
 ): Promise<string> {
-  const year = referenceDate.getFullYear();
-  const prefix = `INV-${year}-`;
+  const yearPrefix = buildInvoiceNumberYearPrefix(referenceDate.getFullYear());
 
-  const existing = await repository.findPaged({
-    page: 1,
-    pageSize: 500,
-    sortBy: "invoiceNumber",
-    sortOrder: "desc",
+  const result = await numberSequences.generateNextNumber("RENTAL_INVOICE", {
+    prefix: yearPrefix,
+    resetWhenPrefixChanges: true,
+    paddingLength: RENTAL_INVOICE_SEQUENCE_PADDING,
   });
 
-  const maxSequence = existing.items.reduce((max, invoice) => {
-    if (!invoice.invoiceNumber.startsWith(prefix)) {
-      return max;
-    }
-
-    const sequence = Number.parseInt(invoice.invoiceNumber.slice(prefix.length), 10);
-    return Number.isFinite(sequence) ? Math.max(max, sequence) : max;
-  }, 0);
-
-  return `${prefix}${String(maxSequence + 1).padStart(3, "0")}`;
+  return result.formattedNumber;
 }

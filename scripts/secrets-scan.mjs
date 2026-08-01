@@ -53,6 +53,8 @@ const ALLOWED_PATH_FRAGMENTS = [
   "fixtures.ts",
   "/tests/",
   "\\tests\\",
+  // Route path constants (forgotPassword / resetPassword), not credentials
+  "src/config/routes.ts",
 ];
 
 const ALLOWED_LINE_SNIPPETS = [
@@ -66,6 +68,8 @@ const ALLOWED_LINE_SNIPPETS = [
   "postgresql://test:test@",
   "postgresql://ci:ci@",
   "postgresql://build:build@",
+  // Compose template interpolation (not literal credentials)
+  "POSTGRES_PASSWORD:-rental",
   "password: \"super-secret\"",
   "password: 'secret'",
   'password: "secret"',

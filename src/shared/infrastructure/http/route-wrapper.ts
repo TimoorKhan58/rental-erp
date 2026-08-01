@@ -82,11 +82,19 @@ export function withHandler<T>(
     try {
       const data = await handler(ctx);
       const durationMs = getRequestDurationMs(request);
+      const slowRequest = durationMs >= 500;
 
-      logger.info("Request completed", {
-        status: 200,
-        durationMs,
-      });
+      if (slowRequest) {
+        logger.info("Request completed", {
+          status: 200,
+          durationMs,
+        });
+      } else {
+        logger.debug("Request completed", {
+          status: 200,
+          durationMs,
+        });
+      }
 
       return {
         status: 200,
