@@ -19,7 +19,11 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
-import { IdentityUserInvariantError } from "@/modules/identity/domain/identity-user.errors";
+import {
+  IdentityUserInvariantError,
+  IdentityUserStateError,
+} from "@/modules/identity/domain/identity-user.errors";
+import { assertCanAssignRole } from "@/modules/identity/domain/identity-user.rules";
 
 export class CreateIdentityUserService {
   constructor(
@@ -30,6 +34,19 @@ export class CreateIdentityUserService {
     const data = parseRequest(CreateIdentityUserSchema, input);
 
     return this.transactionRunner.run(async (scope) => {
+      try {
+        assertCanAssignRole({
+          actorRole: scope.actorRole,
+          targetRole: data.role,
+        });
+      } catch (error) {
+        if (error instanceof IdentityUserStateError) {
+          throw new UnprocessableError({ message: error.message });
+        }
+
+        throw error;
+      }
+
       const role = await scope.roleRepository.findByName(data.role);
 
       if (role === null) {

@@ -8,6 +8,7 @@ import { ListRolesService } from "@/modules/identity/application/services/list-r
 import { ResetIdentityUserPasswordService } from "@/modules/identity/application/services/reset-identity-user-password.service";
 import { UpdateIdentityUserService } from "@/modules/identity/application/services/update-identity-user.service";
 import type { IdentityApplicationServices } from "@/modules/identity/application/services/identity-application-services.interface";
+import type { UserRole } from "@/constants/roles";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 
 import {
@@ -19,10 +20,15 @@ import { createIdentityTransactionRunner } from "./create-identity-transaction.r
 export function createIdentityApplicationServices(
   deps: SharedDeps,
   actorUserId?: string,
+  actorRole?: UserRole,
 ): IdentityApplicationServices {
   const userRepository = createIdentityUserRepositoryFromSharedDeps(deps);
   const roleRepository = createRoleRepositoryFromSharedDeps(deps);
-  const transactionRunner = createIdentityTransactionRunner(deps, actorUserId);
+  const transactionRunner = createIdentityTransactionRunner(
+    deps,
+    actorUserId,
+    actorRole,
+  );
 
   return {
     createIdentityUser: new CreateIdentityUserService(transactionRunner),

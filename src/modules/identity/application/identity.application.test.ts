@@ -18,6 +18,7 @@ import {
   OTHER_USER_ID,
   USER_ID,
   VALID_CREATE_INPUT,
+  WORKER_ROLE_ID,
   buildIdentityUserEntity,
 } from "../tests/helpers/identity-user.fixtures";
 import {
@@ -31,7 +32,10 @@ import {
   createRollbackIdentityTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
 
-function createWriteScope(actorUserId: string = USER_ID) {
+function createWriteScope(
+  actorUserId: string = USER_ID,
+  actorRole: (typeof USER_ROLES)[keyof typeof USER_ROLES] = USER_ROLES.OWNER,
+) {
   const userRepository = new InMemoryIdentityUserRepository();
   const roleRepository = new InMemoryRoleRepository();
   const authGateway = new MockIdentityAuthGateway();
@@ -43,12 +47,14 @@ function createWriteScope(actorUserId: string = USER_ID) {
     authGateway,
     auditLogger,
     actorUserId,
+    actorRole,
     transactionRunner: createPassThroughIdentityTransactionRunner({
       userRepository,
       roleRepository,
       authGateway,
       auditLogger,
       actorUserId,
+      actorRole,
     }),
   };
 }
@@ -81,21 +87,120 @@ describe("CreateIdentityUserService", () => {
       ConflictError,
     );
   });
+
+  it("allows owner to create another owner", async () => {
+    const scope = createWriteScope(USER_ID, USER_ROLES.OWNER);
+    const service = new CreateIdentityUserService(scope.transactionRunner);
+
+    const result = await service.execute({
+      ...VALID_CREATE_INPUT,
+      email: "second.owner@example.com",
+      role: USER_ROLES.OWNER,
+    });
+
+    expect(result.role).toBe(USER_ROLES.OWNER);
+  });
+
+  it("rejects manager creating an owner", async () => {
+    const scope = createWriteScope(OTHER_USER_ID, USER_ROLES.MANAGER);
+    const service = new CreateIdentityUserService(scope.transactionRunner);
+
+    await expect(
+      service.execute({
+        ...VALID_CREATE_INPUT,
+        email: "escalated@example.com",
+        role: USER_ROLES.OWNER,
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
 });
 
 describe("UpdateIdentityUserService", () => {
-  it("updates profile and role assignment", async () => {
+  it("updates profile without demoting the last owner", async () => {
     const scope = createWriteScope();
     scope.userRepository.seed([buildIdentityUserEntity()]);
     const service = new UpdateIdentityUserService(scope.transactionRunner);
 
     const result = await service.execute(
       { id: USER_ID },
-      { role: USER_ROLES.MANAGER, name: "Updated Owner" },
+      { name: "Updated Owner" },
+    );
+
+    expect(result.name).toBe("Updated Owner");
+    expect(result.role).toBe(USER_ROLES.OWNER);
+  });
+
+  it("rejects demoting the last owner", async () => {
+    const scope = createWriteScope();
+    scope.userRepository.seed([buildIdentityUserEntity()]);
+    const service = new UpdateIdentityUserService(scope.transactionRunner);
+
+    await expect(
+      service.execute({ id: USER_ID }, { role: USER_ROLES.MANAGER }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+
+  it("allows demoting an owner when another owner remains", async () => {
+    const scope = createWriteScope();
+    scope.userRepository.seed([
+      buildIdentityUserEntity(),
+      buildIdentityUserEntity({
+        id: OTHER_USER_ID,
+        email: "second.owner@example.com",
+        roleName: USER_ROLES.OWNER,
+      }),
+    ]);
+    const service = new UpdateIdentityUserService(scope.transactionRunner);
+
+    const result = await service.execute(
+      { id: USER_ID },
+      { role: USER_ROLES.MANAGER },
     );
 
     expect(result.role).toBe(USER_ROLES.MANAGER);
-    expect(result.name).toBe("Updated Owner");
+  });
+
+  it("rejects manager promoting a user to owner", async () => {
+    const scope = createWriteScope(OTHER_USER_ID, USER_ROLES.MANAGER);
+    scope.userRepository.seed([
+      buildIdentityUserEntity({
+        id: OTHER_USER_ID,
+        email: "manager@example.com",
+        roleName: USER_ROLES.MANAGER,
+      }),
+      buildIdentityUserEntity({
+        id: USER_ID,
+        email: "worker@example.com",
+        roleName: USER_ROLES.WORKER,
+        roleId: WORKER_ROLE_ID,
+      }),
+    ]);
+    const service = new UpdateIdentityUserService(scope.transactionRunner);
+
+    await expect(
+      service.execute({ id: USER_ID }, { role: USER_ROLES.OWNER }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+
+  it("allows owner to promote a user to owner", async () => {
+    const scope = createWriteScope(USER_ID, USER_ROLES.OWNER);
+    scope.userRepository.seed([
+      buildIdentityUserEntity(),
+      buildIdentityUserEntity({
+        id: OTHER_USER_ID,
+        email: "worker@example.com",
+        roleName: USER_ROLES.WORKER,
+        roleId: WORKER_ROLE_ID,
+      }),
+    ]);
+    const service = new UpdateIdentityUserService(scope.transactionRunner);
+
+    const result = await service.execute(
+      { id: OTHER_USER_ID },
+      { role: USER_ROLES.OWNER },
+    );
+
+    expect(result.role).toBe(USER_ROLES.OWNER);
   });
 
   it("prevents self deactivation", async () => {

@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { appConfig } from "@/shared/config/app.config";
 import { authConfig } from "@/shared/config/auth.config";
 import { securityConfig } from "@/shared/config/security.config";
+import { assertAuthUserActiveForSession } from "@/shared/infrastructure/auth/assert-auth-user-active-for-session";
 
 const trustedOrigins = Array.from(
   new Set(
@@ -24,6 +25,15 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          await assertAuthUserActiveForSession(session.userId);
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,

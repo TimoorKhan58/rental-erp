@@ -1,10 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/shared/config/env", async () => {
+  const { testEnvFixture } = await import("@/shared/config/env.test-fixture");
+  return { env: testEnvFixture };
+});
+
 import { PERMISSIONS } from "@/shared/application/authorization";
 import { USER_ROLES } from "@/constants/roles";
 import type { UserRole } from "@/constants/roles";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
-import { createMockAuthSession } from "@/shared/infrastructure/auth/test-session.factory";
+import {
+  createMockAuthSession,
+  TEST_ERP_USER_ID,
+} from "@/shared/infrastructure/auth/test-session.factory";
 
 import { runIdentityApiRoute } from "@/modules/identity/presentation/http/identity-api.route-runner";
 import {
@@ -17,8 +25,10 @@ import {
   readJsonResponse,
 } from "@/modules/identity/tests/helpers/api-request.factory";
 import type { IdentityApplicationServices } from "@/modules/identity/application/services/identity-application-services.interface";
+import { VALID_CREATE_INPUT } from "@/modules/identity/tests/helpers/identity-user.fixtures";
 
 const getSessionMock = vi.fn();
+const findUniqueMock = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   auth: {
@@ -28,11 +38,23 @@ vi.mock("@/lib/auth", () => ({
   },
 }));
 
+vi.mock("@/lib/prisma", () => ({
+  default: {
+    user: {
+      findUnique: (...args: unknown[]) => findUniqueMock(...args),
+    },
+  },
+}));
+
 function mockSession(role: UserRole) {
   getSessionMock.mockResolvedValue(createMockAuthSession(role));
+  findUniqueMock.mockResolvedValue({ isActive: true });
 }
 
-import { VALID_CREATE_INPUT } from "@/modules/identity/tests/helpers/identity-user.fixtures";
+function mockInactiveSession(role: UserRole = USER_ROLES.MANAGER) {
+  getSessionMock.mockResolvedValue(createMockAuthSession(role));
+  findUniqueMock.mockResolvedValue({ isActive: false });
+}
 
 function createMockServices() {
   return {
@@ -51,6 +73,7 @@ function createMockServices() {
 describe("runIdentityApiRoute authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findUniqueMock.mockResolvedValue({ isActive: true });
   });
 
   it("returns 401 when session is missing", async () => {
@@ -61,7 +84,8 @@ describe("runIdentityApiRoute authorization", () => {
       route: "/api/users",
       httpMethod: "GET",
       permission: PERMISSIONS.identity.read,
-      resolveServices: () => createMockServices() as unknown as IdentityApplicationServices,
+      resolveServices: () =>
+        createMockServices() as unknown as IdentityApplicationServices,
       handler: async () => ({ ok: true }),
     });
 
@@ -87,11 +111,32 @@ describe("runIdentityApiRoute authorization", () => {
       route: "/api/users",
       httpMethod: "GET",
       permission: PERMISSIONS.identity.read,
-      resolveServices: () => createMockServices() as unknown as IdentityApplicationServices,
+      resolveServices: () =>
+        createMockServices() as unknown as IdentityApplicationServices,
       handler: async () => ({ ok: true }),
     });
 
     expect(result.status).toBe(401);
+  });
+
+  it("returns 401 when ERP user is inactive", async () => {
+    mockInactiveSession(USER_ROLES.MANAGER);
+
+    const result = await runIdentityApiRoute({
+      request: createMockNextRequest(),
+      route: "/api/users",
+      httpMethod: "GET",
+      permission: PERMISSIONS.identity.read,
+      resolveServices: () =>
+        createMockServices() as unknown as IdentityApplicationServices,
+      handler: async () => ({ ok: true }),
+    });
+
+    expect(result.status).toBe(401);
+    expect(findUniqueMock).toHaveBeenCalledWith({
+      where: { id: TEST_ERP_USER_ID },
+      select: { isActive: true },
+    });
   });
 
   it("returns 403 when permission is missing", async () => {
@@ -102,7 +147,8 @@ describe("runIdentityApiRoute authorization", () => {
       route: "/api/users",
       httpMethod: "POST",
       permission: PERMISSIONS.identity.create,
-      resolveServices: () => createMockServices() as unknown as IdentityApplicationServices,
+      resolveServices: () =>
+        createMockServices() as unknown as IdentityApplicationServices,
       handler: async () => ({ ok: true }),
     });
 
@@ -136,11 +182,51 @@ describe("runIdentityApiRoute authorization", () => {
 
     expect(result.status).toBe(200);
   });
+
+  it("allows worker self profile without identity:read", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+    services.getIdentityUserProfile.execute.mockResolvedValue({
+      id: TEST_ERP_USER_ID,
+      name: "Worker",
+      email: "worker@example.com",
+      roleId: "00000000-0000-4000-8000-000000000003",
+      role: USER_ROLES.WORKER,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      permissions: [],
+    });
+
+    const response = await handleGetIdentityUserProfile(
+      createMockNextRequest({ url: "http://localhost:3000/api/users/me" }),
+      () => services as unknown as IdentityApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("still forbids worker from listing users", async () => {
+    mockSession(USER_ROLES.WORKER);
+
+    const result = await runIdentityApiRoute({
+      request: createMockNextRequest(),
+      route: "/api/users",
+      httpMethod: "GET",
+      permission: PERMISSIONS.identity.read,
+      resolveServices: () =>
+        createMockServices() as unknown as IdentityApplicationServices,
+      handler: async () => ({ items: [] }),
+    });
+
+    expect(result.status).toBe(403);
+  });
 });
 
 describe("identity API handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findUniqueMock.mockResolvedValue({ isActive: true });
   });
 
   it("handleListIdentityUsers returns paginated response", async () => {
@@ -157,7 +243,9 @@ describe("identity API handlers", () => {
       }),
       () => services as unknown as IdentityApplicationServices,
     );
-    const body = await readJsonResponse<{ data: { items: unknown[] } }>(response);
+    const body = await readJsonResponse<{ data: { items: unknown[] } }>(
+      response,
+    );
 
     expect(response.status).toBe(200);
     expect(body.data.items).toEqual([]);

@@ -253,7 +253,7 @@ export async function handleGetIdentityUserProfile(
     request,
     route: IDENTITY_ROUTES.me,
     httpMethod: "GET",
-    permission: PERMISSIONS.identity.read,
+    // Authenticated self-profile only — do not require identity:read (Worker access).
     resolveServices,
     handler: async (ctx, services) => {
       if (ctx.request.userId === undefined) {

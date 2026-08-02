@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { resolveSessionUser } from "@/shared/infrastructure/auth/resolve-session-user";
+import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-erp-user";
 
 const PUBLIC_PATHS = new Set(["/", "/login", "/logout", "/unauthorized"]);
 
@@ -25,16 +27,35 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+async function hasActiveSession(): Promise<boolean> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return false;
+  }
+
+  const resolved = resolveSessionUser(session);
+
+  if (resolved === null) {
+    return false;
+  }
+
+  try {
+    await ensureActiveErpUser(resolved.erpUserId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
     if (pathname === "/login") {
-      const session = await auth.api.getSession({
-        headers: await headers(),
-      });
-
-      if (session) {
+      if (await hasActiveSession()) {
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
@@ -42,11 +63,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
+  if (!(await hasActiveSession())) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);

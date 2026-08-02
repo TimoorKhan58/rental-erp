@@ -19,6 +19,8 @@ export type {
   IRoleRepository,
 } from "./identity-user.repository.interface";
 export {
+  assertCanAssignRole,
+  assertCanChangeUserRole,
   assertCanDeactivateUser,
   assertUserIsActive,
 } from "./identity-user.rules";

@@ -23,7 +23,10 @@ import {
   IdentityUserInvariantError,
   IdentityUserStateError,
 } from "@/modules/identity/domain/identity-user.errors";
-import { assertCanDeactivateUser } from "@/modules/identity/domain/identity-user.rules";
+import {
+  assertCanChangeUserRole,
+  assertCanDeactivateUser,
+} from "@/modules/identity/domain/identity-user.rules";
 import { USER_ROLES } from "@/constants/roles";
 
 export class UpdateIdentityUserService {
@@ -70,6 +73,25 @@ export class UpdateIdentityUserService {
             message: "Role not found",
             details: { role: data.role },
           });
+        }
+
+        const activeOwnerCount = await scope.userRepository.countActiveByRole(
+          USER_ROLES.OWNER,
+        );
+
+        try {
+          assertCanChangeUserRole({
+            actorRole: scope.actorRole,
+            currentRole: existing.roleName,
+            newRole: role.name,
+            activeOwnerCount,
+          });
+        } catch (error) {
+          if (error instanceof IdentityUserStateError) {
+            throw new UnprocessableError({ message: error.message });
+          }
+
+          throw error;
         }
 
         roleId = role.id;

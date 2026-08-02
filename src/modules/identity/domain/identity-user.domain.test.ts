@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { IdentityUser } from "@/modules/identity/domain/identity-user.entity";
 import { IdentityUserInvariantError } from "@/modules/identity/domain/identity-user.errors";
 import {
+  assertCanAssignRole,
+  assertCanChangeUserRole,
   assertCanDeactivateUser,
   assertUserIsActive,
 } from "@/modules/identity/domain/identity-user.rules";
@@ -75,5 +77,54 @@ describe("identity user rules", () => {
 
   it("requires active users for protected operations", () => {
     expect(() => assertUserIsActive(false)).toThrow();
+  });
+
+  it("blocks manager from assigning owner", () => {
+    expect(() =>
+      assertCanAssignRole({
+        actorRole: USER_ROLES.MANAGER,
+        targetRole: USER_ROLES.OWNER,
+      }),
+    ).toThrow(/Only owners can assign the owner role/);
+  });
+
+  it("allows owner to assign owner", () => {
+    expect(() =>
+      assertCanAssignRole({
+        actorRole: USER_ROLES.OWNER,
+        targetRole: USER_ROLES.OWNER,
+      }),
+    ).not.toThrow();
+  });
+
+  it("allows bootstrap without actor role to assign owner", () => {
+    expect(() =>
+      assertCanAssignRole({
+        actorRole: undefined,
+        targetRole: USER_ROLES.OWNER,
+      }),
+    ).not.toThrow();
+  });
+
+  it("blocks demoting the last owner", () => {
+    expect(() =>
+      assertCanChangeUserRole({
+        actorRole: USER_ROLES.OWNER,
+        currentRole: USER_ROLES.OWNER,
+        newRole: USER_ROLES.MANAGER,
+        activeOwnerCount: 1,
+      }),
+    ).toThrow(/Cannot demote the last active owner account/);
+  });
+
+  it("allows demoting owner when another owner remains", () => {
+    expect(() =>
+      assertCanChangeUserRole({
+        actorRole: USER_ROLES.OWNER,
+        currentRole: USER_ROLES.OWNER,
+        newRole: USER_ROLES.MANAGER,
+        activeOwnerCount: 2,
+      }),
+    ).not.toThrow();
   });
 });
