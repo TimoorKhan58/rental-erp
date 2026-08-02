@@ -22,66 +22,71 @@ import {
   toJsonResponse,
 } from "../http/purchase-order-api.route-runner";
 import { PURCHASE_ORDER_ROUTES } from "../routes/purchase-order.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListPurchaseOrders(
   request: NextRequest,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListPurchaseOrdersSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListPurchaseOrdersSchema, query);
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.purchaseOrders.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listPurchaseOrders.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<PurchaseOrderDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderListResponse(paginated),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.purchaseOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listPurchaseOrders.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<PurchaseOrderDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreatePurchaseOrder(
   request: NextRequest,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreatePurchaseOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreatePurchaseOrderSchema, body);
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.purchaseOrders.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createPurchaseOrder.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.purchaseOrders.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createPurchaseOrder.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetPurchaseOrderById(
@@ -89,29 +94,31 @@ export async function handleGetPurchaseOrderById(
   id: string,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PurchaseOrderIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PurchaseOrderIdParamSchema, { id });
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.purchaseOrders.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getPurchaseOrderById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.purchaseOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getPurchaseOrderById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdatePurchaseOrder(
@@ -119,31 +126,33 @@ export async function handleUpdatePurchaseOrder(
   id: string,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PurchaseOrderIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdatePurchaseOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PurchaseOrderIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdatePurchaseOrderSchema, body);
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.purchaseOrders.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updatePurchaseOrder.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.purchaseOrders.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updatePurchaseOrder.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleApprovePurchaseOrder(
@@ -151,29 +160,31 @@ export async function handleApprovePurchaseOrder(
   id: string,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PurchaseOrderIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PurchaseOrderIdParamSchema, { id });
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.approve(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.purchaseOrders.approve,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.approvePurchaseOrder.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.approve(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.purchaseOrders.approve,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.approvePurchaseOrder.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleReceivePurchaseOrder(
@@ -181,31 +192,33 @@ export async function handleReceivePurchaseOrder(
   id: string,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PurchaseOrderIdParamSchema, { id });
-  const body = await request.json();
-  const receiveInput = parseRequest(ReceivePurchaseOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PurchaseOrderIdParamSchema, { id });
+    const body = await request.json();
+    const receiveInput = parseRequest(ReceivePurchaseOrderSchema, body);
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.receive(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.purchaseOrders.receive,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.receivePurchaseOrder.execute(params, receiveInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.receive(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.purchaseOrders.receive,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.receivePurchaseOrder.execute(params, receiveInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCancelPurchaseOrder(
@@ -213,27 +226,29 @@ export async function handleCancelPurchaseOrder(
   id: string,
   resolveServices: PurchaseOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PurchaseOrderIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PurchaseOrderIdParamSchema, { id });
 
-  const result = await runPurchaseOrderApiRoute({
-    request,
-    route: PURCHASE_ORDER_ROUTES.cancel(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.purchaseOrders.cancel,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.cancelPurchaseOrder.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
-      },
+    const result = await runPurchaseOrderApiRoute({
+      request,
+      route: PURCHASE_ORDER_ROUTES.cancel(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.purchaseOrders.cancel,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.cancelPurchaseOrder.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPurchaseOrderResponse(result.body.data as PurchaseOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

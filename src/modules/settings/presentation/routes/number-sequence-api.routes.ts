@@ -22,31 +22,34 @@ import {
   toJsonResponse,
 } from "../http/number-sequence-api.route-runner";
 import { SETTINGS_ROUTES } from "../routes/settings.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListNumberSequences(
   request: NextRequest,
   resolveServices: SettingsServiceResolver,
 ): Promise<Response> {
-  const result = await runNumberSequenceApiRoute({
-    request,
-    route: SETTINGS_ROUTES.sequences,
-    httpMethod: "GET",
-    permission: PERMISSIONS.sequences.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listNumberSequences.execute(),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toNumberSequenceListResponse(result.body.data as NumberSequenceDto[]),
-      },
+  return runCatchingApiHandler(request, async () => {
+    const result = await runNumberSequenceApiRoute({
+      request,
+      route: SETTINGS_ROUTES.sequences,
+      httpMethod: "GET",
+      permission: PERMISSIONS.sequences.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listNumberSequences.execute(),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toNumberSequenceListResponse(result.body.data as NumberSequenceDto[]),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetNumberSequenceById(
@@ -54,29 +57,31 @@ export async function handleGetNumberSequenceById(
   id: string,
   resolveServices: SettingsServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(NumberSequenceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(NumberSequenceIdParamSchema, { id });
 
-  const result = await runNumberSequenceApiRoute({
-    request,
-    route: SETTINGS_ROUTES.sequenceById(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.sequences.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getNumberSequenceById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toNumberSequenceResponse(result.body.data as NumberSequenceDto),
-      },
+    const result = await runNumberSequenceApiRoute({
+      request,
+      route: SETTINGS_ROUTES.sequenceById(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.sequences.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getNumberSequenceById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toNumberSequenceResponse(result.body.data as NumberSequenceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateNumberSequence(
@@ -84,31 +89,33 @@ export async function handleUpdateNumberSequence(
   id: string,
   resolveServices: SettingsServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(NumberSequenceIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateNumberSequenceSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(NumberSequenceIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateNumberSequenceSchema, body);
 
-  const result = await runNumberSequenceApiRoute({
-    request,
-    route: SETTINGS_ROUTES.sequenceById(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.sequences.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateNumberSequence.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toNumberSequenceResponse(result.body.data as NumberSequenceDto),
-      },
+    const result = await runNumberSequenceApiRoute({
+      request,
+      route: SETTINGS_ROUTES.sequenceById(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.sequences.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateNumberSequence.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toNumberSequenceResponse(result.body.data as NumberSequenceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGenerateNextNumber(
@@ -116,29 +123,31 @@ export async function handleGenerateNextNumber(
   id: string,
   resolveServices: SettingsServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(NumberSequenceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(NumberSequenceIdParamSchema, { id });
 
-  const result = await runNumberSequenceApiRoute({
-    request,
-    route: SETTINGS_ROUTES.generate(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.sequences.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.generateNextNumber.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toGenerateNextNumberResponse(
-          result.body.data as GenerateNextNumberDto,
-        ),
-      },
+    const result = await runNumberSequenceApiRoute({
+      request,
+      route: SETTINGS_ROUTES.generate(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.sequences.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.generateNextNumber.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toGenerateNextNumberResponse(
+            result.body.data as GenerateNextNumberDto,
+          ),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

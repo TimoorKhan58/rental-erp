@@ -149,7 +149,15 @@ export class UpdateIdentityUserService {
           erpUserId: updated.id,
         });
 
-        if (data.isActive === false) {
+        const roleChanged =
+          data.role !== undefined && data.role !== existing.roleName;
+        const deactivated = data.isActive === false && existing.isActive;
+        const emailChanged =
+          data.email !== undefined && data.email !== existing.email;
+
+        // Revoke sessions on privilege/identity-sensitive changes so cookie
+        // cache and elevated claims cannot outlive the ERP update.
+        if (roleChanged || deactivated || emailChanged) {
           await scope.authGateway.revokeSessions(existing.authUserId);
         }
       }

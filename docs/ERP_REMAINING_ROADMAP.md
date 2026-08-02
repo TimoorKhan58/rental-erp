@@ -1,11 +1,14 @@
 # ERP Remaining Roadmap
 
+> **Historical document — not release truth for v1.0.x.**  
+> This roadmap reflects pre–Phase 7/8 status (July 2026). Production releases **v1.0.0+** already ship full UI modules, production hardening, Render deployment, and identity security. For current release status use `CHANGELOG.md`, `docs/production/RELEASE_NOTES_v1.0.2.md`, and `docs/PROJECT_COMPLETION_REPORT.md`. Do **not** treat Frontend ~10% / production ~20% figures below as current.
+
 **Project:** Enterprise Rental ERP (Manyar Tent Service)  
 **Repository path:** `rental-erp/`  
 **Document version:** 1.0  
 **Baseline:** Complete through **Phase 5-020** (per `docs/ERP_MASTER_SPEC.md`)  
 **Last verified:** July 10, 2026  
-**Purpose:** Official source of truth for all **remaining** development. Every future Cursor session should reference this document alongside `docs/ERP_MASTER_SPEC.md`.
+**Purpose:** Historical planning reference for remaining development *as of July 2026*. Every future Cursor session should prefer release notes + master spec over this file for production status.
 
 **Companion docs:**
 - `docs/ERP_MASTER_SPEC.md` — architecture, conventions, completed modules

@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/catalog-api.route-runner";
 import { BRAND_ROUTES } from "./brand.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListBrands(
   request: NextRequest,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListBrandsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListBrandsSchema, query);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: BRAND_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.catalog.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listBrands.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<BrandDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toBrandListResponse(paginated),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: BRAND_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.catalog.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listBrands.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<BrandDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toBrandListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateBrand(
   request: NextRequest,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateBrandSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateBrandSchema, body);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: BRAND_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.catalog.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createBrand.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toBrandResponse(result.body.data as BrandDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: BRAND_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.catalog.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createBrand.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toBrandResponse(result.body.data as BrandDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetBrandById(
@@ -86,28 +91,30 @@ export async function handleGetBrandById(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(BrandIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(BrandIdParamSchema, { id });
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: BRAND_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.catalog.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getBrandById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toBrandResponse(result.body.data as BrandDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: BRAND_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.catalog.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getBrandById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toBrandResponse(result.body.data as BrandDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateBrand(
@@ -115,30 +122,32 @@ export async function handleUpdateBrand(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(BrandIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateBrandSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(BrandIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateBrandSchema, body);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: BRAND_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.catalog.update,
-    resolveServices,
-    handler: async (_ctx, services) => services.updateBrand.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toBrandResponse(result.body.data as BrandDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: BRAND_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.catalog.update,
+      resolveServices,
+      handler: async (_ctx, services) => services.updateBrand.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toBrandResponse(result.body.data as BrandDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteBrand(
@@ -146,19 +155,21 @@ export async function handleDeleteBrand(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(BrandIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(BrandIdParamSchema, { id });
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: BRAND_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.catalog.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteBrand.execute(params);
-      return null;
-    },
+    const result = await runCatalogApiRoute({
+      request,
+      route: BRAND_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.catalog.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteBrand.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

@@ -21,65 +21,70 @@ import {
   toJsonResponse,
 } from "../http/payment-api.route-runner";
 import { PAYMENT_ROUTES } from "../routes/payment.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListPayments(
   request: NextRequest,
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListPaymentsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListPaymentsSchema, query);
 
-  const result = await runPaymentApiRoute({
-    request,
-    route: PAYMENT_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.payments.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listPayments.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<PaymentDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPaymentListResponse(paginated),
-      },
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.payments.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listPayments.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<PaymentDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreatePayment(
   request: NextRequest,
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreatePaymentSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreatePaymentSchema, body);
 
-  const result = await runPaymentApiRoute({
-    request,
-    route: PAYMENT_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.payments.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createPayment.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPaymentResponse(result.body.data as PaymentDto),
-      },
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.payments.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createPayment.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentResponse(result.body.data as PaymentDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetPaymentById(
@@ -87,29 +92,31 @@ export async function handleGetPaymentById(
   id: string,
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PaymentIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PaymentIdParamSchema, { id });
 
-  const result = await runPaymentApiRoute({
-    request,
-    route: PAYMENT_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.payments.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getPaymentById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPaymentResponse(result.body.data as PaymentDto),
-      },
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.payments.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getPaymentById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentResponse(result.body.data as PaymentDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdatePayment(
@@ -117,31 +124,33 @@ export async function handleUpdatePayment(
   id: string,
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PaymentIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdatePaymentSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PaymentIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdatePaymentSchema, body);
 
-  const result = await runPaymentApiRoute({
-    request,
-    route: PAYMENT_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.payments.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updatePayment.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPaymentResponse(result.body.data as PaymentDto),
-      },
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.payments.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updatePayment.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentResponse(result.body.data as PaymentDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handlePostPayment(
@@ -149,28 +158,30 @@ export async function handlePostPayment(
   id: string,
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PaymentIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PaymentIdParamSchema, { id });
 
-  const result = await runPaymentApiRoute({
-    request,
-    route: PAYMENT_ROUTES.post(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.payments.post,
-    resolveServices,
-    handler: async (_ctx, services) => services.postPayment.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPaymentResponse(result.body.data as PaymentDto),
-      },
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.post(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.payments.post,
+      resolveServices,
+      handler: async (_ctx, services) => services.postPayment.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentResponse(result.body.data as PaymentDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleVoidPayment(
@@ -178,26 +189,28 @@ export async function handleVoidPayment(
   id: string,
   resolveServices: PaymentServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(PaymentIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(PaymentIdParamSchema, { id });
 
-  const result = await runPaymentApiRoute({
-    request,
-    route: PAYMENT_ROUTES.void(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.payments.void,
-    resolveServices,
-    handler: async (_ctx, services) => services.voidPayment.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toPaymentResponse(result.body.data as PaymentDto),
-      },
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.void(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.payments.void,
+      resolveServices,
+      handler: async (_ctx, services) => services.voidPayment.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentResponse(result.body.data as PaymentDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

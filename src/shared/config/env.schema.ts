@@ -279,12 +279,27 @@ const envObjectSchema = z
       });
     }
 
-    if (data.UPLOAD_STORAGE === "s3") {
+    if (
+      data.UPLOAD_STORAGE === "s3"
+    ) {
       context.addIssue({
         code: "custom",
         path: ["UPLOAD_STORAGE"],
         message:
           'UPLOAD_STORAGE="s3" is not implemented yet. Use "local" until the S3 adapter ships.',
+      });
+    }
+
+    if (
+      isHardened &&
+      data.ENABLE_METRICS !== false &&
+      (!data.METRICS_BEARER_TOKEN || data.METRICS_BEARER_TOKEN.trim().length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["METRICS_BEARER_TOKEN"],
+        message:
+          "METRICS_BEARER_TOKEN is required in staging/production when ENABLE_METRICS is enabled",
       });
     }
 

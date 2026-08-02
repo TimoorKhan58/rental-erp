@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/customer-api.route-runner";
 import { CUSTOMER_ROUTES } from "../routes/customer.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListCustomers(
   request: NextRequest,
   resolveServices: CustomerServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListCustomersSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListCustomersSchema, query);
 
-  const result = await runCustomerApiRoute({
-    request,
-    route: CUSTOMER_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.customers.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listCustomers.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<CustomerDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toCustomerListResponse(paginated),
-      },
+    const result = await runCustomerApiRoute({
+      request,
+      route: CUSTOMER_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.customers.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listCustomers.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<CustomerDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toCustomerListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateCustomer(
   request: NextRequest,
   resolveServices: CustomerServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateCustomerSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateCustomerSchema, body);
 
-  const result = await runCustomerApiRoute({
-    request,
-    route: CUSTOMER_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.customers.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createCustomer.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toCustomerResponse(result.body.data as CustomerDto),
-      },
+    const result = await runCustomerApiRoute({
+      request,
+      route: CUSTOMER_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.customers.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createCustomer.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toCustomerResponse(result.body.data as CustomerDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetCustomerById(
@@ -86,28 +91,30 @@ export async function handleGetCustomerById(
   id: string,
   resolveServices: CustomerServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(CustomerIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(CustomerIdParamSchema, { id });
 
-  const result = await runCustomerApiRoute({
-    request,
-    route: CUSTOMER_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.customers.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getCustomerById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toCustomerResponse(result.body.data as CustomerDto),
-      },
+    const result = await runCustomerApiRoute({
+      request,
+      route: CUSTOMER_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.customers.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getCustomerById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toCustomerResponse(result.body.data as CustomerDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateCustomer(
@@ -115,31 +122,33 @@ export async function handleUpdateCustomer(
   id: string,
   resolveServices: CustomerServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(CustomerIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateCustomerSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(CustomerIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateCustomerSchema, body);
 
-  const result = await runCustomerApiRoute({
-    request,
-    route: CUSTOMER_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.customers.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateCustomer.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toCustomerResponse(result.body.data as CustomerDto),
-      },
+    const result = await runCustomerApiRoute({
+      request,
+      route: CUSTOMER_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.customers.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateCustomer.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toCustomerResponse(result.body.data as CustomerDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteCustomer(
@@ -147,19 +156,21 @@ export async function handleDeleteCustomer(
   id: string,
   resolveServices: CustomerServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(CustomerIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(CustomerIdParamSchema, { id });
 
-  const result = await runCustomerApiRoute({
-    request,
-    route: CUSTOMER_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.customers.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteCustomer.execute(params);
-      return null;
-    },
+    const result = await runCustomerApiRoute({
+      request,
+      route: CUSTOMER_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.customers.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteCustomer.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

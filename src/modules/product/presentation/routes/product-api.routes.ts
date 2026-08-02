@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/product-api.route-runner";
 import { PRODUCT_ROUTES } from "../routes/product.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListProducts(
   request: NextRequest,
   resolveServices: ProductServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListProductsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListProductsSchema, query);
 
-  const result = await runProductApiRoute({
-    request,
-    route: PRODUCT_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.products.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listProducts.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<ProductDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toProductListResponse(paginated),
-      },
+    const result = await runProductApiRoute({
+      request,
+      route: PRODUCT_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.products.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listProducts.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<ProductDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toProductListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateProduct(
   request: NextRequest,
   resolveServices: ProductServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateProductSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateProductSchema, body);
 
-  const result = await runProductApiRoute({
-    request,
-    route: PRODUCT_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.products.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createProduct.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toProductResponse(result.body.data as ProductDto),
-      },
+    const result = await runProductApiRoute({
+      request,
+      route: PRODUCT_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.products.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createProduct.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toProductResponse(result.body.data as ProductDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetProductById(
@@ -86,28 +91,30 @@ export async function handleGetProductById(
   id: string,
   resolveServices: ProductServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ProductIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ProductIdParamSchema, { id });
 
-  const result = await runProductApiRoute({
-    request,
-    route: PRODUCT_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.products.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getProductById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toProductResponse(result.body.data as ProductDto),
-      },
+    const result = await runProductApiRoute({
+      request,
+      route: PRODUCT_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.products.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getProductById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toProductResponse(result.body.data as ProductDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateProduct(
@@ -115,31 +122,33 @@ export async function handleUpdateProduct(
   id: string,
   resolveServices: ProductServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ProductIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateProductSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ProductIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateProductSchema, body);
 
-  const result = await runProductApiRoute({
-    request,
-    route: PRODUCT_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.products.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateProduct.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toProductResponse(result.body.data as ProductDto),
-      },
+    const result = await runProductApiRoute({
+      request,
+      route: PRODUCT_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.products.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateProduct.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toProductResponse(result.body.data as ProductDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteProduct(
@@ -147,19 +156,21 @@ export async function handleDeleteProduct(
   id: string,
   resolveServices: ProductServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ProductIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ProductIdParamSchema, { id });
 
-  const result = await runProductApiRoute({
-    request,
-    route: PRODUCT_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.products.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteProduct.execute(params);
-      return null;
-    },
+    const result = await runProductApiRoute({
+      request,
+      route: PRODUCT_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.products.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteProduct.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

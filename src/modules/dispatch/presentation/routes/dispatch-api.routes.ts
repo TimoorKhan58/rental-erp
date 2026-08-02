@@ -21,66 +21,71 @@ import {
   toJsonResponse,
 } from "../http/dispatch-api.route-runner";
 import { DISPATCH_ROUTES } from "../routes/dispatch.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListDispatches(
   request: NextRequest,
   resolveServices: DispatchServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListDispatchesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListDispatchesSchema, query);
 
-  const result = await runDispatchApiRoute({
-    request,
-    route: DISPATCH_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.dispatches.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listDispatches.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<DispatchDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toDispatchListResponse(paginated),
-      },
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.dispatches.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listDispatches.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<DispatchDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateDispatch(
   request: NextRequest,
   resolveServices: DispatchServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateDispatchSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateDispatchSchema, body);
 
-  const result = await runDispatchApiRoute({
-    request,
-    route: DISPATCH_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.dispatches.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createDispatch.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toDispatchResponse(result.body.data as DispatchDto),
-      },
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.dispatches.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createDispatch.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchResponse(result.body.data as DispatchDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetDispatchById(
@@ -88,29 +93,31 @@ export async function handleGetDispatchById(
   id: string,
   resolveServices: DispatchServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(DispatchIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(DispatchIdParamSchema, { id });
 
-  const result = await runDispatchApiRoute({
-    request,
-    route: DISPATCH_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.dispatches.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getDispatchById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toDispatchResponse(result.body.data as DispatchDto),
-      },
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.dispatches.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getDispatchById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchResponse(result.body.data as DispatchDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateDispatch(
@@ -118,31 +125,33 @@ export async function handleUpdateDispatch(
   id: string,
   resolveServices: DispatchServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(DispatchIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateDispatchSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(DispatchIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateDispatchSchema, body);
 
-  const result = await runDispatchApiRoute({
-    request,
-    route: DISPATCH_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.dispatches.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateDispatch.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toDispatchResponse(result.body.data as DispatchDto),
-      },
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.dispatches.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateDispatch.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchResponse(result.body.data as DispatchDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCompleteDispatch(
@@ -150,29 +159,31 @@ export async function handleCompleteDispatch(
   id: string,
   resolveServices: DispatchServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(DispatchIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(DispatchIdParamSchema, { id });
 
-  const result = await runDispatchApiRoute({
-    request,
-    route: DISPATCH_ROUTES.complete(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.dispatches.complete,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.completeDispatch.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toDispatchResponse(result.body.data as DispatchDto),
-      },
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.complete(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.dispatches.complete,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.completeDispatch.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchResponse(result.body.data as DispatchDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCancelDispatch(
@@ -180,27 +191,29 @@ export async function handleCancelDispatch(
   id: string,
   resolveServices: DispatchServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(DispatchIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(DispatchIdParamSchema, { id });
 
-  const result = await runDispatchApiRoute({
-    request,
-    route: DISPATCH_ROUTES.cancel(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.dispatches.cancel,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.cancelDispatch.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toDispatchResponse(result.body.data as DispatchDto),
-      },
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.cancel(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.dispatches.cancel,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.cancelDispatch.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchResponse(result.body.data as DispatchDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

@@ -21,57 +21,62 @@ import {
   toJsonResponse,
 } from "../http/rental-order-api.route-runner";
 import { RENTAL_ORDER_ROUTES } from "../routes/rental-order.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListRentalOrders(
   request: NextRequest,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.rentalOrders.read,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      const listInput = parseRequest(ListRentalOrdersSchema, query);
-      const paginated = await services.listRentalOrders.execute(listInput);
-      return toRentalOrderListResponse(paginated);
-    },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        const listInput = parseRequest(ListRentalOrdersSchema, query);
+        const paginated = await services.listRentalOrders.execute(listInput);
+        return toRentalOrderListResponse(paginated);
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }
 
 export async function handleCreateRentalOrder(
   request: NextRequest,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateRentalOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateRentalOrderSchema, body);
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalOrders.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createRentalOrder.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderResponse(result.body.data as RentalOrderDto),
-      },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalOrders.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createRentalOrder.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetRentalOrderById(
@@ -79,29 +84,31 @@ export async function handleGetRentalOrderById(
   id: string,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalOrderIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.rentalOrders.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getRentalOrderById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderResponse(result.body.data as RentalOrderDto),
-      },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getRentalOrderById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateRentalOrder(
@@ -109,31 +116,33 @@ export async function handleUpdateRentalOrder(
   id: string,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalOrderIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateRentalOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateRentalOrderSchema, body);
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.rentalOrders.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateRentalOrder.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderResponse(result.body.data as RentalOrderDto),
-      },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.rentalOrders.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateRentalOrder.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleConfirmRentalOrder(
@@ -141,29 +150,31 @@ export async function handleConfirmRentalOrder(
   id: string,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalOrderIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.confirm(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalOrders.confirm,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.confirmRentalOrder.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderResponse(result.body.data as RentalOrderDto),
-      },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.confirm(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalOrders.confirm,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.confirmRentalOrder.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleReserveRentalOrder(
@@ -171,31 +182,33 @@ export async function handleReserveRentalOrder(
   id: string,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalOrderIdParamSchema, { id });
-  const body = await request.json();
-  const reserveInput = parseRequest(ReserveRentalOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
+    const body = await request.json();
+    const reserveInput = parseRequest(ReserveRentalOrderSchema, body);
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.reserve(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalOrders.reserve,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.reserveRentalOrder.execute(params, reserveInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderResponse(result.body.data as RentalOrderDto),
-      },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.reserve(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalOrders.reserve,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.reserveRentalOrder.execute(params, reserveInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCancelRentalOrder(
@@ -203,27 +216,29 @@ export async function handleCancelRentalOrder(
   id: string,
   resolveServices: RentalOrderServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalOrderIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
 
-  const result = await runRentalOrderApiRoute({
-    request,
-    route: RENTAL_ORDER_ROUTES.cancel(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalOrders.cancel,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.cancelRentalOrder.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalOrderResponse(result.body.data as RentalOrderDto),
-      },
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.cancel(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalOrders.cancel,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.cancelRentalOrder.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

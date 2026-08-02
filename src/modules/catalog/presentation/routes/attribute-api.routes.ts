@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/catalog-api.route-runner";
 import { ATTRIBUTE_ROUTES } from "./attribute.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListAttributes(
   request: NextRequest,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListAttributesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListAttributesSchema, query);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: ATTRIBUTE_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.catalog.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listAttributes.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<AttributeDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAttributeListResponse(paginated),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: ATTRIBUTE_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.catalog.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listAttributes.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<AttributeDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAttributeListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateAttribute(
   request: NextRequest,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateAttributeSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateAttributeSchema, body);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: ATTRIBUTE_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.catalog.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createAttribute.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAttributeResponse(result.body.data as AttributeDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: ATTRIBUTE_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.catalog.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createAttribute.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAttributeResponse(result.body.data as AttributeDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetAttributeById(
@@ -86,28 +91,30 @@ export async function handleGetAttributeById(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AttributeIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AttributeIdParamSchema, { id });
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: ATTRIBUTE_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.catalog.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getAttributeById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAttributeResponse(result.body.data as AttributeDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: ATTRIBUTE_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.catalog.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getAttributeById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAttributeResponse(result.body.data as AttributeDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateAttribute(
@@ -115,30 +122,32 @@ export async function handleUpdateAttribute(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AttributeIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateAttributeSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AttributeIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateAttributeSchema, body);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: ATTRIBUTE_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.catalog.update,
-    resolveServices,
-    handler: async (_ctx, services) => services.updateAttribute.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAttributeResponse(result.body.data as AttributeDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: ATTRIBUTE_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.catalog.update,
+      resolveServices,
+      handler: async (_ctx, services) => services.updateAttribute.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAttributeResponse(result.body.data as AttributeDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteAttribute(
@@ -146,19 +155,21 @@ export async function handleDeleteAttribute(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AttributeIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AttributeIdParamSchema, { id });
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: ATTRIBUTE_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.catalog.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteAttribute.execute(params);
-      return null;
-    },
+    const result = await runCatalogApiRoute({
+      request,
+      route: ATTRIBUTE_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.catalog.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteAttribute.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

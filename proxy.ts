@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { resolveSessionUser } from "@/shared/infrastructure/auth/resolve-session-user";
 import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-erp-user";
+import { sanitizeCallbackUrl } from "@/shared/infrastructure/http/safe-callback-url";
 
 const PUBLIC_PATHS = new Set(["/", "/login", "/logout", "/unauthorized"]);
 
@@ -65,7 +66,10 @@ export async function proxy(request: NextRequest) {
 
   if (!(await hasActiveSession())) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      sanitizeCallbackUrl(pathname),
+    );
     return NextResponse.redirect(loginUrl);
   }
 

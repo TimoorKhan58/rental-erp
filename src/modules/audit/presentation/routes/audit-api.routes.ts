@@ -19,6 +19,7 @@ import {
   toJsonResponse,
 } from "../http/audit-api.route-runner";
 import { AUDIT_ROUTES } from "./audit.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 function parseQuery(request: NextRequest): Record<string, string> {
   return Object.fromEntries(request.nextUrl.searchParams.entries());
@@ -28,29 +29,31 @@ export async function handleListAuditLogs(
   request: NextRequest,
   resolveServices: AuditServiceResolver,
 ): Promise<Response> {
-  const listInput = parseRequest(ListAuditSchema, parseQuery(request));
+  return runCatchingApiHandler(request, async () => {
+    const listInput = parseRequest(ListAuditSchema, parseQuery(request));
 
-  const result = await runAuditApiRoute({
-    request,
-    route: AUDIT_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.audit.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listAudit.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<AuditLogDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAuditLogListResponse(paginated),
-      },
+    const result = await runAuditApiRoute({
+      request,
+      route: AUDIT_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.audit.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listAudit.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<AuditLogDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAuditLogListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetAuditLogById(
@@ -58,26 +61,28 @@ export async function handleGetAuditLogById(
   id: string,
   resolveServices: AuditServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AuditIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AuditIdParamSchema, { id });
 
-  const result = await runAuditApiRoute({
-    request,
-    route: AUDIT_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.audit.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getAuditById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAuditLogResponse(result.body.data as AuditLogDto),
-      },
+    const result = await runAuditApiRoute({
+      request,
+      route: AUDIT_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.audit.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getAuditById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAuditLogResponse(result.body.data as AuditLogDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

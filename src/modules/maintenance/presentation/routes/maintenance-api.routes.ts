@@ -21,66 +21,71 @@ import {
   toJsonResponse,
 } from "../http/maintenance-api.route-runner";
 import { MAINTENANCE_ROUTES } from "../routes/maintenance.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListMaintenances(
   request: NextRequest,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListMaintenancesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListMaintenancesSchema, query);
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.maintenances.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listMaintenances.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<MaintenanceDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceListResponse(paginated),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.maintenances.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listMaintenances.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<MaintenanceDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateMaintenance(
   request: NextRequest,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateMaintenanceSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateMaintenanceSchema, body);
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.maintenances.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createMaintenance.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceResponse(result.body.data as MaintenanceDto),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.maintenances.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createMaintenance.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceResponse(result.body.data as MaintenanceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetMaintenanceById(
@@ -88,29 +93,31 @@ export async function handleGetMaintenanceById(
   id: string,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(MaintenanceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(MaintenanceIdParamSchema, { id });
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.maintenances.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getMaintenanceById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceResponse(result.body.data as MaintenanceDto),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.maintenances.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getMaintenanceById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceResponse(result.body.data as MaintenanceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateMaintenance(
@@ -118,31 +125,33 @@ export async function handleUpdateMaintenance(
   id: string,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(MaintenanceIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateMaintenanceSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(MaintenanceIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateMaintenanceSchema, body);
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.maintenances.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateMaintenance.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceResponse(result.body.data as MaintenanceDto),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.maintenances.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateMaintenance.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceResponse(result.body.data as MaintenanceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleStartMaintenance(
@@ -150,29 +159,31 @@ export async function handleStartMaintenance(
   id: string,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(MaintenanceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(MaintenanceIdParamSchema, { id });
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.start(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.maintenances.start,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.startMaintenance.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceResponse(result.body.data as MaintenanceDto),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.start(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.maintenances.start,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.startMaintenance.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceResponse(result.body.data as MaintenanceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCompleteMaintenance(
@@ -180,29 +191,31 @@ export async function handleCompleteMaintenance(
   id: string,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(MaintenanceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(MaintenanceIdParamSchema, { id });
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.complete(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.maintenances.complete,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.completeMaintenance.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceResponse(result.body.data as MaintenanceDto),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.complete(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.maintenances.complete,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.completeMaintenance.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceResponse(result.body.data as MaintenanceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCancelMaintenance(
@@ -210,27 +223,29 @@ export async function handleCancelMaintenance(
   id: string,
   resolveServices: MaintenanceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(MaintenanceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(MaintenanceIdParamSchema, { id });
 
-  const result = await runMaintenanceApiRoute({
-    request,
-    route: MAINTENANCE_ROUTES.cancel(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.maintenances.cancel,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.cancelMaintenance.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toMaintenanceResponse(result.body.data as MaintenanceDto),
-      },
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.cancel(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.maintenances.cancel,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.cancelMaintenance.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceResponse(result.body.data as MaintenanceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

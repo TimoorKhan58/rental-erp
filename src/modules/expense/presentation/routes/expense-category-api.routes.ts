@@ -21,66 +21,71 @@ import {
   toJsonResponse,
 } from "../http/expense-category-api.route-runner";
 import { EXPENSE_CATEGORY_ROUTES } from "../routes/expense-category.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListExpenseCategories(
   request: NextRequest,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListExpenseCategoriesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListExpenseCategoriesSchema, query);
 
-  const result = await runExpenseCategoryApiRoute({
-    request,
-    route: EXPENSE_CATEGORY_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.expenses.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listCategories.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<ExpenseCategoryDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseCategoryListResponse(paginated),
-      },
+    const result = await runExpenseCategoryApiRoute({
+      request,
+      route: EXPENSE_CATEGORY_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.expenses.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listCategories.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<ExpenseCategoryDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseCategoryListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateExpenseCategory(
   request: NextRequest,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateExpenseCategorySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateExpenseCategorySchema, body);
 
-  const result = await runExpenseCategoryApiRoute({
-    request,
-    route: EXPENSE_CATEGORY_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.expenses.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createCategory.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseCategoryResponse(result.body.data as ExpenseCategoryDto),
-      },
+    const result = await runExpenseCategoryApiRoute({
+      request,
+      route: EXPENSE_CATEGORY_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.expenses.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createCategory.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseCategoryResponse(result.body.data as ExpenseCategoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetExpenseCategoryById(
@@ -88,29 +93,31 @@ export async function handleGetExpenseCategoryById(
   id: string,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseCategoryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseCategoryIdParamSchema, { id });
 
-  const result = await runExpenseCategoryApiRoute({
-    request,
-    route: EXPENSE_CATEGORY_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.expenses.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getCategoryById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseCategoryResponse(result.body.data as ExpenseCategoryDto),
-      },
+    const result = await runExpenseCategoryApiRoute({
+      request,
+      route: EXPENSE_CATEGORY_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.expenses.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getCategoryById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseCategoryResponse(result.body.data as ExpenseCategoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateExpenseCategory(
@@ -118,31 +125,33 @@ export async function handleUpdateExpenseCategory(
   id: string,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseCategoryIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateExpenseCategorySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseCategoryIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateExpenseCategorySchema, body);
 
-  const result = await runExpenseCategoryApiRoute({
-    request,
-    route: EXPENSE_CATEGORY_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.expenses.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateCategory.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseCategoryResponse(result.body.data as ExpenseCategoryDto),
-      },
+    const result = await runExpenseCategoryApiRoute({
+      request,
+      route: EXPENSE_CATEGORY_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.expenses.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateCategory.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseCategoryResponse(result.body.data as ExpenseCategoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteExpenseCategory(
@@ -150,19 +159,21 @@ export async function handleDeleteExpenseCategory(
   id: string,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseCategoryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseCategoryIdParamSchema, { id });
 
-  const result = await runExpenseCategoryApiRoute({
-    request,
-    route: EXPENSE_CATEGORY_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.expenses.update,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteCategory.execute(params);
-      return null;
-    },
+    const result = await runExpenseCategoryApiRoute({
+      request,
+      route: EXPENSE_CATEGORY_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.expenses.update,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteCategory.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

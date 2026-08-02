@@ -22,96 +22,103 @@ import {
   toJsonResponse,
 } from "../http/rental-invoice-api.route-runner";
 import { RENTAL_INVOICE_ROUTES } from "../routes/rental-invoice.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListRentalInvoices(
   request: NextRequest,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListRentalInvoicesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListRentalInvoicesSchema, query);
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.rentalInvoices.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listRentalInvoices.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<RentalInvoiceDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceListResponse(paginated),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalInvoices.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listRentalInvoices.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<RentalInvoiceDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateRentalInvoice(
   request: NextRequest,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateRentalInvoiceSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateRentalInvoiceSchema, body);
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalInvoices.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createRentalInvoice.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalInvoices.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createRentalInvoice.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGenerateRentalInvoiceFromOrder(
   request: NextRequest,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const generateInput = parseRequest(GenerateRentalInvoiceFromOrderSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const generateInput = parseRequest(GenerateRentalInvoiceFromOrderSchema, body);
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.generate,
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalInvoices.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.generateRentalInvoiceFromOrder.execute(generateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.generate,
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalInvoices.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.generateRentalInvoiceFromOrder.execute(generateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetRentalInvoiceById(
@@ -119,29 +126,31 @@ export async function handleGetRentalInvoiceById(
   id: string,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalInvoiceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalInvoiceIdParamSchema, { id });
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.rentalInvoices.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getRentalInvoiceById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalInvoices.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getRentalInvoiceById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateRentalInvoice(
@@ -149,31 +158,33 @@ export async function handleUpdateRentalInvoice(
   id: string,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalInvoiceIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateRentalInvoiceSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalInvoiceIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateRentalInvoiceSchema, body);
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.rentalInvoices.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateRentalInvoice.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.rentalInvoices.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateRentalInvoice.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleIssueRentalInvoice(
@@ -181,29 +192,31 @@ export async function handleIssueRentalInvoice(
   id: string,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalInvoiceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalInvoiceIdParamSchema, { id });
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.issue(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalInvoices.issue,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.issueRentalInvoice.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.issue(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalInvoices.issue,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.issueRentalInvoice.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleVoidRentalInvoice(
@@ -211,29 +224,31 @@ export async function handleVoidRentalInvoice(
   id: string,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalInvoiceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalInvoiceIdParamSchema, { id });
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.void(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalInvoices.void,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.voidRentalInvoice.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.void(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalInvoices.void,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.voidRentalInvoice.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleConvertMissingToLoss(
@@ -241,27 +256,29 @@ export async function handleConvertMissingToLoss(
   id: string,
   resolveServices: RentalInvoiceServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RentalInvoiceIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalInvoiceIdParamSchema, { id });
 
-  const result = await runRentalInvoiceApiRoute({
-    request,
-    route: RENTAL_INVOICE_ROUTES.convertMissingToLoss(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.rentalInvoices.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.convertMissingToLoss.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
-      },
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.convertMissingToLoss(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalInvoices.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.convertMissingToLoss.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceResponse(result.body.data as RentalInvoiceDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

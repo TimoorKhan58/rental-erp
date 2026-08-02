@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/repair-api.route-runner";
 import { REPAIR_ROUTES } from "../routes/repair.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListRepairs(
   request: NextRequest,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListRepairsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListRepairsSchema, query);
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.repairs.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listRepairs.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<RepairDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairListResponse(paginated),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.repairs.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listRepairs.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<RepairDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateRepair(
   request: NextRequest,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateRepairSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateRepairSchema, body);
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.repairs.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createRepair.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairResponse(result.body.data as RepairDto),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.repairs.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createRepair.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairResponse(result.body.data as RepairDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetRepairById(
@@ -86,28 +91,30 @@ export async function handleGetRepairById(
   id: string,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RepairIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RepairIdParamSchema, { id });
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.repairs.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getRepairById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairResponse(result.body.data as RepairDto),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.repairs.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getRepairById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairResponse(result.body.data as RepairDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateRepair(
@@ -115,31 +122,33 @@ export async function handleUpdateRepair(
   id: string,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RepairIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateRepairSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RepairIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateRepairSchema, body);
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.repairs.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateRepair.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairResponse(result.body.data as RepairDto),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.repairs.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateRepair.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairResponse(result.body.data as RepairDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleStartRepair(
@@ -147,28 +156,30 @@ export async function handleStartRepair(
   id: string,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RepairIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RepairIdParamSchema, { id });
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.start(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.repairs.start,
-    resolveServices,
-    handler: async (_ctx, services) => services.startRepair.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairResponse(result.body.data as RepairDto),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.start(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.repairs.start,
+      resolveServices,
+      handler: async (_ctx, services) => services.startRepair.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairResponse(result.body.data as RepairDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCompleteRepair(
@@ -176,28 +187,30 @@ export async function handleCompleteRepair(
   id: string,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RepairIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RepairIdParamSchema, { id });
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.complete(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.repairs.complete,
-    resolveServices,
-    handler: async (_ctx, services) => services.completeRepair.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairResponse(result.body.data as RepairDto),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.complete(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.repairs.complete,
+      resolveServices,
+      handler: async (_ctx, services) => services.completeRepair.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairResponse(result.body.data as RepairDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCancelRepair(
@@ -205,26 +218,28 @@ export async function handleCancelRepair(
   id: string,
   resolveServices: RepairServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(RepairIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RepairIdParamSchema, { id });
 
-  const result = await runRepairApiRoute({
-    request,
-    route: REPAIR_ROUTES.cancel(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.repairs.cancel,
-    resolveServices,
-    handler: async (_ctx, services) => services.cancelRepair.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRepairResponse(result.body.data as RepairDto),
-      },
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.cancel(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.repairs.cancel,
+      resolveServices,
+      handler: async (_ctx, services) => services.cancelRepair.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairResponse(result.body.data as RepairDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

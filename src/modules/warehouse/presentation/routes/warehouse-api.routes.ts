@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/warehouse-api.route-runner";
 import { WAREHOUSE_ROUTES } from "../routes/warehouse.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListWarehouses(
   request: NextRequest,
   resolveServices: WarehouseServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListWarehousesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListWarehousesSchema, query);
 
-  const result = await runWarehouseApiRoute({
-    request,
-    route: WAREHOUSE_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.warehouses.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listWarehouses.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<WarehouseDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toWarehouseListResponse(paginated),
-      },
+    const result = await runWarehouseApiRoute({
+      request,
+      route: WAREHOUSE_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.warehouses.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listWarehouses.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<WarehouseDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toWarehouseListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateWarehouse(
   request: NextRequest,
   resolveServices: WarehouseServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateWarehouseSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateWarehouseSchema, body);
 
-  const result = await runWarehouseApiRoute({
-    request,
-    route: WAREHOUSE_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.warehouses.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createWarehouse.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toWarehouseResponse(result.body.data as WarehouseDto),
-      },
+    const result = await runWarehouseApiRoute({
+      request,
+      route: WAREHOUSE_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.warehouses.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createWarehouse.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toWarehouseResponse(result.body.data as WarehouseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetWarehouseById(
@@ -86,28 +91,30 @@ export async function handleGetWarehouseById(
   id: string,
   resolveServices: WarehouseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(WarehouseIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(WarehouseIdParamSchema, { id });
 
-  const result = await runWarehouseApiRoute({
-    request,
-    route: WAREHOUSE_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.warehouses.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getWarehouseById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toWarehouseResponse(result.body.data as WarehouseDto),
-      },
+    const result = await runWarehouseApiRoute({
+      request,
+      route: WAREHOUSE_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.warehouses.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getWarehouseById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toWarehouseResponse(result.body.data as WarehouseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateWarehouse(
@@ -115,31 +122,33 @@ export async function handleUpdateWarehouse(
   id: string,
   resolveServices: WarehouseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(WarehouseIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateWarehouseSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(WarehouseIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateWarehouseSchema, body);
 
-  const result = await runWarehouseApiRoute({
-    request,
-    route: WAREHOUSE_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.warehouses.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateWarehouse.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toWarehouseResponse(result.body.data as WarehouseDto),
-      },
+    const result = await runWarehouseApiRoute({
+      request,
+      route: WAREHOUSE_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.warehouses.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateWarehouse.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toWarehouseResponse(result.body.data as WarehouseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteWarehouse(
@@ -147,19 +156,21 @@ export async function handleDeleteWarehouse(
   id: string,
   resolveServices: WarehouseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(WarehouseIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(WarehouseIdParamSchema, { id });
 
-  const result = await runWarehouseApiRoute({
-    request,
-    route: WAREHOUSE_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.warehouses.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteWarehouse.execute(params);
-      return null;
-    },
+    const result = await runWarehouseApiRoute({
+      request,
+      route: WAREHOUSE_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.warehouses.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteWarehouse.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

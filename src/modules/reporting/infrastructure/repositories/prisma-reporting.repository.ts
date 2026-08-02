@@ -184,13 +184,14 @@ export class PrismaReportingRepository implements IReportingRepository {
       totalProducts,
       totalWarehouses,
       inventories,
-      rentalOrders,
-      dispatches,
-      returns,
-      repairs,
-      maintenances,
-      purchaseOrders,
-      invoices,
+      orderStatusGroups,
+      durationOrders,
+      dispatchStatusGroups,
+      returnStatusGroups,
+      repairStatusGroups,
+      maintenanceStatusGroups,
+      purchaseOrderStatusGroups,
+      invoiceStatusGroups,
       revenueThisMonth,
       paymentsThisMonth,
     ] = await this.runner.run(
@@ -201,13 +202,14 @@ export class PrismaReportingRepository implements IReportingRepository {
           products,
           warehouses,
           inventoryRows,
-          orderRows,
-          dispatchRows,
-          returnRows,
-          repairRows,
-          maintenanceRows,
-          poRows,
-          invoiceRows,
+          orderGroups,
+          durationRows,
+          dispatchGroups,
+          returnGroups,
+          repairGroups,
+          maintenanceGroups,
+          poGroups,
+          invoiceGroups,
           monthlyRevenue,
           monthlyPayments,
         ] = await Promise.all([
@@ -223,19 +225,41 @@ export class PrismaReportingRepository implements IReportingRepository {
               product: { select: { purchaseCost: true } },
             },
           }),
+          db.rentalOrder.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
           db.rentalOrder.findMany({
+            where: { status: { not: "CANCELLED" } },
             select: {
-              status: true,
               eventStartDate: true,
               eventEndDate: true,
             },
           }),
-          db.dispatch.findMany({ select: { status: true } }),
-          db.returnInspection.findMany({ select: { status: true } }),
-          db.repair.findMany({ select: { status: true } }),
-          db.maintenance.findMany({ select: { status: true } }),
-          db.purchaseOrder.findMany({ select: { status: true } }),
-          db.rentalInvoice.findMany({ select: { status: true } }),
+          db.dispatch.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.returnInspection.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.repair.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.maintenance.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.purchaseOrder.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          db.rentalInvoice.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
           db.rentalInvoice.aggregate({
             where: {
               status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] },
@@ -258,13 +282,14 @@ export class PrismaReportingRepository implements IReportingRepository {
           products,
           warehouses,
           inventoryRows,
-          orderRows,
-          dispatchRows,
-          returnRows,
-          repairRows,
-          maintenanceRows,
-          poRows,
-          invoiceRows,
+          orderGroups,
+          durationRows,
+          dispatchGroups,
+          returnGroups,
+          repairGroups,
+          maintenanceGroups,
+          poGroups,
+          invoiceGroups,
           monthlyRevenue,
           monthlyPayments,
         ] as const;
@@ -293,10 +318,22 @@ export class PrismaReportingRepository implements IReportingRepository {
       reservedQuantity,
     );
 
-    const nonCancelledOrders = rentalOrders.filter(
-      (order) => order.status !== "CANCELLED",
+    const statusCount = (
+      groups: Array<{ status: string; _count: { _all: number } }>,
+      statuses: string | string[],
+    ): number => {
+      const wanted = Array.isArray(statuses) ? statuses : [statuses];
+      return groups
+        .filter((group) => wanted.includes(group.status))
+        .reduce((sum, group) => sum + group._count._all, 0);
+    };
+
+    const rentalOrderCount = orderStatusGroups.reduce(
+      (sum, group) => sum + group._count._all,
+      0,
     );
-    const durationValues = nonCancelledOrders.map((order) =>
+
+    const durationValues = durationOrders.map((order) =>
       calculateRentalDurationDays(order.eventStartDate, order.eventEndDate),
     );
 
@@ -309,42 +346,34 @@ export class PrismaReportingRepository implements IReportingRepository {
       inventoryQuantity,
       reservedQuantity,
       availableQuantity,
-      rentalOrders: rentalOrders.length,
-      confirmedOrders: rentalOrders.filter((order) => order.status === "CONFIRMED")
-        .length,
-      reservedOrders: rentalOrders.filter((order) => order.status === "RESERVED")
-        .length,
-      completedRentals: rentalOrders.filter(
-        (order) => order.status === "COMPLETED",
-      ).length,
-      dispatchesReady: dispatches.filter(
-        (dispatch) => dispatch.status === "READY",
-      ).length,
-      dispatchesInProgress: dispatches.filter(
-        (dispatch) => dispatch.status === "DISPATCHED",
-      ).length,
-      pendingReturns: returns.filter(
-        (row) => row.status === "DRAFT" || row.status === "RECEIVED",
-      ).length,
-      repairsPending: repairs.filter((row) => row.status === "PENDING").length,
-      repairsInProgress: repairs.filter((row) => row.status === "IN_PROGRESS")
-        .length,
-      maintenanceScheduled: maintenances.filter(
-        (row) => row.status === "SCHEDULED",
-      ).length,
-      maintenanceInProgress: maintenances.filter(
-        (row) => row.status === "IN_PROGRESS",
-      ).length,
-      openPurchaseOrders: purchaseOrders.filter((row) =>
-        ["DRAFT", "APPROVED", "PARTIALLY_RECEIVED"].includes(row.status),
-      ).length,
-      completedPurchaseOrders: purchaseOrders.filter(
-        (row) => row.status === "RECEIVED",
-      ).length,
-      outstandingInvoices: invoices.filter((row) =>
-        ["ISSUED", "PARTIALLY_PAID"].includes(row.status),
-      ).length,
-      paidInvoices: invoices.filter((row) => row.status === "PAID").length,
+      rentalOrders: rentalOrderCount,
+      confirmedOrders: statusCount(orderStatusGroups, "CONFIRMED"),
+      reservedOrders: statusCount(orderStatusGroups, "RESERVED"),
+      completedRentals: statusCount(orderStatusGroups, "COMPLETED"),
+      dispatchesReady: statusCount(dispatchStatusGroups, "READY"),
+      dispatchesInProgress: statusCount(dispatchStatusGroups, "DISPATCHED"),
+      pendingReturns: statusCount(returnStatusGroups, ["DRAFT", "RECEIVED"]),
+      repairsPending: statusCount(repairStatusGroups, "PENDING"),
+      repairsInProgress: statusCount(repairStatusGroups, "IN_PROGRESS"),
+      maintenanceScheduled: statusCount(maintenanceStatusGroups, "SCHEDULED"),
+      maintenanceInProgress: statusCount(
+        maintenanceStatusGroups,
+        "IN_PROGRESS",
+      ),
+      openPurchaseOrders: statusCount(purchaseOrderStatusGroups, [
+        "DRAFT",
+        "APPROVED",
+        "PARTIALLY_RECEIVED",
+      ]),
+      completedPurchaseOrders: statusCount(
+        purchaseOrderStatusGroups,
+        "RECEIVED",
+      ),
+      outstandingInvoices: statusCount(invoiceStatusGroups, [
+        "ISSUED",
+        "PARTIALLY_PAID",
+      ]),
+      paidInvoices: statusCount(invoiceStatusGroups, "PAID"),
       revenueThisMonth: roundMoney(
         decimalToNumber(revenueThisMonth._sum.grandTotal),
       ),

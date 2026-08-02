@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/supplier-api.route-runner";
 import { SUPPLIER_ROUTES } from "../routes/supplier.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListSuppliers(
   request: NextRequest,
   resolveServices: SupplierServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListSuppliersSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListSuppliersSchema, query);
 
-  const result = await runSupplierApiRoute({
-    request,
-    route: SUPPLIER_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.suppliers.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listSuppliers.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<SupplierDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toSupplierListResponse(paginated),
-      },
+    const result = await runSupplierApiRoute({
+      request,
+      route: SUPPLIER_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.suppliers.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listSuppliers.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<SupplierDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toSupplierListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateSupplier(
   request: NextRequest,
   resolveServices: SupplierServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateSupplierSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateSupplierSchema, body);
 
-  const result = await runSupplierApiRoute({
-    request,
-    route: SUPPLIER_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.suppliers.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createSupplier.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toSupplierResponse(result.body.data as SupplierDto),
-      },
+    const result = await runSupplierApiRoute({
+      request,
+      route: SUPPLIER_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.suppliers.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createSupplier.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toSupplierResponse(result.body.data as SupplierDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetSupplierById(
@@ -86,28 +91,30 @@ export async function handleGetSupplierById(
   id: string,
   resolveServices: SupplierServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(SupplierIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(SupplierIdParamSchema, { id });
 
-  const result = await runSupplierApiRoute({
-    request,
-    route: SUPPLIER_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.suppliers.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getSupplierById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toSupplierResponse(result.body.data as SupplierDto),
-      },
+    const result = await runSupplierApiRoute({
+      request,
+      route: SUPPLIER_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.suppliers.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getSupplierById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toSupplierResponse(result.body.data as SupplierDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateSupplier(
@@ -115,31 +122,33 @@ export async function handleUpdateSupplier(
   id: string,
   resolveServices: SupplierServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(SupplierIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateSupplierSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(SupplierIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateSupplierSchema, body);
 
-  const result = await runSupplierApiRoute({
-    request,
-    route: SUPPLIER_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.suppliers.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateSupplier.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toSupplierResponse(result.body.data as SupplierDto),
-      },
+    const result = await runSupplierApiRoute({
+      request,
+      route: SUPPLIER_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.suppliers.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateSupplier.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toSupplierResponse(result.body.data as SupplierDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteSupplier(
@@ -147,19 +156,21 @@ export async function handleDeleteSupplier(
   id: string,
   resolveServices: SupplierServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(SupplierIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(SupplierIdParamSchema, { id });
 
-  const result = await runSupplierApiRoute({
-    request,
-    route: SUPPLIER_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.suppliers.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteSupplier.execute(params);
-      return null;
-    },
+    const result = await runSupplierApiRoute({
+      request,
+      route: SUPPLIER_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.suppliers.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteSupplier.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

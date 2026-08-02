@@ -21,66 +21,71 @@ import {
   toJsonResponse,
 } from "../http/accounting-api.route-runner";
 import { JOURNAL_ENTRY_ROUTES } from "../routes/journal-entry.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListJournalEntries(
   request: NextRequest,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListJournalEntriesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListJournalEntriesSchema, query);
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: JOURNAL_ENTRY_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.journalEntries.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listJournalEntries.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<JournalEntryDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toJournalEntryListResponse(paginated),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: JOURNAL_ENTRY_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.journalEntries.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listJournalEntries.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<JournalEntryDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toJournalEntryListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateJournalEntry(
   request: NextRequest,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateJournalEntrySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateJournalEntrySchema, body);
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: JOURNAL_ENTRY_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.journalEntries.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createJournalEntry.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toJournalEntryResponse(result.body.data as JournalEntryDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: JOURNAL_ENTRY_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.journalEntries.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createJournalEntry.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toJournalEntryResponse(result.body.data as JournalEntryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetJournalEntryById(
@@ -88,29 +93,31 @@ export async function handleGetJournalEntryById(
   id: string,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(JournalEntryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(JournalEntryIdParamSchema, { id });
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: JOURNAL_ENTRY_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.journalEntries.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getJournalEntryById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toJournalEntryResponse(result.body.data as JournalEntryDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: JOURNAL_ENTRY_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.journalEntries.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getJournalEntryById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toJournalEntryResponse(result.body.data as JournalEntryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateJournalEntry(
@@ -118,31 +125,33 @@ export async function handleUpdateJournalEntry(
   id: string,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(JournalEntryIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateJournalEntrySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(JournalEntryIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateJournalEntrySchema, body);
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: JOURNAL_ENTRY_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.journalEntries.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateJournalEntry.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toJournalEntryResponse(result.body.data as JournalEntryDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: JOURNAL_ENTRY_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.journalEntries.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateJournalEntry.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toJournalEntryResponse(result.body.data as JournalEntryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handlePostJournalEntry(
@@ -150,29 +159,31 @@ export async function handlePostJournalEntry(
   id: string,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(JournalEntryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(JournalEntryIdParamSchema, { id });
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: JOURNAL_ENTRY_ROUTES.post(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.journalEntries.post,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.postJournalEntry.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toJournalEntryResponse(result.body.data as JournalEntryDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: JOURNAL_ENTRY_ROUTES.post(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.journalEntries.post,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.postJournalEntry.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toJournalEntryResponse(result.body.data as JournalEntryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleVoidJournalEntry(
@@ -180,27 +191,29 @@ export async function handleVoidJournalEntry(
   id: string,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(JournalEntryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(JournalEntryIdParamSchema, { id });
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: JOURNAL_ENTRY_ROUTES.void(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.journalEntries.void,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.voidJournalEntry.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toJournalEntryResponse(result.body.data as JournalEntryDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: JOURNAL_ENTRY_ROUTES.void(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.journalEntries.void,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.voidJournalEntry.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toJournalEntryResponse(result.body.data as JournalEntryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

@@ -21,65 +21,70 @@ import {
   toJsonResponse,
 } from "../http/accounting-api.route-runner";
 import { ACCOUNT_ROUTES } from "../routes/account.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListAccounts(
   request: NextRequest,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListAccountsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListAccountsSchema, query);
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: ACCOUNT_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.accounts.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listAccounts.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<AccountDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAccountListResponse(paginated),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: ACCOUNT_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.accounts.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listAccounts.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<AccountDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAccountListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateAccount(
   request: NextRequest,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const body = await request.json();
-  const createInput = parseRequest(CreateAccountSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body = await request.json();
+    const createInput = parseRequest(CreateAccountSchema, body);
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: ACCOUNT_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.accounts.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createAccount.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAccountResponse(result.body.data as AccountDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: ACCOUNT_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.accounts.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createAccount.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAccountResponse(result.body.data as AccountDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetAccountById(
@@ -87,29 +92,31 @@ export async function handleGetAccountById(
   id: string,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AccountIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AccountIdParamSchema, { id });
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: ACCOUNT_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.accounts.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getAccountById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAccountResponse(result.body.data as AccountDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: ACCOUNT_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.accounts.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getAccountById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAccountResponse(result.body.data as AccountDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateAccount(
@@ -117,29 +124,31 @@ export async function handleUpdateAccount(
   id: string,
   resolveServices: AccountingServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AccountIdParamSchema, { id });
-  const body = await request.json();
-  const updateInput = parseRequest(UpdateAccountSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AccountIdParamSchema, { id });
+    const body = await request.json();
+    const updateInput = parseRequest(UpdateAccountSchema, body);
 
-  const result = await runAccountingApiRoute({
-    request,
-    route: ACCOUNT_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.accounts.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateAccount.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAccountResponse(result.body.data as AccountDto),
-      },
+    const result = await runAccountingApiRoute({
+      request,
+      route: ACCOUNT_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.accounts.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateAccount.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAccountResponse(result.body.data as AccountDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

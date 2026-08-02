@@ -254,16 +254,18 @@ describe("identity API handlers", () => {
   it("rejects invalid create payload", async () => {
     mockSession(USER_ROLES.OWNER);
 
-    await expect(
-      handleCreateIdentityUser(
-        createMockNextRequest({
-          url: "http://localhost:3000/api/users",
-          method: "POST",
-          json: { name: "x" },
-        }),
-        () => createMockServices() as unknown as IdentityApplicationServices,
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+    const response = await handleCreateIdentityUser(
+      createMockNextRequest({
+        url: "http://localhost:3000/api/users",
+        method: "POST",
+        json: { name: "x" },
+      }),
+      () => createMockServices() as unknown as IdentityApplicationServices,
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("handleGetIdentityUserProfile uses authenticated ERP user id", async () => {

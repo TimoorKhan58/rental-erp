@@ -21,65 +21,70 @@ import {
   toJsonResponse,
 } from "../http/inventory-api.route-runner";
 import { INVENTORY_ROUTES } from "../routes/inventory.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListInventory(
   request: NextRequest,
   resolveServices: InventoryServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListInventorySchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListInventorySchema, query);
 
-  const result = await runInventoryApiRoute({
-    request,
-    route: INVENTORY_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.inventory.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listInventory.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<InventoryDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toInventoryListResponse(paginated),
-      },
+    const result = await runInventoryApiRoute({
+      request,
+      route: INVENTORY_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.inventory.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listInventory.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<InventoryDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toInventoryListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateInventory(
   request: NextRequest,
   resolveServices: InventoryServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateInventorySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateInventorySchema, body);
 
-  const result = await runInventoryApiRoute({
-    request,
-    route: INVENTORY_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.inventory.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createInventory.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toInventoryResponse(result.body.data as InventoryDto),
-      },
+    const result = await runInventoryApiRoute({
+      request,
+      route: INVENTORY_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.inventory.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createInventory.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toInventoryResponse(result.body.data as InventoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetInventoryById(
@@ -87,28 +92,30 @@ export async function handleGetInventoryById(
   id: string,
   resolveServices: InventoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(InventoryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(InventoryIdParamSchema, { id });
 
-  const result = await runInventoryApiRoute({
-    request,
-    route: INVENTORY_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.inventory.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getInventoryById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toInventoryResponse(result.body.data as InventoryDto),
-      },
+    const result = await runInventoryApiRoute({
+      request,
+      route: INVENTORY_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.inventory.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getInventoryById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toInventoryResponse(result.body.data as InventoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateInventory(
@@ -116,31 +123,33 @@ export async function handleUpdateInventory(
   id: string,
   resolveServices: InventoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(InventoryIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateInventorySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(InventoryIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateInventorySchema, body);
 
-  const result = await runInventoryApiRoute({
-    request,
-    route: INVENTORY_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.inventory.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateInventory.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toInventoryResponse(result.body.data as InventoryDto),
-      },
+    const result = await runInventoryApiRoute({
+      request,
+      route: INVENTORY_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.inventory.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateInventory.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toInventoryResponse(result.body.data as InventoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteInventory(
@@ -148,19 +157,21 @@ export async function handleDeleteInventory(
   id: string,
   resolveServices: InventoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(InventoryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(InventoryIdParamSchema, { id });
 
-  const result = await runInventoryApiRoute({
-    request,
-    route: INVENTORY_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.inventory.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteInventory.execute(params);
-      return null;
-    },
+    const result = await runInventoryApiRoute({
+      request,
+      route: INVENTORY_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.inventory.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteInventory.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

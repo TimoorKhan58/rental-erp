@@ -31,6 +31,7 @@ import {
   toJsonResponse,
 } from "../http/identity-api.route-runner";
 import { IDENTITY_ROUTES, ROLE_ROUTES } from "../routes/identity.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export type IdentityServiceResolver = (
   ctx: import("@/shared/application/context").ExecutionContext,
@@ -40,61 +41,65 @@ export async function handleListIdentityUsers(
   request: NextRequest,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListIdentityUsersSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListIdentityUsersSchema, query);
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.identity.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listIdentityUsers.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<IdentityUserDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserListResponse(paginated),
-      },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.identity.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listIdentityUsers.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<IdentityUserDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateIdentityUser(
   request: NextRequest,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateIdentityUserSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateIdentityUserSchema, body);
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.identity.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createIdentityUser.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserResponse(result.body.data as IdentityUserDto),
-      },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.identity.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createIdentityUser.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserResponse(result.body.data as IdentityUserDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetIdentityUserById(
@@ -102,29 +107,31 @@ export async function handleGetIdentityUserById(
   id: string,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(IdentityUserIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(IdentityUserIdParamSchema, { id });
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.identity.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getIdentityUserById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserResponse(result.body.data as IdentityUserDto),
-      },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.identity.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getIdentityUserById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserResponse(result.body.data as IdentityUserDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateIdentityUser(
@@ -132,31 +139,33 @@ export async function handleUpdateIdentityUser(
   id: string,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(IdentityUserIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateIdentityUserSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(IdentityUserIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateIdentityUserSchema, body);
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.identity.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateIdentityUser.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserResponse(result.body.data as IdentityUserDto),
-      },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.identity.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateIdentityUser.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserResponse(result.body.data as IdentityUserDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeactivateIdentityUser(
@@ -164,21 +173,23 @@ export async function handleDeactivateIdentityUser(
   id: string,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(IdentityUserIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(IdentityUserIdParamSchema, { id });
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.identity.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deactivateIdentityUser.execute(params);
-      return null;
-    },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.identity.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deactivateIdentityUser.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }
 
 export async function handleResetIdentityUserPassword(
@@ -186,31 +197,33 @@ export async function handleResetIdentityUserPassword(
   id: string,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(IdentityUserIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const resetInput = parseRequest(ResetIdentityUserPasswordSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(IdentityUserIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const resetInput = parseRequest(ResetIdentityUserPasswordSchema, body);
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.resetPassword(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.identity.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.resetIdentityUserPassword.execute(params, resetInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserResponse(result.body.data as IdentityUserDto),
-      },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.resetPassword(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.identity.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.resetIdentityUserPassword.execute(params, resetInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserResponse(result.body.data as IdentityUserDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetIdentityUserPermissions(
@@ -218,89 +231,95 @@ export async function handleGetIdentityUserPermissions(
   id: string,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(IdentityUserIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(IdentityUserIdParamSchema, { id });
 
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.permissions(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.identity.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getIdentityUserPermissions.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserPermissionsResponse(
-          result.body.data as IdentityUserPermissionsDto,
-        ),
-      },
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.permissions(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.identity.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getIdentityUserPermissions.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserPermissionsResponse(
+            result.body.data as IdentityUserPermissionsDto,
+          ),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetIdentityUserProfile(
   request: NextRequest,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const result = await runIdentityApiRoute({
-    request,
-    route: IDENTITY_ROUTES.me,
-    httpMethod: "GET",
-    // Authenticated self-profile only — do not require identity:read (Worker access).
-    resolveServices,
-    handler: async (ctx, services) => {
-      if (ctx.request.userId === undefined) {
-        throw new UnauthorizedError();
-      }
+  return runCatchingApiHandler(request, async () => {
+    const result = await runIdentityApiRoute({
+      request,
+      route: IDENTITY_ROUTES.me,
+      httpMethod: "GET",
+      // Authenticated self-profile only — do not require identity:read (Worker access).
+      resolveServices,
+      handler: async (ctx, services) => {
+        if (ctx.request.userId === undefined) {
+          throw new UnauthorizedError();
+        }
 
-      return services.getIdentityUserProfile.execute(ctx.request.userId);
-    },
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toIdentityUserProfileResponse(
-          result.body.data as IdentityUserProfileDto,
-        ),
+        return services.getIdentityUserProfile.execute(ctx.request.userId);
       },
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toIdentityUserProfileResponse(
+            result.body.data as IdentityUserProfileDto,
+          ),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleListRoles(
   request: NextRequest,
   resolveServices: IdentityServiceResolver,
 ): Promise<Response> {
-  const result = await runIdentityApiRoute({
-    request,
-    route: ROLE_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.identity.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listRoles.execute(),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toRoleListResponse(result.body.data as RoleDto[]),
-      },
+  return runCatchingApiHandler(request, async () => {
+    const result = await runIdentityApiRoute({
+      request,
+      route: ROLE_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.identity.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listRoles.execute(),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRoleListResponse(result.body.data as RoleDto[]),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

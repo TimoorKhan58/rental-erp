@@ -21,64 +21,69 @@ import {
   toJsonResponse,
 } from "../http/catalog-api.route-runner";
 import { TAG_ROUTES } from "./tag.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListTags(
   request: NextRequest,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListTagsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListTagsSchema, query);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: TAG_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.catalog.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listTags.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<TagDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toTagListResponse(paginated),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: TAG_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.catalog.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listTags.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<TagDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toTagListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateTag(
   request: NextRequest,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateTagSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateTagSchema, body);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: TAG_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.catalog.create,
-    resolveServices,
-    handler: async (_ctx, services) => services.createTag.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toTagResponse(result.body.data as TagDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: TAG_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.catalog.create,
+      resolveServices,
+      handler: async (_ctx, services) => services.createTag.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toTagResponse(result.body.data as TagDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetTagById(
@@ -86,28 +91,30 @@ export async function handleGetTagById(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(TagIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(TagIdParamSchema, { id });
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: TAG_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.catalog.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.getTagById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toTagResponse(result.body.data as TagDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: TAG_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.catalog.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getTagById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toTagResponse(result.body.data as TagDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateTag(
@@ -115,30 +122,32 @@ export async function handleUpdateTag(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(TagIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateTagSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(TagIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateTagSchema, body);
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: TAG_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.catalog.update,
-    resolveServices,
-    handler: async (_ctx, services) => services.updateTag.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toTagResponse(result.body.data as TagDto),
-      },
+    const result = await runCatalogApiRoute({
+      request,
+      route: TAG_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.catalog.update,
+      resolveServices,
+      handler: async (_ctx, services) => services.updateTag.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toTagResponse(result.body.data as TagDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteTag(
@@ -146,19 +155,21 @@ export async function handleDeleteTag(
   id: string,
   resolveServices: CatalogServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(TagIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(TagIdParamSchema, { id });
 
-  const result = await runCatalogApiRoute({
-    request,
-    route: TAG_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.catalog.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteTag.execute(params);
-      return null;
-    },
+    const result = await runCatalogApiRoute({
+      request,
+      route: TAG_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.catalog.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteTag.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }

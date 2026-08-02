@@ -22,65 +22,70 @@ import {
   toJsonResponse,
 } from "../http/expense-api.route-runner";
 import { EXPENSE_ROUTES } from "../routes/expense.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListExpenses(
   request: NextRequest,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListExpensesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListExpensesSchema, query);
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.expenses.read,
-    resolveServices,
-    handler: async (_ctx, services) => services.listExpenses.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<ExpenseDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseListResponse(paginated),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.expenses.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.listExpenses.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<ExpenseDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateExpense(
   request: NextRequest,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateExpenseSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateExpenseSchema, body);
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.expenses.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createExpense.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.expenses.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createExpense.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetExpenseById(
@@ -88,29 +93,31 @@ export async function handleGetExpenseById(
   id: string,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseIdParamSchema, { id });
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.expenses.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getExpenseById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.expenses.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getExpenseById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateExpense(
@@ -118,31 +125,33 @@ export async function handleUpdateExpense(
   id: string,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateExpenseSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateExpenseSchema, body);
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.expenses.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateExpense.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.expenses.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateExpense.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleSubmitExpense(
@@ -150,29 +159,31 @@ export async function handleSubmitExpense(
   id: string,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseIdParamSchema, { id });
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.submit(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.expenses.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.submitExpense.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.submit(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.expenses.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.submitExpense.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleApproveExpense(
@@ -180,29 +191,31 @@ export async function handleApproveExpense(
   id: string,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseIdParamSchema, { id });
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.approve(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.expenses.approve,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.approveExpense.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.approve(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.expenses.approve,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.approveExpense.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleRejectExpense(
@@ -210,31 +223,33 @@ export async function handleRejectExpense(
   id: string,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const rejectInput = parseRequest(RejectExpenseSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const rejectInput = parseRequest(RejectExpenseSchema, body);
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.reject(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.expenses.reject,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.rejectExpense.execute(params, rejectInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.reject(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.expenses.reject,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.rejectExpense.execute(params, rejectInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handlePayExpense(
@@ -242,26 +257,28 @@ export async function handlePayExpense(
   id: string,
   resolveServices: ExpenseServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(ExpenseIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExpenseIdParamSchema, { id });
 
-  const result = await runExpenseApiRoute({
-    request,
-    route: EXPENSE_ROUTES.pay(id),
-    httpMethod: "POST",
-    permission: PERMISSIONS.expenses.pay,
-    resolveServices,
-    handler: async (_ctx, services) => services.payExpense.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toExpenseResponse(result.body.data as ExpenseDto),
-      },
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.pay(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.expenses.pay,
+      resolveServices,
+      handler: async (_ctx, services) => services.payExpense.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseResponse(result.body.data as ExpenseDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

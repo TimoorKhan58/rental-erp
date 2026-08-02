@@ -20,66 +20,71 @@ import {
   toJsonResponse,
 } from "../http/stock-movement-api.route-runner";
 import { STOCK_MOVEMENT_ROUTES } from "../routes/stock-movement.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListStockMovements(
   request: NextRequest,
   resolveServices: StockMovementServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListStockMovementsSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListStockMovementsSchema, query);
 
-  const result = await runStockMovementApiRoute({
-    request,
-    route: STOCK_MOVEMENT_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.stockMovements.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listStockMovements.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<StockMovementDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toStockMovementListResponse(paginated),
-      },
+    const result = await runStockMovementApiRoute({
+      request,
+      route: STOCK_MOVEMENT_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.stockMovements.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listStockMovements.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<StockMovementDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toStockMovementListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateStockMovement(
   request: NextRequest,
   resolveServices: StockMovementServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateStockMovementSchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateStockMovementSchema, body);
 
-  const result = await runStockMovementApiRoute({
-    request,
-    route: STOCK_MOVEMENT_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.stockMovements.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createStockMovement.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toStockMovementResponse(result.body.data as StockMovementDto),
-      },
+    const result = await runStockMovementApiRoute({
+      request,
+      route: STOCK_MOVEMENT_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.stockMovements.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createStockMovement.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toStockMovementResponse(result.body.data as StockMovementDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetStockMovementById(
@@ -87,27 +92,29 @@ export async function handleGetStockMovementById(
   id: string,
   resolveServices: StockMovementServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(StockMovementIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(StockMovementIdParamSchema, { id });
 
-  const result = await runStockMovementApiRoute({
-    request,
-    route: STOCK_MOVEMENT_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.stockMovements.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getStockMovementById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toStockMovementResponse(result.body.data as StockMovementDto),
-      },
+    const result = await runStockMovementApiRoute({
+      request,
+      route: STOCK_MOVEMENT_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.stockMovements.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getStockMovementById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toStockMovementResponse(result.body.data as StockMovementDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }

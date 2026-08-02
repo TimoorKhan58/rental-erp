@@ -21,66 +21,71 @@ import {
   toJsonResponse,
 } from "../http/asset-category-api.route-runner";
 import { ASSET_CATEGORY_ROUTES } from "../routes/asset-category.routes";
+import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListAssetCategories(
   request: NextRequest,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const query = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const listInput = parseRequest(ListAssetCategoriesSchema, query);
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const listInput = parseRequest(ListAssetCategoriesSchema, query);
 
-  const result = await runAssetCategoryApiRoute({
-    request,
-    route: ASSET_CATEGORY_ROUTES.base,
-    httpMethod: "GET",
-    permission: PERMISSIONS.assetCategories.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.listCategories.execute(listInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    const paginated = result.body.data as PaginatedResult<AssetCategoryDto>;
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAssetCategoryListResponse(paginated),
-      },
+    const result = await runAssetCategoryApiRoute({
+      request,
+      route: ASSET_CATEGORY_ROUTES.base,
+      httpMethod: "GET",
+      permission: PERMISSIONS.assetCategories.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.listCategories.execute(listInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      const paginated = result.body.data as PaginatedResult<AssetCategoryDto>;
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAssetCategoryListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleCreateAssetCategory(
   request: NextRequest,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const body: unknown = await request.json();
-  const createInput = parseRequest(CreateAssetCategorySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const body: unknown = await request.json();
+    const createInput = parseRequest(CreateAssetCategorySchema, body);
 
-  const result = await runAssetCategoryApiRoute({
-    request,
-    route: ASSET_CATEGORY_ROUTES.base,
-    httpMethod: "POST",
-    permission: PERMISSIONS.assetCategories.create,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.createCategory.execute(createInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAssetCategoryResponse(result.body.data as AssetCategoryDto),
-      },
+    const result = await runAssetCategoryApiRoute({
+      request,
+      route: ASSET_CATEGORY_ROUTES.base,
+      httpMethod: "POST",
+      permission: PERMISSIONS.assetCategories.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.createCategory.execute(createInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAssetCategoryResponse(result.body.data as AssetCategoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleGetAssetCategoryById(
@@ -88,29 +93,31 @@ export async function handleGetAssetCategoryById(
   id: string,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AssetCategoryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AssetCategoryIdParamSchema, { id });
 
-  const result = await runAssetCategoryApiRoute({
-    request,
-    route: ASSET_CATEGORY_ROUTES.byId(id),
-    httpMethod: "GET",
-    permission: PERMISSIONS.assetCategories.read,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.getCategoryById.execute(params),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAssetCategoryResponse(result.body.data as AssetCategoryDto),
-      },
+    const result = await runAssetCategoryApiRoute({
+      request,
+      route: ASSET_CATEGORY_ROUTES.byId(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.assetCategories.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getCategoryById.execute(params),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAssetCategoryResponse(result.body.data as AssetCategoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleUpdateAssetCategory(
@@ -118,31 +125,33 @@ export async function handleUpdateAssetCategory(
   id: string,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AssetCategoryIdParamSchema, { id });
-  const body: unknown = await request.json();
-  const updateInput = parseRequest(UpdateAssetCategorySchema, body);
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AssetCategoryIdParamSchema, { id });
+    const body: unknown = await request.json();
+    const updateInput = parseRequest(UpdateAssetCategorySchema, body);
 
-  const result = await runAssetCategoryApiRoute({
-    request,
-    route: ASSET_CATEGORY_ROUTES.byId(id),
-    httpMethod: "PATCH",
-    permission: PERMISSIONS.assetCategories.update,
-    resolveServices,
-    handler: async (_ctx, services) =>
-      services.updateCategory.execute(params, updateInput),
-  });
-
-  if (result.status === 200 && "data" in result.body) {
-    return toJsonResponse({
-      ...result,
-      body: {
-        ...result.body,
-        data: toAssetCategoryResponse(result.body.data as AssetCategoryDto),
-      },
+    const result = await runAssetCategoryApiRoute({
+      request,
+      route: ASSET_CATEGORY_ROUTES.byId(id),
+      httpMethod: "PATCH",
+      permission: PERMISSIONS.assetCategories.update,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.updateCategory.execute(params, updateInput),
     });
-  }
 
-  return toJsonResponse(result);
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAssetCategoryResponse(result.body.data as AssetCategoryDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
 }
 
 export async function handleDeleteAssetCategory(
@@ -150,19 +159,21 @@ export async function handleDeleteAssetCategory(
   id: string,
   resolveServices: CategoryServiceResolver,
 ): Promise<Response> {
-  const params = parseRequest(AssetCategoryIdParamSchema, { id });
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(AssetCategoryIdParamSchema, { id });
 
-  const result = await runAssetCategoryApiRoute({
-    request,
-    route: ASSET_CATEGORY_ROUTES.byId(id),
-    httpMethod: "DELETE",
-    permission: PERMISSIONS.assetCategories.delete,
-    resolveServices,
-    handler: async (_ctx, services) => {
-      await services.deleteCategory.execute(params);
-      return null;
-    },
+    const result = await runAssetCategoryApiRoute({
+      request,
+      route: ASSET_CATEGORY_ROUTES.byId(id),
+      httpMethod: "DELETE",
+      permission: PERMISSIONS.assetCategories.delete,
+      resolveServices,
+      handler: async (_ctx, services) => {
+        await services.deleteCategory.execute(params);
+        return null;
+      },
+    });
+
+    return toJsonResponse(result);
   });
-
-  return toJsonResponse(result);
 }
