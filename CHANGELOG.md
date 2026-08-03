@@ -5,6 +5,40 @@ All notable changes to Rental ERP are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-08-03
+
+### Fixed
+
+- Restore `package.json` / `package-lock.json` sync for Next.js `16.2.12` so Render `npm ci` succeeds
+- Restore accidentally deleted `runCatchingApiHandler` used by API route handlers
+- Restore `sanitizeCallbackUrl` open-redirect protection on login
+- Remove accidental `tmp-debug-auth.test.ts` and no-op `src/middleware.ts` (auth remains in `proxy.ts`)
+- Pin Node engine to `22.x` to avoid Render selecting unsupported newer majors
+
+### Changed
+
+- Align `@next/bundle-analyzer` and `eslint-config-next` with Next.js `16.2.12`
+
+## [1.0.3] - 2026-08-03
+
+### Changed
+
+- Procurement, payments, catalog, and user-management release packaging
+
+### Known issues (superseded by 1.0.4)
+
+- `package.json` Next pins were reverted to `16.2.10` without regenerating the lockfile (broke Render `npm ci`)
+- Shared HTTP helpers were deleted while route imports remained
+
+## [1.0.2] - 2026-08-02
+
+### Changed
+
+- Upgrade Next.js stack to `16.2.12` (with matching lockfile)
+- API route error envelope via `runCatchingApiHandler`
+- Login callback URL sanitization
+- Maintenance / UX improvements for production on Render
+
 ## [1.0.1] - 2026-08-02
 
 ### Security
@@ -46,5 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed create-next-app demo content (default homepage, demo SVG assets, Geist fonts)
 - Enhanced `.gitignore` for production build artifacts, logs, and environment files
 
+[1.0.4]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.4
+[1.0.3]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.3
+[1.0.2]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.2
 [1.0.1]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.1
 [0.1.0]: https://github.com/manyar-tent/rental-erp/releases/tag/v0.1.0
