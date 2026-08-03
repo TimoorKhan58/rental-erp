@@ -224,33 +224,36 @@ describe("Inventory API validation and error mapping", () => {
   });
 
   it("rejects invalid list pagination", async () => {
-    await expect(
-      handleListInventory(
+    const response = await handleListInventory(
         createMockNextRequest({ url: "http://localhost/api/inventory?page=0" }),
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects invalid inventory id", async () => {
-    await expect(
-      handleGetInventoryById(
+    const response = await handleGetInventoryById(
         createMockNextRequest(),
         "not-a-uuid",
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects invalid create payload quantityOnHand", async () => {
-    await expect(
-      handleCreateInventory(
+    const response = await handleCreateInventory(
         createMockNextRequest({
           json: { ...VALID_CREATE_INPUT, quantityOnHand: -1 },
         }),
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("accepts create payload with required fields only", async () => {
@@ -281,13 +284,14 @@ describe("Inventory API validation and error mapping", () => {
   });
 
   it("rejects empty update payload", async () => {
-    await expect(
-      handleUpdateInventory(
+    const response = await handleUpdateInventory(
         createMockNextRequest({ json: {} }),
         INVENTORY_ID,
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("maps not found errors to response envelope", async () => {

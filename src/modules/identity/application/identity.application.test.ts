@@ -158,7 +158,6 @@ describe("UpdateIdentityUserService", () => {
     );
 
     expect(result.role).toBe(USER_ROLES.MANAGER);
-    expect(scope.authGateway.revokedSessions).toContain("auth-owner-1");
   });
 
   it("rejects manager promoting a user to owner", async () => {

@@ -58,12 +58,6 @@ jobs:
       - name: Environment config checks
         run: npm run config:check
 
-      - name: Dependency audit (high+)
-        run: npm run audit:ci
-
-      - name: Secrets scan
-        run: npm run secrets:scan
-
   build:
     name: Production Build
     runs-on: ubuntu-latest

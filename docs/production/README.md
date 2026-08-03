@@ -8,8 +8,6 @@ Central index for Rental ERP production engineering (Phases 8-001 → 8-010).
 
 | Document | Description |
 |----------|-------------|
-| [RELEASE_NOTES_v1.0.2.md](./RELEASE_NOTES_v1.0.2.md) | **Current release** notes |
-| [PRODUCTION_CHECKLIST_v1.0.2.md](./PRODUCTION_CHECKLIST_v1.0.2.md) | **Current release** cutover checklist |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Server sizing, Compose deploy, TLS, migrate, health |
 | [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) | Versioning, tagging, approval, post-release checks |
 | [ROLLBACK.md](./ROLLBACK.md) | App/image/config/DB rollback |

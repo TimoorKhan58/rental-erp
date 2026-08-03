@@ -199,34 +199,37 @@ describe("Asset category API validation and error mapping", () => {
   });
 
   it("rejects invalid list pagination", async () => {
-    await expect(
-      handleListAssetCategories(
+    const response = await handleListAssetCategories(
         createMockNextRequest({
           url: "http://localhost/api/asset-categories?page=0",
         }),
         () => createMockServices() as unknown as CategoryApplicationServices,
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects invalid category id", async () => {
-    await expect(
-      handleGetAssetCategoryById(
+    const response = await handleGetAssetCategoryById(
         createMockNextRequest(),
         "not-a-uuid",
         () => createMockServices() as unknown as CategoryApplicationServices,
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects empty update payload", async () => {
-    await expect(
-      handleUpdateAssetCategory(
+    const response = await handleUpdateAssetCategory(
         createMockNextRequest({ json: {} }),
         CATEGORY_ID,
         () => createMockServices() as unknown as CategoryApplicationServices,
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("maps not found errors to response envelope", async () => {

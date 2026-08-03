@@ -141,12 +141,6 @@ Render does **not** run migrations unless you configure them. For the existing w
 
 Required env on Render: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `APP_URL`, `BETTER_AUTH_URL` (HTTPS), `APP_ENV=production`, `NODE_ENV=production`.
 
-**Also set for hardened metrics:** `METRICS_BEARER_TOKEN` (required when `ENABLE_METRICS` is true in staging/production).
-
-**Optional:** `TRUSTED_PROXIES` — usually empty on Render (platform sets client IP headers). For Docker/Nginx, set proxy CIDRs so rate-limit / login IP attribution is accurate.
-
-> **Note:** This repository does **not** ship a `render.yaml` Blueprint. Configure Build / Pre-Deploy / Start commands and env vars in the Render dashboard (values above). Keep Pre-Deploy migrate enabled so schema indexes and future migrations apply before traffic.
-
 ---
 
 ## 7. Docker Compose deployment sequence

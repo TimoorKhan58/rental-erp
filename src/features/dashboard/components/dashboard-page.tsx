@@ -2,7 +2,6 @@
 
 import { PageContainer } from "@/components/layout";
 import { DashboardSkeleton } from "@/components/design-system/loading";
-import { QueryErrorState } from "@/components/feedback/query-error-state";
 import {
   useBusinessPulse,
   useDashboardNotifications,
@@ -49,13 +48,13 @@ export function DashboardPage() {
       />
 
       {hasError ? (
-        <QueryErrorState
-          title="Could not load live business numbers"
-          description="Check your reports permission or try refreshing."
-          onRetry={() => {
-            void pulse.refetch();
-          }}
-        />
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          Could not load live business numbers. Check your reports permission or try
+          refreshing.
+        </div>
       ) : null}
 
       <BusinessPulseRow

@@ -248,15 +248,16 @@ describe("Stock movement API handlers", () => {
   it("POST /api/stock-movements returns 400 for invalid body", async () => {
     const services = createMockServices();
 
-    await expect(
-      handleCreateStockMovement(
+    const response = await handleCreateStockMovement(
         createMockNextRequest({
           method: "POST",
           json: { inventoryId: INVENTORY_ID, movementType: "IN", quantity: 0 },
         }),
         () => services,
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
 
     expect(services.createStockMovement.execute).not.toHaveBeenCalled();
   });

@@ -231,46 +231,51 @@ describe("Customer API validation and error mapping", () => {
   });
 
   it("rejects invalid list pagination", async () => {
-    await expect(
-      handleListCustomers(
+    const response = await handleListCustomers(
         createMockNextRequest({ url: "http://localhost/api/customers?page=0" }),
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects invalid customer id", async () => {
-    await expect(
-      handleGetCustomerById(createMockNextRequest(), "not-a-uuid", () => createMockServices()),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+    const response = await handleGetCustomerById(createMockNextRequest(), "not-a-uuid", () => createMockServices());
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects invalid create payload phone", async () => {
-    await expect(
-      handleCreateCustomer(
+    const response = await handleCreateCustomer(
         createMockNextRequest({ json: { ...VALID_CREATE_INPUT, phone: "bad" } }),
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects invalid CNIC on create", async () => {
-    await expect(
-      handleCreateCustomer(
+    const response = await handleCreateCustomer(
         createMockNextRequest({ json: { ...VALID_CREATE_INPUT, cnic: "bad" } }),
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("rejects empty update payload", async () => {
-    await expect(
-      handleUpdateCustomer(
+    const response = await handleUpdateCustomer(
         createMockNextRequest({ json: {} }),
         CUSTOMER_ID,
         () => createMockServices(),
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+      );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("maps not found errors to response envelope", async () => {

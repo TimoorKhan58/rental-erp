@@ -14,12 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { sanitizeCallbackUrl } from "@/shared/infrastructure/http/safe-callback-url";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

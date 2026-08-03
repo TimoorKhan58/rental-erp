@@ -5,34 +5,6 @@ All notable changes to Rental ERP are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2] - 2026-08-02
-
-### Security
-
-- Sanitize login `callbackUrl` to block open redirects
-- Revoke sessions on role change, email change, and deactivation
-- Resolve API RBAC role from ERP `Role` table (not only AuthUser cache)
-- Enforce active ERP user in `requireSession` (aligned with proxy/API)
-- Require `METRICS_BEARER_TOKEN` in staging/production when metrics enabled
-- Upgrade Next.js to 16.2.12 (high-severity advisory remediation)
-
-### Fixed
-
-- API request validation / JSON parse errors now return standard 400 error envelopes instead of uncaught failures
-- Dashboard status metrics no longer load entire status tables into memory (`groupBy`)
-
-### Changed
-
-- Remove deprecated empty `src/middleware.ts` (edge gate remains `proxy.ts`)
-- CI quality gates include `audit:ci` and `secrets:scan`
-- Production env example documents shorter cookie cache and required metrics token
-- README / deployment docs / roadmap banner aligned to v1.0.x production status
-
-### UI
-
-- Customer list uses shared `PageHeader`
-- Dashboard load failures use shared `QueryErrorState` with retry
-
 ## [1.0.1] - 2026-08-02
 
 ### Security
@@ -74,6 +46,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed create-next-app demo content (default homepage, demo SVG assets, Geist fonts)
 - Enhanced `.gitignore` for production build artifacts, logs, and environment files
 
-[1.0.2]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.2
 [1.0.1]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.1
 [0.1.0]: https://github.com/manyar-tent/rental-erp/releases/tag/v0.1.0

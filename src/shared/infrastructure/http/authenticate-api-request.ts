@@ -24,7 +24,6 @@ import {
 } from "@/shared/infrastructure/logging";
 import { resolveSessionUser } from "@/shared/infrastructure/auth/resolve-session-user";
 import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-erp-user";
-import { isUserRole } from "@/shared/application/authorization/types";
 import { enterRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
 
 export interface AuthenticatedApiRequestResult {
@@ -58,11 +57,7 @@ export async function authenticateApiRequest(
     });
   }
 
-  const erpUser = await ensureActiveErpUser(resolvedUser.erpUserId);
-  // Prefer ERP Role table over AuthUser.role session cache for RBAC.
-  const role = isUserRole(erpUser.roleName)
-    ? erpUser.roleName
-    : resolvedUser.role;
+  await ensureActiveErpUser(resolvedUser.erpUserId);
 
   const requestContext = createRequestContext({
     requestId,
@@ -71,7 +66,7 @@ export async function authenticateApiRequest(
     route,
     httpMethod,
     userId: resolvedUser.erpUserId,
-    role,
+    role: resolvedUser.role,
     ipAddress: resolveClientIp(request.headers),
     userAgent: request.headers.get("user-agent") ?? undefined,
   });
