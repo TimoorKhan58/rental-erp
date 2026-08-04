@@ -351,25 +351,39 @@ describe("ReceivePurchaseOrderService", () => {
     expect(result.status).toBe("RECEIVED");
   });
 
-  it("rejects receive when inventory is missing", async () => {
+  it("creates inventory and receives when inventory is missing", async () => {
     const purchaseOrderRepository = new InMemoryPurchaseOrderRepository();
     purchaseOrderRepository.seed([buildApprovedPurchaseOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
     const service = new ReceivePurchaseOrderService(
       createWriteScope(
         purchaseOrderRepository,
-        new InMemoryInventoryRepository(),
+        inventoryRepository,
         new InMemoryStockMovementRepository(),
         new MockAuditLogger(),
         USER_ID,
       ),
     );
 
-    await expect(
-      service.execute(
-        { id: PURCHASE_ORDER_ID },
-        { items: [{ productId: PRODUCT_ID, quantity: 10 }] },
+    const result = await service.execute(
+      { id: PURCHASE_ORDER_ID },
+      { items: [{ productId: PRODUCT_ID, quantity: 10 }] },
+    );
+
+    expect(result.status).toBe("PARTIALLY_RECEIVED");
+
+    const inventoryItems = (
+      await inventoryRepository.findPaged({
+        page: 1,
+        pageSize: 10,
+        sortOrder: "desc",
+      })
+    ).items;
+    expect(
+      inventoryItems.some(
+        (item) => item.productId === PRODUCT_ID && item.warehouseId === WAREHOUSE_ID,
       ),
-    ).rejects.toBeInstanceOf(NotFoundError);
+    ).toBe(true);
   });
 
   it("rejects receive without user context", async () => {

@@ -7,6 +7,7 @@ export const SETTINGS_ENTITY_NAME = "Settings";
 export const DOCUMENT_TYPES = [
   "RENTAL_ORDER",
   "PAYMENT",
+  "SUPPLIER_PAYMENT",
   "DISPATCH",
   "EXPENSE",
   "REPAIR",

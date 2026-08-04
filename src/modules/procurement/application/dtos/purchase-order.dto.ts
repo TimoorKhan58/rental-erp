@@ -17,6 +17,9 @@ export interface PurchaseOrderDto {
   orderDate: string;
   expectedDate: string | null;
   remarks: string | null;
+  orderTotal: number;
+  paidAmount: number;
+  balance: number;
   items: PurchaseOrderItemDto[];
   createdAt: string;
   updatedAt: string;

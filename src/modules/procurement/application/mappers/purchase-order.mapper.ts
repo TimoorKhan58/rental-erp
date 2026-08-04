@@ -18,6 +18,7 @@ import type { PurchaseOrderDto } from "../dtos/purchase-order.dto";
 
 export function toPurchaseOrderDto(order: PurchaseOrder): PurchaseOrderDto {
   const props = order.toProps();
+  const orderTotal = order.getOrderTotal();
 
   return {
     id: props.id,
@@ -28,6 +29,9 @@ export function toPurchaseOrderDto(order: PurchaseOrder): PurchaseOrderDto {
     orderDate: props.orderDate.toISOString(),
     expectedDate: props.expectedDate?.toISOString() ?? null,
     remarks: props.remarks,
+    orderTotal,
+    paidAmount: props.paidAmount,
+    balance: order.getBalance(),
     items: props.items.map((item) => ({
       id: item.id,
       productId: item.productId,

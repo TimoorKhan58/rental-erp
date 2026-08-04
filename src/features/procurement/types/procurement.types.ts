@@ -27,6 +27,9 @@ export type ProcurementResponse = {
   orderDate: string;
   expectedDate: string | null;
   remarks: string | null;
+  orderTotal: number;
+  paidAmount: number;
+  balance: number;
   items: PurchaseOrderItemResponse[];
   createdAt: string;
   updatedAt: string;

@@ -7,3 +7,12 @@ export {
   receiveProcurement,
   updateProcurement,
 } from "./procurement.service";
+export {
+  createPurchaseOrderSupplierPayment,
+  createSupplierPayment,
+  getPurchaseOrderSupplierPayments,
+  getSupplierPayment,
+  getSupplierPayments,
+  postSupplierPayment,
+  voidSupplierPayment,
+} from "./supplier-payment.service";

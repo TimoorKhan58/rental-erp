@@ -12,6 +12,7 @@ export function toPurchaseOrderAuditValues(order: PurchaseOrder): Record<string,
     orderDate: props.orderDate.toISOString(),
     expectedDate: props.expectedDate?.toISOString() ?? null,
     remarks: props.remarks,
+    paidAmount: props.paidAmount,
     items: props.items.map((item) => ({
       id: item.id,
       productId: item.productId,

@@ -11,3 +11,9 @@ export type {
   UpdateProcurementPayload,
 } from "./procurement.types";
 export { PURCHASE_ORDER_STATUSES } from "./procurement.types";
+export type {
+  CreateSupplierPaymentPayload,
+  ListSupplierPaymentsParams,
+  SupplierPaymentListResponse,
+  SupplierPaymentResponse,
+} from "./supplier-payment.types";

@@ -18,6 +18,9 @@ export interface PurchaseOrderResponse {
   orderDate: string;
   expectedDate: string | null;
   remarks: string | null;
+  orderTotal: number;
+  paidAmount: number;
+  balance: number;
   items: PurchaseOrderItemResponse[];
   createdAt: string;
   updatedAt: string;
@@ -40,6 +43,9 @@ export function toPurchaseOrderResponse(
     orderDate: dto.orderDate,
     expectedDate: dto.expectedDate,
     remarks: dto.remarks,
+    orderTotal: dto.orderTotal,
+    paidAmount: dto.paidAmount,
+    balance: dto.balance,
     items: dto.items.map((item) => ({
       id: item.id,
       productId: item.productId,

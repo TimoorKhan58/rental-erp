@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { SupplierPaymentsSection } from "../components/supplier-payments-section";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
@@ -325,10 +326,7 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Supplier payments"
-            description="Payment history will appear here when the payments module is connected."
-          />
+          <SupplierPaymentsSection procurement={procurement} />
 
           <EmptyCard
             title="Audit timeline"

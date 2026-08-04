@@ -108,6 +108,12 @@ export const PERMISSIONS = {
     post: "payments:post",
     void: "payments:void",
   },
+  supplierPayments: {
+    read: "supplier-payments:read",
+    create: "supplier-payments:create",
+    post: "supplier-payments:post",
+    void: "supplier-payments:void",
+  },
   accounts: {
     read: "accounts:read",
     create: "accounts:create",

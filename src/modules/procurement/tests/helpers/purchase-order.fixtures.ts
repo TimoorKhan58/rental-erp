@@ -69,6 +69,7 @@ export function buildPurchaseOrderEntity(
   override: {
     id?: PurchaseOrderId;
     status?: PurchaseOrder["status"];
+    paidAmount?: number;
     receivedQuantity?: number;
     items?: PurchaseOrder["items"];
     createdAt?: Date;
@@ -88,6 +89,7 @@ export function buildPurchaseOrderEntity(
     orderDate: created.orderDate,
     expectedDate: created.expectedDate,
     remarks: created.remarks,
+    paidAmount: override.paidAmount ?? 0,
     items:
       override.items ??
       created.items.map((item, index) => ({

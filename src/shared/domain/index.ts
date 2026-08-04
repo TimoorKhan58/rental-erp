@@ -11,6 +11,7 @@ export {
   type InventoryId,
   type NotificationId,
   type PaymentId,
+  type SupplierPaymentId,
   type AccountId,
   type JournalEntryId,
   type ProductId,

@@ -107,18 +107,23 @@ export class ReceivePurchaseOrderService {
         );
 
         for (const receiveItem of data.items) {
-          const inventory = await inventoryRepository.findByProductAndWarehouse(
-            toProductId(receiveItem.productId),
+          const productId = toProductId(receiveItem.productId);
+          let inventory = await inventoryRepository.findByProductAndWarehouse(
+            productId,
             existing.warehouseId,
           );
 
           if (inventory === null) {
-            throw new NotFoundError({
-              message: "Inventory not found for product and warehouse",
-              details: {
-                productId: receiveItem.productId,
-                warehouseId: existing.warehouseId,
-              },
+            // Auto-create a baseline inventory record so first-time procurement
+            // receipts can post stock movement without a manual inventory setup step.
+            inventory = await inventoryRepository.create({
+              productId,
+              warehouseId: existing.warehouseId,
+              quantityOnHand: 0,
+              reservedQuantity: 0,
+              minimumStock: 0,
+              maximumStock: null,
+              isActive: true,
             });
           }
 

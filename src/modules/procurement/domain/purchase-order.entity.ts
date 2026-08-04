@@ -13,6 +13,8 @@ import {
   assertCanReceive,
   assertCanUpdate,
   computeStatusAfterReceive,
+  getOrderTotal,
+  normalizePaidAmount,
   normalizePurchaseOrderProps,
   validatePurchaseOrderItems,
 } from "./purchase-order.rules";
@@ -32,6 +34,7 @@ export class PurchaseOrder implements Entity<PurchaseOrderId> {
   readonly orderDate: Date;
   readonly expectedDate: Date | null;
   readonly remarks: string | null;
+  readonly paidAmount: number;
   readonly items: PurchaseOrderItemProps[];
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -47,6 +50,7 @@ export class PurchaseOrder implements Entity<PurchaseOrderId> {
     this.orderDate = normalized.orderDate;
     this.expectedDate = normalized.expectedDate;
     this.remarks = normalized.remarks;
+    this.paidAmount = normalized.paidAmount;
     this.items = normalized.items;
     this.createdAt = normalized.createdAt;
     this.updatedAt = normalized.updatedAt;
@@ -62,6 +66,7 @@ export class PurchaseOrder implements Entity<PurchaseOrderId> {
       orderDate: data.orderDate,
       expectedDate: data.expectedDate,
       remarks: normalizeOptionalText(data.remarks),
+      paidAmount: 0,
       items: validatePurchaseOrderItems(data.items),
     };
   }
@@ -80,10 +85,27 @@ export class PurchaseOrder implements Entity<PurchaseOrderId> {
       orderDate: this.orderDate,
       expectedDate: this.expectedDate,
       remarks: this.remarks,
+      paidAmount: this.paidAmount,
       items: this.items.map((item) => ({ ...item })),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
+  }
+
+  getOrderTotal(): number {
+    return getOrderTotal(this.items);
+  }
+
+  getBalance(): number {
+    return Math.round((this.getOrderTotal() - this.paidAmount) * 100) / 100;
+  }
+
+  withPaymentApplied(paidAmount: number): PurchaseOrder {
+    return PurchaseOrder.reconstitute({
+      ...this.toProps(),
+      paidAmount: normalizePaidAmount(paidAmount),
+      updatedAt: new Date(),
+    });
   }
 
   assertCanUpdate(): void {

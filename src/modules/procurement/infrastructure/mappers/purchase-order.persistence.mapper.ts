@@ -13,7 +13,13 @@ import type {
   WarehouseId,
 } from "@/shared/domain/ids";
 
-function decimalToNumber(value: Prisma.Decimal): number {
+function decimalToNumber(
+  value: Prisma.Decimal | null | undefined,
+): number {
+  if (value == null) {
+    return 0;
+  }
+
   return value.toNumber();
 }
 
@@ -30,6 +36,7 @@ export function toPurchaseOrderDomain(record: {
   orderDate: Date;
   expectedDate: Date | null;
   remarks: string | null;
+  paidAmount: Prisma.Decimal;
   createdAt: Date;
   updatedAt: Date;
   items: Array<{
@@ -49,6 +56,7 @@ export function toPurchaseOrderDomain(record: {
     orderDate: record.orderDate,
     expectedDate: record.expectedDate,
     remarks: record.remarks,
+    paidAmount: decimalToNumber(record.paidAmount),
     items: record.items.map((item) => ({
       id: item.id,
       productId: item.productId as ProductId,

@@ -236,6 +236,22 @@ export class InMemoryPurchaseOrderRepository implements IPurchaseOrderRepository
     return updated;
   }
 
+  async updatePaidAmount(
+    id: PurchaseOrderId,
+    paidAmount: number,
+  ): Promise<PurchaseOrder> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      throw new Error("Purchase order not found");
+    }
+
+    const entity = PurchaseOrder.reconstitute(existing.record);
+    const updated = entity.withPaymentApplied(paidAmount);
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
   count(): number {
     return this.store.size;
   }

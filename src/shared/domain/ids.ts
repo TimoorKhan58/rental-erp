@@ -21,6 +21,7 @@ export type RepairId = Brand<string, "RepairId">;
 export type MaintenanceId = Brand<string, "MaintenanceId">;
 export type RentalInvoiceId = Brand<string, "RentalInvoiceId">;
 export type PaymentId = Brand<string, "PaymentId">;
+export type SupplierPaymentId = Brand<string, "SupplierPaymentId">;
 export type AccountId = Brand<string, "AccountId">;
 export type JournalEntryId = Brand<string, "JournalEntryId">;
 export type ExpenseId = Brand<string, "ExpenseId">;

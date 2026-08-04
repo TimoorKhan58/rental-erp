@@ -62,6 +62,7 @@ export interface PurchaseOrderProps {
   orderDate: Date;
   expectedDate: Date | null;
   remarks: string | null;
+  paidAmount: number;
   items: PurchaseOrderItemProps[];
   createdAt: Date;
   updatedAt: Date;

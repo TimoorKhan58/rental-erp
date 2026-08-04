@@ -25,6 +25,8 @@ export {
   assertCanReceive,
   assertCanUpdate,
   computeStatusAfterReceive,
+  getOrderTotal,
+  normalizePaidAmount,
   validatePurchaseOrderItems,
 } from "./purchase-order.rules";
 export type {

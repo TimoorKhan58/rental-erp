@@ -188,6 +188,25 @@ export function assertCanCancel(
   }
 }
 
+export function getOrderTotal(items: PurchaseOrderItemProps[]): number {
+  return roundMoney(
+    items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0),
+  );
+}
+
+export function normalizePaidAmount(paidAmount: number | null | undefined): number {
+  const amount = paidAmount ?? 0;
+
+  if (Number.isNaN(amount) || amount < 0) {
+    throw new PurchaseOrderInvariantError(
+      "Paid amount cannot be negative",
+      "paidAmount",
+    );
+  }
+
+  return roundMoney(amount);
+}
+
 export function normalizePurchaseOrderProps(
   props: PurchaseOrderProps,
 ): PurchaseOrderProps {
@@ -195,6 +214,7 @@ export function normalizePurchaseOrderProps(
     ...props,
     poNumber: createPoNumber(props.poNumber),
     remarks: normalizeOptionalText(props.remarks),
+    paidAmount: normalizePaidAmount(props.paidAmount),
     items: props.items.map((item) => {
       assertReceivedQuantityWithinOrdered(item);
       return item;
@@ -209,4 +229,8 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }

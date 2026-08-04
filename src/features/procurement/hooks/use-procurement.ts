@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
 import { useAppMutation } from "@/lib/query";
+import { apiPost } from "@/lib/api";
 import { getCurrentUserPermissions } from "@/features/customer/services";
 import { getProducts } from "@/features/product/services";
 import { getSuppliers } from "@/features/supplier/services";
@@ -23,6 +24,19 @@ type LookupOption = {
   label: string;
 };
 
+type CreateProcurementProductPayload = {
+  name: string;
+  unit: string;
+  rentalRate: number;
+  description?: string | null;
+  isActive?: boolean;
+};
+
+type ProcurementProductResponse = {
+  id: string;
+  name: string;
+};
+
 export function useProcurementPermissions() {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.permissions.me(),
@@ -40,6 +54,7 @@ export function useProcurementPermissions() {
     canApprove: permissions.includes(PERMISSIONS.purchaseOrders.approve),
     canReceive: permissions.includes(PERMISSIONS.purchaseOrders.receive),
     canCancel: permissions.includes(PERMISSIONS.purchaseOrders.cancel),
+    canCreateProduct: permissions.includes(PERMISSIONS.products.create),
   };
 }
 
@@ -213,6 +228,20 @@ export function useCancelProcurement() {
         queryClient.invalidateQueries({ queryKey: queryKeys.procurement.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.procurement.detail(data.id) }),
       ]);
+    },
+  });
+}
+
+export function useCreateProcurementProduct() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: (payload: CreateProcurementProductPayload) =>
+      apiPost<ProcurementProductResponse>("/products", payload),
+    showSuccessToast: true,
+    successMessage: "Product created.",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
     },
   });
 }

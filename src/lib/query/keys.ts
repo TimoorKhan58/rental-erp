@@ -140,6 +140,15 @@ export const queryKeys = {
     details: () => [...queryKeys.payments.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.payments.details(), id] as const,
   },
+  supplierPayments: {
+    all: ["app", "supplier-payments"] as const,
+    lists: () => [...queryKeys.supplierPayments.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.supplierPayments.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.supplierPayments.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.supplierPayments.details(), id] as const,
+  },
   accounting: {
     all: ["app", "accounting"] as const,
     summary: (params?: Record<string, unknown>) =>

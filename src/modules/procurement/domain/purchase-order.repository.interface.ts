@@ -28,4 +28,8 @@ export interface IPurchaseOrderRepository {
     id: PurchaseOrderId,
     status: PurchaseOrder["status"],
   ): Promise<PurchaseOrder>;
+  updatePaidAmount(
+    id: PurchaseOrderId,
+    paidAmount: number,
+  ): Promise<PurchaseOrder>;
 }

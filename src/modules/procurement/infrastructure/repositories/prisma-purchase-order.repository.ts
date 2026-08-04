@@ -9,6 +9,7 @@ import {
   repositoryUpdate,
   runRepositoryPagedQuery,
 } from "@/shared/infrastructure/database";
+import { Prisma } from "@/generated/prisma/client";
 
 import { PurchaseOrder } from "@/modules/procurement/domain/purchase-order.entity";
 import type { IPurchaseOrderRepository } from "@/modules/procurement/domain/purchase-order.repository.interface";
@@ -202,6 +203,22 @@ export class PrismaPurchaseOrderRepository implements IPurchaseOrderRepository {
           include: PURCHASE_ORDER_INCLUDE,
         }),
       { model: MODEL, operation: "updateStatus" },
+    ).then(toPurchaseOrderDomain);
+  }
+
+  updatePaidAmount(
+    id: PurchaseOrderId,
+    paidAmount: number,
+  ): Promise<PurchaseOrder> {
+    return repositoryUpdate(
+      this.runner,
+      (db) =>
+        db.purchaseOrder.update({
+          where: { id },
+          data: { paidAmount: new Prisma.Decimal(paidAmount) },
+          include: PURCHASE_ORDER_INCLUDE,
+        }),
+      { model: MODEL, operation: "updatePaidAmount" },
     ).then(toPurchaseOrderDomain);
   }
 }

@@ -4,6 +4,7 @@ export const PURCHASE_ORDER_ROUTES = {
   approve: (id: string) => `/api/purchase-orders/${id}/approve`,
   receive: (id: string) => `/api/purchase-orders/${id}/receive`,
   cancel: (id: string) => `/api/purchase-orders/${id}/cancel`,
+  payments: (id: string) => `/api/purchase-orders/${id}/payments`,
 } as const;
 
 export type PurchaseOrderRouteKey = keyof typeof PURCHASE_ORDER_ROUTES;

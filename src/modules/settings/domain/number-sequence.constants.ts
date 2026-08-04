@@ -5,6 +5,7 @@ export const NUMBER_SEQUENCE_ENTITY_NAME = "NumberSequence";
 export const DOCUMENT_TYPE_PREFIXES: Record<DocumentType, string> = {
   RENTAL_ORDER: "RO-",
   PAYMENT: "PAY-",
+  SUPPLIER_PAYMENT: "SPAY-",
   DISPATCH: "DIS-",
   EXPENSE: "EXP-",
   REPAIR: "RPR-",
