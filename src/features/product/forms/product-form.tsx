@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { AppForm } from "@/components/forms";
 import {
   NumberField,
@@ -12,13 +13,20 @@ import {
 } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { SectionCard } from "@/components/design-system/card";
+import { AppModal } from "@/components/design-system/modal";
+import { Input } from "@/components/ui/input";
 import {
   createProductFormSchema,
   updateProductFormSchema,
   type CreateProductFormValues,
   type UpdateProductFormValues,
 } from "../schemas";
-import { useProductCatalogOptions } from "../hooks";
+import {
+  useCatalogPermissions,
+  useCreateBrandOption,
+  useCreateCategoryOption,
+  useProductCatalogOptions,
+} from "../hooks";
 
 type ProductFormBaseProps = {
   onCancel: () => void;
@@ -69,6 +77,9 @@ function CreateProductForm({
   isSubmitting = false,
 }: CreateProductFormProps) {
   const { categoryOptions, brandOptions, unitOptions } = useProductCatalogOptions();
+  const { canCreate: canCreateCatalogOption } = useCatalogPermissions();
+  const createCategory = useCreateCategoryOption();
+  const createBrand = useCreateBrandOption();
   const form = useForm<CreateProductFormValues>({
     resolver: zodResolver(createProductFormSchema),
     defaultValues: { ...createDefaults, ...defaultValues },
@@ -119,6 +130,19 @@ function CreateProductForm({
       </SectionCard>
 
       <SectionCard title="Classification">
+        <CatalogQuickCreate
+          canCreate={canCreateCatalogOption}
+          onCreateCategory={async (payload) => {
+            const created = await createCategory.mutateAsync(payload);
+            form.setValue("categoryId", created.id, { shouldDirty: true });
+          }}
+          onCreateBrand={async (payload) => {
+            const created = await createBrand.mutateAsync(payload);
+            form.setValue("brandId", created.id, { shouldDirty: true });
+          }}
+          isCreatingCategory={createCategory.isPending}
+          isCreatingBrand={createBrand.isPending}
+        />
         <div className="grid gap-4 md:grid-cols-3">
           <SelectField
             control={form.control}
@@ -175,6 +199,9 @@ function EditProductForm({
   isSubmitting = false,
 }: EditProductFormProps) {
   const { categoryOptions, brandOptions, unitOptions } = useProductCatalogOptions();
+  const { canCreate: canCreateCatalogOption } = useCatalogPermissions();
+  const createCategory = useCreateCategoryOption();
+  const createBrand = useCreateBrandOption();
   const form = useForm<UpdateProductFormValues>({
     resolver: zodResolver(updateProductFormSchema),
     defaultValues,
@@ -222,6 +249,19 @@ function EditProductForm({
       </SectionCard>
 
       <SectionCard title="Classification">
+        <CatalogQuickCreate
+          canCreate={canCreateCatalogOption}
+          onCreateCategory={async (payload) => {
+            const created = await createCategory.mutateAsync(payload);
+            form.setValue("categoryId", created.id, { shouldDirty: true });
+          }}
+          onCreateBrand={async (payload) => {
+            const created = await createBrand.mutateAsync(payload);
+            form.setValue("brandId", created.id, { shouldDirty: true });
+          }}
+          isCreatingCategory={createCategory.isPending}
+          isCreatingBrand={createBrand.isPending}
+        />
         <div className="grid gap-4 md:grid-cols-3">
           <SelectField
             control={form.control}
@@ -289,5 +329,184 @@ function FormActions({
         {submitLabel}
       </AppButton>
     </div>
+  );
+}
+
+type CatalogQuickCreatePayload = {
+  name: string;
+  description?: string | null;
+  isActive?: boolean;
+};
+
+function CatalogQuickCreate({
+  canCreate,
+  onCreateCategory,
+  onCreateBrand,
+  isCreatingCategory,
+  isCreatingBrand,
+}: {
+  canCreate: boolean;
+  onCreateCategory: (payload: CatalogQuickCreatePayload) => Promise<void>;
+  onCreateBrand: (payload: CatalogQuickCreatePayload) => Promise<void>;
+  isCreatingCategory: boolean;
+  isCreatingBrand: boolean;
+}) {
+  const [openCategoryModal, setOpenCategoryModal] = useState(false);
+  const [openBrandModal, setOpenBrandModal] = useState(false);
+
+  if (!canCreate) {
+    return null;
+  }
+
+  return (
+    <>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <AppButton
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setOpenCategoryModal(true)}
+        >
+          Add category
+        </AppButton>
+        <AppButton
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setOpenBrandModal(true)}
+        >
+          Add brand
+        </AppButton>
+      </div>
+
+      <CreateCatalogOptionModal
+        open={openCategoryModal}
+        onOpenChange={setOpenCategoryModal}
+        title="New category"
+        description="Create a category and assign it to this product."
+        submitLabel="Create category"
+        isSubmitting={isCreatingCategory}
+        onSubmit={async (payload) => {
+          await onCreateCategory(payload);
+          setOpenCategoryModal(false);
+        }}
+      />
+
+      <CreateCatalogOptionModal
+        open={openBrandModal}
+        onOpenChange={setOpenBrandModal}
+        title="New brand"
+        description="Create a brand and assign it to this product."
+        submitLabel="Create brand"
+        isSubmitting={isCreatingBrand}
+        onSubmit={async (payload) => {
+          await onCreateBrand(payload);
+          setOpenBrandModal(false);
+        }}
+      />
+    </>
+  );
+}
+
+function CreateCatalogOptionModal({
+  open,
+  onOpenChange,
+  title,
+  description,
+  submitLabel,
+  isSubmitting,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  submitLabel: string;
+  isSubmitting: boolean;
+  onSubmit: (payload: CatalogQuickCreatePayload) => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [details, setDetails] = useState("");
+
+  const handleCreate = async () => {
+    const normalizedName = name.trim();
+
+    if (!normalizedName) {
+      return;
+    }
+
+    await onSubmit({
+      name: normalizedName,
+      description: details.trim() ? details.trim() : null,
+      isActive: true,
+    });
+
+    setName("");
+    setDetails("");
+  };
+
+  return (
+    <AppModal
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) {
+          setName("");
+          setDetails("");
+        }
+      }}
+      title={title}
+      description={description}
+      size="md"
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground" htmlFor={`${title}-name`}>
+            Name
+          </label>
+          <Input
+            id={`${title}-name`}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleCreate();
+              }
+            }}
+            placeholder="Enter name"
+            disabled={isSubmitting}
+            required
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground" htmlFor={`${title}-description`}>
+            Description (optional)
+          </label>
+          <Input
+            id={`${title}-description`}
+            value={details}
+            onChange={(event) => setDetails(event.target.value)}
+            placeholder="Short description"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <AppButton
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </AppButton>
+          <AppButton type="button" loading={isSubmitting} onClick={() => void handleCreate()}>
+            {submitLabel}
+          </AppButton>
+        </div>
+      </div>
+    </AppModal>
   );
 }

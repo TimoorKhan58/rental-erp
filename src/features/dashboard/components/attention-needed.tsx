@@ -5,7 +5,6 @@ import { memo } from "react";
 import {
   AlertTriangleIcon,
   ArrowRightIcon,
-  CheckCircle2Icon,
   InfoIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,19 +61,7 @@ export const AttentionNeeded = memo(function AttentionNeeded({
   }
 
   if (items.length === 0) {
-    return (
-      <Card className="border-success/25 bg-success-muted/20 shadow-soft">
-        <CardContent className="flex items-start gap-3 p-5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-success-muted text-success">
-            <CheckCircle2Icon className="size-5" aria-hidden="true" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-heading text-base font-semibold">All clear</p>
-            <p className="text-sm text-muted-foreground">{headline}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (

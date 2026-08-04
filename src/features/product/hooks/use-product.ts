@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
 import { getCurrentUserPermissions } from "@/features/customer/services";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 import type { ListProductsParams } from "../types";
 import {
   createProduct,
@@ -20,6 +20,17 @@ type CatalogListResponse = {
   items: CatalogOption[];
 };
 
+type CreateCatalogOptionInput = {
+  name: string;
+  description?: string | null;
+  isActive?: boolean;
+};
+
+type CatalogOptionResponse = {
+  id: string;
+  name: string;
+};
+
 export function useProductPermissions() {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.permissions.me(),
@@ -35,6 +46,21 @@ export function useProductPermissions() {
     canCreate: permissions.includes(PERMISSIONS.products.create),
     canUpdate: permissions.includes(PERMISSIONS.products.update),
     canDelete: permissions.includes(PERMISSIONS.products.delete),
+  };
+}
+
+export function useCatalogPermissions() {
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.permissions.me(),
+    queryFn: getCurrentUserPermissions,
+    staleTime: 5 * 60_000,
+  });
+
+  const permissions = data?.permissions ?? [];
+
+  return {
+    isLoading,
+    canCreate: permissions.includes(PERMISSIONS.catalog.create),
   };
 }
 
@@ -178,6 +204,38 @@ export function useToggleProductStatus() {
         queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.products.detail(data.id) }),
       ]);
+    },
+  });
+}
+
+export function useCreateCategoryOption() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: (payload: CreateCatalogOptionInput) =>
+      apiPost<CatalogOptionResponse>("/categories", payload),
+    showSuccessToast: true,
+    successMessage: "Category created.",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.products.catalog.categories(),
+      });
+    },
+  });
+}
+
+export function useCreateBrandOption() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: (payload: CreateCatalogOptionInput) =>
+      apiPost<CatalogOptionResponse>("/brands", payload),
+    showSuccessToast: true,
+    successMessage: "Brand created.",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.products.catalog.brands(),
+      });
     },
   });
 }

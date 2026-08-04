@@ -1,4 +1,7 @@
 export {
+  useCatalogPermissions,
+  useCreateBrandOption,
+  useCreateCategoryOption,
   useCreateProduct,
   useDeleteProduct,
   useProduct,
