@@ -5,6 +5,12 @@ All notable changes to Rental ERP are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-08-04
+
+### Fixed
+
+- Ship Prisma migration for purchase-order `paidAmount`, `supplier_payments`, and `DocumentType.SUPPLIER_PAYMENT` so production `db:migrate:deploy` applies Phase B schema (v1.0.6 shipped code without a migration)
+
 ## [1.0.6] - 2026-08-04
 
 ### Added
@@ -104,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed create-next-app demo content (default homepage, demo SVG assets, Geist fonts)
 - Enhanced `.gitignore` for production build artifacts, logs, and environment files
 
+[1.0.7]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.7
 [1.0.6]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.6
 [1.0.5]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.5
 [1.0.4]: https://github.com/manyar-tent/rental-erp/releases/tag/v1.0.4
