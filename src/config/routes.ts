@@ -78,6 +78,10 @@ export const ROUTES = {
   auditDetail: (id: string) => `/audit/${id}`,
   notifications: "/notifications",
   notificationDetail: (id: string) => `/notifications/${id}`,
+  users: "/users",
+  usersNew: "/users/new",
+  userDetail: (id: string) => `/users/${id}`,
+  userEdit: (id: string) => `/users/${id}/edit`,
   settings: "/settings",
   settingsProfile: "/settings/profile",
   settingsCompany: "/settings/company",
@@ -108,6 +112,7 @@ export const PROTECTED_ROUTE_PREFIXES = [
   ROUTES.reports,
   ROUTES.audit,
   ROUTES.notifications,
+  ROUTES.users,
   ROUTES.settings,
 ] as const;
 

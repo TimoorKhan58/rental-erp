@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   Truck,
   Undo2,
+  UserCog,
   Users,
   Warehouse,
   Wrench,
@@ -71,6 +72,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: "Platform",
     items: [
+      { label: "Users", href: ROUTES.users, icon: UserCog },
       { label: "Audit", href: ROUTES.audit, icon: ScrollText },
       { label: "Notifications", href: ROUTES.notifications, icon: Bell },
       { label: "Settings", href: ROUTES.settings, icon: Settings },

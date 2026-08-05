@@ -5,6 +5,19 @@ All notable changes to Rental ERP are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-05
+
+### Added
+
+- Enterprise User Management UI under Platform → Users (`/users`)
+- Users list with server-side search, sorting, pagination, status filter, and role filter
+- Create user (`/users/new`) with role selection and initial active status
+- User detail and edit pages (`/users/[id]`, `/users/[id]/edit`) for name, email, and role
+- Activate / deactivate user actions with confirmation dialogs
+- Reset password action with confirmation dialog (existing identity API)
+- Permission-aware actions using `identity:read|create|update|delete`
+- Playwright UX coverage for users management flows
+
 ## [1.0.7] - 2026-08-04
 
 ### Fixed
