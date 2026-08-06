@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   CUSTOMER_ONE_ID,
@@ -8,6 +8,9 @@ import {
 } from "./helpers/reporting.fixtures";
 import { InMemoryReportingRepository } from "./helpers/in-memory-reporting.repository";
 
+/** Fixtures use July 2026 invoice/booking dates for "this month" / default period. */
+const REPORTING_FIXTURE_NOW = new Date("2026-07-15T12:00:00.000Z");
+
 function createRepo() {
   const repository = new InMemoryReportingRepository();
   repository.seed(buildStandardReportingDataset());
@@ -15,6 +18,15 @@ function createRepo() {
 }
 
 describe("InMemoryReportingRepository", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(REPORTING_FIXTURE_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns dashboard summary with all fields", async () => {
     const report = await createRepo().getDashboard({});
     expect(report.totalCustomers).toBe(2);

@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { createMockNumberSequenceRepository } from "@/modules/settings/tests/helpers/mock-number-sequence.repository";
 
 import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import {
@@ -96,7 +97,7 @@ describe("CreateReturnService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -124,7 +125,7 @@ describe("CreateReturnService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -143,7 +144,7 @@ describe("CreateReturnService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -167,7 +168,7 @@ describe("CreateReturnService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -193,7 +194,7 @@ describe("CreateReturnService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -216,7 +217,7 @@ describe("CreateReturnService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -239,7 +240,7 @@ describe("CreateReturnService", () => {
         new MockAuditLogger(),
         undefined,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -262,7 +263,7 @@ describe("CreateReturnService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -695,7 +696,6 @@ describe("CompleteReturnService", () => {
       newValues: {
         rentalOrderItemId: ITEM_ID,
         lostQuantity: 5,
-      missingQuantity: 0,
       },
     });
   });
@@ -1011,7 +1011,7 @@ describe("CreateReturnService prior returns aggregation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -1058,7 +1058,7 @@ describe("CreateReturnService prior returns aggregation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute({
@@ -1106,7 +1106,7 @@ describe("CreateReturnService prior returns aggregation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute({
@@ -1134,7 +1134,7 @@ describe("CreateReturnService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -1161,7 +1161,7 @@ describe("CreateReturnService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -1184,7 +1184,7 @@ describe("CreateReturnService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(

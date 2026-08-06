@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { createMockNumberSequenceRepository } from "@/modules/settings/tests/helpers/mock-number-sequence.repository";
 
 import { CreatePaymentService } from "@/modules/payment/application/services/create-payment.service";
 import { GetPaymentByIdService } from "@/modules/payment/application/services/get-payment-by-id.service";
@@ -98,7 +99,7 @@ function createDefaultTestScope(
 describe("CreatePaymentService", () => {
   it("creates a payment and returns a DTO", async () => {
     const { transactionRunner, paymentRepository } = createDefaultTestScope();
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
 
@@ -111,7 +112,7 @@ describe("CreatePaymentService", () => {
   it("rejects duplicate payment number", async () => {
     const { transactionRunner, paymentRepository } = createDefaultTestScope();
     paymentRepository.seed([buildPaymentEntity()]);
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute(VALID_CREATE_SERVICE_INPUT),
@@ -120,7 +121,7 @@ describe("CreatePaymentService", () => {
 
   it("rejects invalid input", async () => {
     const { transactionRunner } = createDefaultTestScope();
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute({
@@ -133,7 +134,7 @@ describe("CreatePaymentService", () => {
   it("writes audit log on create", async () => {
     const auditLogger = new MockAuditLogger();
     const { transactionRunner } = createDefaultTestScope(auditLogger);
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
 
@@ -149,7 +150,7 @@ describe("CreatePaymentService", () => {
     const { transactionRunner, rentalInvoiceRepository } =
       createDefaultTestScope();
     rentalInvoiceRepository.seed([]);
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute(VALID_CREATE_SERVICE_INPUT),
@@ -160,7 +161,7 @@ describe("CreatePaymentService", () => {
     const { transactionRunner, rentalInvoiceRepository } =
       createDefaultTestScope();
     rentalInvoiceRepository.seed([buildRentalInvoiceEntity()]);
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute(VALID_CREATE_SERVICE_INPUT),
@@ -171,7 +172,7 @@ describe("CreatePaymentService", () => {
     const { transactionRunner, rentalInvoiceRepository } =
       createDefaultTestScope();
     rentalInvoiceRepository.seed([buildVoidRentalInvoiceEntity()]);
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute(VALID_CREATE_SERVICE_INPUT),
@@ -180,7 +181,7 @@ describe("CreatePaymentService", () => {
 
   it("rejects customer mismatch with invoice", async () => {
     const { transactionRunner } = createDefaultTestScope();
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute({
@@ -192,7 +193,7 @@ describe("CreatePaymentService", () => {
 
   it("rejects amount exceeding invoice balance", async () => {
     const { transactionRunner } = createDefaultTestScope();
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     await expect(
       service.execute({
@@ -206,7 +207,7 @@ describe("CreatePaymentService", () => {
     const { transactionRunner, rentalInvoiceRepository } =
       createDefaultTestScope();
     rentalInvoiceRepository.seed([buildPartiallyPaidRentalInvoiceEntity(100)]);
-    const service = new CreatePaymentService(transactionRunner, { generateNextNumber: vi.fn() } as any);
+    const service = new CreatePaymentService(transactionRunner, createMockNumberSequenceRepository());
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
 
@@ -225,7 +226,7 @@ describe("CreatePaymentService", () => {
         auditLogger,
         undefined,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -245,7 +246,7 @@ describe("CreatePaymentService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(

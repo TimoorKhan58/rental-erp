@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createMockNumberSequenceRepository } from "@/modules/settings/tests/helpers/mock-number-sequence.repository";
 
 import { CreateProductService } from "@/modules/product/application/services/create-product.service";
 import { DeleteProductService } from "@/modules/product/application/services/delete-product.service";
@@ -37,7 +38,7 @@ describe("CreateProductService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute(VALID_CREATE_INPUT);
@@ -53,7 +54,7 @@ describe("CreateProductService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const inputWithoutCost = {
@@ -76,7 +77,7 @@ describe("CreateProductService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(
@@ -89,7 +90,7 @@ describe("CreateProductService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -102,7 +103,7 @@ describe("CreateProductService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -253,7 +254,7 @@ describe("Product application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -301,7 +302,7 @@ describe("Product application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -318,7 +319,7 @@ describe("Product application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createRollbackTransactionRunner(repository, auditLogger),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -333,7 +334,7 @@ describe("Product application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateProductService(
       createRollbackTransactionRunner(repository, auditLogger),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(

@@ -5,6 +5,16 @@ All notable changes to Rental ERP are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-08-06
+
+### Fixed
+
+- CI quality gates: replace `as any` stubs in application tests with typed mock helpers (`createMockNumberSequenceRepository`, repository interfaces)
+- API presentation tests: shared auth and Prisma mocks so `ensureActiveErpUser` no longer hits real DB in route tests
+- Rental-invoice domain and wedding demo scenario expectations aligned with current catalog pricing (Stage Platform)
+- Reporting dashboard and rental-insights tests use a frozen date for stable "this month" assertions
+- Supplier payments section: remove `setState` in `useEffect` to satisfy React hooks lint
+
 ## [1.1.0] - 2026-08-05
 
 ### Added

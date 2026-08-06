@@ -56,7 +56,8 @@ describe("wedding demo scenario bill", () => {
   it("charges rental for inclusive event days only (not late days)", () => {
     const { rental } = buildBill();
     // Customer lens: rent is for the agreed event window, not the delay.
-    expect(rental).toBe(163_400);
+    // Catalog × RENTAL_DAYS(2) matches scripts/seed-wedding-scenario.mjs.
+    expect(rental).toBe(217_900);
   });
 
   it("applies 2× damage and 5× lost multipliers used by invoice generation", () => {
@@ -71,10 +72,10 @@ describe("wedding demo scenario bill", () => {
     const { late, grand, advance, balance } = buildBill();
     expect(late).toBe(15_000);
     // Business lens: late fee = opportunity cost of blocked next booking.
-    expect(grand).toBe(163_400 + 2_220 + 4_450 + 15_000 + 8_000 + 5_000);
-    expect(grand).toBe(198_070);
-    expect(advance).toBe(79_228);
-    expect(balance).toBe(118_842);
+    expect(grand).toBe(217_900 + 2_220 + 4_450 + 15_000 + 8_000 + 5_000);
+    expect(grand).toBe(252_570);
+    expect(advance).toBe(101_028);
+    expect(balance).toBe(151_542);
   });
 
   it("keeps inspection quantities balanced (good + damaged + lost = rented)", () => {

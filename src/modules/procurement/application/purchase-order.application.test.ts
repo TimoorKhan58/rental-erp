@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { createMockNumberSequenceRepository } from "@/modules/settings/tests/helpers/mock-number-sequence.repository";
 
 import { ApprovePurchaseOrderService } from "@/modules/procurement/application/services/approve-purchase-order.service";
 import { CancelPurchaseOrderService } from "@/modules/procurement/application/services/cancel-purchase-order.service";
@@ -75,7 +76,7 @@ describe("CreatePurchaseOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -96,7 +97,7 @@ describe("CreatePurchaseOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
@@ -113,7 +114,7 @@ describe("CreatePurchaseOrderService", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -131,7 +132,7 @@ describe("CreatePurchaseOrderService", () => {
         auditLogger,
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await service.execute(VALID_CREATE_SERVICE_INPUT);
@@ -567,7 +568,7 @@ describe("CreatePurchaseOrderService domain validation", () => {
         new MockAuditLogger(),
         USER_ID,
       ),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AppButton } from "@/components/design-system/button";
 import { AppModal } from "@/components/design-system/modal";
 import { ConfirmModal } from "@/components/design-system/modal";
@@ -167,6 +167,7 @@ export function SupplierPaymentsSection({
       )}
 
       <RecordSupplierPaymentDialog
+        key={recordOpen ? `open-${balance}` : "closed"}
         open={recordOpen}
         onOpenChange={setRecordOpen}
         supplierId={procurement.supplierId}
@@ -258,16 +259,6 @@ function RecordSupplierPaymentDialog({
   const [amount, setAmount] = useState(String(balance));
   const [referenceNumber, setReferenceNumber] = useState("");
   const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setPaymentDate(new Date().toISOString().slice(0, 10));
-      setPaymentMethod("BANK_TRANSFER");
-      setAmount(String(balance));
-      setReferenceNumber("");
-      setNotes("");
-    }
-  }, [open, balance]);
 
   const handleSubmit = () => {
     const parsedAmount = Number(amount);

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createMockNumberSequenceRepository } from "@/modules/settings/tests/helpers/mock-number-sequence.repository";
 
 import { CreateWarehouseService } from "@/modules/warehouse/application/services/create-warehouse.service";
 import { DeleteWarehouseService } from "@/modules/warehouse/application/services/delete-warehouse.service";
@@ -35,7 +36,7 @@ describe("CreateWarehouseService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute(VALID_CREATE_INPUT);
@@ -49,7 +50,7 @@ describe("CreateWarehouseService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const inputWithoutPhone = {
@@ -72,7 +73,7 @@ describe("CreateWarehouseService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(
@@ -86,7 +87,7 @@ describe("CreateWarehouseService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     const result = await service.execute({
@@ -103,7 +104,7 @@ describe("CreateWarehouseService", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -243,7 +244,7 @@ describe("Warehouse application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -291,7 +292,7 @@ describe("Warehouse application audit behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createPassThroughTransactionRunner({ repository, auditLogger }),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(
@@ -308,7 +309,7 @@ describe("Warehouse application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createRollbackTransactionRunner(repository, auditLogger),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await service.execute(VALID_CREATE_INPUT);
@@ -323,7 +324,7 @@ describe("Warehouse application transaction behavior", () => {
     const auditLogger = new MockAuditLogger();
     const service = new CreateWarehouseService(
       createRollbackTransactionRunner(repository, auditLogger),
-      { generateNextNumber: vi.fn() } as any,
+      createMockNumberSequenceRepository(),
     );
 
     await expect(service.execute(VALID_CREATE_INPUT)).rejects.toBeInstanceOf(

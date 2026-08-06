@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GetCustomerReportService } from "@/modules/reporting/application/services/get-customer-report.service";
 import { GetDashboardService } from "@/modules/reporting/application/services/get-dashboard.service";
@@ -22,6 +22,9 @@ import {
 } from "../tests/helpers/reporting.fixtures";
 import { InMemoryReportingRepository } from "../tests/helpers/in-memory-reporting.repository";
 
+/** Fixtures use July 2026 invoice/booking dates for "this month" / default period. */
+const REPORTING_FIXTURE_NOW = new Date("2026-07-15T12:00:00.000Z");
+
 function seedRepository() {
   const repository = new InMemoryReportingRepository();
   repository.seed(buildStandardReportingDataset());
@@ -29,6 +32,15 @@ function seedRepository() {
 }
 
 describe("GetDashboardService", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(REPORTING_FIXTURE_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns all dashboard summary fields", async () => {
     const service = new GetDashboardService(seedRepository());
     const result = await service.execute({});
