@@ -1,5 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  findUniqueUserMock,
+  getSessionMock,
+  mockAuthenticatedInactiveUser,
+  mockSession,
+  mockUnauthenticatedUser,
+} from "@/shared/infrastructure/auth/api-auth.test-helpers";
+import { TEST_ERP_USER_ID } from "@/shared/infrastructure/auth/test-session.factory";
+
+vi.mock("@/lib/auth", async () =>
+  (await import("@/shared/infrastructure/auth/api-auth.test-helpers")).createLibAuthMockModule(),
+);
+
+vi.mock("@/lib/prisma", async () =>
+  (await import("@/shared/infrastructure/auth/api-auth.test-helpers")).createLibPrismaMockModule(),
+);
+
 vi.mock("@/shared/config/env", async () => {
   const { testEnvFixture } = await import("@/shared/config/env.test-fixture");
   return { env: testEnvFixture };
@@ -7,12 +24,7 @@ vi.mock("@/shared/config/env", async () => {
 
 import { PERMISSIONS } from "@/shared/application/authorization";
 import { USER_ROLES } from "@/constants/roles";
-import type { UserRole } from "@/constants/roles";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
-import {
-  createMockAuthSession,
-  TEST_ERP_USER_ID,
-} from "@/shared/infrastructure/auth/test-session.factory";
 
 import { runIdentityApiRoute } from "@/modules/identity/presentation/http/identity-api.route-runner";
 import {
@@ -26,35 +38,6 @@ import {
 } from "@/modules/identity/tests/helpers/api-request.factory";
 import type { IdentityApplicationServices } from "@/modules/identity/application/services/identity-application-services.interface";
 import { VALID_CREATE_INPUT } from "@/modules/identity/tests/helpers/identity-user.fixtures";
-
-const getSessionMock = vi.fn();
-const findUniqueMock = vi.fn();
-
-vi.mock("@/lib/auth", () => ({
-  auth: {
-    api: {
-      getSession: (...args: unknown[]) => getSessionMock(...args),
-    },
-  },
-}));
-
-vi.mock("@/lib/prisma", () => ({
-  default: {
-    user: {
-      findUnique: (...args: unknown[]) => findUniqueMock(...args),
-    },
-  },
-}));
-
-function mockSession(role: UserRole) {
-  getSessionMock.mockResolvedValue(createMockAuthSession(role));
-  findUniqueMock.mockResolvedValue({ isActive: true });
-}
-
-function mockInactiveSession(role: UserRole = USER_ROLES.MANAGER) {
-  getSessionMock.mockResolvedValue(createMockAuthSession(role));
-  findUniqueMock.mockResolvedValue({ isActive: false });
-}
 
 function createMockServices() {
   return {
@@ -73,11 +56,11 @@ function createMockServices() {
 describe("runIdentityApiRoute authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findUniqueMock.mockResolvedValue({ isActive: true });
+    findUniqueUserMock.mockResolvedValue({ isActive: true });
   });
 
   it("returns 401 when session is missing", async () => {
-    getSessionMock.mockResolvedValue(null);
+    mockUnauthenticatedUser();
 
     const result = await runIdentityApiRoute({
       request: createMockNextRequest(),
@@ -120,7 +103,7 @@ describe("runIdentityApiRoute authorization", () => {
   });
 
   it("returns 401 when ERP user is inactive", async () => {
-    mockInactiveSession(USER_ROLES.MANAGER);
+    mockAuthenticatedInactiveUser(USER_ROLES.MANAGER);
 
     const result = await runIdentityApiRoute({
       request: createMockNextRequest(),
@@ -133,7 +116,7 @@ describe("runIdentityApiRoute authorization", () => {
     });
 
     expect(result.status).toBe(401);
-    expect(findUniqueMock).toHaveBeenCalledWith({
+    expect(findUniqueUserMock).toHaveBeenCalledWith({
       where: { id: TEST_ERP_USER_ID },
       select: { isActive: true },
     });
@@ -226,7 +209,7 @@ describe("runIdentityApiRoute authorization", () => {
 describe("identity API handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findUniqueMock.mockResolvedValue({ isActive: true });
+    findUniqueUserMock.mockResolvedValue({ isActive: true });
   });
 
   it("handleListIdentityUsers returns paginated response", async () => {
@@ -254,16 +237,18 @@ describe("identity API handlers", () => {
   it("rejects invalid create payload", async () => {
     mockSession(USER_ROLES.OWNER);
 
-    await expect(
-      handleCreateIdentityUser(
-        createMockNextRequest({
-          url: "http://localhost:3000/api/users",
-          method: "POST",
-          json: { name: "x" },
-        }),
-        () => createMockServices() as unknown as IdentityApplicationServices,
-      ),
-    ).rejects.toMatchObject({ code: ERROR_CODES.VALIDATION_FAILED });
+    const response = await handleCreateIdentityUser(
+      createMockNextRequest({
+        url: "http://localhost:3000/api/users",
+        method: "POST",
+        json: { name: "x" },
+      }),
+      () => createMockServices() as unknown as IdentityApplicationServices,
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("handleGetIdentityUserProfile uses authenticated ERP user id", async () => {

@@ -1,8 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  mockSession,
+  mockUnauthenticatedUser,
+} from "@/shared/infrastructure/auth/api-auth.test-helpers";
+
+vi.mock("@/lib/auth", async () =>
+  (await import("@/shared/infrastructure/auth/api-auth.test-helpers")).createLibAuthMockModule(),
+);
+
+vi.mock("@/lib/prisma", async () =>
+  (await import("@/shared/infrastructure/auth/api-auth.test-helpers")).createLibPrismaMockModule(),
+);
+
+
 import { PERMISSIONS } from "@/shared/application/authorization";
-import { USER_ROLES, type UserRole } from "@/constants/roles";
-import { createMockAuthSession } from "@/shared/infrastructure/auth/test-session.factory";
+import { USER_ROLES } from "@/constants/roles";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
 import { NotFoundError } from "@/shared/infrastructure/errors";
 
@@ -23,19 +36,6 @@ import {
   VALID_CREATE_INPUT,
 } from "@/modules/customer/tests/helpers/customer.fixtures";
 
-const getSessionMock = vi.fn();
-
-vi.mock("@/lib/auth", () => ({
-  auth: {
-    api: {
-      getSession: (...args: unknown[]) => getSessionMock(...args),
-    },
-  },
-}));
-
-function mockSession(role: UserRole) {
-  getSessionMock.mockResolvedValue(createMockAuthSession(role));
-}
 
 function createMockServices() {
   return {
@@ -53,7 +53,7 @@ describe("runCustomerApiRoute authorization", () => {
   });
 
   it("returns 401 when session is missing", async () => {
-    getSessionMock.mockResolvedValue(null);
+    mockUnauthenticatedUser();
 
     const result = await runCustomerApiRoute({
       request: createMockNextRequest(),
