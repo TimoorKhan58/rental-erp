@@ -55,6 +55,7 @@ import {
   createPassThroughTransactionRunner,
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 function createWriteScope(
   returnRepository: InMemoryReturnRepository,
@@ -72,6 +73,7 @@ function createWriteScope(
     inventoryRepository,
     stockMovementRepository,
     auditLogger,
+    ...mockNotificationWriteScopeDeps,
     userId,
   });
 }

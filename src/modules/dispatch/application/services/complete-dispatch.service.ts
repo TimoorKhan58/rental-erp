@@ -7,6 +7,10 @@ import {
   UnauthorizedError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { DispatchDto } from "../dtos/dispatch.dto";
 import { toDispatchDto, toDispatchId, toProductId } from "../mappers/dispatch.mapper";
@@ -36,6 +40,8 @@ export class CompleteDispatchService {
         inventoryRepository,
         stockMovementRepository,
         auditLogger,
+        notificationService,
+        db,
         userId,
       }) => {
         if (userId === undefined) {
@@ -155,6 +161,18 @@ export class CompleteDispatchService {
           status: "SUCCESS",
           oldValues: previousValues,
           newValues: toDispatchAuditValues(updated),
+        });
+
+        await enqueueWorkflowNotification(notificationService, db, {
+          eventKey: NOTIFICATION_EVENT_KEYS.DISPATCH_COMPLETED,
+          module: DISPATCH_MODULE,
+          entityName: DISPATCH_ENTITY_NAME,
+          recordId: updated.id,
+          recipientUserIds: [rentalOrder.createdById],
+          data: {
+            dispatchNumber: updated.dispatchNumber,
+            orderNumber: rentalOrder.orderNumber,
+          },
         });
 
         return toDispatchDto(updated);

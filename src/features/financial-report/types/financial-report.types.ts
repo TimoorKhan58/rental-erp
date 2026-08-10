@@ -278,3 +278,193 @@ export type ProductReportResponse = {
   total: number;
   totalPages: number;
 };
+
+export type OperationalReportListParams = {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  status?: string;
+  warehouseId?: string;
+  supplierId?: string;
+};
+
+export type SupplierReportLine = {
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  purchaseOrderCount: number;
+  purchaseTotal: number;
+  lastOrderDate: string | null;
+};
+
+export type SupplierReportResponse = {
+  lines: SupplierReportLine[];
+  totalSuppliers: number;
+  totalPurchaseValue: number;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type WarehouseReportLine = {
+  warehouseId: string;
+  warehouseCode: string;
+  warehouseName: string;
+  inventoryQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  inventoryValue: number;
+  productCount: number;
+  utilizationPercent: number;
+};
+
+export type WarehouseReportResponse = {
+  lines: WarehouseReportLine[];
+  totalWarehouses: number;
+  totalInventoryValue: number;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type ProcurementReportLine = {
+  id: string;
+  poNumber: string;
+  supplierId: string;
+  supplierName: string;
+  warehouseId: string;
+  warehouseName: string;
+  status: string;
+  orderDate: string;
+  expectedDate: string | null;
+  lineCount: number;
+  purchaseTotal: number;
+};
+
+export type ProcurementReportResponse = {
+  lines: ProcurementReportLine[];
+  totalPurchaseOrders: number;
+  totalPurchaseValue: number;
+  supplierTotals: Array<{
+    supplierId: string;
+    supplierName: string;
+    purchaseOrderCount: number;
+    purchaseTotal: number;
+  }>;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type DispatchReportLine = {
+  id: string;
+  dispatchNumber: string;
+  rentalOrderId: string;
+  orderNumber: string;
+  status: string;
+  dispatchDate: string;
+  deliveryMethod: string | null;
+  loadedAt: string | null;
+  departedAt: string | null;
+  deliveredAt: string | null;
+  turnaroundHours: number | null;
+};
+
+export type DispatchReportResponse = {
+  lines: DispatchReportLine[];
+  pendingCount: number;
+  completedCount: number;
+  averageTurnaroundHours: number | null;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type ReturnReportLine = {
+  id: string;
+  returnNumber: string;
+  rentalOrderId: string;
+  orderNumber: string;
+  status: string;
+  inspectionDate: string | null;
+  receivedAt: string | null;
+  completedAt: string | null;
+  damagedQuantity: number;
+  lostQuantity: number;
+};
+
+export type ReturnReportResponse = {
+  lines: ReturnReportLine[];
+  outstandingCount: number;
+  completedCount: number;
+  totalDamaged: number;
+  totalLost: number;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type RepairReportLine = {
+  id: string;
+  repairNumber: string;
+  productId: string;
+  productName: string;
+  warehouseId: string;
+  status: string;
+  repairDate: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  turnaroundDays: number | null;
+  estimatedCost: number | null;
+  actualCost: number | null;
+};
+
+export type RepairReportResponse = {
+  lines: RepairReportLine[];
+  statusCounts: Array<{ status: string; count: number }>;
+  averageTurnaroundDays: number | null;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type MaintenanceReportLine = {
+  id: string;
+  maintenanceNumber: string;
+  productId: string;
+  productName: string;
+  warehouseId: string;
+  status: string;
+  serviceType: string | null;
+  scheduledDate: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  estimatedCost: number | null;
+  actualCost: number | null;
+};
+
+export type MaintenanceReportResponse = {
+  lines: MaintenanceReportLine[];
+  upcomingCount: number;
+  completedCount: number;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type CsvColumn<T> = {
+  key: keyof T | string;
+  header: string;
+  value?: (row: T) => string | number | null | undefined;
+};

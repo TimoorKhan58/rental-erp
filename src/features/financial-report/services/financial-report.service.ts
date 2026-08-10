@@ -5,15 +5,23 @@ import type {
   CustomerReportParams,
   CustomerReportResponse,
   DateRangeParams,
+  DispatchReportResponse,
   ExpenseSummaryResponse,
   InventoryReportParams,
   InventoryReportResponse,
+  MaintenanceReportResponse,
+  OperationalReportListParams,
+  ProcurementReportResponse,
   ProductReportParams,
   ProductReportResponse,
   ProfitLossResponse,
   RentalReportParams,
   RentalReportResponse,
+  RepairReportResponse,
+  ReturnReportResponse,
   RevenueSummaryResponse,
+  SupplierReportResponse,
+  WarehouseReportResponse,
 } from "../types";
 import { apiGet } from "@/lib/api";
 
@@ -72,4 +80,46 @@ export async function getProductReport(
   params: ProductReportParams = {},
 ): Promise<ProductReportResponse> {
   return apiGet<ProductReportResponse>(`${REPORTS_BASE}/products`, { params });
+}
+
+export async function getSupplierReport(
+  params: OperationalReportListParams = {},
+): Promise<SupplierReportResponse> {
+  return apiGet<SupplierReportResponse>(`${REPORTS_BASE}/suppliers`, { params });
+}
+
+export async function getWarehouseReport(
+  params: OperationalReportListParams = {},
+): Promise<WarehouseReportResponse> {
+  return apiGet<WarehouseReportResponse>(`${REPORTS_BASE}/warehouses`, { params });
+}
+
+export async function getProcurementReport(
+  params: OperationalReportListParams = {},
+): Promise<ProcurementReportResponse> {
+  return apiGet<ProcurementReportResponse>(`${REPORTS_BASE}/procurement`, { params });
+}
+
+export async function getDispatchReport(
+  params: OperationalReportListParams = {},
+): Promise<DispatchReportResponse> {
+  return apiGet<DispatchReportResponse>(`${REPORTS_BASE}/dispatches`, { params });
+}
+
+export async function getReturnReport(
+  params: OperationalReportListParams = {},
+): Promise<ReturnReportResponse> {
+  return apiGet<ReturnReportResponse>(`${REPORTS_BASE}/returns`, { params });
+}
+
+export async function getRepairReport(
+  params: OperationalReportListParams = {},
+): Promise<RepairReportResponse> {
+  return apiGet<RepairReportResponse>(`${REPORTS_BASE}/repairs`, { params });
+}
+
+export async function getMaintenanceReport(
+  params: OperationalReportListParams = {},
+): Promise<MaintenanceReportResponse> {
+  return apiGet<MaintenanceReportResponse>(`${REPORTS_BASE}/maintenance`, { params });
 }

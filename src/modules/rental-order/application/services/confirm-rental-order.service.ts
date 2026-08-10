@@ -4,6 +4,10 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { RentalOrderDto } from "../dtos/rental-order.dto";
 import {
@@ -29,7 +33,12 @@ export class ConfirmRentalOrderService {
   async execute(params: RentalOrderIdParamInput): Promise<RentalOrderDto> {
     const { id } = parseRequest(RentalOrderIdParamSchema, params);
 
-    return this.transactionRunner.run(async ({ rentalOrderRepository, auditLogger }) => {
+    return this.transactionRunner.run(async ({
+      rentalOrderRepository,
+      auditLogger,
+      notificationService,
+      db,
+    }) => {
       const existing = await rentalOrderRepository.findById(toRentalOrderId(id));
 
       if (existing === null) {
@@ -71,6 +80,15 @@ export class ConfirmRentalOrderService {
         status: "SUCCESS",
         oldValues: previousValues,
         newValues: toRentalOrderAuditValues(updated),
+      });
+
+      await enqueueWorkflowNotification(notificationService, db, {
+        eventKey: NOTIFICATION_EVENT_KEYS.RENTAL_ORDER_CONFIRMED,
+        module: RENTAL_ORDER_MODULE,
+        entityName: RENTAL_ORDER_ENTITY_NAME,
+        recordId: updated.id,
+        recipientUserIds: [updated.createdById],
+        data: { orderNumber: updated.orderNumber },
       });
 
       return toRentalOrderDto(updated);

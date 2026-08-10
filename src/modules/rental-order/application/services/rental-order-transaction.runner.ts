@@ -2,12 +2,16 @@ import type { IInventoryRepository } from "@/modules/inventory/domain/inventory.
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
 import type { IStockMovementRepository } from "@/modules/stock-movement/domain/stock-movement.repository.interface";
 import type { IAuditLogger } from "@/shared/infrastructure/audit/audit-logger.interface";
+import type { DbClient } from "@/shared/infrastructure/database/prisma-types";
+import type { INotificationService } from "@/shared/infrastructure/notifications/notification-service.interface";
 
 export interface RentalOrderWriteScope {
   readonly rentalOrderRepository: IRentalOrderRepository;
   readonly inventoryRepository: IInventoryRepository;
   readonly stockMovementRepository: IStockMovementRepository;
   readonly auditLogger: IAuditLogger;
+  readonly notificationService: INotificationService;
+  readonly db: DbClient;
   readonly userId: string | undefined;
 }
 

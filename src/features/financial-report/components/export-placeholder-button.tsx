@@ -8,15 +8,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { downloadCsv, type CsvColumnDef } from "@/lib/utils";
 
-type ExportPlaceholderButtonProps = {
+type ExportReportButtonProps<T> = {
+  filename: string;
+  rows: T[];
+  columns: Array<CsvColumnDef<T>>;
   disabled?: boolean;
 };
 
 /**
- * Export UI placeholder — backend has no PDF/Excel/CSV export endpoints yet.
+ * Client-side report export. CSV is live; PDF/Excel remain deferred.
  */
-export function ExportPlaceholderButton({ disabled = true }: ExportPlaceholderButtonProps) {
+export function ExportReportButton<T>({
+  filename,
+  rows,
+  columns,
+  disabled = false,
+}: ExportReportButtonProps<T>) {
+  const canCsv = !disabled && rows.length > 0 && columns.length > 0;
+
+  const handleCsv = () => {
+    if (!canCsv) return;
+    downloadCsv(rows, columns, filename);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -25,7 +41,7 @@ export function ExportPlaceholderButton({ disabled = true }: ExportPlaceholderBu
             variant="outline"
             size="sm"
             leftIcon={<DownloadIcon className="size-4" aria-hidden="true" />}
-            disabled={disabled}
+            disabled={disabled && !canCsv}
             aria-label="Export report"
           />
         }
@@ -35,8 +51,22 @@ export function ExportPlaceholderButton({ disabled = true }: ExportPlaceholderBu
       <DropdownMenuContent align="end">
         <DropdownMenuItem disabled>PDF (coming soon)</DropdownMenuItem>
         <DropdownMenuItem disabled>Excel (coming soon)</DropdownMenuItem>
-        <DropdownMenuItem disabled>CSV (coming soon)</DropdownMenuItem>
+        <DropdownMenuItem disabled={!canCsv} onClick={handleCsv}>
+          CSV
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** @deprecated Prefer ExportReportButton with CSV rows/columns. */
+export function ExportPlaceholderButton({ disabled = true }: { disabled?: boolean }) {
+  return (
+    <ExportReportButton
+      filename="report.csv"
+      rows={[]}
+      columns={[]}
+      disabled={disabled}
+    />
   );
 }

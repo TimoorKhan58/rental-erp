@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/shared/stat-card";
 import { cn } from "@/lib/utils";
-import { SparklinePlaceholder } from "../charts";
 import type { DashboardMetric } from "../types";
 
 const iconMap = {
@@ -69,7 +68,6 @@ export const DashboardMetricCard = memo(function DashboardMetricCard({
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">{metric.changeLabel}</span>
         </div>
-        <SparklinePlaceholder />
       </CardContent>
     </Card>
   );

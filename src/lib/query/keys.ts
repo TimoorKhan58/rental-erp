@@ -68,6 +68,34 @@ export const queryKeys = {
       units: () => [...queryKeys.products.all, "catalog", "units"] as const,
     },
   },
+  catalog: {
+    all: ["app", "catalog"] as const,
+    categories: {
+      lists: () => [...queryKeys.catalog.all, "categories", "list"] as const,
+      list: (params?: Record<string, unknown>) =>
+        [...queryKeys.catalog.categories.lists(), params ?? {}] as const,
+    },
+    brands: {
+      lists: () => [...queryKeys.catalog.all, "brands", "list"] as const,
+      list: (params?: Record<string, unknown>) =>
+        [...queryKeys.catalog.brands.lists(), params ?? {}] as const,
+    },
+    units: {
+      lists: () => [...queryKeys.catalog.all, "units", "list"] as const,
+      list: (params?: Record<string, unknown>) =>
+        [...queryKeys.catalog.units.lists(), params ?? {}] as const,
+    },
+    attributes: {
+      lists: () => [...queryKeys.catalog.all, "attributes", "list"] as const,
+      list: (params?: Record<string, unknown>) =>
+        [...queryKeys.catalog.attributes.lists(), params ?? {}] as const,
+    },
+    tags: {
+      lists: () => [...queryKeys.catalog.all, "tags", "list"] as const,
+      list: (params?: Record<string, unknown>) =>
+        [...queryKeys.catalog.tags.lists(), params ?? {}] as const,
+    },
+  },
   inventory: {
     all: ["app", "inventory"] as const,
     lists: () => [...queryKeys.inventory.all, "list"] as const,
@@ -140,6 +168,40 @@ export const queryKeys = {
     details: () => [...queryKeys.payments.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.payments.details(), id] as const,
   },
+  expenses: {
+    all: ["app", "expenses"] as const,
+    lists: () => [...queryKeys.expenses.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.expenses.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.expenses.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.expenses.details(), id] as const,
+  },
+  expenseCategories: {
+    all: ["app", "expense-categories"] as const,
+    lists: () => [...queryKeys.expenseCategories.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.expenseCategories.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.expenseCategories.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.expenseCategories.details(), id] as const,
+  },
+  assets: {
+    all: ["app", "assets"] as const,
+    lists: () => [...queryKeys.assets.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.assets.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.assets.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.assets.details(), id] as const,
+  },
+  assetCategories: {
+    all: ["app", "asset-categories"] as const,
+    lists: () => [...queryKeys.assetCategories.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.assetCategories.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.assetCategories.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.assetCategories.details(), id] as const,
+  },
   supplierPayments: {
     all: ["app", "supplier-payments"] as const,
     lists: () => [...queryKeys.supplierPayments.all, "list"] as const,
@@ -196,6 +258,20 @@ export const queryKeys = {
       [...queryKeys.reports.all, "customers", params ?? {}] as const,
     products: (params?: Record<string, unknown>) =>
       [...queryKeys.reports.all, "products", params ?? {}] as const,
+    suppliers: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "suppliers", params ?? {}] as const,
+    warehouses: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "warehouses", params ?? {}] as const,
+    procurement: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "procurement", params ?? {}] as const,
+    dispatches: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "dispatches", params ?? {}] as const,
+    returns: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "returns", params ?? {}] as const,
+    repairs: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "repairs", params ?? {}] as const,
+    maintenance: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "maintenance", params ?? {}] as const,
   },
   audit: {
     all: ["app", "audit"] as const,

@@ -2,6 +2,7 @@ import type { RentalOrderWriteScope } from "@/modules/rental-order/application/s
 import type { IRentalOrderTransactionRunner } from "@/modules/rental-order/application/services/rental-order-transaction.runner";
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 import type { InMemoryRentalOrderRepository } from "./in-memory-rental-order.repository";
 import type { MockAuditLogger } from "./mock-audit-logger";
@@ -34,6 +35,7 @@ export function createRollbackTransactionRunner(
           inventoryRepository,
           stockMovementRepository,
           auditLogger,
+          ...mockNotificationWriteScopeDeps,
           userId,
         });
       } catch (error) {

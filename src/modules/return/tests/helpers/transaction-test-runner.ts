@@ -2,6 +2,7 @@ import type { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helper
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import type { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
 import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 import type {
   IReturnTransactionRunner,
   ReturnWriteScope,
@@ -44,6 +45,7 @@ export function createRollbackTransactionRunner(
           inventoryRepository,
           stockMovementRepository,
           auditLogger,
+          ...mockNotificationWriteScopeDeps,
           userId,
         });
       } catch (error) {

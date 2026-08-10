@@ -3,6 +3,7 @@ import type {
   IRentalInvoiceTransactionRunner,
   RentalInvoiceWriteScope,
 } from "@/modules/rental-invoice/application/services/rental-invoice-transaction.runner";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 import type { InMemoryRentalInvoiceRepository } from "./in-memory-rental-invoice.repository";
 import type { InMemoryRentalOrderInvoiceLookup } from "./in-memory-rental-order-invoice.lookup";
@@ -34,6 +35,7 @@ export function createRollbackTransactionRunner(
           rentalOrderInvoiceLookup,
           customerRepository,
           auditLogger,
+          ...mockNotificationWriteScopeDeps,
           userId,
         });
       } catch (error) {

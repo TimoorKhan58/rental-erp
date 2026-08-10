@@ -1,0 +1,15 @@
+export {
+  approveExpense,
+  createExpense,
+  createExpenseCategory,
+  deleteExpenseCategory,
+  getExpense,
+  getExpenseCategories,
+  getExpenseCategory,
+  getExpenses,
+  payExpense,
+  rejectExpense,
+  submitExpense,
+  updateExpense,
+  updateExpenseCategory,
+} from "./expense.service";

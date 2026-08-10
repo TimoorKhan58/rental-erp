@@ -7,6 +7,7 @@ import type {
   CustomerReportSortField,
   InventoryReportParams,
   InventoryReportSortField,
+  OperationalReportListParams,
   ProductReportParams,
   ProductReportSortField,
   RentalReportParams,
@@ -210,5 +211,52 @@ export function useProductReportParams() {
       sortBy: ProductReportSortField,
       sortOrder: ProductReportParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+  };
+}
+
+export function useOperationalListReportParams(options?: {
+  defaultSortOrder?: "asc" | "desc";
+}) {
+  const { searchParams, updateParams } = useUrlUpdater();
+  const defaultSortOrder = options?.defaultSortOrder ?? "desc";
+
+  const params = useMemo<OperationalReportListParams>(
+    () => ({
+      page: Number(searchParams.get("page") ?? DEFAULT_PAGE),
+      pageSize: Number(searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE),
+      sortBy: searchParams.get("sortBy") ?? undefined,
+      sortOrder:
+        (searchParams.get("sortOrder") as OperationalReportListParams["sortOrder"]) ??
+        defaultSortOrder,
+      search: searchParams.get("search") ?? undefined,
+      dateFrom: searchParams.get("dateFrom") ?? undefined,
+      dateTo: searchParams.get("dateTo") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+      warehouseId: searchParams.get("warehouseId") ?? undefined,
+      supplierId: searchParams.get("supplierId") ?? undefined,
+    }),
+    [searchParams, defaultSortOrder],
+  );
+
+  const [localSearch, setLocalSearch] = useState(params.search ?? "");
+
+  return {
+    params,
+    localSearch,
+    setLocalSearch,
+    setPage: (page: number) => updateParams({ page }),
+    setSearch: (search: string) => {
+      setLocalSearch(search);
+      updateParams({ search, page: DEFAULT_PAGE });
+    },
+    setDateRange: (from?: string, to?: string) =>
+      updateParams({ dateFrom: from, dateTo: to, page: DEFAULT_PAGE }),
+    setStatusFilter: (status?: string) => updateParams({ status, page: DEFAULT_PAGE }),
+    setWarehouseFilter: (warehouseId?: string) =>
+      updateParams({ warehouseId, page: DEFAULT_PAGE }),
+    setSupplierFilter: (supplierId?: string) =>
+      updateParams({ supplierId, page: DEFAULT_PAGE }),
+    setSorting: (sortBy: string, sortOrder: "asc" | "desc" = "asc") =>
+      updateParams({ sortBy, sortOrder }),
   };
 }

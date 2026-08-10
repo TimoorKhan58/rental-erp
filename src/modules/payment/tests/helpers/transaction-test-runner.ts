@@ -3,6 +3,7 @@ import type {
   IPaymentTransactionRunner,
   PaymentWriteScope,
 } from "@/modules/payment/application/services/payment-transaction.runner";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 import type { InMemoryPaymentRepository } from "./in-memory-payment.repository";
 import type { MockAuditLogger } from "./mock-audit-logger";
@@ -32,6 +33,7 @@ export function createRollbackTransactionRunner(
           paymentRepository,
           rentalInvoiceRepository,
           auditLogger,
+          ...mockNotificationWriteScopeDeps,
           userId,
         });
       } catch (error) {

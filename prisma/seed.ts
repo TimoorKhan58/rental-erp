@@ -5,6 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import {
   SEED_EXPENSE_CATEGORIES,
+  SEED_NOTIFICATION_TEMPLATES,
   SEED_ROLES,
   SEED_UNITS_OF_MEASURE,
 } from "./seed-data";
@@ -59,8 +60,23 @@ async function main(): Promise<void> {
       skipDuplicates: true,
     });
 
+    const notificationTemplates = await prisma.notificationTemplate.createMany({
+      data: SEED_NOTIFICATION_TEMPLATES.map((template) => ({
+        id: template.id,
+        name: template.name,
+        eventKey: template.eventKey,
+        channel: template.channel,
+        title: template.title,
+        body: template.body,
+        enabled: true,
+        createdAt: now,
+        updatedAt: now,
+      })),
+      skipDuplicates: true,
+    });
+
     console.log(
-      `Seed complete: roles +${roles.count}, units +${units.count}, expense categories +${categories.count}`,
+      `Seed complete: roles +${roles.count}, units +${units.count}, expense categories +${categories.count}, notification templates +${notificationTemplates.count}`,
     );
   } finally {
     await prisma.$disconnect();

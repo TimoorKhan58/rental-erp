@@ -12,6 +12,10 @@ import {
   UnauthorizedError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { ReturnDto } from "../dtos/return.dto";
 import { toProductId, toReturnDto, toReturnId } from "../mappers/return.mapper";
@@ -42,6 +46,8 @@ export class CompleteReturnService {
         inventoryRepository,
         stockMovementRepository,
         auditLogger,
+        notificationService,
+        db,
         userId,
       }) => {
         if (userId === undefined) {
@@ -193,6 +199,18 @@ export class CompleteReturnService {
           dispatchRepository,
           returnRepository,
           rentalOrderRepository,
+        });
+
+        await enqueueWorkflowNotification(notificationService, db, {
+          eventKey: NOTIFICATION_EVENT_KEYS.RETURN_COMPLETED,
+          module: RETURN_MODULE,
+          entityName: RETURN_ENTITY_NAME,
+          recordId: updated.id,
+          recipientUserIds: [rentalOrder.createdById],
+          data: {
+            returnNumber: updated.returnNumber,
+            orderNumber: rentalOrder.orderNumber,
+          },
         });
 
         return toReturnDto(updated);

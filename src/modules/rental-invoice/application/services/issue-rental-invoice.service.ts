@@ -4,6 +4,10 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { RentalInvoiceDto } from "../dtos/rental-invoice.dto";
 import {
@@ -30,7 +34,7 @@ export class IssueRentalInvoiceService {
     const { id } = parseRequest(RentalInvoiceIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ rentalInvoiceRepository, auditLogger }) => {
+      async ({ rentalInvoiceRepository, auditLogger, notificationService, db }) => {
         const existing = await rentalInvoiceRepository.findById(
           toRentalInvoiceId(id),
         );
@@ -77,6 +81,15 @@ export class IssueRentalInvoiceService {
           status: "SUCCESS",
           oldValues: previousValues,
           newValues: toRentalInvoiceAuditValues(updated),
+        });
+
+        await enqueueWorkflowNotification(notificationService, db, {
+          eventKey: NOTIFICATION_EVENT_KEYS.RENTAL_INVOICE_ISSUED,
+          module: RENTAL_INVOICE_MODULE,
+          entityName: RENTAL_INVOICE_ENTITY_NAME,
+          recordId: updated.id,
+          recipientUserIds: [updated.createdById],
+          data: { invoiceNumber: updated.invoiceNumber },
         });
 
         return toRentalInvoiceDto(updated);

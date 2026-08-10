@@ -5,6 +5,10 @@ import {
   UnauthorizedError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { ExpenseDto } from "../dtos/expense.dto";
 import { toExpenseDto, toExpenseId, toUserId } from "../mappers/expense.mapper";
@@ -28,7 +32,7 @@ export class ApproveExpenseService {
     const { id } = parseRequest(ExpenseIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ expenseRepository, auditLogger, userId }) => {
+      async ({ expenseRepository, auditLogger, notificationService, db, userId }) => {
         if (userId === undefined) {
           throw new UnauthorizedError({
             message: "User context is required to approve expense",
@@ -77,6 +81,15 @@ export class ApproveExpenseService {
           status: "SUCCESS",
           oldValues: previousValues,
           newValues: toExpenseAuditValues(updated),
+        });
+
+        await enqueueWorkflowNotification(notificationService, db, {
+          eventKey: NOTIFICATION_EVENT_KEYS.EXPENSE_APPROVED,
+          module: EXPENSE_MODULE,
+          entityName: EXPENSE_ENTITY_NAME,
+          recordId: updated.id,
+          recipientUserIds: [updated.recordedById],
+          data: { expenseNumber: updated.expenseNumber },
         });
 
         return toExpenseDto(updated);

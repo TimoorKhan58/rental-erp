@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency } from "@/lib/utils";
 import {
-  ExportPlaceholderButton,
+  ExportReportButton,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
@@ -153,7 +153,21 @@ function ProductReportContent() {
             >
               Refresh
             </AppButton>
-            <ExportPlaceholderButton />
+            <ExportReportButton
+              filename="products-report.csv"
+              rows={data?.lines ?? []}
+              columns={[
+                { header: "Product code", value: (row) => row.productCode },
+                { header: "Product name", value: (row) => row.productName },
+                { header: "Rate", value: (row) => row.rentalPricePerDay },
+                { header: "Rentals", value: (row) => row.rentalCount },
+                { header: "Qty rented", value: (row) => row.rentedQuantity },
+                { header: "Qty-days", value: (row) => row.quantityDays },
+                { header: "Revenue", value: (row) => row.revenue },
+                { header: "On hand", value: (row) => row.quantityOnHand },
+              ]}
+              disabled={isLoading || !(data?.lines?.length)}
+            />
           </>
         }
         emptyState={

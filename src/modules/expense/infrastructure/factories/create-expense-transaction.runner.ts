@@ -27,6 +27,8 @@ export function createExpenseTransactionRunner(
           supplierRepository: createSupplierRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           accountingHook,
+          notificationService: context.deps.notificationService,
+          db: context.tx,
           userId: options.userId,
         }),
       ),

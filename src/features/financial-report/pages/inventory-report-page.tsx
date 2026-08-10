@@ -20,7 +20,7 @@ import { getWarehouses } from "@/features/warehouse/services";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query";
 import {
-  ExportPlaceholderButton,
+  ExportReportButton,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
@@ -169,7 +169,24 @@ function InventoryReportContent() {
             >
               Refresh
             </AppButton>
-            <ExportPlaceholderButton />
+            <ExportReportButton
+              filename="inventory-report.csv"
+              rows={data?.lines ?? []}
+              columns={[
+                { header: "Product code", value: (row) => row.productCode },
+                { header: "Product name", value: (row) => row.productName },
+                { header: "Warehouse", value: (row) => row.warehouseCode },
+                { header: "On hand", value: (row) => row.quantityOnHand },
+                { header: "Available", value: (row) => row.availableQuantity },
+                { header: "Value", value: (row) => row.inventoryValue },
+                {
+                  header: "Flag",
+                  value: (row) =>
+                    row.isLowStock ? "Low stock" : row.isOverstock ? "Overstock" : "",
+                },
+              ]}
+              disabled={isLoading || !(data?.lines?.length)}
+            />
           </>
         }
         emptyState={

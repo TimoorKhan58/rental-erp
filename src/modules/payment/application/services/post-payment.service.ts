@@ -9,6 +9,10 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { PaymentDto } from "../dtos/payment.dto";
 import {
@@ -40,7 +44,13 @@ export class PostPaymentService {
     const { id } = parseRequest(PaymentIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ paymentRepository, rentalInvoiceRepository, auditLogger }) => {
+      async ({
+        paymentRepository,
+        rentalInvoiceRepository,
+        auditLogger,
+        notificationService,
+        db,
+      }) => {
         const existing = await paymentRepository.findById(toPaymentId(id));
 
         if (existing === null) {
@@ -118,6 +128,19 @@ export class PostPaymentService {
           status: "SUCCESS",
           oldValues: previousInvoiceValues,
           newValues: toRentalInvoiceAuditValues(updatedInvoice),
+        });
+
+        await enqueueWorkflowNotification(notificationService, db, {
+          eventKey: NOTIFICATION_EVENT_KEYS.PAYMENT_POSTED,
+          module: PAYMENT_MODULE,
+          entityName: PAYMENT_ENTITY_NAME,
+          recordId: updated.id,
+          recipientUserIds: [updated.createdById],
+          data: {
+            paymentNumber: updated.paymentNumber,
+            invoiceNumber: updatedInvoice.invoiceNumber,
+            amount: updated.amount,
+          },
         });
 
         return toPaymentDto(updated);

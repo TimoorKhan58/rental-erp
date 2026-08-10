@@ -7,6 +7,7 @@ import type {
   CustomerReportParams,
   DateRangeParams,
   InventoryReportParams,
+  OperationalReportListParams,
   ProductReportParams,
   RentalReportParams,
 } from "../types";
@@ -14,12 +15,19 @@ import {
   getBalanceSheet,
   getCashFlow,
   getCustomerReport,
+  getDispatchReport,
   getExpenseReport,
   getInventoryReport,
+  getMaintenanceReport,
+  getProcurementReport,
   getProductReport,
   getProfitLoss,
   getRentalReport,
+  getRepairReport,
+  getReturnReport,
   getRevenueReport,
+  getSupplierReport,
+  getWarehouseReport,
 } from "../services";
 
 export function useFinancialReportPermissions() {
@@ -30,16 +38,17 @@ export function useFinancialReportPermissions() {
   });
 
   const permissions = data?.permissions ?? [];
+  const canRead =
+    permissions.includes(PERMISSIONS.financialReports.read) ||
+    permissions.includes(PERMISSIONS.reports.read);
 
   return {
     isLoading,
     canReadFinancial: permissions.includes(PERMISSIONS.financialReports.read),
     canReadOperational: permissions.includes(PERMISSIONS.reports.read),
-    canRead:
-      permissions.includes(PERMISSIONS.financialReports.read) ||
-      permissions.includes(PERMISSIONS.reports.read),
-    /** Backend has no reports:export permission — export UI is a placeholder only. */
-    canExport: false,
+    canRead,
+    /** Client-side CSV export is available whenever the user can read reports. */
+    canExport: canRead,
   };
 }
 
@@ -103,5 +112,54 @@ export function useProductReport(params: ProductReportParams = {}) {
   return useQuery({
     queryKey: queryKeys.reports.products(params),
     queryFn: () => getProductReport(params),
+  });
+}
+
+export function useSupplierReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.suppliers(params),
+    queryFn: () => getSupplierReport(params),
+  });
+}
+
+export function useWarehouseReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.warehouses(params),
+    queryFn: () => getWarehouseReport(params),
+  });
+}
+
+export function useProcurementReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.procurement(params),
+    queryFn: () => getProcurementReport(params),
+  });
+}
+
+export function useDispatchReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.dispatches(params),
+    queryFn: () => getDispatchReport(params),
+  });
+}
+
+export function useReturnReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.returns(params),
+    queryFn: () => getReturnReport(params),
+  });
+}
+
+export function useRepairReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.repairs(params),
+    queryFn: () => getRepairReport(params),
+  });
+}
+
+export function useMaintenanceReport(params: OperationalReportListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.reports.maintenance(params),
+    queryFn: () => getMaintenanceReport(params),
   });
 }

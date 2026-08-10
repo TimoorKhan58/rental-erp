@@ -26,6 +26,8 @@ export function createDispatchTransactionRunner(
             context,
           ),
           auditLogger: context.deps.auditLogger,
+          notificationService: context.deps.notificationService,
+          db: context.tx,
           userId: options.userId,
         }),
       ),

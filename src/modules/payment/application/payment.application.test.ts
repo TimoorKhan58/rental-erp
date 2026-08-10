@@ -51,6 +51,7 @@ import {
   createPassThroughTransactionRunner,
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 class ThrowingAuditLogger extends MockAuditLogger {
   async log(_entry: AuditEntry): Promise<void> {
@@ -68,6 +69,7 @@ function createWriteScope(
     paymentRepository,
     rentalInvoiceRepository,
     auditLogger,
+    ...mockNotificationWriteScopeDeps,
     userId,
   });
 }

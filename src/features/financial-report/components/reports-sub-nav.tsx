@@ -16,6 +16,13 @@ const LINKS = [
   { label: "Inventory", href: ROUTES.reportsInventory },
   { label: "Customers", href: ROUTES.reportsCustomers },
   { label: "Products", href: ROUTES.reportsProducts },
+  { label: "Suppliers", href: ROUTES.reportsSuppliers },
+  { label: "Warehouses", href: ROUTES.reportsWarehouses },
+  { label: "Procurement", href: ROUTES.reportsProcurement },
+  { label: "Dispatches", href: ROUTES.reportsDispatches },
+  { label: "Returns", href: ROUTES.reportsReturns },
+  { label: "Repairs", href: ROUTES.reportsRepairs },
+  { label: "Maintenance", href: ROUTES.reportsMaintenance },
 ] as const;
 
 export function ReportsSubNav() {

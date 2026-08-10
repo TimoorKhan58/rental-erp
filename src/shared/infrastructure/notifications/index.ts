@@ -1,4 +1,11 @@
+export { enqueueWorkflowNotification } from "./enqueue-workflow-notification";
+export { NOTIFICATION_EVENT_KEYS, type NotificationEventKey } from "./notification-event-keys";
+export { resolveUserRecipients } from "./notification-recipient-resolver";
 export { type INotificationService } from "./notification-service.interface";
+export {
+  NoOpNotificationService,
+  noopNotificationService,
+} from "./noop-notification-service";
 export {
   mapNotificationPayloadToCreateInput,
   validateNotificationPayload,

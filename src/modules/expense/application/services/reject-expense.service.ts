@@ -7,6 +7,10 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import {
+  NOTIFICATION_EVENT_KEYS,
+  enqueueWorkflowNotification,
+} from "@/shared/infrastructure/notifications";
 
 import type { ExpenseDto } from "../dtos/expense.dto";
 import {
@@ -41,7 +45,7 @@ export class RejectExpenseService {
     const rejectData = toRejectExpenseData(data);
 
     return this.transactionRunner.run(
-      async ({ expenseRepository, auditLogger }) => {
+      async ({ expenseRepository, auditLogger, notificationService, db }) => {
         const existing = await expenseRepository.findById(toExpenseId(id));
 
         if (existing === null) {
@@ -91,6 +95,18 @@ export class RejectExpenseService {
           status: "SUCCESS",
           oldValues: previousValues,
           newValues: toExpenseAuditValues(updated),
+        });
+
+        await enqueueWorkflowNotification(notificationService, db, {
+          eventKey: NOTIFICATION_EVENT_KEYS.EXPENSE_REJECTED,
+          module: EXPENSE_MODULE,
+          entityName: EXPENSE_ENTITY_NAME,
+          recordId: updated.id,
+          recipientUserIds: [updated.recordedById],
+          data: {
+            expenseNumber: updated.expenseNumber,
+            rejectionReason: updated.rejectionReason,
+          },
         });
 
         return toExpenseDto(updated);

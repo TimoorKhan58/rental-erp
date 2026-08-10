@@ -2,6 +2,8 @@ export { formatCurrency, parseCurrencyInput } from "./currency";
 export { formatDate, formatDateTime, formatRelativeDays } from "./date";
 export { debounce } from "./debounce";
 export { downloadBlob, downloadJson, downloadText } from "./download";
+export { downloadCsv, toCsv, type CsvColumnDef } from "./csv";
+
 export { formatCompactNumber, formatNumber, formatPercent } from "./number";
 export {
   DEFAULT_PAGE,

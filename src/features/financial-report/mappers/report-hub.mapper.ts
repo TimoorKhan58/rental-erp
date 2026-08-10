@@ -56,6 +56,48 @@ export const REPORT_HUB_CARDS: ReportHubCard[] = [
     href: ROUTES.reportsProducts,
     category: "operational",
   },
+  {
+    title: "Suppliers",
+    description: "Purchase volume and spend by supplier.",
+    href: ROUTES.reportsSuppliers,
+    category: "operational",
+  },
+  {
+    title: "Warehouses",
+    description: "Stock levels and inventory value by location.",
+    href: ROUTES.reportsWarehouses,
+    category: "operational",
+  },
+  {
+    title: "Procurement",
+    description: "Purchase orders by status, supplier, and warehouse.",
+    href: ROUTES.reportsProcurement,
+    category: "operational",
+  },
+  {
+    title: "Dispatches",
+    description: "Delivery status and turnaround performance.",
+    href: ROUTES.reportsDispatches,
+    category: "operational",
+  },
+  {
+    title: "Returns",
+    description: "Return inspections, damage, and loss.",
+    href: ROUTES.reportsReturns,
+    category: "operational",
+  },
+  {
+    title: "Repairs",
+    description: "Repair turnaround and cost by product.",
+    href: ROUTES.reportsRepairs,
+    category: "operational",
+  },
+  {
+    title: "Maintenance",
+    description: "Scheduled vs completed maintenance jobs.",
+    href: ROUTES.reportsMaintenance,
+    category: "operational",
+  },
 ];
 
 export function toPaginationMeta(report: {
