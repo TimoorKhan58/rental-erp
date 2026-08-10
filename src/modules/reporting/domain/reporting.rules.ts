@@ -222,3 +222,73 @@ export function inDateRange(
   }
   return true;
 }
+
+/** Frozen analytics: upcoming rentals look ahead this many UTC calendar days (inclusive). */
+export const ANALYTICS_UPCOMING_HORIZON_DAYS = 14;
+
+export function startOfUtcDay(reference: Date = new Date()): Date {
+  return new Date(
+    Date.UTC(
+      reference.getUTCFullYear(),
+      reference.getUTCMonth(),
+      reference.getUTCDate(),
+    ),
+  );
+}
+
+export function addUtcDays(date: Date, days: number): Date {
+  const result = new Date(date.getTime());
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+/** BD-1: Booked Rental Value excludes DRAFT and CANCELLED. */
+export function isBookedRentalValueStatus(status: string): boolean {
+  return status !== "DRAFT" && status !== "CANCELLED";
+}
+
+/** BD-2: Active Rental = CONFIRMED + RESERVED (not physically on rent). */
+export function isActiveRentalStatus(status: string): boolean {
+  return status === "CONFIRMED" || status === "RESERVED";
+}
+
+/** BD-3: Upcoming requires CONFIRMED|RESERVED (same as active booking statuses). */
+export function isUpcomingRentalStatus(status: string): boolean {
+  return isActiveRentalStatus(status);
+}
+
+/** BD-4: Overdue excludes COMPLETED, CANCELLED, DRAFT. */
+export function isOverdueRentalStatus(status: string): boolean {
+  return (
+    status !== "COMPLETED" && status !== "CANCELLED" && status !== "DRAFT"
+  );
+}
+
+export function isUpcomingRental(
+  status: string,
+  eventStartDate: Date,
+  reference: Date = new Date(),
+): boolean {
+  if (!isUpcomingRentalStatus(status)) {
+    return false;
+  }
+  const today = startOfUtcDay(reference);
+  const horizonEnd = addUtcDays(today, ANALYTICS_UPCOMING_HORIZON_DAYS);
+  return inDateRange(eventStartDate, today, horizonEnd);
+}
+
+export function isOverdueRental(
+  status: string,
+  expectedReturnDate: Date,
+  reference: Date = new Date(),
+): boolean {
+  if (!isOverdueRentalStatus(status)) {
+    return false;
+  }
+  return expectedReturnDate.getTime() < startOfUtcDay(reference).getTime();
+}
+
+/** BD-9: Ordered Procurement Value excludes DRAFT and CANCELLED POs. */
+export function isOrderedProcurementValueStatus(status: string): boolean {
+  return status !== "DRAFT" && status !== "CANCELLED";
+}

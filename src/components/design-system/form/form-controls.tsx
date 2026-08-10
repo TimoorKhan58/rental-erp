@@ -148,7 +148,8 @@ export function TextAreaField<T extends FieldValues>({
   disabled,
   className,
   rows = 4,
-}: BaseFieldProps<T> & { rows?: number }) {
+  placeholder,
+}: BaseFieldProps<T> & { rows?: number; placeholder?: string }) {
   return (
     <FormField
       control={control}
@@ -161,6 +162,7 @@ export function TextAreaField<T extends FieldValues>({
           {...field}
           id={name}
           rows={rows}
+          placeholder={placeholder}
           disabled={disabled}
           value={field.value ?? ""}
         />

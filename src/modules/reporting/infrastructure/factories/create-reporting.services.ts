@@ -1,6 +1,7 @@
 import type { ReportingApplicationServices as ReportingApplicationServicesBase } from "@/modules/reporting/application/services/reporting-application-services.interface";
 import { ReportingService } from "@/modules/reporting/application/services/reporting.service";
 import type { IReportingService } from "@/modules/reporting/application/services/reporting-application-services.interface";
+import { GetAnalyticsOverviewService } from "@/modules/reporting/application/services/get-analytics-overview.service";
 import { GetCustomerReportService } from "@/modules/reporting/application/services/get-customer-report.service";
 import { GetDashboardService } from "@/modules/reporting/application/services/get-dashboard.service";
 import { GetDispatchReportService } from "@/modules/reporting/application/services/get-dispatch-report.service";
@@ -14,6 +15,7 @@ import { GetRepairReportService } from "@/modules/reporting/application/services
 import { GetReturnReportService } from "@/modules/reporting/application/services/get-return-report.service";
 import { GetSupplierReportService } from "@/modules/reporting/application/services/get-supplier-report.service";
 import { GetWarehouseReportService } from "@/modules/reporting/application/services/get-warehouse-report.service";
+import { createFinancialReportRepositoryFromSharedDeps } from "@/modules/financial-report/infrastructure/factories/create-financial-report.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 
 import { createReportingRepositoryFromSharedDeps } from "./create-reporting.repository";
@@ -29,8 +31,14 @@ export function createReportingApplicationServices(
   deps: SharedDeps,
 ): WiredReportingApplicationServices {
   const reportingRepository = createReportingRepositoryFromSharedDeps(deps);
+  const financialReportRepository =
+    createFinancialReportRepositoryFromSharedDeps(deps);
 
   const getDashboard = new GetDashboardService(reportingRepository);
+  const getAnalyticsOverview = new GetAnalyticsOverviewService(
+    reportingRepository,
+    financialReportRepository,
+  );
   const getRentalInsights = new GetRentalInsightsService(reportingRepository);
   const getInventoryReport = new GetInventoryReportService(reportingRepository);
   const getRentalReport = new GetRentalReportService(reportingRepository);
@@ -50,6 +58,7 @@ export function createReportingApplicationServices(
 
   return {
     getDashboard,
+    getAnalyticsOverview,
     getRentalInsights,
     getInventoryReport,
     getRentalReport,
@@ -64,6 +73,7 @@ export function createReportingApplicationServices(
     getProductReport,
     reportingService: new ReportingService(
       getDashboard,
+      getAnalyticsOverview,
       getRentalInsights,
       getInventoryReport,
       getRentalReport,

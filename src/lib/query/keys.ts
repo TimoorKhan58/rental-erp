@@ -250,6 +250,8 @@ export const queryKeys = {
   },
   reports: {
     all: ["app", "reports"] as const,
+    analyticsOverview: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, "analytics-overview", params ?? {}] as const,
     rentals: (params?: Record<string, unknown>) =>
       [...queryKeys.reports.all, "rentals", params ?? {}] as const,
     inventory: (params?: Record<string, unknown>) =>

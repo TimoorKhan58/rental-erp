@@ -7,6 +7,7 @@ import { ROUTES } from "@/config/routes";
 
 const LINKS = [
   { label: "Overview", href: ROUTES.reports },
+  { label: "Analytics", href: ROUTES.reportsAnalytics },
   { label: "Profit & Loss", href: ROUTES.reportsProfitLoss },
   { label: "Balance Sheet", href: ROUTES.reportsBalanceSheet },
   { label: "Cash Flow", href: ROUTES.reportsCashFlow },

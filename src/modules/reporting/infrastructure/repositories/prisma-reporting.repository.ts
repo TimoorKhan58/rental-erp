@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type {
+  AnalyticsOverviewQuery,
   CustomerReportQuery,
   DashboardQuery,
   DispatchReportQuery,
@@ -16,6 +17,8 @@ import type {
 } from "@/modules/reporting/domain/reporting.queries";
 import type { IReportingRepository } from "@/modules/reporting/domain/reporting.repository.interface";
 import {
+  ANALYTICS_UPCOMING_HORIZON_DAYS,
+  addUtcDays,
   average,
   buildArAgingBuckets,
   calculateAvailableQuantity,
@@ -30,9 +33,11 @@ import {
   resolveReportPeriod,
   roundMoney,
   startOfMonth,
+  startOfUtcDay,
   totalPages,
 } from "@/modules/reporting/domain/reporting.rules";
 import type {
+  AnalyticsOperationalSnapshot,
   CustomerReport,
   CustomerReportLine,
   DashboardSummary,
@@ -352,6 +357,220 @@ export class PrismaReportingRepository implements IReportingRepository {
         decimalToNumber(paymentsThisMonth._sum.amount),
       ),
       averageRentalDuration: average(durationValues),
+    };
+  }
+
+  async getAnalyticsOverview(
+    query: AnalyticsOverviewQuery,
+  ): Promise<AnalyticsOperationalSnapshot> {
+    const period = resolveReportPeriod(query);
+    const today = startOfUtcDay();
+    const upcomingHorizonEnd = addUtcDays(today, ANALYTICS_UPCOMING_HORIZON_DAYS);
+    const dateFilter = {
+      gte: period.dateFrom,
+      lte: period.dateTo,
+    };
+
+    const [
+      bookedRentalValueRaw,
+      billedRevenueRaw,
+      collectedCashRaw,
+      activeCount,
+      upcomingCount,
+      overdueCount,
+      completedCount,
+      outstandingARRaw,
+      inventories,
+      newCustomerCount,
+      purchaseOrders,
+      assetsUnderMaintenanceCount,
+      rentalMaintenanceJobsOpenCount,
+      repairJobsOpenCount,
+    ] = await this.runner.run(
+      async (db) => {
+        const [
+          booked,
+          billed,
+          collected,
+          active,
+          upcoming,
+          overdue,
+          completed,
+          outstanding,
+          inventoryRows,
+          newCustomers,
+          poRows,
+          assetsUnderMaint,
+          maintOpen,
+          repairOpen,
+        ] = await Promise.all([
+          db.rentalOrder.aggregate({
+            where: {
+              status: { notIn: ["DRAFT", "CANCELLED"] },
+              bookingDate: dateFilter,
+            },
+            _sum: { grandTotal: true },
+          }),
+          db.rentalInvoice.aggregate({
+            where: {
+              status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] },
+              invoiceDate: dateFilter,
+            },
+            _sum: { grandTotal: true },
+          }),
+          db.payment.aggregate({
+            where: {
+              status: "POSTED",
+              paymentDate: dateFilter,
+            },
+            _sum: { amount: true },
+          }),
+          db.rentalOrder.count({
+            where: { status: { in: ["CONFIRMED", "RESERVED"] } },
+          }),
+          db.rentalOrder.count({
+            where: {
+              status: { in: ["CONFIRMED", "RESERVED"] },
+              eventStartDate: { gte: today, lte: upcomingHorizonEnd },
+            },
+          }),
+          db.rentalOrder.count({
+            where: {
+              status: { notIn: ["COMPLETED", "CANCELLED", "DRAFT"] },
+              expectedReturnDate: { lt: today },
+            },
+          }),
+          db.rentalOrder.count({
+            where: { status: "COMPLETED" },
+          }),
+          db.rentalInvoice.aggregate({
+            where: {
+              status: { in: ["ISSUED", "PARTIALLY_PAID"] },
+              balance: { gt: 0 },
+            },
+            _sum: { balance: true },
+          }),
+          db.inventory.findMany({
+            where: { isActive: true },
+            select: {
+              quantityOnHand: true,
+              reservedQuantity: true,
+            },
+          }),
+          db.customer.count({
+            where: {
+              isActive: true,
+              createdAt: dateFilter,
+            },
+          }),
+          db.purchaseOrder.findMany({
+            where: {
+              status: { notIn: ["DRAFT", "CANCELLED"] },
+              orderDate: dateFilter,
+            },
+            select: {
+              items: {
+                select: {
+                  quantity: true,
+                  unitCost: true,
+                },
+              },
+            },
+          }),
+          db.asset.count({
+            where: { status: "UNDER_MAINTENANCE" },
+          }),
+          db.maintenance.count({
+            where: { status: { in: ["SCHEDULED", "IN_PROGRESS"] } },
+          }),
+          db.repair.count({
+            where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+          }),
+        ]);
+
+        return [
+          booked,
+          billed,
+          collected,
+          active,
+          upcoming,
+          overdue,
+          completed,
+          outstanding,
+          inventoryRows,
+          newCustomers,
+          poRows,
+          assetsUnderMaint,
+          maintOpen,
+          repairOpen,
+        ] as const;
+      },
+      { model: MODEL, operation: "getAnalyticsOverview" },
+    );
+
+    let reservedQuantity = 0;
+    let availableQuantity = 0;
+    for (const row of inventories) {
+      reservedQuantity += row.reservedQuantity;
+      availableQuantity += calculateAvailableQuantity(
+        row.quantityOnHand,
+        row.reservedQuantity,
+      );
+    }
+
+    const orderedProcurementValue = roundMoney(
+      purchaseOrders.reduce(
+        (sum, order) =>
+          sum +
+          order.items.reduce(
+            (itemSum, item) =>
+              itemSum + item.quantity * decimalToNumber(item.unitCost),
+            0,
+          ),
+        0,
+      ),
+    );
+
+    return {
+      period: {
+        dateFrom: period.dateFrom,
+        dateTo: period.dateTo,
+      },
+      bookedRentalValue: roundMoney(
+        decimalToNumber(bookedRentalValueRaw._sum.grandTotal),
+      ),
+      billedRevenue: roundMoney(
+        decimalToNumber(billedRevenueRaw._sum.grandTotal),
+      ),
+      collectedCash: roundMoney(
+        decimalToNumber(collectedCashRaw._sum.amount),
+      ),
+      rentals: {
+        activeCount,
+        upcomingCount,
+        overdueCount,
+        completedCount,
+      },
+      financial: {
+        outstandingAR: roundMoney(
+          decimalToNumber(outstandingARRaw._sum.balance),
+        ),
+      },
+      inventory: {
+        availableQuantity,
+        reservedQuantity,
+      },
+      customers: {
+        newCount: newCustomerCount,
+      },
+      procurement: {
+        orderedProcurementValue,
+      },
+      operations: {
+        assetsUnderMaintenanceCount,
+        rentalMaintenanceJobsOpenCount,
+        repairJobsOpenCount,
+      },
     };
   }
 

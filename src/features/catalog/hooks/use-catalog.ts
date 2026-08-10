@@ -3,7 +3,12 @@ import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
 import { useAppMutation } from "@/lib/query";
 import { getCurrentUserPermissions } from "@/features/customer/services";
-import type { CatalogListParams, CatalogTab } from "../types";
+import type {
+  CatalogEntityResponse,
+  CatalogListParams,
+  CatalogListResponse,
+  CatalogTab,
+} from "../types";
 import {
   createAttribute,
   createBrand,
@@ -81,7 +86,7 @@ function invalidateCatalogAndProduct(
 export function useCatalogItems(tab: CatalogTab, params: CatalogListParams) {
   return useQuery({
     queryKey: queryKeys.catalog[tab].list(params),
-    queryFn: () => {
+    queryFn: async (): Promise<CatalogListResponse<CatalogEntityResponse>> => {
       switch (tab) {
         case "categories":
           return getCategories(params);

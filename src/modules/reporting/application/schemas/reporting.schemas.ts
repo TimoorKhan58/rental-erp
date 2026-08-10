@@ -60,6 +60,8 @@ export const DashboardQuerySchema = z
 
 export const RentalInsightsQuerySchema = DashboardQuerySchema;
 
+export const AnalyticsOverviewQuerySchema = DashboardQuerySchema;
+
 export const InventoryReportQuerySchema = PaginationSchema.extend({
   dateFrom: DateSchema.optional(),
   dateTo: DateSchema.optional(),
@@ -174,6 +176,9 @@ export const ProductReportQuerySchema = PaginationSchema.extend({
 
 export type DashboardQueryInput = z.input<typeof DashboardQuerySchema>;
 export type RentalInsightsQueryInput = z.input<typeof RentalInsightsQuerySchema>;
+export type AnalyticsOverviewQueryInput = z.input<
+  typeof AnalyticsOverviewQuerySchema
+>;
 export type InventoryReportQueryInput = z.input<
   typeof InventoryReportQuerySchema
 >;
@@ -202,6 +207,9 @@ export type ProductReportQueryInput = z.input<typeof ProductReportQuerySchema>;
 
 export type DashboardQueryParsed = z.infer<typeof DashboardQuerySchema>;
 export type RentalInsightsQueryParsed = z.infer<typeof RentalInsightsQuerySchema>;
+export type AnalyticsOverviewQueryParsed = z.infer<
+  typeof AnalyticsOverviewQuerySchema
+>;
 export type InventoryReportQueryParsed = z.infer<
   typeof InventoryReportQuerySchema
 >;

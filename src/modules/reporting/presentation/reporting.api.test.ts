@@ -24,6 +24,7 @@ import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
 import type { ReportingApplicationServices } from "@/modules/reporting/application/services/reporting-application-services.interface";
 import { runReportingApiRoute } from "@/modules/reporting/presentation/http/reporting-api.route-runner";
 import {
+  handleGetAnalyticsOverview,
   handleGetCustomerReport,
   handleGetDashboard,
   handleGetDispatchReport,
@@ -44,6 +45,9 @@ import { WAREHOUSE_ONE_ID } from "../tests/helpers/reporting.fixtures";
 function createMockServices() {
   return {
     getDashboard: { execute: vi.fn().mockResolvedValue({ totalCustomers: 0 }) },
+    getAnalyticsOverview: {
+      execute: vi.fn().mockResolvedValue({ bookedRentalValue: 0 }),
+    },
     getInventoryReport: { execute: vi.fn().mockResolvedValue({ lines: [] }) },
     getRentalReport: { execute: vi.fn().mockResolvedValue({ lines: [] }) },
     getDispatchReport: { execute: vi.fn().mockResolvedValue({ lines: [] }) },
@@ -150,6 +154,18 @@ describe("reporting API handlers", () => {
     );
     expect(response.status).toBe(200);
     expect(services.getDashboard.execute).toHaveBeenCalled();
+  });
+
+  it("handles analytics overview", async () => {
+    const services = createMockServices();
+    const response = await handleGetAnalyticsOverview(
+      createMockNextRequest({
+        url: "http://localhost/api/reports/analytics-overview",
+      }),
+      () => services as unknown as ReportingApplicationServices,
+    );
+    expect(response.status).toBe(200);
+    expect(services.getAnalyticsOverview.execute).toHaveBeenCalled();
   });
 
   it("handles inventory report", async () => {

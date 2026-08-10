@@ -1,4 +1,5 @@
 import type {
+  AnalyticsOverviewDto,
   CustomerReportDto,
   DashboardSummaryDto,
   DispatchReportDto,
@@ -15,6 +16,12 @@ import type {
 } from "@/modules/reporting/application/dtos/reporting.dto";
 
 export function toDashboardResponse(dto: DashboardSummaryDto): DashboardSummaryDto {
+  return dto;
+}
+
+export function toAnalyticsOverviewResponse(
+  dto: AnalyticsOverviewDto,
+): AnalyticsOverviewDto {
   return dto;
 }
 

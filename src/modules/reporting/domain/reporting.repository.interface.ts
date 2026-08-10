@@ -1,4 +1,5 @@
 import type {
+  AnalyticsOverviewQuery,
   CustomerReportQuery,
   DashboardQuery,
   RentalInsightsQuery,
@@ -14,6 +15,7 @@ import type {
   WarehouseReportQuery,
 } from "./reporting.queries";
 import type {
+  AnalyticsOperationalSnapshot,
   CustomerReport,
   DashboardSummary,
   RentalInsightsReport,
@@ -31,6 +33,9 @@ import type {
 
 export interface IReportingRepository {
   getDashboard(query: DashboardQuery): Promise<DashboardSummary>;
+  getAnalyticsOverview(
+    query: AnalyticsOverviewQuery,
+  ): Promise<AnalyticsOperationalSnapshot>;
   getRentalInsights(query: RentalInsightsQuery): Promise<RentalInsightsReport>;
   getInventoryReport(query: InventoryReportQuery): Promise<InventoryReport>;
   getRentalReport(query: RentalReportQuery): Promise<RentalReport>;

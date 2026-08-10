@@ -4,6 +4,7 @@ export * from "./schemas/reporting.schemas";
 export * from "./services/reporting-application-services.interface";
 export * from "./services/reporting.service";
 export * from "./services/get-dashboard.service";
+export * from "./services/get-analytics-overview.service";
 export * from "./services/get-inventory-report.service";
 export * from "./services/get-rental-report.service";
 export * from "./services/get-dispatch-report.service";

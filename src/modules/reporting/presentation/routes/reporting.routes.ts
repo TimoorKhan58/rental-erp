@@ -1,5 +1,6 @@
 export const REPORTING_ROUTES = {
   dashboard: "/api/reports/dashboard",
+  analyticsOverview: "/api/reports/analytics-overview",
   inventory: "/api/reports/inventory",
   rentals: "/api/reports/rentals",
   dispatches: "/api/reports/dispatches",

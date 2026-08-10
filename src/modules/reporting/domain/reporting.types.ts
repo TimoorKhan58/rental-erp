@@ -356,3 +356,46 @@ export interface ProductReport {
   total: number;
   totalPages: number;
 }
+
+/**
+ * Operational analytics snapshot (Phase 24.1.2).
+ * Recognized revenue is composed at the application layer from financial-report.
+ * Intentionally omits: paidInvoiceAmount, physicallyRentedQuantity, bare "revenue".
+ */
+export interface AnalyticsOperationalSnapshot {
+  period: {
+    dateFrom: Date;
+    dateTo: Date;
+  };
+  bookedRentalValue: number;
+  billedRevenue: number;
+  collectedCash: number;
+  rentals: {
+    activeCount: number;
+    upcomingCount: number;
+    overdueCount: number;
+    completedCount: number;
+  };
+  financial: {
+    outstandingAR: number;
+  };
+  inventory: {
+    availableQuantity: number;
+    reservedQuantity: number;
+  };
+  customers: {
+    newCount: number;
+  };
+  procurement: {
+    orderedProcurementValue: number;
+  };
+  operations: {
+    assetsUnderMaintenanceCount: number;
+    rentalMaintenanceJobsOpenCount: number;
+    repairJobsOpenCount: number;
+  };
+}
+
+export interface AnalyticsOverview extends AnalyticsOperationalSnapshot {
+  recognizedRevenue: number;
+}

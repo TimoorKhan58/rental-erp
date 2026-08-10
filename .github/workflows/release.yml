@@ -56,6 +56,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: UI tests
+        run: npm run test:ui
+
       - name: Environment config checks
         run: npm run config:check
 

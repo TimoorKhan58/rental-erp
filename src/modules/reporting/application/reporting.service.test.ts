@@ -10,6 +10,9 @@ import {
 
 function createService() {
   const getDashboard = { execute: vi.fn().mockResolvedValue({ type: "dashboard" }) };
+  const getAnalyticsOverview = {
+    execute: vi.fn().mockResolvedValue({ type: "analytics-overview" }),
+  };
   const getRentalInsights = {
     execute: vi.fn().mockResolvedValue({ type: "rental-insights" }),
   };
@@ -43,6 +46,7 @@ function createService() {
 
   const service = new ReportingService(
     getDashboard as never,
+    getAnalyticsOverview as never,
     getRentalInsights as never,
     getInventoryReport as never,
     getRentalReport as never,
@@ -60,6 +64,7 @@ function createService() {
   return {
     service,
     getDashboard,
+    getAnalyticsOverview,
     getRentalInsights,
     getInventoryReport,
     getRentalReport,
@@ -80,6 +85,14 @@ describe("ReportingService facade", () => {
     const { service, getDashboard } = createService();
     await expect(service.getDashboard({})).resolves.toEqual({ type: "dashboard" });
     expect(getDashboard.execute).toHaveBeenCalledWith({});
+  });
+
+  it("delegates getAnalyticsOverview", async () => {
+    const { service, getAnalyticsOverview } = createService();
+    await expect(service.getAnalyticsOverview({})).resolves.toEqual({
+      type: "analytics-overview",
+    });
+    expect(getAnalyticsOverview.execute).toHaveBeenCalledWith({});
   });
 
   it("delegates getRentalInsights", async () => {

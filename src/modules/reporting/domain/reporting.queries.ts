@@ -26,6 +26,7 @@ export interface PaginatedReportQuery {
 
 export type DashboardQuery = DateRangeQuery;
 export type RentalInsightsQuery = DateRangeQuery;
+export type AnalyticsOverviewQuery = DateRangeQuery;
 
 export interface InventoryReportQuery extends PaginatedReportQuery, DateRangeQuery {
   warehouseId?: string;

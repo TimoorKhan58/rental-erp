@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import type { ReportingServiceResolver } from "@/modules/reporting/application/services/reporting-application-services.interface";
 import {
+  AnalyticsOverviewQuerySchema,
   CustomerReportQuerySchema,
   DashboardQuerySchema,
   DispatchReportQuerySchema,
@@ -20,6 +21,7 @@ import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 
 import {
+  toAnalyticsOverviewResponse,
   toCustomerReportResponse,
   toDashboardResponse,
   toDispatchReportResponse,
@@ -67,6 +69,40 @@ export async function handleGetDashboard(
         body: {
           ...result.body,
           data: toDashboardResponse(result.body.data as never),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetAnalyticsOverview(
+  request: NextRequest,
+  resolveServices: ReportingServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const input = parseRequest(
+      AnalyticsOverviewQuerySchema,
+      parseQuery(request),
+    );
+
+    const result = await runReportingApiRoute({
+      request,
+      route: REPORTING_ROUTES.analyticsOverview,
+      httpMethod: "GET",
+      permission: PERMISSIONS.reports.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getAnalyticsOverview.execute(input),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAnalyticsOverviewResponse(result.body.data as never),
         },
       });
     }

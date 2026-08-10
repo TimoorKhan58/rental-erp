@@ -102,13 +102,6 @@ export function CatalogEntityPanel({ tab }: CatalogEntityPanelProps) {
     return () => window.clearTimeout(timer);
   }, [localSearch, search]);
 
-  useEffect(() => {
-    setPage(1);
-    setLocalSearch("");
-    setSearch("");
-    setActiveFilter("all");
-  }, [tab]);
-
   const columns: Array<DataTableColumn<CatalogEntityResponse>> = [
     {
       id: "name",
@@ -241,7 +234,7 @@ export function CatalogEntityPanel({ tab }: CatalogEntityPanelProps) {
 
       <DataTableShell
         columns={columns}
-        data={(data?.items ?? []) as CatalogEntityResponse[]}
+        data={data?.items ?? []}
         getRowId={(row) => row.id}
         isLoading={isLoading}
         search={

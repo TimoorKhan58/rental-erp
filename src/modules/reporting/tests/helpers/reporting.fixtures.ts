@@ -35,6 +35,12 @@ export interface FixtureCustomer {
   customerCode: string;
   name: string;
   isActive: boolean;
+  createdAt: Date;
+}
+
+export interface FixtureAsset {
+  id: string;
+  status: string;
 }
 
 export interface FixtureSupplier {
@@ -193,6 +199,7 @@ export function buildCustomer(
     customerCode: "CUST-001",
     name: "Acme Events",
     isActive: true,
+    createdAt: new Date("2026-01-15T00:00:00.000Z"),
     ...overrides,
   };
 }

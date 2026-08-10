@@ -1,4 +1,5 @@
 import type {
+  AnalyticsOverviewQuery,
   CustomerReportQuery,
   DashboardQuery,
   DispatchReportQuery,
@@ -14,6 +15,7 @@ import type {
   WarehouseReportQuery,
 } from "@/modules/reporting/domain/reporting.queries";
 import type {
+  AnalyticsOverview,
   CustomerReport,
   DashboardSummary,
   DispatchReport,
@@ -30,6 +32,7 @@ import type {
 } from "@/modules/reporting/domain/reporting.types";
 
 import type {
+  AnalyticsOverviewDto,
   CustomerReportDto,
   DashboardSummaryDto,
   DispatchReportDto,
@@ -45,6 +48,7 @@ import type {
   WarehouseReportDto,
 } from "../dtos/reporting.dto";
 import type {
+  AnalyticsOverviewQueryParsed,
   CustomerReportQueryParsed,
   DashboardQueryParsed,
   DispatchReportQueryParsed,
@@ -69,6 +73,12 @@ function toIsoRequired(value: Date): string {
 }
 
 export function toDashboardQuery(input: DashboardQueryParsed): DashboardQuery {
+  return { dateFrom: input.dateFrom, dateTo: input.dateTo };
+}
+
+export function toAnalyticsOverviewQuery(
+  input: AnalyticsOverviewQueryParsed,
+): AnalyticsOverviewQuery {
   return { dateFrom: input.dateFrom, dateTo: input.dateTo };
 }
 
@@ -394,5 +404,26 @@ export function toRentalInsightsDto(
       buckets: report.arAging.buckets.map((bucket) => ({ ...bucket })),
       totalOutstanding: report.arAging.totalOutstanding,
     },
+  };
+}
+
+export function toAnalyticsOverviewDto(
+  report: AnalyticsOverview,
+): AnalyticsOverviewDto {
+  return {
+    period: {
+      dateFrom: toIsoRequired(report.period.dateFrom),
+      dateTo: toIsoRequired(report.period.dateTo),
+    },
+    bookedRentalValue: report.bookedRentalValue,
+    billedRevenue: report.billedRevenue,
+    collectedCash: report.collectedCash,
+    recognizedRevenue: report.recognizedRevenue,
+    rentals: { ...report.rentals },
+    financial: { ...report.financial },
+    inventory: { ...report.inventory },
+    customers: { ...report.customers },
+    procurement: { ...report.procurement },
+    operations: { ...report.operations },
   };
 }

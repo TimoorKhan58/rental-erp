@@ -1,4 +1,5 @@
 import type {
+  AnalyticsOverviewQuery,
   CustomerReportQuery,
   DashboardQuery,
   DispatchReportQuery,
@@ -24,14 +25,20 @@ import {
   calculateUtilizationPercent,
   endOfMonth,
   inDateRange,
+  isBookedRentalValueStatus,
   isLowStock,
+  isOrderedProcurementValueStatus,
   isOverstock,
+  isActiveRentalStatus,
+  isOverdueRental,
+  isUpcomingRental,
   resolveReportPeriod,
   roundMoney,
   startOfMonth,
   totalPages,
 } from "@/modules/reporting/domain/reporting.rules";
 import type {
+  AnalyticsOperationalSnapshot,
   CustomerReport,
   CustomerReportLine,
   DashboardSummary,
@@ -59,6 +66,7 @@ import type {
 } from "@/modules/reporting/domain/reporting.types";
 
 import type {
+  FixtureAsset,
   FixtureCustomer,
   FixtureDispatch,
   FixtureInventory,
@@ -186,6 +194,7 @@ export interface ReportingSeedOptions {
   purchaseOrders?: FixturePurchaseOrder[];
   invoices?: FixtureInvoice[];
   payments?: FixturePayment[];
+  assets?: FixtureAsset[];
 }
 
 export class InMemoryReportingRepository implements IReportingRepository {
@@ -203,6 +212,7 @@ export class InMemoryReportingRepository implements IReportingRepository {
   private purchaseOrders: FixturePurchaseOrder[] = [];
   private invoices: FixtureInvoice[] = [];
   private payments: FixturePayment[] = [];
+  private assets: FixtureAsset[] = [];
 
   seed(options: ReportingSeedOptions): void {
     if (options.customers !== undefined) {
@@ -247,6 +257,9 @@ export class InMemoryReportingRepository implements IReportingRepository {
     if (options.payments !== undefined) {
       this.payments = [...options.payments];
     }
+    if (options.assets !== undefined) {
+      this.assets = [...options.assets];
+    }
   }
 
   clear(): void {
@@ -264,6 +277,7 @@ export class InMemoryReportingRepository implements IReportingRepository {
     this.purchaseOrders = [];
     this.invoices = [];
     this.payments = [];
+    this.assets = [];
   }
 
   private getProduct(productId: string): FixtureProduct {
@@ -389,6 +403,132 @@ export class InMemoryReportingRepository implements IReportingRepository {
       revenueThisMonth,
       paymentsThisMonth,
       averageRentalDuration: average(durationValues),
+    };
+  }
+
+  async getAnalyticsOverview(
+    query: AnalyticsOverviewQuery,
+  ): Promise<AnalyticsOperationalSnapshot> {
+    const period = resolveReportPeriod(query);
+    const reference = new Date();
+
+    const bookedRentalValue = roundMoney(
+      this.rentals
+        .filter(
+          (order) =>
+            isBookedRentalValueStatus(order.status) &&
+            inDateRange(order.bookingDate, period.dateFrom, period.dateTo),
+        )
+        .reduce((sum, order) => sum + order.grandTotal, 0),
+    );
+
+    const billedRevenue = roundMoney(
+      this.invoices
+        .filter(
+          (invoice) =>
+            ["ISSUED", "PARTIALLY_PAID", "PAID"].includes(invoice.status) &&
+            inDateRange(invoice.invoiceDate, period.dateFrom, period.dateTo),
+        )
+        .reduce((sum, invoice) => sum + invoice.grandTotal, 0),
+    );
+
+    const collectedCash = roundMoney(
+      this.payments
+        .filter(
+          (payment) =>
+            payment.status === "POSTED" &&
+            inDateRange(payment.paymentDate, period.dateFrom, period.dateTo),
+        )
+        .reduce((sum, payment) => sum + payment.amount, 0),
+    );
+
+    const activeInventories = this.inventories.filter((row) => row.isActive);
+    let reservedQuantity = 0;
+    let availableQuantity = 0;
+    for (const row of activeInventories) {
+      reservedQuantity += row.reservedQuantity;
+      availableQuantity += calculateAvailableQuantity(
+        row.quantityOnHand,
+        row.reservedQuantity,
+      );
+    }
+
+    const orderedProcurementValue = roundMoney(
+      this.purchaseOrders
+        .filter(
+          (order) =>
+            isOrderedProcurementValueStatus(order.status) &&
+            inDateRange(order.orderDate, period.dateFrom, period.dateTo),
+        )
+        .reduce(
+          (sum, order) =>
+            sum +
+            order.items.reduce(
+              (itemSum, item) => itemSum + item.quantity * item.unitCost,
+              0,
+            ),
+          0,
+        ),
+    );
+
+    return {
+      period: {
+        dateFrom: period.dateFrom,
+        dateTo: period.dateTo,
+      },
+      bookedRentalValue,
+      billedRevenue,
+      collectedCash,
+      rentals: {
+        activeCount: this.rentals.filter((order) =>
+          isActiveRentalStatus(order.status),
+        ).length,
+        upcomingCount: this.rentals.filter((order) =>
+          isUpcomingRental(order.status, order.eventStartDate, reference),
+        ).length,
+        overdueCount: this.rentals.filter((order) =>
+          isOverdueRental(order.status, order.expectedReturnDate, reference),
+        ).length,
+        completedCount: this.rentals.filter(
+          (order) => order.status === "COMPLETED",
+        ).length,
+      },
+      financial: {
+        outstandingAR: roundMoney(
+          this.invoices
+            .filter(
+              (invoice) =>
+                ["ISSUED", "PARTIALLY_PAID"].includes(invoice.status) &&
+                invoice.balance > 0,
+            )
+            .reduce((sum, invoice) => sum + invoice.balance, 0),
+        ),
+      },
+      inventory: {
+        availableQuantity,
+        reservedQuantity,
+      },
+      customers: {
+        newCount: this.customers.filter(
+          (customer) =>
+            customer.isActive &&
+            inDateRange(customer.createdAt, period.dateFrom, period.dateTo),
+        ).length,
+      },
+      procurement: {
+        orderedProcurementValue,
+      },
+      operations: {
+        assetsUnderMaintenanceCount: this.assets.filter(
+          (asset) => asset.status === "UNDER_MAINTENANCE",
+        ).length,
+        rentalMaintenanceJobsOpenCount: this.maintenances.filter((row) =>
+          ["SCHEDULED", "IN_PROGRESS"].includes(row.status),
+        ).length,
+        repairJobsOpenCount: this.repairs.filter((row) =>
+          ["PENDING", "IN_PROGRESS"].includes(row.status),
+        ).length,
+      },
     };
   }
 

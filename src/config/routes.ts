@@ -74,6 +74,7 @@ export const ROUTES = {
   accountingGeneralLedger: "/accounting/general-ledger",
   accountingTrialBalance: "/accounting/trial-balance",
   reports: "/reports",
+  reportsAnalytics: "/reports/analytics",
   reportsProfitLoss: "/reports/profit-loss",
   reportsBalanceSheet: "/reports/balance-sheet",
   reportsCashFlow: "/reports/cash-flow",

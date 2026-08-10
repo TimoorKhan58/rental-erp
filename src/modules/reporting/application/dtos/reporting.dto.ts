@@ -350,3 +350,39 @@ export interface ProductReportDto {
   total: number;
   totalPages: number;
 }
+
+/** Phase 24.1.2 analytics overview DTO — qualified money fields only (no bare "revenue"). */
+export interface AnalyticsOverviewDto {
+  period: {
+    dateFrom: string;
+    dateTo: string;
+  };
+  bookedRentalValue: number;
+  billedRevenue: number;
+  collectedCash: number;
+  recognizedRevenue: number;
+  rentals: {
+    activeCount: number;
+    upcomingCount: number;
+    overdueCount: number;
+    completedCount: number;
+  };
+  financial: {
+    outstandingAR: number;
+  };
+  inventory: {
+    availableQuantity: number;
+    reservedQuantity: number;
+  };
+  customers: {
+    newCount: number;
+  };
+  procurement: {
+    orderedProcurementValue: number;
+  };
+  operations: {
+    assetsUnderMaintenanceCount: number;
+    rentalMaintenanceJobsOpenCount: number;
+    repairJobsOpenCount: number;
+  };
+}

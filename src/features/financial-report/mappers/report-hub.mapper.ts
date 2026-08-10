@@ -3,6 +3,13 @@ import type { ReportHubCard } from "../types";
 
 export const REPORT_HUB_CARDS: ReportHubCard[] = [
   {
+    title: "Analytics",
+    description:
+      "Executive snapshot — booked value, billed revenue, collected cash, rentals, inventory, and ops health.",
+    href: ROUTES.reportsAnalytics,
+    category: "financial",
+  },
+  {
     title: "Profit & Loss",
     description: "Are we making money this month? Revenue vs cost of running jobs.",
     href: ROUTES.reportsProfitLoss,

@@ -1,4 +1,5 @@
 import type {
+  AnalyticsOverviewDto,
   CustomerReportDto,
   DashboardSummaryDto,
   DispatchReportDto,
@@ -14,6 +15,7 @@ import type {
   WarehouseReportDto,
 } from "../dtos/reporting.dto";
 import type {
+  AnalyticsOverviewQueryInput,
   CustomerReportQueryInput,
   DashboardQueryInput,
   DispatchReportQueryInput,
@@ -29,6 +31,7 @@ import type {
   WarehouseReportQueryInput,
 } from "../schemas/reporting.schemas";
 import type { IReportingService } from "./reporting-application-services.interface";
+import type { GetAnalyticsOverviewService } from "./get-analytics-overview.service";
 import type { GetCustomerReportService } from "./get-customer-report.service";
 import type { GetDashboardService } from "./get-dashboard.service";
 import type { GetDispatchReportService } from "./get-dispatch-report.service";
@@ -46,6 +49,7 @@ import type { GetWarehouseReportService } from "./get-warehouse-report.service";
 export class ReportingService implements IReportingService {
   constructor(
     private readonly getDashboardService: GetDashboardService,
+    private readonly getAnalyticsOverviewService: GetAnalyticsOverviewService,
     private readonly getRentalInsightsService: GetRentalInsightsService,
     private readonly getInventoryReportService: GetInventoryReportService,
     private readonly getRentalReportService: GetRentalReportService,
@@ -62,6 +66,12 @@ export class ReportingService implements IReportingService {
 
   getDashboard(input: DashboardQueryInput): Promise<DashboardSummaryDto> {
     return this.getDashboardService.execute(input);
+  }
+
+  getAnalyticsOverview(
+    input: AnalyticsOverviewQueryInput,
+  ): Promise<AnalyticsOverviewDto> {
+    return this.getAnalyticsOverviewService.execute(input);
   }
 
   getRentalInsights(
