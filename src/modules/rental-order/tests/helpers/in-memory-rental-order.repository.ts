@@ -196,11 +196,11 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
   async updateReserve(
     id: RentalOrderId,
     data: UpdateRentalOrderReserveData,
-  ): Promise<RentalOrder> {
+  ): Promise<RentalOrder | null> {
     const existing = this.store.get(id);
 
-    if (!existing) {
-      throw new Error("Rental order not found");
+    if (!existing || existing.record.status !== "CONFIRMED") {
+      return null;
     }
 
     const reserveMap = new Map(
@@ -213,6 +213,48 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
       items: existing.record.items.map((item) => ({
         ...item,
         reservedQuantity: reserveMap.get(item.id) ?? item.reservedQuantity,
+      })),
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  async cancelIfCancellable(id: RentalOrderId): Promise<RentalOrder | null> {
+    const existing = this.store.get(id);
+
+    if (
+      !existing ||
+      (existing.record.status !== "DRAFT" &&
+        existing.record.status !== "CONFIRMED" &&
+        existing.record.status !== "RESERVED")
+    ) {
+      return null;
+    }
+
+    const updated = RentalOrder.reconstitute({
+      ...existing.record,
+      status: "CANCELLED",
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  async clearReservedQuantities(id: RentalOrderId): Promise<RentalOrder> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      throw new Error("Rental order not found");
+    }
+
+    const updated = RentalOrder.reconstitute({
+      ...existing.record,
+      items: existing.record.items.map((item) => ({
+        ...item,
+        reservedQuantity: 0,
       })),
       updatedAt: new Date(),
     });

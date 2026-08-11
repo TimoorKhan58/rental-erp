@@ -177,6 +177,73 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
     return updated;
   }
 
+  /**
+   * Mirrors production atomic RESERVE semantics without awaiting between
+   * check and write so concurrent Promise.all callers serialize correctly
+   * on the event loop.
+   */
+  async reserveAvailableQuantity(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return null;
+    }
+
+    const existing = this.store.get(id);
+
+    if (!existing || !existing.record.isActive) {
+      return null;
+    }
+
+    if (
+      existing.record.reservedQuantity + quantity >
+      existing.record.quantityOnHand
+    ) {
+      return null;
+    }
+
+    const updated = Inventory.reconstitute({
+      ...existing.record,
+      reservedQuantity: existing.record.reservedQuantity + quantity,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  /**
+   * Mirrors production atomic RELEASE semantics. Does not require isActive.
+   */
+  async releaseReservedQuantity(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return null;
+    }
+
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    if (existing.record.reservedQuantity < quantity) {
+      return null;
+    }
+
+    const updated = Inventory.reconstitute({
+      ...existing.record,
+      reservedQuantity: existing.record.reservedQuantity - quantity,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
   async delete(id: InventoryId): Promise<void> {
     this.store.delete(id);
   }

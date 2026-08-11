@@ -49,7 +49,7 @@ describe("InMemoryRentalOrderRepository", () => {
       items: [{ id: itemId, reservedQuantity: 4 }],
     });
 
-    expect(updated.items[0]?.reservedQuantity).toBe(4);
+    expect(updated?.items[0]?.reservedQuantity).toBe(4);
   });
 
   it("filters paged results by status", async () => {

@@ -227,10 +227,61 @@ function createMockInventoryStore(initial: InventoryRecord[] = []) {
     }),
   };
 
+  const $queryRaw = vi.fn(
+    async (strings: TemplateStringsArray, ...values: unknown[]) => {
+      const sql = strings.join("?");
+      if (!sql.includes('UPDATE "inventory"')) {
+        return [];
+      }
+
+      const quantity = Number(values[0]);
+      const id = String(values[1]);
+      const existing = records.get(id);
+
+      if (!existing || !Number.isInteger(quantity) || quantity <= 0) {
+        return [];
+      }
+
+      // RELEASE: reservedQuantity = reservedQuantity - qty WHERE reserved >= qty
+      // (no isActive requirement)
+      if (sql.includes('"reservedQuantity" = "reservedQuantity" -')) {
+        if (existing.reservedQuantity < quantity) {
+          return [];
+        }
+
+        const updated: InventoryRecord = {
+          ...existing,
+          reservedQuantity: existing.reservedQuantity - quantity,
+          updatedAt: new Date(),
+        };
+        records.set(id, updated);
+        return [cloneInventoryRecord(updated)];
+      }
+
+      // RESERVE: reservedQuantity = reservedQuantity + qty with capacity + active
+      // Parameter order: quantity (SET), id (WHERE), quantity (capacity predicate)
+      if (
+        !existing.isActive ||
+        existing.reservedQuantity + quantity > existing.quantityOnHand
+      ) {
+        return [];
+      }
+
+      const updated: InventoryRecord = {
+        ...existing,
+        reservedQuantity: existing.reservedQuantity + quantity,
+        updatedAt: new Date(),
+      };
+      records.set(id, updated);
+      return [cloneInventoryRecord(updated)];
+    },
+  );
+
   return {
-    db: { inventory } as unknown as DbClient,
+    db: { inventory, $queryRaw } as unknown as DbClient,
     store: records,
     inventory,
+    $queryRaw,
   };
 }
 
@@ -445,5 +496,184 @@ describe("PrismaInventoryRepository mapping", () => {
     await expect(
       repository.update(INVENTORY_ID, { quantityOnHand: 5 }),
     ).rejects.toThrow();
+  });
+
+  it("atomically reserves available quantity and returns updated inventory", async () => {
+    const { db, $queryRaw, store } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 0,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: true,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const updated = await repository.reserveAvailableQuantity(INVENTORY_ID, 40);
+
+    expect($queryRaw).toHaveBeenCalledOnce();
+    const [strings] = $queryRaw.mock.calls[0] as [TemplateStringsArray, ...unknown[]];
+    const sql = strings.join("?");
+    expect(sql).toContain('"reservedQuantity" = "reservedQuantity" +');
+    expect(sql).toContain('"reservedQuantity" +');
+    expect(sql).toContain('"quantityOnHand"');
+    expect(sql).toContain('"isActive" = true');
+    expect(sql).not.toContain('"reservedQuantity" = "reservedQuantity" -');
+    expect(updated?.reservedQuantity).toBe(40);
+    expect(updated?.availableQuantity).toBe(60);
+    expect(store.get(INVENTORY_ID)?.reservedQuantity).toBe(40);
+  });
+
+  it("returns null when atomic reserve capacity predicate matches zero rows", async () => {
+    const { db, store } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 30,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: true,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const updated = await repository.reserveAvailableQuantity(INVENTORY_ID, 80);
+
+    expect(updated).toBeNull();
+    expect(store.get(INVENTORY_ID)?.reservedQuantity).toBe(30);
+  });
+
+  it("returns null when inventory is inactive for atomic reserve", async () => {
+    const { db } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 0,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: false,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    await expect(
+      repository.reserveAvailableQuantity(INVENTORY_ID, 10),
+    ).resolves.toBeNull();
+  });
+
+  it("atomically releases reserved quantity and returns updated inventory", async () => {
+    const { db, $queryRaw, store } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 100,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: true,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const updated = await repository.releaseReservedQuantity(INVENTORY_ID, 40);
+
+    expect($queryRaw).toHaveBeenCalledOnce();
+    const [strings] = $queryRaw.mock.calls[0] as [TemplateStringsArray, ...unknown[]];
+    const sql = strings.join("?");
+    expect(sql).toContain('"reservedQuantity" = "reservedQuantity" -');
+    expect(sql).toContain('"reservedQuantity" >=');
+    expect(sql).not.toContain('"isActive" = true');
+    expect(updated?.reservedQuantity).toBe(60);
+    expect(store.get(INVENTORY_ID)?.reservedQuantity).toBe(60);
+  });
+
+  it("returns null when atomic release reserved predicate matches zero rows", async () => {
+    const { db, store } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 40,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: true,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const updated = await repository.releaseReservedQuantity(INVENTORY_ID, 50);
+
+    expect(updated).toBeNull();
+    expect(store.get(INVENTORY_ID)?.reservedQuantity).toBe(40);
+  });
+
+  it("releases reserved quantity on inactive inventory", async () => {
+    const { db, store } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 40,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: false,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    const updated = await repository.releaseReservedQuantity(INVENTORY_ID, 20);
+
+    expect(updated?.reservedQuantity).toBe(20);
+    expect(updated?.isActive).toBe(false);
+    expect(store.get(INVENTORY_ID)?.reservedQuantity).toBe(20);
+  });
+
+  it("returns null for non-positive release quantity without querying", async () => {
+    const { db, $queryRaw } = createMockInventoryStore([
+      {
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 40,
+        minimumStock: 5,
+        maximumStock: 500,
+        isActive: true,
+        createdAt: new Date("2026-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+      },
+    ]);
+    const repository = new PrismaInventoryRepository(createMockRunner(db));
+
+    await expect(
+      repository.releaseReservedQuantity(INVENTORY_ID, 0),
+    ).resolves.toBeNull();
+    await expect(
+      repository.releaseReservedQuantity(INVENTORY_ID, -5),
+    ).resolves.toBeNull();
+    expect($queryRaw).not.toHaveBeenCalled();
   });
 });

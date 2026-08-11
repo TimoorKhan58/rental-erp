@@ -13,11 +13,15 @@ import {
   RENTAL_ORDER_MODULE,
 } from "@/modules/rental-order/application/services/rental-order-service.constants";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
+import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
+import { buildDispatchEntity } from "@/modules/dispatch/tests/helpers/dispatch.fixtures";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
 import {
   INVENTORY_ID,
+  OTHER_INVENTORY_ID,
+  OTHER_PRODUCT_ID,
   PRODUCT_ID,
   USER_ID,
   WAREHOUSE_ID,
@@ -32,11 +36,14 @@ import {
 import type { CreateRentalOrderInput } from "@/modules/rental-order/application/schemas/rental-order.schemas";
 
 import {
+  ITEM_ID,
   RENTAL_ORDER_ID,
   VALID_CREATE_INPUT,
   buildConfirmedRentalOrderEntity,
+  buildCreateRentalOrderData,
   buildPartiallyReservedConfirmedEntity,
   buildRentalOrderEntity,
+  buildReservedRentalOrderEntity,
 } from "../tests/helpers/rental-order.fixtures";
 import { InMemoryRentalOrderRepository } from "../tests/helpers/in-memory-rental-order.repository";
 import { MockAuditLogger } from "../tests/helpers/mock-audit-logger";
@@ -45,6 +52,7 @@ import {
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
+import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 
 function createWriteScope(
   rentalOrderRepository: InMemoryRentalOrderRepository,
@@ -52,11 +60,13 @@ function createWriteScope(
   stockMovementRepository: InMemoryStockMovementRepository,
   auditLogger: MockAuditLogger,
   userId?: string,
+  dispatchRepository: InMemoryDispatchRepository = new InMemoryDispatchRepository(),
 ) {
   return createPassThroughTransactionRunner({
     rentalOrderRepository,
     inventoryRepository,
     stockMovementRepository,
+    dispatchRepository,
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId,
@@ -261,14 +271,15 @@ describe("ConfirmRentalOrderService", () => {
 });
 
 describe("CancelRentalOrderService", () => {
-  it("cancels draft rental order", async () => {
+  it("cancels draft rental order without RELEASE", async () => {
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
     rentalOrderRepository.seed([buildRentalOrderEntity()]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
     const service = new CancelRentalOrderService(
       createWriteScope(
         rentalOrderRepository,
         new InMemoryInventoryRepository(),
-        new InMemoryStockMovementRepository(),
+        stockMovementRepository,
         new MockAuditLogger(),
         USER_ID,
       ),
@@ -277,16 +288,329 @@ describe("CancelRentalOrderService", () => {
     const result = await service.execute({ id: RENTAL_ORDER_ID });
 
     expect(result.status).toBe("CANCELLED");
+    expect(stockMovementRepository.count()).toBe(0);
   });
 
-  it("rejects cancel when partially reserved", async () => {
+  it("cancels confirmed order with zero reservation without RELEASE", async () => {
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
-    rentalOrderRepository.seed([buildPartiallyReservedConfirmedEntity()]);
+    rentalOrderRepository.seed([buildConfirmedRentalOrderEntity()]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
     const service = new CancelRentalOrderService(
       createWriteScope(
         rentalOrderRepository,
         new InMemoryInventoryRepository(),
-        new InMemoryStockMovementRepository(),
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(stockMovementRepository.count()).toBe(0);
+  });
+
+  it("cancels partially reserved confirmed order and releases exact reserved qty", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "CONFIRMED",
+        reservedQuantity: 60,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 60,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 60,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const auditLogger = new MockAuditLogger();
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        auditLogger,
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(result.items[0]?.reservedQuantity).toBe(0);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(stockMovementRepository.count()).toBe(1);
+    const movement = (await stockMovementRepository.findPaged({
+      page: 1,
+      pageSize: 10,
+      sortOrder: "desc",
+    })).items[0];
+    expect(movement?.movementType).toBe("RELEASE");
+    expect(movement?.quantity).toBe(60);
+    expect(movement?.previousQuantity).toBe(60);
+    expect(movement?.newQuantity).toBe(0);
+    expect(auditLogger.entries.some((entry) => entry.action === "CANCEL")).toBe(
+      true,
+    );
+  });
+
+  it("cancels fully reserved order and releases all reserved quantity", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        reservedQuantity: 100,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 100,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(result.items[0]?.reservedQuantity).toBe(0);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+
+  it("cancels multi-line reserved order releasing each line", async () => {
+    const secondItemId = "dd0e8400-e29b-41d4-a716-446655440099";
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 50,
+            dailyRate: 10,
+            reservedQuantity: 50,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+          {
+            id: secondItemId,
+            productId: OTHER_PRODUCT_ID,
+            quantity: 30,
+            dailyRate: 10,
+            reservedQuantity: 30,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 50,
+      }),
+      buildInventoryEntity({
+        id: OTHER_INVENTORY_ID,
+        productId: OTHER_PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 30,
+        reservedQuantity: 30,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(result.items.every((item) => item.reservedQuantity === 0)).toBe(true);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(
+      (await inventoryRepository.findById(OTHER_INVENTORY_ID))?.reservedQuantity,
+    ).toBe(0);
+    expect(stockMovementRepository.count()).toBe(2);
+  });
+
+  it("rolls back everything when a later RELEASE fails", async () => {
+    const secondItemId = "dd0e8400-e29b-41d4-a716-446655440099";
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 50,
+            dailyRate: 10,
+            reservedQuantity: 50,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+          {
+            id: secondItemId,
+            productId: OTHER_PRODUCT_ID,
+            quantity: 30,
+            dailyRate: 10,
+            reservedQuantity: 30,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 50,
+      }),
+      buildInventoryEntity({
+        id: OTHER_INVENTORY_ID,
+        productId: OTHER_PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 30,
+        reservedQuantity: 10,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const auditLogger = new MockAuditLogger();
+    const service = new CancelRentalOrderService(
+      createRollbackTransactionRunner(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        auditLogger,
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute({ id: RENTAL_ORDER_ID }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("RESERVED");
+    expect(order?.items[0]?.reservedQuantity).toBe(50);
+    expect(order?.items[1]?.reservedQuantity).toBe(30);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      50,
+    );
+    expect(
+      (await inventoryRepository.findById(OTHER_INVENTORY_ID))?.reservedQuantity,
+    ).toBe(10);
+    expect(stockMovementRepository.count()).toBe(0);
+    expect(auditLogger.entries.some((entry) => entry.action === "CANCEL")).toBe(
+      false,
+    );
+  });
+
+  it("fails closed when inventory reserved is below line reserved", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "CONFIRMED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 60,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 40,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CancelRentalOrderService(
+      createRollbackTransactionRunner(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
         new MockAuditLogger(),
         USER_ID,
       ),
@@ -295,6 +619,283 @@ describe("CancelRentalOrderService", () => {
     await expect(
       service.execute({ id: RENTAL_ORDER_ID }),
     ).rejects.toBeInstanceOf(UnprocessableError);
+
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "CONFIRMED",
+    );
+    expect(
+      (await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.items[0]
+        ?.reservedQuantity,
+    ).toBe(60);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      40,
+    );
+    expect(stockMovementRepository.count()).toBe(0);
+  });
+
+  it("cancels successfully when inventory is inactive", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 10,
+        isActive: false,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+
+  it("rejects cancel when a non-cancelled dispatch exists", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 10,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({ status: "READY" }),
+    ]);
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+        dispatchRepository,
+      ),
+    );
+
+    await expect(
+      service.execute({ id: RENTAL_ORDER_ID }),
+    ).rejects.toMatchObject({
+      name: "UnprocessableError",
+      message:
+        "Rental order cannot be cancelled because it has an active dispatch",
+    });
+
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "RESERVED",
+    );
+    expect(stockMovementRepository.count()).toBe(0);
+  });
+
+  it("allows cancel when only cancelled dispatches exist", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 10,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({ status: "CANCELLED" }),
+    ]);
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+        dispatchRepository,
+      ),
+    );
+
+    const result = await service.execute({ id: RENTAL_ORDER_ID });
+
+    expect(result.status).toBe("CANCELLED");
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+
+  it("rejects duplicate cancel without second RELEASE", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 10,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await service.execute({ id: RENTAL_ORDER_ID });
+    await expect(
+      service.execute({ id: RENTAL_ORDER_ID }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+
+    expect(stockMovementRepository.count()).toBe(1);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+  });
+
+  it("allows only one concurrent cancel", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 100,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const results = await Promise.allSettled([
+      service.execute({ id: RENTAL_ORDER_ID }),
+      service.execute({ id: RENTAL_ORDER_ID }),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+      1,
+    );
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(
+      1,
+    );
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "CANCELLED",
+    );
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+
+  it("cancel vs reserve does not produce negative reserved or partial cancel", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildConfirmedRentalOrderEntity()]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 0,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const cancelService = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+    const reserveService = new ReserveRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const results = await Promise.allSettled([
+      cancelService.execute({ id: RENTAL_ORDER_ID }),
+      reserveService.execute(
+        { id: RENTAL_ORDER_ID },
+        { items: [{ productId: PRODUCT_ID, quantity: 5 }] },
+      ),
+    ]);
+
+    const fulfilled = results.filter((result) => result.status === "fulfilled");
+    expect(fulfilled.length).toBeGreaterThanOrEqual(1);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+
+    expect(inventory?.reservedQuantity).toBeGreaterThanOrEqual(0);
+    if (order?.status === "CANCELLED") {
+      expect(order.items.every((item) => item.reservedQuantity === 0)).toBe(true);
+      expect(inventory?.reservedQuantity).toBe(0);
+    }
+    if (order?.status === "CONFIRMED" || order?.status === "RESERVED") {
+      expect(order.items[0]?.reservedQuantity).toBeGreaterThan(0);
+      expect(inventory?.reservedQuantity).toBe(order.items[0]?.reservedQuantity);
+    }
   });
 });
 
@@ -640,5 +1241,176 @@ describe("ReserveRentalOrderService inventory state", () => {
 
     expect(result.items[0]?.reservedQuantity).toBe(10);
     expect(result.status).toBe("RESERVED");
+  });
+
+  it("rolls back all inventory and order changes when a later line lacks capacity", async () => {
+    const created = RentalOrder.create(
+      buildCreateRentalOrderData({
+        items: [
+          { productId: PRODUCT_ID, quantity: 50, dailyRate: 10 },
+          { productId: OTHER_PRODUCT_ID, quantity: 50, dailyRate: 10 },
+        ],
+      }),
+    );
+    const multiItemOrder = RentalOrder.reconstitute({
+      id: RENTAL_ORDER_ID,
+      orderNumber: created.orderNumber,
+      customerId: created.customerId,
+      warehouseId: created.warehouseId,
+      status: "CONFIRMED",
+      startDate: created.startDate,
+      endDate: created.endDate,
+      remarks: created.remarks,
+      items: created.items.map((item, index) => ({
+        ...item,
+        id:
+          index === 0
+            ? ITEM_ID
+            : "dd0e8400-e29b-41d4-a716-446655440099",
+        reservedQuantity: 0,
+      })),
+      createdById: created.createdById,
+      createdAt: new Date("2026-01-15T10:00:00.000Z"),
+      updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+    });
+
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([multiItemOrder]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 0,
+      }),
+      buildInventoryEntity({
+        id: OTHER_INVENTORY_ID,
+        productId: OTHER_PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 20,
+        reservedQuantity: 0,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const auditLogger = new MockAuditLogger();
+    const service = new ReserveRentalOrderService(
+      createRollbackTransactionRunner(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        auditLogger,
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute(
+        { id: RENTAL_ORDER_ID },
+        {
+          items: [
+            { productId: PRODUCT_ID, quantity: 50 },
+            { productId: OTHER_PRODUCT_ID, quantity: 50 },
+          ],
+        },
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("CONFIRMED");
+    expect(order?.items.every((item) => item.reservedQuantity === 0)).toBe(
+      true,
+    );
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(
+      (await inventoryRepository.findById(OTHER_INVENTORY_ID))?.reservedQuantity,
+    ).toBe(0);
+    expect(stockMovementRepository.count()).toBe(0);
+  });
+
+  it("applies multi-item inventory reserves in deterministic inventory-id order", async () => {
+    const created = RentalOrder.create(
+      buildCreateRentalOrderData({
+        items: [
+          { productId: PRODUCT_ID, quantity: 5, dailyRate: 10 },
+          { productId: OTHER_PRODUCT_ID, quantity: 5, dailyRate: 10 },
+        ],
+      }),
+    );
+    const multiItemOrder = RentalOrder.reconstitute({
+      id: RENTAL_ORDER_ID,
+      orderNumber: created.orderNumber,
+      customerId: created.customerId,
+      warehouseId: created.warehouseId,
+      status: "CONFIRMED",
+      startDate: created.startDate,
+      endDate: created.endDate,
+      remarks: created.remarks,
+      items: created.items.map((item, index) => ({
+        ...item,
+        id:
+          index === 0
+            ? ITEM_ID
+            : "dd0e8400-e29b-41d4-a716-446655440099",
+        reservedQuantity: 0,
+      })),
+      createdById: created.createdById,
+      createdAt: new Date("2026-01-15T10:00:00.000Z"),
+      updatedAt: new Date("2026-01-15T10:00:00.000Z"),
+    });
+
+    // OTHER_INVENTORY_ID > INVENTORY_ID lexicographically (...440001 > ...440000)
+    // Request items intentionally put the higher id product first.
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([multiItemOrder]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 0,
+      }),
+      buildInventoryEntity({
+        id: OTHER_INVENTORY_ID,
+        productId: OTHER_PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 0,
+      }),
+    ]);
+
+    const reserveOrder: string[] = [];
+    const originalReserve = inventoryRepository.reserveAvailableQuantity.bind(
+      inventoryRepository,
+    );
+    inventoryRepository.reserveAvailableQuantity = async (id, quantity) => {
+      reserveOrder.push(id);
+      return originalReserve(id, quantity);
+    };
+
+    const service = new ReserveRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await service.execute(
+      { id: RENTAL_ORDER_ID },
+      {
+        items: [
+          { productId: OTHER_PRODUCT_ID, quantity: 5 },
+          { productId: PRODUCT_ID, quantity: 5 },
+        ],
+      },
+    );
+
+    expect(reserveOrder).toEqual([INVENTORY_ID, OTHER_INVENTORY_ID]);
   });
 });

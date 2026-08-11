@@ -24,6 +24,8 @@ export {
   assertCanConfirm,
   assertCanReserve,
   assertCanUpdate,
+  CANCELLABLE_RENTAL_ORDER_STATUSES,
+  clearReservedQuantitiesOnCancel,
   computeLineTotal,
   computeRentalDays,
   computeStatusAfterReserve,

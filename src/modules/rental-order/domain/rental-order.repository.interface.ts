@@ -18,7 +18,17 @@ export interface IRentalOrderRepository {
   updateReserve(
     id: RentalOrderId,
     data: UpdateRentalOrderReserveData,
-  ): Promise<RentalOrder>;
+  ): Promise<RentalOrder | null>;
+  /**
+   * Conditionally claims CANCELLED when status is DRAFT | CONFIRMED | RESERVED.
+   * Does not clear item reservedQuantity — caller releases inventory first,
+   * then clears lines. Returns null when zero rows match.
+   */
+  cancelIfCancellable(id: RentalOrderId): Promise<RentalOrder | null>;
+  /**
+   * Sets every order-line reservedQuantity to 0 without changing status.
+   */
+  clearReservedQuantities(id: RentalOrderId): Promise<RentalOrder>;
   updateStatus(
     id: RentalOrderId,
     status: RentalOrder["status"],

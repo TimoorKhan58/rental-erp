@@ -216,17 +216,95 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
   updateReserve(
     id: RentalOrderId,
     data: UpdateRentalOrderReserveData,
-  ): Promise<RentalOrder> {
-    return repositoryUpdate(
-      this.runner,
-      (db) =>
-        db.rentalOrder.update({
+  ): Promise<RentalOrder | null> {
+    return this.runner.run(
+      async (db) => {
+        // Only one concurrent reserve claim can win while status is CONFIRMED.
+        const claimed = await db.rentalOrder.updateMany({
+          where: {
+            id,
+            status: "CONFIRMED",
+          },
+          data: {
+            status: data.status,
+          },
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.rentalOrder.update({
           where: { id },
           data: toRentalOrderReserveUpdateInput(data),
           include: RENTAL_ORDER_INCLUDE,
-        }),
+        });
+
+        return toRentalOrderDomain(record);
+      },
       { model: MODEL, operation: "updateReserve" },
-    ).then(toRentalOrderDomain);
+    );
+  }
+
+  cancelIfCancellable(id: RentalOrderId): Promise<RentalOrder | null> {
+    return this.runner.run(
+      async (db) => {
+        const claimed = await db.rentalOrder.updateMany({
+          where: {
+            id,
+            status: {
+              in: ["DRAFT", "CONFIRMED", "RESERVED"],
+            },
+          },
+          data: {
+            status: "CANCELLED",
+          },
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.rentalOrder.findUnique({
+          where: { id },
+          include: RENTAL_ORDER_INCLUDE,
+        });
+
+        return record === null ? null : toRentalOrderDomain(record);
+      },
+      { model: MODEL, operation: "cancelIfCancellable" },
+    );
+  }
+
+  clearReservedQuantities(id: RentalOrderId): Promise<RentalOrder> {
+    return this.runner.run(
+      async (db) => {
+        const existing = await db.rentalOrder.findUnique({
+          where: { id },
+          include: RENTAL_ORDER_INCLUDE,
+        });
+
+        if (existing === null) {
+          throw new Error("Rental order not found");
+        }
+
+        const record = await db.rentalOrder.update({
+          where: { id },
+          data: {
+            items: {
+              update: existing.items.map((item) => ({
+                where: { id: item.id },
+                data: { reservedQuantity: 0 },
+              })),
+            },
+          },
+          include: RENTAL_ORDER_INCLUDE,
+        });
+
+        return toRentalOrderDomain(record);
+      },
+      { model: MODEL, operation: "clearReservedQuantities" },
+    );
   }
 
   updateStatus(

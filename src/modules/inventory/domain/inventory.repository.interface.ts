@@ -15,5 +15,32 @@ export interface IInventoryRepository {
   exists(id: InventoryId): Promise<boolean>;
   create(data: CreateInventoryData): Promise<Inventory>;
   update(id: InventoryId, data: UpdateInventoryData): Promise<Inventory>;
+  /**
+   * Atomically increments reservedQuantity when capacity allows.
+   *
+   * Succeeds only when the inventory row exists, is active, and
+   * reservedQuantity + quantity <= quantityOnHand.
+   *
+   * Returns the updated inventory on success, or null when the
+   * capacity/active predicate matches zero rows.
+   */
+  reserveAvailableQuantity(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null>;
+  /**
+   * Atomically decrements reservedQuantity when enough reserved stock exists.
+   *
+   * Succeeds only when the inventory row exists and
+   * reservedQuantity >= quantity.
+   * Does not require the inventory to be active (holds must still clear).
+   *
+   * Returns the updated inventory on success, or null when the
+   * reserved-quantity predicate matches zero rows.
+   */
+  releaseReservedQuantity(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null>;
   delete(id: InventoryId): Promise<void>;
 }

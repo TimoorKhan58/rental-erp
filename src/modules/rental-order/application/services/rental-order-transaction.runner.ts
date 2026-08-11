@@ -1,3 +1,4 @@
+import type { IDispatchRepository } from "@/modules/dispatch/domain/dispatch.repository.interface";
 import type { IInventoryRepository } from "@/modules/inventory/domain/inventory.repository.interface";
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
 import type { IStockMovementRepository } from "@/modules/stock-movement/domain/stock-movement.repository.interface";
@@ -9,6 +10,7 @@ export interface RentalOrderWriteScope {
   readonly rentalOrderRepository: IRentalOrderRepository;
   readonly inventoryRepository: IInventoryRepository;
   readonly stockMovementRepository: IStockMovementRepository;
+  readonly dispatchRepository: IDispatchRepository;
   readonly auditLogger: IAuditLogger;
   readonly notificationService: INotificationService;
   readonly db: DbClient;

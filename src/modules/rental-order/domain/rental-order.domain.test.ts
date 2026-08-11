@@ -50,6 +50,7 @@ import {
   buildConfirmedRentalOrderEntity,
   buildCreateRentalOrderData,
   buildRentalOrderEntity,
+  buildReservedRentalOrderEntity,
 } from "../tests/helpers/rental-order.fixtures";
 
 describe("RentalOrder entity", () => {
@@ -144,10 +145,30 @@ describe("RentalOrder entity", () => {
     expect(cancelled.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel when reserved", () => {
+  it("cancels confirmed order with reservations and clears line reserved quantities", () => {
     const order = buildRentalOrderEntity({
       status: "CONFIRMED",
       reservedQuantity: 5,
+    });
+    const cancelled = order.withCancelled();
+
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(cancelled.items[0]?.reservedQuantity).toBe(0);
+  });
+
+  it("cancels fully reserved order and clears line reserved quantities", () => {
+    const order = buildReservedRentalOrderEntity();
+    const cancelled = order.withCancelled();
+
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(cancelled.items.every((item) => item.reservedQuantity === 0)).toBe(
+      true,
+    );
+  });
+
+  it("rejects cancel when dispatched", () => {
+    const order = buildRentalOrderEntity({
+      status: "DISPATCHED",
     });
 
     expect(() => order.withCancelled()).toThrow(RentalOrderInvalidStatusError);

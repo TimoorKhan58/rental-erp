@@ -11,6 +11,7 @@ import {
   assertCanConfirm,
   assertCanReserve,
   assertCanUpdate,
+  clearReservedQuantitiesOnCancel,
   computeOrderDateEnvelope,
   computeStatusAfterReserve,
   normalizeRentalOrderProps,
@@ -120,6 +121,7 @@ export class RentalOrder implements Entity<RentalOrderId> {
     return RentalOrder.reconstitute({
       ...this.toProps(),
       status: "CANCELLED",
+      items: clearReservedQuantitiesOnCancel(this.items),
       updatedAt: new Date(),
     });
   }

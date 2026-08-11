@@ -48,6 +48,10 @@ describe("status transition guards", () => {
     );
   });
 
+  it("assertCanCancel allows draft", () => {
+    expect(() => assertCanCancel("DRAFT", [])).not.toThrow();
+  });
+
   it("assertCanCancel allows confirmed with no reservations", () => {
     expect(() =>
       assertCanCancel("CONFIRMED", [
@@ -65,8 +69,59 @@ describe("status transition guards", () => {
     ).not.toThrow();
   });
 
-  it("assertCanCancel rejects reserved status", () => {
-    expect(() => assertCanCancel("RESERVED", [])).toThrow(
+  it("assertCanCancel allows confirmed with reservations", () => {
+    expect(() =>
+      assertCanCancel("CONFIRMED", [
+        {
+          id: ITEM_ID,
+          productId: PRODUCT_ID,
+          quantity: 10,
+          dailyRate: 10,
+          reservedQuantity: 4,
+          startDate: new Date("2026-02-01T00:00:00.000Z"),
+          endDate: new Date("2026-02-05T00:00:00.000Z"),
+          numberOfDays: 4,
+        },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("assertCanCancel allows reserved status", () => {
+    expect(() => assertCanCancel("RESERVED", [])).not.toThrow();
+  });
+
+  it("assertCanCancel rejects cancelled", () => {
+    expect(() => assertCanCancel("CANCELLED", [])).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanCancel rejects dispatched", () => {
+    expect(() => assertCanCancel("DISPATCHED", [])).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanCancel rejects on_rent", () => {
+    expect(() => assertCanCancel("ON_RENT", [])).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanCancel rejects partially_returned", () => {
+    expect(() => assertCanCancel("PARTIALLY_RETURNED", [])).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanCancel rejects returned", () => {
+    expect(() => assertCanCancel("RETURNED", [])).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanCancel rejects completed", () => {
+    expect(() => assertCanCancel("COMPLETED", [])).toThrow(
       RentalOrderInvalidStatusError,
     );
   });
@@ -93,20 +148,26 @@ describe("rental order entity edge cases", () => {
     expect(cancelled.status).toBe("CANCELLED");
   });
 
-  it("rejects cancel on partially reserved entity", () => {
+  it("cancels partially reserved confirmed entity and clears reserved", () => {
     const partial = buildPartiallyReservedConfirmedEntity();
+    const cancelled = partial.withCancelled();
 
-    expect(() => partial.withCancelled()).toThrow(
-      RentalOrderInvalidStatusError,
-    );
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(cancelled.items[0]?.reservedQuantity).toBe(0);
   });
 
-  it("rejects cancel on fully reserved entity", () => {
+  it("cancels fully reserved entity and clears reserved", () => {
     const reserved = buildReservedRentalOrderEntity();
+    const cancelled = reserved.withCancelled();
 
-    expect(() => reserved.withCancelled()).toThrow(
-      RentalOrderInvalidStatusError,
-    );
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(cancelled.items[0]?.reservedQuantity).toBe(0);
+  });
+
+  it("rejects cancel on dispatched entity", () => {
+    const order = buildRentalOrderEntity({ status: "DISPATCHED" });
+
+    expect(() => order.withCancelled()).toThrow(RentalOrderInvalidStatusError);
   });
 
   it("normalizes optional remarks to null", () => {

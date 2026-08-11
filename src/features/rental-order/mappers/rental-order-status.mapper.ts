@@ -12,25 +12,14 @@ export function canReserveRentalOrder(status: RentalOrderStatus): boolean {
   return status === "CONFIRMED";
 }
 
-const NON_CANCELLABLE_STATUSES: RentalOrderStatus[] = [
-  "RESERVED",
-  "DISPATCHED",
-  "ON_RENT",
-  "PARTIALLY_RETURNED",
-  "RETURNED",
-  "COMPLETED",
-  "CANCELLED",
-];
-
 export function canCancelRentalOrder(
   status: RentalOrderStatus,
   items: RentalOrderItemResponse[],
 ): boolean {
-  if (NON_CANCELLABLE_STATUSES.includes(status)) {
-    return false;
-  }
-
-  return !items.some((item) => item.reservedQuantity > 0);
+  void items;
+  return (
+    status === "DRAFT" || status === "CONFIRMED" || status === "RESERVED"
+  );
 }
 
 export const STATUS_LABELS: Record<RentalOrderStatus, string> = {

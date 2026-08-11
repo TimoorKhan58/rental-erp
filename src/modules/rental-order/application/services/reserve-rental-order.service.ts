@@ -106,11 +106,29 @@ export class ReserveRentalOrderService {
           },
         );
 
+        if (updated === null) {
+          throw new UnprocessableError({
+            message: "Rental order cannot be reserved",
+            details: {
+              currentStatus: existing.status,
+              action: "reserve",
+            },
+          });
+        }
+
+        // Resolve inventory rows first, then reserve in deterministic id order
+        // to reduce deadlock risk when concurrent orders touch the same SKUs.
+        const reserveTargets: Array<{
+          inventoryId: string;
+          quantity: number;
+        }> = [];
+
         for (const reserveItem of data.items) {
-          const inventory = await inventoryRepository.findByProductAndWarehouse(
-            toProductId(reserveItem.productId),
-            existing.warehouseId,
-          );
+          const inventory =
+            await inventoryRepository.findByProductAndWarehouse(
+              toProductId(reserveItem.productId),
+              existing.warehouseId,
+            );
 
           if (inventory === null) {
             throw new NotFoundError({
@@ -122,6 +140,17 @@ export class ReserveRentalOrderService {
             });
           }
 
+          reserveTargets.push({
+            inventoryId: inventory.id,
+            quantity: reserveItem.quantity,
+          });
+        }
+
+        reserveTargets.sort((left, right) =>
+          left.inventoryId.localeCompare(right.inventoryId),
+        );
+
+        for (const target of reserveTargets) {
           await executeCreateStockMovementInScope(
             {
               stockMovementRepository,
@@ -130,9 +159,9 @@ export class ReserveRentalOrderService {
               userId,
             },
             {
-              inventoryId: inventory.id,
+              inventoryId: target.inventoryId,
               movementType: "RESERVE",
-              quantity: reserveItem.quantity,
+              quantity: target.quantity,
               referenceType: RENTAL_ORDER_REFERENCE_TYPE,
               referenceId: existing.id,
               remarks: `Reserved for rental order ${existing.orderNumber}`,

@@ -228,8 +228,14 @@ export function assertCanReserve(status: RentalOrderStatus): void {
   }
 }
 
-const NON_CANCELLABLE_STATUSES: RentalOrderStatus[] = [
+/** Statuses that may enter the cancel-after-reserve workflow. */
+export const CANCELLABLE_RENTAL_ORDER_STATUSES: RentalOrderStatus[] = [
+  "DRAFT",
+  "CONFIRMED",
   "RESERVED",
+];
+
+const NON_CANCELLABLE_STATUSES: RentalOrderStatus[] = [
   "DISPATCHED",
   "ON_RENT",
   "PARTIALLY_RETURNED",
@@ -242,13 +248,24 @@ export function assertCanCancel(
   status: RentalOrderStatus,
   items: RentalOrderItemProps[],
 ): void {
+  void items;
+
   if (NON_CANCELLABLE_STATUSES.includes(status)) {
     throw new RentalOrderInvalidStatusError(status, "cancel");
   }
 
-  if (items.some((item) => item.reservedQuantity > 0)) {
+  if (!CANCELLABLE_RENTAL_ORDER_STATUSES.includes(status)) {
     throw new RentalOrderInvalidStatusError(status, "cancel");
   }
+}
+
+export function clearReservedQuantitiesOnCancel(
+  items: RentalOrderItemProps[],
+): RentalOrderItemProps[] {
+  return items.map((item) => ({
+    ...item,
+    reservedQuantity: 0,
+  }));
 }
 
 export function normalizeRentalOrderProps(

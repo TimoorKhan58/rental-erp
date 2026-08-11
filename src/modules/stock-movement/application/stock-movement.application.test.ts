@@ -156,6 +156,34 @@ describe("CreateStockMovementService", () => {
     expect(inventory?.reservedQuantity).toBe(5);
   });
 
+  it("creates RELEASE movement on inactive inventory", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ isActive: false, reservedQuantity: 10 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const result = await service.execute({
+      inventoryId: INVENTORY_ID,
+      movementType: "RELEASE",
+      quantity: 4,
+    });
+
+    expect(result.previousQuantity).toBe(10);
+    expect(result.newQuantity).toBe(6);
+    expect(stockMovementRepository.count()).toBe(1);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      6,
+    );
+  });
+
   it("creates ADJUSTMENT movement and increases on-hand", async () => {
     const inventoryRepository = new InMemoryInventoryRepository();
     inventoryRepository.seed([buildInventoryEntity()]);
@@ -389,7 +417,19 @@ describe("CreateStockMovementService", () => {
         movementType: "RELEASE",
         quantity: 11,
       }),
-    ).rejects.toBeInstanceOf(UnprocessableError);
+    ).rejects.toMatchObject({
+      name: "UnprocessableError",
+      details: expect.objectContaining({
+        movementType: "RELEASE",
+        requestedQuantity: 11,
+        availableQuantity: 10,
+      }),
+    });
+
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      10,
+    );
+    expect(stockMovementRepository.count()).toBe(0);
   });
 
   it("rejects invalid inventoryId", async () => {
@@ -637,5 +677,237 @@ describe("ListStockMovementsService", () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.movementType).toBe("OUT");
+  });
+});
+
+describe("CreateStockMovementService RESERVE concurrency", () => {
+  it("allows only one concurrent oversubscription reserve (80 + 80)", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ quantityOnHand: 100, reservedQuantity: 0 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const results = await Promise.allSettled([
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RESERVE",
+        quantity: 80,
+      }),
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RESERVE",
+        quantity: 80,
+      }),
+    ]);
+
+    const fulfilled = results.filter((result) => result.status === "fulfilled");
+    const rejected = results.filter((result) => result.status === "rejected");
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0]?.status === "rejected" && rejected[0].reason).toBeInstanceOf(
+      UnprocessableError,
+    );
+
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.reservedQuantity).toBe(80);
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+
+  it("allows concurrent exact capacity reserves (50 + 50)", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ quantityOnHand: 100, reservedQuantity: 0 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const results = await Promise.all([
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RESERVE",
+        quantity: 50,
+      }),
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RESERVE",
+        quantity: 50,
+      }),
+    ]);
+
+    expect(results).toHaveLength(2);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      100,
+    );
+    expect(stockMovementRepository.count()).toBe(2);
+  });
+
+  it("allows only one concurrent over-capacity reserve (60 + 60)", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ quantityOnHand: 100, reservedQuantity: 0 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const results = await Promise.allSettled([
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RESERVE",
+        quantity: 60,
+      }),
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RESERVE",
+        quantity: 60,
+      }),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+      1,
+    );
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(
+      1,
+    );
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      60,
+    );
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+});
+
+describe("CreateStockMovementService RELEASE concurrency", () => {
+  it("allows only one concurrent oversubscription release (80 + 80)", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ quantityOnHand: 100, reservedQuantity: 100 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const results = await Promise.allSettled([
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RELEASE",
+        quantity: 80,
+      }),
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RELEASE",
+        quantity: 80,
+      }),
+    ]);
+
+    const fulfilled = results.filter((result) => result.status === "fulfilled");
+    const rejected = results.filter((result) => result.status === "rejected");
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0]?.status === "rejected" && rejected[0].reason).toBeInstanceOf(
+      UnprocessableError,
+    );
+
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.reservedQuantity).toBe(20);
+    expect(stockMovementRepository.count()).toBe(1);
+  });
+
+  it("allows concurrent exact releases (50 + 50)", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ quantityOnHand: 100, reservedQuantity: 100 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const results = await Promise.all([
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RELEASE",
+        quantity: 50,
+      }),
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RELEASE",
+        quantity: 50,
+      }),
+    ]);
+
+    expect(results).toHaveLength(2);
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      0,
+    );
+    expect(stockMovementRepository.count()).toBe(2);
+  });
+
+  it("allows only one concurrent over-reserved release (60 + 60)", async () => {
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({ quantityOnHand: 100, reservedQuantity: 100 }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateStockMovementService(
+      createWriteScope(
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+      ),
+    );
+
+    const results = await Promise.allSettled([
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RELEASE",
+        quantity: 60,
+      }),
+      service.execute({
+        inventoryId: INVENTORY_ID,
+        movementType: "RELEASE",
+        quantity: 60,
+      }),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+      1,
+    );
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(
+      1,
+    );
+    expect((await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity).toBe(
+      40,
+    );
+    expect(stockMovementRepository.count()).toBe(1);
   });
 });

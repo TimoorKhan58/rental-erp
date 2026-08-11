@@ -22,16 +22,24 @@ import {
 } from "./stock-movement-service.constants";
 import type { StockMovementWriteScope } from "./stock-movement-transaction.runner";
 
+function toInsufficientUnprocessable(
+  error: StockMovementInsufficientQuantityError,
+): UnprocessableError {
+  return new UnprocessableError({
+    message: error.message,
+    details: {
+      movementType: error.movementType,
+      requestedQuantity: error.requestedQuantity,
+      availableQuantity: error.availableQuantity,
+    },
+  });
+}
+
 export async function executeCreateStockMovementInScope(
   scope: StockMovementWriteScope,
   input: CreateStockMovementInput,
 ): Promise<StockMovement> {
-  const {
-    stockMovementRepository,
-    inventoryRepository,
-    auditLogger,
-    userId,
-  } = scope;
+  const { inventoryRepository, userId } = scope;
 
   if (userId === undefined) {
     throw new UnauthorizedError({
@@ -48,6 +56,22 @@ export async function executeCreateStockMovementInScope(
       message: "Inventory not found",
       details: { inventoryId: input.inventoryId },
     });
+  }
+
+  if (input.movementType === "RESERVE") {
+    if (!inventory.isActive) {
+      throw new UnprocessableError({
+        message: "Inventory is inactive",
+        details: { inventoryId: input.inventoryId },
+      });
+    }
+
+    return executeReserveStockMovementInScope(scope, input, inventory);
+  }
+
+  if (input.movementType === "RELEASE") {
+    // RELEASE must clear existing holds even when inventory is inactive.
+    return executeReleaseStockMovementInScope(scope, input, inventory);
   }
 
   if (!inventory.isActive) {
@@ -67,14 +91,7 @@ export async function executeCreateStockMovementInScope(
     );
   } catch (error) {
     if (error instanceof StockMovementInsufficientQuantityError) {
-      throw new UnprocessableError({
-        message: error.message,
-        details: {
-          movementType: error.movementType,
-          requestedQuantity: error.requestedQuantity,
-          availableQuantity: error.availableQuantity,
-        },
-      });
+      throw toInsufficientUnprocessable(error);
     }
 
     throw error;
@@ -103,6 +120,126 @@ export async function executeCreateStockMovementInScope(
     reservedQuantity: effect.reservedQuantity,
   });
 
+  return createStockMovementAndAudit(scope, input, inventory, {
+    previousQuantity: effect.previousQuantity,
+    newQuantity: effect.newQuantity,
+  });
+}
+
+async function executeReserveStockMovementInScope(
+  scope: StockMovementWriteScope,
+  input: CreateStockMovementInput,
+  inventory: Inventory,
+): Promise<StockMovement> {
+  const { inventoryRepository } = scope;
+
+  // Database atomic UPDATE is the concurrency authority for RESERVE.
+  const reserved = await inventoryRepository.reserveAvailableQuantity(
+    inventory.id,
+    input.quantity,
+  );
+
+  if (reserved === null) {
+    const latest = await inventoryRepository.findById(inventory.id);
+    const availableQuantity =
+      latest?.availableQuantity ?? inventory.availableQuantity;
+
+    throw toInsufficientUnprocessable(
+      new StockMovementInsufficientQuantityError(
+        "Insufficient available quantity for RESERVE movement",
+        "RESERVE",
+        input.quantity,
+        availableQuantity,
+      ),
+    );
+  }
+
+  try {
+    Inventory.reconstitute(reserved.toProps());
+  } catch (error) {
+    if (error instanceof InventoryInvariantError) {
+      throw new UnprocessableError({
+        message: error.message,
+        details: { field: error.field },
+      });
+    }
+
+    throw error;
+  }
+
+  const previousQuantity = reserved.reservedQuantity - input.quantity;
+  const newQuantity = reserved.reservedQuantity;
+
+  return createStockMovementAndAudit(scope, input, reserved, {
+    previousQuantity,
+    newQuantity,
+  });
+}
+
+async function executeReleaseStockMovementInScope(
+  scope: StockMovementWriteScope,
+  input: CreateStockMovementInput,
+  inventory: Inventory,
+): Promise<StockMovement> {
+  const { inventoryRepository } = scope;
+
+  // Database atomic UPDATE is the concurrency authority for RELEASE.
+  const released = await inventoryRepository.releaseReservedQuantity(
+    inventory.id,
+    input.quantity,
+  );
+
+  if (released === null) {
+    const latest = await inventoryRepository.findById(inventory.id);
+    const availableQuantity =
+      latest?.reservedQuantity ?? inventory.reservedQuantity;
+
+    throw toInsufficientUnprocessable(
+      new StockMovementInsufficientQuantityError(
+        "Insufficient reserved quantity for RELEASE movement",
+        "RELEASE",
+        input.quantity,
+        availableQuantity,
+      ),
+    );
+  }
+
+  try {
+    Inventory.reconstitute(released.toProps());
+  } catch (error) {
+    if (error instanceof InventoryInvariantError) {
+      throw new UnprocessableError({
+        message: error.message,
+        details: { field: error.field },
+      });
+    }
+
+    throw error;
+  }
+
+  const previousQuantity = released.reservedQuantity + input.quantity;
+  const newQuantity = released.reservedQuantity;
+
+  return createStockMovementAndAudit(scope, input, released, {
+    previousQuantity,
+    newQuantity,
+  });
+}
+
+async function createStockMovementAndAudit(
+  scope: StockMovementWriteScope,
+  input: CreateStockMovementInput,
+  inventory: Inventory,
+  quantities: { previousQuantity: number; newQuantity: number },
+): Promise<StockMovement> {
+  const { stockMovementRepository, auditLogger, userId } = scope;
+
+  if (userId === undefined) {
+    throw new UnauthorizedError({
+      message: "User context is required to create stock movement",
+    });
+  }
+
   const movement = await stockMovementRepository.create(
     toCreateStockMovementData(
       input,
@@ -111,10 +248,7 @@ export async function executeCreateStockMovementInScope(
         productId: inventory.productId,
         warehouseId: inventory.warehouseId,
       },
-      {
-        previousQuantity: effect.previousQuantity,
-        newQuantity: effect.newQuantity,
-      },
+      quantities,
       toUserId(userId),
     ),
   );

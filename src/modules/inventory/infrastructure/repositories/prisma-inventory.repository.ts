@@ -220,6 +220,116 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     return toInventoryDomain(record);
   }
 
+  /**
+   * Capacity check and reservedQuantity increment are enforced in one SQL UPDATE.
+   * Uses the repository runner's transaction-scoped client when inside a UoW.
+   */
+  reserveAvailableQuantity(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<
+          Array<{
+            id: string;
+            productId: string;
+            warehouseId: string;
+            quantityOnHand: number;
+            reservedQuantity: number;
+            minimumStock: number;
+            maximumStock: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >`
+          UPDATE "inventory"
+          SET
+            "reservedQuantity" = "reservedQuantity" + ${quantity},
+            "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${id}
+            AND "reservedQuantity" + ${quantity} <= "quantityOnHand"
+            AND "isActive" = true
+          RETURNING
+            "id",
+            "productId",
+            "warehouseId",
+            "quantityOnHand",
+            "reservedQuantity",
+            "minimumStock",
+            "maximumStock",
+            "isActive",
+            "createdAt",
+            "updatedAt"
+        `;
+
+        const record = rows[0];
+        return record === undefined ? null : toInventoryDomain(record);
+      },
+      { model: MODEL, operation: "reserveAvailableQuantity" },
+    );
+  }
+
+  /**
+   * Reserved-quantity decrement is enforced in one SQL UPDATE.
+   * Uses the repository runner's transaction-scoped client when inside a UoW.
+   * Does not require isActive — existing holds must still be releasable.
+   */
+  releaseReservedQuantity(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<
+          Array<{
+            id: string;
+            productId: string;
+            warehouseId: string;
+            quantityOnHand: number;
+            reservedQuantity: number;
+            minimumStock: number;
+            maximumStock: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >`
+          UPDATE "inventory"
+          SET
+            "reservedQuantity" = "reservedQuantity" - ${quantity},
+            "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${id}
+            AND "reservedQuantity" >= ${quantity}
+          RETURNING
+            "id",
+            "productId",
+            "warehouseId",
+            "quantityOnHand",
+            "reservedQuantity",
+            "minimumStock",
+            "maximumStock",
+            "isActive",
+            "createdAt",
+            "updatedAt"
+        `;
+
+        const record = rows[0];
+        return record === undefined ? null : toInventoryDomain(record);
+      },
+      { model: MODEL, operation: "releaseReservedQuantity" },
+    );
+  }
+
   delete(id: InventoryId): Promise<void> {
     return repositoryDelete(
       this.runner,
