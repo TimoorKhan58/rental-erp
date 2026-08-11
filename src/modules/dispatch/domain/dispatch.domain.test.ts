@@ -9,6 +9,7 @@ import {
 } from "@/modules/dispatch/domain/dispatch.errors";
 import {
   assertRentalOrderEligibleForDispatch,
+  sumClaimedDispatchQuantitiesByRentalOrderItem,
   validateDeliveryAddress,
   validateDispatchDate,
   validateDispatchItems,
@@ -230,10 +231,112 @@ describe("Dispatch rules", () => {
     ).toThrow(DispatchInvalidItemError);
   });
 
+  it("rejects quantity exceeding remaining after prior dispatch claims", () => {
+    const claimed = new Map([[ITEM_ID, 60]]);
+
+    expect(() =>
+      validateDispatchItemsAgainstRentalOrder(
+        [{ productId: PRODUCT_ID, rentalOrderItemId: ITEM_ID, quantity: 41 }],
+        [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            ...LINE_PERIOD,
+          },
+        ],
+        claimed,
+      ),
+    ).toThrow(DispatchInvalidItemError);
+  });
+
+  it("allows quantity within remaining after prior dispatch claims", () => {
+    const claimed = new Map([[ITEM_ID, 60]]);
+
+    expect(() =>
+      validateDispatchItemsAgainstRentalOrder(
+        [{ productId: PRODUCT_ID, rentalOrderItemId: ITEM_ID, quantity: 40 }],
+        [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            ...LINE_PERIOD,
+          },
+        ],
+        claimed,
+      ),
+    ).not.toThrow();
+  });
+
+  it("sums claimed quantities from non-cancelled dispatches only", () => {
+    const claimed = sumClaimedDispatchQuantitiesByRentalOrderItem([
+      {
+        id: "d1",
+        status: "COMPLETED",
+        items: [
+          {
+            rentalOrderItemId: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 60,
+          },
+        ],
+      },
+      {
+        id: "d2",
+        status: "CANCELLED",
+        items: [
+          {
+            rentalOrderItemId: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 40,
+          },
+        ],
+      },
+    ]);
+
+    expect(claimed.get(ITEM_ID)).toBe(60);
+  });
+
+  it("excludes a dispatch id when summing claimed quantities", () => {
+    const claimed = sumClaimedDispatchQuantitiesByRentalOrderItem(
+      [
+        {
+          id: "d1",
+          status: "DRAFT",
+          items: [
+            {
+              rentalOrderItemId: ITEM_ID,
+              productId: PRODUCT_ID,
+              quantity: 60,
+            },
+          ],
+        },
+      ],
+      { excludeDispatchId: "d1" },
+    );
+
+    expect(claimed.get(ITEM_ID)).toBeUndefined();
+  });
+
   it("rejects ineligible rental order status", () => {
     expect(() => assertRentalOrderEligibleForDispatch("DRAFT")).toThrow(
       DispatchInvalidItemError,
     );
+  });
+
+  it("allows ON_RENT rental order status for dispatch eligibility", () => {
+    expect(() => assertRentalOrderEligibleForDispatch("ON_RENT")).not.toThrow();
+  });
+
+  it("rejects PARTIALLY_RETURNED for dispatch eligibility", () => {
+    expect(() =>
+      assertRentalOrderEligibleForDispatch("PARTIALLY_RETURNED"),
+    ).toThrow(DispatchInvalidItemError);
   });
 });
 

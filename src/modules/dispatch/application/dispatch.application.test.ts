@@ -37,9 +37,11 @@ import type { CreateDispatchInput } from "@/modules/dispatch/application/schemas
 
 import {
   DISPATCH_ID,
+  ITEM_ID,
   OTHER_DISPATCH_ID,
   RENTAL_ORDER_ID,
   VALID_CREATE_INPUT,
+  buildCompletedDispatchEntity,
   buildDispatchEntity,
   buildReadyDispatchEntity,
   buildReservedRentalOrderEntity,
@@ -221,6 +223,192 @@ describe("CreateDispatchService", () => {
       UnauthorizedError,
     );
   });
+
+  it("creates dispatch for confirmed rental order", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "CONFIRMED",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        new InMemoryDispatchRepository(),
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      createMockNumberSequenceRepository(),
+    );
+
+    const result = await service.execute(VALID_CREATE_SERVICE_INPUT);
+
+    expect(result.status).toBe("DRAFT");
+  });
+
+  it("creates dispatch for ON_RENT rental order when remaining reserved exists", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildCompletedDispatchEntity(),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      createMockNumberSequenceRepository(),
+    );
+
+    const result = await service.execute({
+      ...VALID_CREATE_SERVICE_INPUT,
+      dispatchNumber: "DSP-2026-002",
+      items: [
+        {
+          productId: PRODUCT_ID,
+          rentalOrderItemId: ITEM_ID,
+          quantity: 5,
+        },
+      ],
+    });
+
+    expect(result.dispatchNumber).toBe("DSP-2026-002");
+    expect(dispatchRepository.count()).toBe(2);
+  });
+
+  it("rejects create when remaining reserved quantity is exceeded", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([buildCompletedDispatchEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 45,
+        reservedQuantity: 5,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CreateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      createMockNumberSequenceRepository(),
+    );
+
+    await expect(
+      service.execute({
+        ...VALID_CREATE_SERVICE_INPUT,
+        dispatchNumber: "DSP-2026-002",
+        items: [
+          {
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 6,
+          },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+
+    expect(dispatchRepository.count()).toBe(1);
+    expect(stockMovementRepository.count()).toBe(0);
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity,
+    ).toBe(5);
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.quantityOnHand,
+    ).toBe(45);
+  });
+
+  it("allows create after cancelled dispatch frees claimed capacity", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        status: "CANCELLED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 10,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildReservedRentalOrderEntity()]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      createMockNumberSequenceRepository(),
+    );
+
+    const result = await service.execute({
+      ...VALID_CREATE_SERVICE_INPUT,
+      dispatchNumber: "DSP-2026-003",
+    });
+
+    expect(result.dispatchNumber).toBe("DSP-2026-003");
+    expect(dispatchRepository.count()).toBe(2);
+  });
+
+  it("rejects create for PARTIALLY_RETURNED rental order", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "PARTIALLY_RETURNED",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        new InMemoryDispatchRepository(),
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      createMockNumberSequenceRepository(),
+    );
+
+    await expect(service.execute(VALID_CREATE_SERVICE_INPUT)).rejects.toBeInstanceOf(
+      UnprocessableError,
+    );
+  });
 });
 
 describe("UpdateDispatchService", () => {
@@ -325,6 +513,202 @@ describe("UpdateDispatchService", () => {
       service.execute({ id: DISPATCH_ID }, { markReady: true }),
     ).rejects.toBeInstanceOf(UnprocessableError);
   });
+
+  it("allows updating draft quantity to the same claimed amount when excluding self", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 60,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        reservedQuantity: 100,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const service = new UpdateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute(
+      { id: DISPATCH_ID },
+      {
+        items: [
+          {
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 60,
+          },
+        ],
+      },
+    );
+
+    expect(result.items[0]?.quantity).toBe(60);
+  });
+
+  it("allows increasing draft quantity within remaining after excluding self", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 60,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        reservedQuantity: 100,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const service = new UpdateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute(
+      { id: DISPATCH_ID },
+      {
+        items: [
+          {
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 80,
+          },
+        ],
+      },
+    );
+
+    expect(result.items[0]?.quantity).toBe(80);
+  });
+
+  it("rejects draft update that exceeds remaining after other dispatches", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 60,
+            notes: null,
+          },
+        ],
+      }),
+      buildDispatchEntity({
+        id: OTHER_DISPATCH_ID,
+        status: "COMPLETED",
+        items: [
+          {
+            id: "dd0e8400-e29b-41d4-a716-446655440099",
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 40,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 100,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const service = new UpdateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(
+      service.execute(
+        { id: DISPATCH_ID },
+        {
+          items: [
+            {
+              productId: PRODUCT_ID,
+              rentalOrderItemId: ITEM_ID,
+              quantity: 61,
+            },
+          ],
+        },
+      ),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+  });
 });
 
 describe("CompleteDispatchService", () => {
@@ -386,6 +770,48 @@ describe("CompleteDispatchService", () => {
     expect(inventory?.quantityOnHand).toBe(45);
     expect(inventory?.reservedQuantity).toBe(0);
     expect(inventory?.availableQuantity).toBe(45);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("ON_RENT");
+    expect(order?.items[0]?.reservedQuantity).toBe(10);
+  });
+
+  it("sets confirmed rental order to ON_RENT without persisting DISPATCHED", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([buildReadyDispatchEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildConfirmedRentalOrderEntity().withReserved([
+        { productId: PRODUCT_ID, quantity: 5 },
+      ]),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 5,
+      }),
+    ]);
+    const service = new CompleteDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await service.execute({ id: DISPATCH_ID });
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("ON_RENT");
+    expect(order?.status).not.toBe("DISPATCHED");
+    expect(order?.items[0]?.reservedQuantity).toBe(5);
   });
 
   it("rejects complete when not ready", async () => {
@@ -513,6 +939,274 @@ describe("CompleteDispatchService", () => {
     expect(dispatch?.status).toBe("READY");
     expect(stockMovementRepository.count()).toBe(0);
     expect(auditLogger.entries).toHaveLength(0);
+
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("RESERVED");
+  });
+
+  it("rejects complete when rental order status cannot enter ON_RENT", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([buildReadyDispatchEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({ status: "CANCELLED" }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 50,
+        reservedQuantity: 5,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CompleteDispatchService(
+      createRollbackTransactionRunner(
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    await expect(service.execute({ id: DISPATCH_ID })).rejects.toBeInstanceOf(
+      UnprocessableError,
+    );
+
+    expect((await dispatchRepository.findById(DISPATCH_ID))?.status).toBe(
+      "READY",
+    );
+    expect(stockMovementRepository.count()).toBe(0);
+    expect(
+      (await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status,
+    ).toBe("CANCELLED");
+  });
+
+  it("keeps rental order ON_RENT when completing a subsequent dispatch", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    const readyAt = new Date("2026-01-16T10:00:00.000Z");
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        id: OTHER_DISPATCH_ID,
+        status: "READY",
+        readyAt,
+        items: [
+          {
+            id: "dd0e8400-e29b-41d4-a716-446655440099",
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 5,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 45,
+        reservedQuantity: 5,
+      }),
+    ]);
+    const service = new CompleteDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: OTHER_DISPATCH_ID });
+
+    expect(result.status).toBe("COMPLETED");
+    const order = await rentalOrderRepository.findById(RENTAL_ORDER_ID);
+    expect(order?.status).toBe("ON_RENT");
+    const inventory = await inventoryRepository.findById(INVENTORY_ID);
+    expect(inventory?.reservedQuantity).toBe(0);
+    expect(inventory?.quantityOnHand).toBe(40);
+  });
+});
+
+describe("Multi-dispatch remaining quantity", () => {
+  it("supports 100 reserved → dispatch 60 then 40", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "RESERVED",
+        reservedQuantity: 100,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 100,
+        reservedQuantity: 100,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const writeScope = createWriteScope(
+      dispatchRepository,
+      rentalOrderRepository,
+      inventoryRepository,
+      stockMovementRepository,
+      new MockAuditLogger(),
+      USER_ID,
+    );
+    const createService = new CreateDispatchService(
+      writeScope,
+      createMockNumberSequenceRepository(),
+    );
+    const updateService = new UpdateDispatchService(writeScope);
+    const completeService = new CompleteDispatchService(writeScope);
+
+    const first = await createService.execute({
+      ...VALID_CREATE_SERVICE_INPUT,
+      dispatchNumber: "DSP-100-001",
+      items: [
+        {
+          productId: PRODUCT_ID,
+          rentalOrderItemId: ITEM_ID,
+          quantity: 60,
+        },
+      ],
+    });
+    await updateService.execute({ id: first.id }, { markReady: true });
+    await completeService.execute({ id: first.id });
+
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "ON_RENT",
+    );
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity,
+    ).toBe(40);
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.quantityOnHand,
+    ).toBe(40);
+
+    const second = await createService.execute({
+      ...VALID_CREATE_SERVICE_INPUT,
+      dispatchNumber: "DSP-100-002",
+      items: [
+        {
+          productId: PRODUCT_ID,
+          rentalOrderItemId: ITEM_ID,
+          quantity: 40,
+        },
+      ],
+    });
+    await updateService.execute({ id: second.id }, { markReady: true });
+    await completeService.execute({ id: second.id });
+
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "ON_RENT",
+    );
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity,
+    ).toBe(0);
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.quantityOnHand,
+    ).toBe(0);
+    expect(
+      (await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.items[0]
+        ?.reservedQuantity,
+    ).toBe(100);
+  });
+
+  it("rejects 100 reserved → dispatch 60 then 41", async () => {
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({
+        status: "COMPLETED",
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 60,
+            notes: null,
+          },
+        ],
+      }),
+    ]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 100,
+        items: [
+          {
+            id: ITEM_ID,
+            productId: PRODUCT_ID,
+            quantity: 100,
+            dailyRate: 150,
+            reservedQuantity: 100,
+            startDate: new Date("2026-02-01T00:00:00.000Z"),
+            endDate: new Date("2026-02-05T00:00:00.000Z"),
+            numberOfDays: 4,
+          },
+        ],
+      }),
+    ]);
+    const service = new CreateDispatchService(
+      createWriteScope(
+        dispatchRepository,
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      createMockNumberSequenceRepository(),
+    );
+
+    await expect(
+      service.execute({
+        ...VALID_CREATE_SERVICE_INPUT,
+        dispatchNumber: "DSP-100-002",
+        items: [
+          {
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantity: 41,
+          },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableError);
+
+    expect(dispatchRepository.count()).toBe(1);
   });
 });
 

@@ -3,6 +3,7 @@ import type { INumberSequenceRepository } from "@/modules/settings/domain/number
 import { Dispatch } from "@/modules/dispatch/domain";
 import {
   DispatchInvariantError,
+  sumClaimedDispatchQuantitiesByRentalOrderItem,
 } from "@/modules/dispatch/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
@@ -87,7 +88,21 @@ export class CreateDispatchService {
           });
         }
 
-        validateRentalOrderForDispatch(rentalOrder, createData.items);
+        const existingForOrder = await dispatchRepository.findPaged({
+          page: 1,
+          pageSize: 100,
+          sortOrder: "desc",
+          rentalOrderId: rentalOrder.id,
+        });
+        const claimedByItem = sumClaimedDispatchQuantitiesByRentalOrderItem(
+          existingForOrder.items,
+        );
+
+        validateRentalOrderForDispatch(
+          rentalOrder,
+          createData.items,
+          claimedByItem,
+        );
 
         const existing = await dispatchRepository.findByDispatchNumber(
           createData.dispatchNumber,

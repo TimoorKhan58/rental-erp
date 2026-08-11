@@ -174,6 +174,15 @@ describe("RentalOrder entity", () => {
     expect(() => order.withCancelled()).toThrow(RentalOrderInvalidStatusError);
   });
 
+  it("marks reserved order dispatched then on rent without mutating items", () => {
+    const order = buildReservedRentalOrderEntity();
+    const onRent = order.withDispatched().withOnRent();
+
+    expect(onRent.status).toBe("ON_RENT");
+    expect(onRent.items).toEqual(order.items);
+    expect(onRent.id).toBe(order.id);
+  });
+
   it("reserves confirmed rental order partially", () => {
     const order = buildConfirmedRentalOrderEntity();
     const reserved = order.withReserved([

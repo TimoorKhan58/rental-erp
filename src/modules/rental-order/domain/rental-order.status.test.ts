@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   assertCanCancel,
   assertCanConfirm,
+  assertCanMarkDispatched,
+  assertCanMarkOnRent,
   assertCanReserve,
   assertCanUpdate,
 } from "@/modules/rental-order/domain/rental-order.rules";
@@ -125,6 +127,84 @@ describe("status transition guards", () => {
       RentalOrderInvalidStatusError,
     );
   });
+
+  it("assertCanMarkDispatched allows confirmed", () => {
+    expect(() => assertCanMarkDispatched("CONFIRMED")).not.toThrow();
+  });
+
+  it("assertCanMarkDispatched allows reserved", () => {
+    expect(() => assertCanMarkDispatched("RESERVED")).not.toThrow();
+  });
+
+  it("assertCanMarkDispatched rejects draft", () => {
+    expect(() => assertCanMarkDispatched("DRAFT")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkDispatched rejects dispatched", () => {
+    expect(() => assertCanMarkDispatched("DISPATCHED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkDispatched rejects on_rent", () => {
+    expect(() => assertCanMarkDispatched("ON_RENT")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkDispatched rejects cancelled", () => {
+    expect(() => assertCanMarkDispatched("CANCELLED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkDispatched rejects returned", () => {
+    expect(() => assertCanMarkDispatched("RETURNED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkOnRent allows dispatched", () => {
+    expect(() => assertCanMarkOnRent("DISPATCHED")).not.toThrow();
+  });
+
+  it("assertCanMarkOnRent rejects confirmed", () => {
+    expect(() => assertCanMarkOnRent("CONFIRMED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkOnRent rejects reserved", () => {
+    expect(() => assertCanMarkOnRent("RESERVED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkOnRent rejects on_rent", () => {
+    expect(() => assertCanMarkOnRent("ON_RENT")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkOnRent rejects cancelled", () => {
+    expect(() => assertCanMarkOnRent("CANCELLED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkOnRent rejects returned", () => {
+    expect(() => assertCanMarkOnRent("RETURNED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("assertCanMarkOnRent rejects completed", () => {
+    expect(() => assertCanMarkOnRent("COMPLETED")).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
 });
 
 describe("rental order entity edge cases", () => {
@@ -168,6 +248,99 @@ describe("rental order entity edge cases", () => {
     const order = buildRentalOrderEntity({ status: "DISPATCHED" });
 
     expect(() => order.withCancelled()).toThrow(RentalOrderInvalidStatusError);
+  });
+
+  it("marks confirmed order as dispatched", () => {
+    const confirmed = buildConfirmedRentalOrderEntity();
+    const dispatched = confirmed.withDispatched();
+
+    expect(dispatched.status).toBe("DISPATCHED");
+  });
+
+  it("marks reserved order as dispatched without clearing reserved quantities", () => {
+    const reserved = buildReservedRentalOrderEntity();
+    const dispatched = reserved.withDispatched();
+
+    expect(dispatched.status).toBe("DISPATCHED");
+    expect(dispatched.items[0]?.reservedQuantity).toBe(10);
+  });
+
+  it("rejects draft to dispatched", () => {
+    expect(() => buildRentalOrderEntity().withDispatched()).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("rejects cancelled to dispatched", () => {
+    const cancelled = buildRentalOrderEntity({ status: "CANCELLED" });
+
+    expect(() => cancelled.withDispatched()).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("rejects on_rent to dispatched", () => {
+    const onRent = buildRentalOrderEntity({ status: "ON_RENT" });
+
+    expect(() => onRent.withDispatched()).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("rejects returned to dispatched", () => {
+    const returned = buildRentalOrderEntity({ status: "RETURNED" });
+
+    expect(() => returned.withDispatched()).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("marks dispatched order as on rent", () => {
+    const dispatched = buildRentalOrderEntity({ status: "DISPATCHED" });
+    const onRent = dispatched.withOnRent();
+
+    expect(onRent.status).toBe("ON_RENT");
+  });
+
+  it("rejects on_rent to on_rent", () => {
+    const onRent = buildRentalOrderEntity({ status: "ON_RENT" });
+
+    expect(() => onRent.withOnRent()).toThrow(RentalOrderInvalidStatusError);
+  });
+
+  it("rejects cancelled to on_rent", () => {
+    const cancelled = buildRentalOrderEntity({ status: "CANCELLED" });
+
+    expect(() => cancelled.withOnRent()).toThrow(RentalOrderInvalidStatusError);
+  });
+
+  it("rejects returned to on_rent", () => {
+    const returned = buildRentalOrderEntity({ status: "RETURNED" });
+
+    expect(() => returned.withOnRent()).toThrow(RentalOrderInvalidStatusError);
+  });
+
+  it("rejects completed to on_rent", () => {
+    const completed = buildRentalOrderEntity({ status: "COMPLETED" });
+
+    expect(() => completed.withOnRent()).toThrow(RentalOrderInvalidStatusError);
+  });
+
+  it("rejects confirmed to on_rent without dispatched intermediate", () => {
+    expect(() => buildConfirmedRentalOrderEntity().withOnRent()).toThrow(
+      RentalOrderInvalidStatusError,
+    );
+  });
+
+  it("chains dispatched then on rent while preserving reserved quantities", () => {
+    const reserved = buildReservedRentalOrderEntity();
+    const onRent = reserved.withDispatched().withOnRent();
+
+    expect(onRent.status).toBe("ON_RENT");
+    expect(onRent.items[0]?.reservedQuantity).toBe(10);
+    expect(onRent.orderNumber).toBe(reserved.orderNumber);
+    expect(onRent.customerId).toBe(reserved.customerId);
+    expect(onRent.warehouseId).toBe(reserved.warehouseId);
   });
 
   it("normalizes optional remarks to null", () => {

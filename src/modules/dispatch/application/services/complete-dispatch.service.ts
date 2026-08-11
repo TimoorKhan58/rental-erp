@@ -1,4 +1,5 @@
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
+import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { DispatchInvalidStatusError } from "@/modules/dispatch/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -152,6 +153,33 @@ export class CompleteDispatchService {
           completed.status,
           { completedAt: completed.completedAt },
         );
+
+        // First physical completion: ephemeral DISPATCHED → persist ON_RENT.
+        // Subsequent completions on an already ON_RENT order leave status unchanged.
+        if (rentalOrder.status !== "ON_RENT") {
+          let onRentOrder;
+
+          try {
+            onRentOrder = rentalOrder.withDispatched().withOnRent();
+          } catch (error) {
+            if (error instanceof RentalOrderInvalidStatusError) {
+              throw new UnprocessableError({
+                message: error.message,
+                details: {
+                  currentStatus: error.currentStatus,
+                  action: error.action,
+                },
+              });
+            }
+
+            throw error;
+          }
+
+          await rentalOrderRepository.updateStatus(
+            onRentOrder.id,
+            onRentOrder.status,
+          );
+        }
 
         await auditLogger.log({
           module: DISPATCH_MODULE,

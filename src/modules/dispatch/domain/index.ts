@@ -29,8 +29,10 @@ export {
   assertCanMarkReady,
   assertCanUpdate,
   assertRentalOrderEligibleForDispatch,
+  sumClaimedDispatchQuantitiesByRentalOrderItem,
   validateDispatchItems,
   validateDispatchItemsAgainstRentalOrder,
+  type DispatchQuantityClaimSource,
 } from "./dispatch.rules";
 export type {
   CreateDispatchData,

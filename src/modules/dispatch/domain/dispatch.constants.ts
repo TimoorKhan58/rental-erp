@@ -30,4 +30,9 @@ export const DISPATCH_SORT_FIELDS = [
 
 export type DispatchSortField = (typeof DISPATCH_SORT_FIELDS)[number];
 
-export const ELIGIBLE_RENTAL_ORDER_STATUSES = ["CONFIRMED", "RESERVED"] as const;
+/** Orders that may create a dispatch; quantity/reservation still governs validity. */
+export const ELIGIBLE_RENTAL_ORDER_STATUSES = [
+  "CONFIRMED",
+  "RESERVED",
+  "ON_RENT",
+] as const;

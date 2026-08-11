@@ -22,6 +22,8 @@ export {
   applyReserveToItems,
   assertCanCancel,
   assertCanConfirm,
+  assertCanMarkDispatched,
+  assertCanMarkOnRent,
   assertCanReserve,
   assertCanUpdate,
   CANCELLABLE_RENTAL_ORDER_STATUSES,
@@ -29,6 +31,7 @@ export {
   computeLineTotal,
   computeRentalDays,
   computeStatusAfterReserve,
+  DISPATCHABLE_RENTAL_ORDER_STATUSES,
   validateRentalOrderItems,
   validateRentalPeriod,
 } from "./rental-order.rules";

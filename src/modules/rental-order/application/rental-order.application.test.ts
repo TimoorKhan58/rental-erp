@@ -14,7 +14,10 @@ import {
 } from "@/modules/rental-order/application/services/rental-order-service.constants";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
-import { buildDispatchEntity } from "@/modules/dispatch/tests/helpers/dispatch.fixtures";
+import {
+  DISPATCH_ID,
+  buildDispatchEntity,
+} from "@/modules/dispatch/tests/helpers/dispatch.fixtures";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
@@ -708,6 +711,56 @@ describe("CancelRentalOrderService", () => {
       "RESERVED",
     );
     expect(stockMovementRepository.count()).toBe(0);
+  });
+
+  it("rejects cancel when order is ON_RENT after physical dispatch", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 90,
+        reservedQuantity: 0,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([
+      buildDispatchEntity({ status: "COMPLETED" }),
+    ]);
+    const service = new CancelRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+        dispatchRepository,
+      ),
+    );
+
+    await expect(service.execute({ id: RENTAL_ORDER_ID })).rejects.toBeInstanceOf(
+      UnprocessableError,
+    );
+
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "ON_RENT",
+    );
+    expect(stockMovementRepository.count()).toBe(0);
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.quantityOnHand,
+    ).toBe(90);
+    expect((await dispatchRepository.findById(DISPATCH_ID))?.status).toBe(
+      "COMPLETED",
+    );
   });
 
   it("allows cancel when only cancelled dispatches exist", async () => {

@@ -228,6 +228,24 @@ export function assertCanReserve(status: RentalOrderStatus): void {
   }
 }
 
+/** Statuses that may enter the physical DISPATCHED lifecycle state. */
+export const DISPATCHABLE_RENTAL_ORDER_STATUSES: RentalOrderStatus[] = [
+  "CONFIRMED",
+  "RESERVED",
+];
+
+export function assertCanMarkDispatched(status: RentalOrderStatus): void {
+  if (!DISPATCHABLE_RENTAL_ORDER_STATUSES.includes(status)) {
+    throw new RentalOrderInvalidStatusError(status, "mark dispatched");
+  }
+}
+
+export function assertCanMarkOnRent(status: RentalOrderStatus): void {
+  if (status !== "DISPATCHED") {
+    throw new RentalOrderInvalidStatusError(status, "mark on rent");
+  }
+}
+
 /** Statuses that may enter the cancel-after-reserve workflow. */
 export const CANCELLABLE_RENTAL_ORDER_STATUSES: RentalOrderStatus[] = [
   "DRAFT",

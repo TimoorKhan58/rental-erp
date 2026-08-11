@@ -9,6 +9,8 @@ import {
   applyReserveToItems,
   assertCanCancel,
   assertCanConfirm,
+  assertCanMarkDispatched,
+  assertCanMarkOnRent,
   assertCanReserve,
   assertCanUpdate,
   clearReservedQuantitiesOnCancel,
@@ -135,6 +137,26 @@ export class RentalOrder implements Entity<RentalOrderId> {
       ...this.toProps(),
       status: computeStatusAfterReserve(updatedItems),
       items: updatedItems,
+      updatedAt: new Date(),
+    });
+  }
+
+  withDispatched(): RentalOrder {
+    assertCanMarkDispatched(this.status);
+
+    return RentalOrder.reconstitute({
+      ...this.toProps(),
+      status: "DISPATCHED",
+      updatedAt: new Date(),
+    });
+  }
+
+  withOnRent(): RentalOrder {
+    assertCanMarkOnRent(this.status);
+
+    return RentalOrder.reconstitute({
+      ...this.toProps(),
+      status: "ON_RENT",
       updatedAt: new Date(),
     });
   }

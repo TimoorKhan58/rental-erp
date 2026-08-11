@@ -21,6 +21,7 @@ import {
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
+import { buildRentalOrderEntity } from "@/modules/rental-order/tests/helpers/rental-order.fixtures";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
 import {
@@ -584,6 +585,57 @@ describe("CompleteReturnService", () => {
     expect(inventory?.quantityOnHand).toBe(48);
     expect(inventory?.reservedQuantity).toBe(0);
     expect(inventory?.availableQuantity).toBe(48);
+  });
+
+  it("completes inspected return from ON_RENT and syncs order to COMPLETED", async () => {
+    const returnRepository = new InMemoryReturnRepository();
+    returnRepository.seed([buildInspectedReturnEntity()]);
+    const dispatchRepository = new InMemoryDispatchRepository();
+    dispatchRepository.seed([buildCompletedDispatchEntity()]);
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([
+      buildRentalOrderEntity({
+        status: "ON_RENT",
+        reservedQuantity: 10,
+      }),
+    ]);
+    const inventoryRepository = new InMemoryInventoryRepository();
+    inventoryRepository.seed([
+      buildInventoryEntity({
+        id: INVENTORY_ID,
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+        quantityOnHand: 45,
+        reservedQuantity: 0,
+      }),
+    ]);
+    const stockMovementRepository = new InMemoryStockMovementRepository();
+    const service = new CompleteReturnService(
+      createWriteScope(
+        returnRepository,
+        dispatchRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        stockMovementRepository,
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+    );
+
+    const result = await service.execute({ id: RETURN_ID });
+
+    expect(result.status).toBe("COMPLETED");
+    expect(stockMovementRepository.count()).toBe(1);
+    expect(
+      (await stockMovementRepository.findPaged({ page: 1, pageSize: 10 }))
+        .items[0]?.movementType,
+    ).toBe("IN");
+    expect((await rentalOrderRepository.findById(RENTAL_ORDER_ID))?.status).toBe(
+      "COMPLETED",
+    );
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.quantityOnHand,
+    ).toBe(48);
   });
 
   it("restocks without RELEASE when reservation was already cleared at dispatch", async () => {

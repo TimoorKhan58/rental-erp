@@ -59,6 +59,12 @@ export function useDispatchFilterOptions() {
     staleTime: 5 * 60_000,
   });
 
+  const onRentOrders = useQuery({
+    queryKey: queryKeys.rentalOrders.list({ pageSize: 100, status: "ON_RENT" }),
+    queryFn: () => getRentalOrders({ pageSize: 100, status: "ON_RENT" }),
+    staleTime: 5 * 60_000,
+  });
+
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
     queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
@@ -74,6 +80,7 @@ export function useDispatchFilterOptions() {
   const allRentalOrders = [
     ...(rentalOrders.data?.items ?? []),
     ...(reservedOrders.data?.items ?? []),
+    ...(onRentOrders.data?.items ?? []),
   ];
 
   const rentalOrderOptions: LookupOption[] = allRentalOrders.map((order) => ({
@@ -117,6 +124,7 @@ export function useDispatchFilterOptions() {
     isLoading:
       rentalOrders.isLoading ||
       reservedOrders.isLoading ||
+      onRentOrders.isLoading ||
       warehouses.isLoading ||
       products.isLoading,
   };

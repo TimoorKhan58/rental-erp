@@ -1,6 +1,7 @@
 import {
   DispatchInvalidStatusError,
   DispatchInvariantError,
+  sumClaimedDispatchQuantitiesByRentalOrderItem,
   validateDispatchItems,
 } from "@/modules/dispatch/domain";
 import { parseRequest } from "@/shared/application/validation";
@@ -96,7 +97,22 @@ export class UpdateDispatchService {
             });
           }
 
-          validateRentalOrderForDispatch(rentalOrder, updateData.items);
+          const existingForOrder = await dispatchRepository.findPaged({
+            page: 1,
+            pageSize: 100,
+            sortOrder: "desc",
+            rentalOrderId: rentalOrder.id,
+          });
+          const claimedByItem = sumClaimedDispatchQuantitiesByRentalOrderItem(
+            existingForOrder.items,
+            { excludeDispatchId: existing.id },
+          );
+
+          validateRentalOrderForDispatch(
+            rentalOrder,
+            updateData.items,
+            claimedByItem,
+          );
         }
 
         const previousValues = toDispatchAuditValues(existing);

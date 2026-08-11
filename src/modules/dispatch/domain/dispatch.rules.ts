@@ -102,14 +102,57 @@ export function assertRentalOrderEligibleForDispatch(
 ): void {
   if (!(ELIGIBLE_RENTAL_ORDER_STATUSES as readonly string[]).includes(status)) {
     throw new DispatchInvalidItemError(
-      `Rental order must be CONFIRMED or RESERVED to create dispatch (current: ${status})`,
+      `Rental order must be CONFIRMED, RESERVED, or ON_RENT to create dispatch (current: ${status})`,
     );
   }
+}
+
+/**
+ * Quantities already claimed against reservation by non-CANCELLED dispatches.
+ * Line reservedQuantity is not reduced on complete; remaining dispatchable qty
+ * is reservedQuantity minus this claim total (existing dispatch records).
+ */
+export type DispatchQuantityClaimSource = {
+  id?: string;
+  status: string;
+  items: Array<{
+    rentalOrderItemId: string | null;
+    productId: string;
+    quantity: number;
+  }>;
+};
+
+export function sumClaimedDispatchQuantitiesByRentalOrderItem(
+  dispatches: DispatchQuantityClaimSource[],
+  options?: { excludeDispatchId?: string },
+): Map<string, number> {
+  const claimed = new Map<string, number>();
+
+  for (const dispatch of dispatches) {
+    if (dispatch.status === "CANCELLED") {
+      continue;
+    }
+
+    if (
+      options?.excludeDispatchId !== undefined &&
+      dispatch.id === options.excludeDispatchId
+    ) {
+      continue;
+    }
+
+    for (const item of dispatch.items) {
+      const key = item.rentalOrderItemId ?? item.productId;
+      claimed.set(key, (claimed.get(key) ?? 0) + item.quantity);
+    }
+  }
+
+  return claimed;
 }
 
 export function validateDispatchItemsAgainstRentalOrder(
   dispatchItems: CreateDispatchItemData[],
   rentalOrderItems: RentalOrderItemProps[],
+  claimedByRentalOrderItem: Map<string, number> = new Map(),
 ): void {
   for (const dispatchItem of dispatchItems) {
     const rentalItem = findRentalOrderItem(
@@ -124,9 +167,17 @@ export function validateDispatchItemsAgainstRentalOrder(
       );
     }
 
-    if (dispatchItem.quantity > rentalItem.reservedQuantity) {
+    const claimed =
+      claimedByRentalOrderItem.get(rentalItem.id) ??
+      claimedByRentalOrderItem.get(rentalItem.productId) ??
+      0;
+    const remaining = rentalItem.reservedQuantity - claimed;
+
+    if (dispatchItem.quantity > remaining) {
       throw new DispatchInvalidItemError(
-        "Dispatch quantity exceeds reserved quantity",
+        remaining <= 0
+          ? "No remaining reserved quantity available for dispatch"
+          : "Dispatch quantity exceeds remaining reserved quantity",
         dispatchItem.productId,
       );
     }
