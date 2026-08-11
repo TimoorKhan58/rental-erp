@@ -6,6 +6,7 @@ import { AppModal } from "@/components/design-system/modal";
 import { AppForm } from "@/components/forms";
 import { NumberField } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
+import { DateAwareAvailabilityHint } from "../components";
 import { getRemainingReserveQuantity } from "../mappers";
 import { reserveRentalOrderFormSchema, type ReserveRentalOrderFormValues } from "../schemas";
 import { useRentalOrderFilterOptions, useReserveRentalOrder } from "../hooks";
@@ -75,36 +76,63 @@ export function ReserveRentalOrderDialog({
           <table className="w-full min-w-[520px] text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-left">
-                <th className="px-3 py-2 font-medium" scope="col">Product</th>
-                <th className="px-3 py-2 font-medium" scope="col">Remaining</th>
-                <th className="px-3 py-2 font-medium" scope="col">Reserve now</th>
+                <th className="px-3 py-2 font-medium" scope="col">
+                  Product
+                </th>
+                <th className="px-3 py-2 font-medium" scope="col">
+                  Remaining
+                </th>
+                <th className="px-3 py-2 font-medium" scope="col">
+                  Reserve now
+                </th>
               </tr>
             </thead>
             <tbody>
-              {defaultValues.items.map((item, index) => (
-                <tr key={item.productId} className="border-b last:border-b-0">
-                  <td className="px-3 py-2">
-                    {productLabelById.get(item.productId) ?? item.productId}
-                  </td>
-                  <td className="px-3 py-2">{item.maxQuantity}</td>
-                  <td className="px-3 py-2">
-                    <NumberField
-                      control={form.control}
-                      name={`items.${index}.quantity`}
-                      label="Quantity to reserve"
-                      min={0}
-                      max={item.maxQuantity}
-                      step={1}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {defaultValues.items.map((item, index) => {
+                const orderItem = order.items.find(
+                  (line) => line.productId === item.productId,
+                );
+
+                return (
+                  <tr key={item.productId} className="border-b last:border-b-0">
+                    <td className="px-3 py-2">
+                      <div className="space-y-1">
+                        <div>
+                          {productLabelById.get(item.productId) ?? item.productId}
+                        </div>
+                        <DateAwareAvailabilityHint
+                          productId={item.productId}
+                          warehouseId={order.warehouseId}
+                          startDate={orderItem?.startDate ?? order.startDate}
+                          endDate={orderItem?.endDate ?? order.endDate}
+                          excludeRentalOrderId={order.id}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">{item.maxQuantity}</td>
+                    <td className="px-3 py-2">
+                      <NumberField
+                        control={form.control}
+                        name={`items.${index}.quantity`}
+                        label="Quantity to reserve"
+                        min={0}
+                        max={item.maxQuantity}
+                        step={1}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         <div className="flex justify-end gap-2">
-          <AppButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <AppButton
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </AppButton>
           <AppButton type="submit" loading={reserveMutation.isPending}>

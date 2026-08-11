@@ -1,5 +1,7 @@
 export type {
   CreateRentalOrderPayload,
+  DateAwareAvailabilityResponse,
+  GetDateAwareAvailabilityParams,
   ListRentalOrdersParams,
   RentalOrderLineItemPayload,
   RentalOrderListResponse,

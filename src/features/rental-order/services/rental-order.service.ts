@@ -1,5 +1,7 @@
 import type {
   CreateRentalOrderPayload,
+  DateAwareAvailabilityResponse,
+  GetDateAwareAvailabilityParams,
   ListRentalOrdersParams,
   RentalOrderListResponse,
   RentalOrderResponse,
@@ -18,6 +20,18 @@ export async function getRentalOrders(
 
 export async function getRentalOrder(id: string): Promise<RentalOrderResponse> {
   return apiGet<RentalOrderResponse>(`${BASE}/${id}`);
+}
+
+/**
+ * F-02 informational date-aware availability.
+ * Reserve UoW re-checks independently — do not treat this as an authoritative gate.
+ */
+export async function getDateAwareAvailability(
+  params: GetDateAwareAvailabilityParams,
+): Promise<DateAwareAvailabilityResponse> {
+  return apiGet<DateAwareAvailabilityResponse>(`${BASE}/availability`, {
+    params,
+  });
 }
 
 export async function createRentalOrder(

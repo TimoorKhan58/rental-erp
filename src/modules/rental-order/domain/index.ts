@@ -19,6 +19,30 @@ export {
 export type { RentalOrderListQuery } from "./rental-order-list.query";
 export type { IRentalOrderRepository } from "./rental-order.repository.interface";
 export {
+  AVAILABILITY_COMMITMENT_STATUSES,
+  availabilityPeriodsOverlap,
+  assertValidAvailabilityPeriod,
+  calculateCommitmentQuantity,
+  calculateDateAwareAvailabilitySnapshot,
+  isAvailabilityCommitmentStatus,
+  sumCompletedDispatchQuantities,
+  sumCompletedReturnQuantities,
+  sumNonCancelledDispatchClaims,
+  toUtcCalendarDay,
+  type AvailabilityCommitmentLine,
+  type AvailabilityDispatchClaim,
+  type AvailabilityPeriod,
+  type AvailabilityReturnClaim,
+  type CommitmentQuantityBreakdown,
+  type CommitmentQuantityInput,
+  type DateAwareAvailabilitySnapshot,
+  type DateAwareAvailabilitySnapshotInput,
+} from "./rental-order.availability.rules";
+export type {
+  AvailabilityCommitmentLineProjection,
+  FindAvailabilityCommitmentLinesParams,
+} from "./rental-order.availability.projection";
+export {
   applyReserveToItems,
   assertCanCancel,
   assertCanConfirm,

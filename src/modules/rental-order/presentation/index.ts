@@ -2,6 +2,7 @@ export {
   handleCancelRentalOrder,
   handleConfirmRentalOrder,
   handleCreateRentalOrder,
+  handleGetDateAwareAvailability,
   handleGetRentalOrderById,
   handleListRentalOrders,
   handleReserveRentalOrder,

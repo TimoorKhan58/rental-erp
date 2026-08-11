@@ -1,16 +1,26 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { RentalOrderListQuery } from "@/modules/rental-order/domain/rental-order-list.query";
-import type { RentalOrderId } from "@/shared/domain/ids";
+import type {
+  ProductId,
+  RentalOrderId,
+  WarehouseId,
+} from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
   createRepositoryQuerySpec,
   repositoryCreate,
   repositoryFindFirst,
+  repositoryFindMany,
   repositoryUpdate,
   runRepositoryPagedQuery,
 } from "@/shared/infrastructure/database";
 
+import { AVAILABILITY_COMMITMENT_STATUSES } from "@/modules/rental-order/domain/rental-order.availability.rules";
+import type {
+  AvailabilityCommitmentLineProjection,
+  FindAvailabilityCommitmentLinesParams,
+} from "@/modules/rental-order/domain/rental-order.availability.projection";
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
 import type {
@@ -18,7 +28,10 @@ import type {
   UpdateRentalOrderData,
   UpdateRentalOrderReserveData,
 } from "@/modules/rental-order/domain/rental-order.types";
-import { RENTAL_ORDER_SEARCH_FIELDS } from "@/modules/rental-order/domain/rental-order.constants";
+import {
+  RENTAL_ORDER_SEARCH_FIELDS,
+  type RentalOrderStatus,
+} from "@/modules/rental-order/domain/rental-order.constants";
 
 import {
   RENTAL_ORDER_INCLUDE,
@@ -107,6 +120,83 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
         }),
       { model: MODEL, operation: "findByOrderNumber" },
     ).then((record) => (record ? toRentalOrderDomain(record) : null));
+  }
+
+  findAvailabilityCommitmentLines(
+    params: FindAvailabilityCommitmentLinesParams,
+  ): Promise<AvailabilityCommitmentLineProjection[]> {
+    return repositoryFindMany(
+      this.runner,
+      (db) =>
+        db.rentalOrderItem.findMany({
+          where: {
+            productId: params.productId,
+            rentalOrder: {
+              warehouseId: params.warehouseId,
+              status: {
+                in: [...AVAILABILITY_COMMITMENT_STATUSES],
+              },
+              ...(params.excludeRentalOrderId !== undefined
+                ? { id: { not: params.excludeRentalOrderId } }
+                : {}),
+            },
+          },
+          select: {
+            id: true,
+            productId: true,
+            reservedQuantity: true,
+            eventStartDate: true,
+            eventEndDate: true,
+            rentalOrder: {
+              select: {
+                id: true,
+                warehouseId: true,
+                status: true,
+              },
+            },
+            dispatchItems: {
+              select: {
+                quantity: true,
+                dispatch: {
+                  select: {
+                    status: true,
+                  },
+                },
+              },
+            },
+            returnInspectionItems: {
+              select: {
+                returnedQuantity: true,
+                returnInspection: {
+                  select: {
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+      { model: "RentalOrderItem", operation: "findAvailabilityCommitmentLines" },
+    ).then((rows) =>
+      rows.map((row) => ({
+        rentalOrderItemId: row.id,
+        rentalOrderId: row.rentalOrder.id,
+        productId: row.productId as ProductId,
+        warehouseId: row.rentalOrder.warehouseId as WarehouseId,
+        status: row.rentalOrder.status as RentalOrderStatus,
+        reservedQuantity: row.reservedQuantity,
+        eventStartDate: row.eventStartDate,
+        eventEndDate: row.eventEndDate,
+        dispatches: row.dispatchItems.map((item) => ({
+          status: item.dispatch.status,
+          quantity: item.quantity,
+        })),
+        returns: row.returnInspectionItems.map((item) => ({
+          status: item.returnInspection.status,
+          returnedQuantity: item.returnedQuantity,
+        })),
+      })),
+    );
   }
 
   findPaged(

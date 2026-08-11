@@ -18,11 +18,13 @@ import {
   cancelRentalOrder,
   confirmRentalOrder,
   createRentalOrder,
+  getDateAwareAvailability,
   getRentalOrder,
   getRentalOrders,
   reserveRentalOrder,
   updateRentalOrder,
 } from "../services";
+import type { GetDateAwareAvailabilityParams } from "../types";
 
 type LookupOption = {
   id: string;
@@ -166,6 +168,61 @@ export function useRentalOrder(id: string) {
   });
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidAvailabilityQuery(
+  params: Partial<GetDateAwareAvailabilityParams> | null | undefined,
+): params is GetDateAwareAvailabilityParams {
+  if (
+    params === null ||
+    params === undefined ||
+    !params.productId ||
+    !params.warehouseId ||
+    !params.startDate ||
+    !params.endDate
+  ) {
+    return false;
+  }
+
+  if (
+    !UUID_RE.test(params.productId) ||
+    !UUID_RE.test(params.warehouseId) ||
+    (params.excludeRentalOrderId !== undefined &&
+      !UUID_RE.test(params.excludeRentalOrderId))
+  ) {
+    return false;
+  }
+
+  const start = new Date(params.startDate);
+  const end = new Date(params.endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+
+  return end.getTime() >= start.getTime();
+}
+
+/**
+ * F-02 informational date-aware availability query.
+ * Does not fire when inputs are incomplete/invalid.
+ * Reserve UoW remains the authoritative enforcement point.
+ */
+export function useDateAwareAvailability(
+  params: Partial<GetDateAwareAvailabilityParams> | null | undefined,
+) {
+  const enabled = isValidAvailabilityQuery(params);
+
+  return useQuery({
+    queryKey: queryKeys.rentalOrders.availability(params ?? {}),
+    queryFn: () =>
+      getDateAwareAvailability(params as GetDateAwareAvailabilityParams),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
 export function useCreateRentalOrder() {
   const queryClient = useQueryClient();
 
@@ -255,6 +312,9 @@ export function useReserveRentalOrder() {
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: [...queryKeys.rentalOrders.all, "availability"],
+        }),
       ]);
     },
   });

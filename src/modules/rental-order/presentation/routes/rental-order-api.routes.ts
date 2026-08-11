@@ -4,6 +4,7 @@ import type { RentalOrderServiceResolver } from "@/modules/rental-order/applicat
 import type { RentalOrderDto } from "@/modules/rental-order/application/dtos/rental-order.dto";
 import {
   CreateRentalOrderSchema,
+  GetDateAwareAvailabilitySchema,
   RentalOrderIdParamSchema,
   ReserveRentalOrderSchema,
   UpdateRentalOrderSchema,
@@ -41,6 +42,32 @@ export async function handleListRentalOrders(
         const paginated = await services.listRentalOrders.execute(listInput);
         return toRentalOrderListResponse(paginated);
       },
+    });
+
+    return toJsonResponse(result);
+  });
+}
+
+/**
+ * F-02 read-only date-aware availability.
+ * Informational only — Reserve UoW remains the authoritative gate.
+ */
+export async function handleGetDateAwareAvailability(
+  request: NextRequest,
+  resolveServices: RentalOrderServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const input = parseRequest(GetDateAwareAvailabilitySchema, query);
+
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.availability,
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getDateAwareAvailability.execute(input),
     });
 
     return toJsonResponse(result);

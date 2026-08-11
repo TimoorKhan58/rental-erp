@@ -53,8 +53,15 @@ export type {
 export { CancelRentalOrderService } from "./services/cancel-rental-order.service";
 export { ConfirmRentalOrderService } from "./services/confirm-rental-order.service";
 export { CreateRentalOrderService } from "./services/create-rental-order.service";
+export { GetDateAwareAvailabilityService } from "./services/get-date-aware-availability.service";
 export { GetRentalOrderByIdService } from "./services/get-rental-order-by-id.service";
 export { ListRentalOrdersService } from "./services/list-rental-orders.service";
 export { ReserveRentalOrderService } from "./services/reserve-rental-order.service";
 export { UpdateRentalOrderService } from "./services/update-rental-order.service";
 export { RentalOrderService } from "./services/rental-order.service";
+export type { DateAwareAvailabilityDto } from "./dtos/date-aware-availability.dto";
+export {
+  GetDateAwareAvailabilitySchema,
+  type GetDateAwareAvailabilityInput,
+  type GetDateAwareAvailabilityParams,
+} from "./schemas/date-aware-availability.schema";

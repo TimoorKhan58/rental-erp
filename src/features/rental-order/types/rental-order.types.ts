@@ -50,6 +50,28 @@ export type RentalOrderListResponse = {
   meta: PaginationMeta;
 };
 
+export type DateAwareAvailabilityResponse = {
+  productId: string;
+  warehouseId: string;
+  startDate: string;
+  endDate: string;
+  quantityOnHand: number;
+  reservedQuantity: number;
+  currentAvailableQuantity: number;
+  outstandingOutQuantity: number;
+  baseCapacity: number;
+  dateAwareCommittedQuantity: number;
+  dateAwareAvailableQuantity: number;
+};
+
+export type GetDateAwareAvailabilityParams = {
+  productId: string;
+  warehouseId: string;
+  startDate: string;
+  endDate: string;
+  excludeRentalOrderId?: string;
+};
+
 export type RentalOrderSortField =
   | "orderNumber"
   | "eventStartDate"

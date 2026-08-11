@@ -11,6 +11,7 @@ import type { ListRentalOrdersInput } from "../schemas/list-rental-orders.schema
 import type { CancelRentalOrderService } from "./cancel-rental-order.service";
 import type { ConfirmRentalOrderService } from "./confirm-rental-order.service";
 import type { CreateRentalOrderService } from "./create-rental-order.service";
+import type { GetDateAwareAvailabilityService } from "./get-date-aware-availability.service";
 import type { GetRentalOrderByIdService } from "./get-rental-order-by-id.service";
 import type { ListRentalOrdersService } from "./list-rental-orders.service";
 import type { ReserveRentalOrderService } from "./reserve-rental-order.service";
@@ -24,6 +25,7 @@ export interface RentalOrderApplicationServices {
   confirmRentalOrder: ConfirmRentalOrderService;
   reserveRentalOrder: ReserveRentalOrderService;
   cancelRentalOrder: CancelRentalOrderService;
+  getDateAwareAvailability: GetDateAwareAvailabilityService;
 }
 
 export type RentalOrderServiceResolver = (

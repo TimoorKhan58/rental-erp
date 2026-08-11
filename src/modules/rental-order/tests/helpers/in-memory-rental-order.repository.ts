@@ -1,5 +1,10 @@
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import type { RentalOrderListQuery } from "@/modules/rental-order/domain/rental-order-list.query";
+import type {
+  AvailabilityCommitmentLineProjection,
+  FindAvailabilityCommitmentLinesParams,
+} from "@/modules/rental-order/domain/rental-order.availability.projection";
+import { AVAILABILITY_COMMITMENT_STATUSES } from "@/modules/rental-order/domain/rental-order.availability.rules";
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
 import type {
   CreateRentalOrderData,
@@ -17,6 +22,7 @@ interface StoredRentalOrder {
 
 export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
   private readonly store = new Map<string, StoredRentalOrder>();
+  private availabilityLines: AvailabilityCommitmentLineProjection[] = [];
 
   snapshot(): Map<string, StoredRentalOrder> {
     return new Map(
@@ -42,6 +48,12 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     }
   }
 
+  seedAvailabilityCommitmentLines(
+    lines: AvailabilityCommitmentLineProjection[],
+  ): void {
+    this.availabilityLines = lines.map((line) => structuredClone(line));
+  }
+
   findById(id: RentalOrderId): Promise<RentalOrder | null> {
     const stored = this.store.get(id);
     return Promise.resolve(
@@ -57,6 +69,25 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     }
 
     return Promise.resolve(null);
+  }
+
+  findAvailabilityCommitmentLines(
+    params: FindAvailabilityCommitmentLinesParams,
+  ): Promise<AvailabilityCommitmentLineProjection[]> {
+    const allowed = new Set<string>(AVAILABILITY_COMMITMENT_STATUSES);
+
+    return Promise.resolve(
+      this.availabilityLines
+        .filter(
+          (line) =>
+            line.productId === params.productId &&
+            line.warehouseId === params.warehouseId &&
+            allowed.has(line.status) &&
+            (params.excludeRentalOrderId === undefined ||
+              line.rentalOrderId !== params.excludeRentalOrderId),
+        )
+        .map((line) => structuredClone(line)),
+    );
   }
 
   async findPaged(

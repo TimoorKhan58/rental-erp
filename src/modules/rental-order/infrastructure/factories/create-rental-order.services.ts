@@ -4,10 +4,12 @@ import { ConfirmRentalOrderService } from "@/modules/rental-order/application/se
 import { CreateRentalOrderService } from "@/modules/rental-order/application/services/create-rental-order.service";
 import type { IRentalOrderService } from "@/modules/rental-order/application/services/rental-order-application-services.interface";
 import { RentalOrderService } from "@/modules/rental-order/application/services/rental-order.service";
+import { GetDateAwareAvailabilityService } from "@/modules/rental-order/application/services/get-date-aware-availability.service";
 import { GetRentalOrderByIdService } from "@/modules/rental-order/application/services/get-rental-order-by-id.service";
 import { ListRentalOrdersService } from "@/modules/rental-order/application/services/list-rental-orders.service";
 import { ReserveRentalOrderService } from "@/modules/rental-order/application/services/reserve-rental-order.service";
 import { UpdateRentalOrderService } from "@/modules/rental-order/application/services/update-rental-order.service";
+import { createInventoryRepositoryFromSharedDeps } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 
@@ -26,6 +28,7 @@ export function createRentalOrderApplicationServices(
   userId?: string,
 ): WiredRentalOrderApplicationServices {
   const repository = createRentalOrderRepositoryFromSharedDeps(deps);
+  const inventoryRepository = createInventoryRepositoryFromSharedDeps(deps);
   const transactionRunner = createRentalOrderTransactionRunner(deps, {
     userId,
   });
@@ -41,6 +44,10 @@ export function createRentalOrderApplicationServices(
   const confirmRentalOrder = new ConfirmRentalOrderService(transactionRunner);
   const reserveRentalOrder = new ReserveRentalOrderService(transactionRunner);
   const cancelRentalOrder = new CancelRentalOrderService(transactionRunner);
+  const getDateAwareAvailability = new GetDateAwareAvailabilityService(
+    repository,
+    inventoryRepository,
+  );
 
   return {
     getRentalOrderById,
@@ -50,6 +57,7 @@ export function createRentalOrderApplicationServices(
     confirmRentalOrder,
     reserveRentalOrder,
     cancelRentalOrder,
+    getDateAwareAvailability,
     rentalOrderService: new RentalOrderService(
       getRentalOrderById,
       listRentalOrders,

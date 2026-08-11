@@ -2,6 +2,7 @@ export {
   cancelRentalOrder,
   confirmRentalOrder,
   createRentalOrder,
+  getDateAwareAvailability,
   getRentalOrder,
   getRentalOrders,
   reserveRentalOrder,

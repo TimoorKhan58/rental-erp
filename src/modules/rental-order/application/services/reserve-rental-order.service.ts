@@ -2,9 +2,12 @@ import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/renta
 import {
   RentalOrderInvalidReserveError,
   RentalOrderInvalidStatusError,
+  RentalOrderInvariantError,
 } from "@/modules/rental-order/domain/rental-order.errors";
+import { assertValidAvailabilityPeriod } from "@/modules/rental-order/domain/rental-order.availability.rules";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { parseRequest } from "@/shared/application/validation";
+import type { ProductId } from "@/shared/domain/ids";
 import {
   NotFoundError,
   UnauthorizedError,
@@ -23,6 +26,7 @@ import {
   type RentalOrderIdParamInput,
   type ReserveRentalOrderInput,
 } from "../schemas/rental-order.schemas";
+import { GetDateAwareAvailabilityService } from "./get-date-aware-availability.service";
 import { toRentalOrderAuditValues } from "./rental-order-audit.mapper";
 import {
   RENTAL_ORDER_ENTITY_NAME,
@@ -94,6 +98,77 @@ export class ReserveRentalOrderService {
           throw error;
         }
 
+        // Aggregate requested deltas by product (reserve input is incremental).
+        const deltaByProduct = new Map<string, number>();
+        for (const reserveItem of data.items) {
+          const productId = reserveItem.productId;
+          deltaByProduct.set(
+            productId,
+            (deltaByProduct.get(productId) ?? 0) + reserveItem.quantity,
+          );
+        }
+
+        // Date-aware capacity checks must complete before any mutation.
+        const availabilityService = new GetDateAwareAvailabilityService(
+          rentalOrderRepository,
+          inventoryRepository,
+        );
+
+        for (const [productId, deltaQuantity] of deltaByProduct) {
+          const orderItem = existing.items.find(
+            (item) => item.productId === productId,
+          );
+
+          if (orderItem === undefined) {
+            throw new UnprocessableError({
+              message: "Reserve item does not exist on rental order",
+              details: { productId },
+            });
+          }
+
+          try {
+            assertValidAvailabilityPeriod({
+              startDate: orderItem.startDate,
+              endDate: orderItem.endDate,
+            });
+          } catch (error) {
+            if (error instanceof RentalOrderInvariantError) {
+              throw new UnprocessableError({
+                message: error.message,
+                details: { productId, field: error.field },
+              });
+            }
+
+            throw error;
+          }
+
+          const availability = await availabilityService.execute({
+            productId,
+            warehouseId: existing.warehouseId,
+            startDate: orderItem.startDate,
+            endDate: orderItem.endDate,
+            excludeRentalOrderId: existing.id,
+          });
+
+          if (deltaQuantity > availability.dateAwareAvailableQuantity) {
+            throw new UnprocessableError({
+              message:
+                "Insufficient date-aware availability for the requested rental period",
+              details: {
+                productId,
+                warehouseId: existing.warehouseId,
+                requestedQuantity: deltaQuantity,
+                dateAwareAvailableQuantity:
+                  availability.dateAwareAvailableQuantity,
+                dateAwareCommittedQuantity:
+                  availability.dateAwareCommittedQuantity,
+                startDate: orderItem.startDate.toISOString(),
+                endDate: orderItem.endDate.toISOString(),
+              },
+            });
+          }
+        }
+
         const previousValues = toRentalOrderAuditValues(existing);
         const updated = await rentalOrderRepository.updateReserve(
           existing.id,
@@ -121,6 +196,7 @@ export class ReserveRentalOrderService {
         const reserveTargets: Array<{
           inventoryId: string;
           quantity: number;
+          productId: ProductId;
         }> = [];
 
         for (const reserveItem of data.items) {
@@ -143,6 +219,7 @@ export class ReserveRentalOrderService {
           reserveTargets.push({
             inventoryId: inventory.id,
             quantity: reserveItem.quantity,
+            productId: toProductId(reserveItem.productId),
           });
         }
 

@@ -17,6 +17,7 @@ import {
   calculateRentalDays,
 } from "../mappers";
 import type { CreateRentalOrderFormValues } from "../schemas";
+import { DateAwareAvailabilityHint } from "../components/date-aware-availability-hint";
 
 type RentalOrderLineItemsFieldProps = {
   productOptions: Array<{ id: string; label: string; keywords?: string }>;
@@ -50,6 +51,7 @@ export function RentalOrderLineItemsField({
 
   const watchedStartDate = form.watch("startDate");
   const watchedEndDate = form.watch("endDate");
+  const warehouseId = form.watch("warehouseId");
   const items = form.watch("items");
 
   const orderStartDate = startDate ?? watchedStartDate;
@@ -167,6 +169,13 @@ export function RentalOrderLineItemsField({
                     options={selectOptions}
                   />
                 )}
+
+                <DateAwareAvailabilityHint
+                  productId={line?.productId}
+                  warehouseId={warehouseId}
+                  startDate={line?.startDate}
+                  endDate={line?.endDate}
+                />
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   {readOnly ? (

@@ -24,6 +24,7 @@ import {
   handleCancelRentalOrder,
   handleConfirmRentalOrder,
   handleCreateRentalOrder,
+  handleGetDateAwareAvailability,
   handleGetRentalOrderById,
   handleListRentalOrders,
   handleReserveRentalOrder,
@@ -37,6 +38,7 @@ import {
   PRODUCT_ID,
   RENTAL_ORDER_ID,
   VALID_CREATE_INPUT,
+  WAREHOUSE_ID,
 } from "@/modules/rental-order/tests/helpers/rental-order.fixtures";
 
 function createMockServices() {
@@ -48,6 +50,7 @@ function createMockServices() {
     confirmRentalOrder: { execute: vi.fn() },
     reserveRentalOrder: { execute: vi.fn() },
     cancelRentalOrder: { execute: vi.fn() },
+    getDateAwareAvailability: { execute: vi.fn() },
   };
 }
 
@@ -306,5 +309,215 @@ describe("runRentalOrderApiRoute reserve permission", () => {
     });
 
     expect(result.status).toBe(200);
+  });
+});
+
+describe("handleGetDateAwareAvailability", () => {
+  const availabilitySnapshot = {
+    productId: PRODUCT_ID,
+    warehouseId: WAREHOUSE_ID,
+    startDate: "2026-02-01T00:00:00.000Z",
+    endDate: "2026-02-05T00:00:00.000Z",
+    quantityOnHand: 100,
+    reservedQuantity: 10,
+    currentAvailableQuantity: 90,
+    outstandingOutQuantity: 0,
+    baseCapacity: 100,
+    dateAwareCommittedQuantity: 40,
+    dateAwareAvailableQuantity: 60,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSession(USER_ROLES.MANAGER);
+  });
+
+  it("A: returns availability snapshot for valid request", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue(
+      availabilitySnapshot,
+    );
+
+    const response = await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-05T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+    const body = await readJsonResponse<{
+      data: typeof availabilitySnapshot;
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data).toEqual(availabilitySnapshot);
+    expect(services.getDateAwareAvailability.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+      }),
+    );
+  });
+
+  it("B: accepts same-day period", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue({
+      ...availabilitySnapshot,
+      startDate: "2026-02-01T00:00:00.000Z",
+      endDate: "2026-02-01T00:00:00.000Z",
+    });
+
+    const response = await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-01T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("C: accepts multi-day period", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue(
+      availabilitySnapshot,
+    );
+
+    const response = await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-10T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("D/P: rejects invalid start > end via existing validation mapping", async () => {
+    const services = createMockServices();
+
+    const response = await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-10T00:00:00.000Z&endDate=2026-02-01T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(body.error.code).toBeDefined();
+    expect(services.getDateAwareAvailability.execute).not.toHaveBeenCalled();
+  });
+
+  it("E/F: forwards productId and warehouseId isolation params", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue(
+      availabilitySnapshot,
+    );
+
+    await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-05T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+
+    expect(services.getDateAwareAvailability.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: PRODUCT_ID,
+        warehouseId: WAREHOUSE_ID,
+      }),
+    );
+  });
+
+  it("G–N/Q: response shape exposes business snapshot fields only", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue(
+      availabilitySnapshot,
+    );
+
+    const response = await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-05T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+    const body = await readJsonResponse<{
+      data: Record<string, unknown>;
+    }>(response);
+
+    expect(Object.keys(body.data).sort()).toEqual(
+      [
+        "baseCapacity",
+        "currentAvailableQuantity",
+        "dateAwareAvailableQuantity",
+        "dateAwareCommittedQuantity",
+        "endDate",
+        "outstandingOutQuantity",
+        "productId",
+        "quantityOnHand",
+        "reservedQuantity",
+        "startDate",
+        "warehouseId",
+      ].sort(),
+    );
+    expect(body.data).not.toHaveProperty("dispatches");
+    expect(body.data).not.toHaveProperty("returns");
+  });
+
+  it("O: handler is read-only (only availability execute)", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue(
+      availabilitySnapshot,
+    );
+
+    await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-05T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+
+    expect(services.getDateAwareAvailability.execute).toHaveBeenCalledTimes(1);
+    expect(services.reserveRentalOrder.execute).not.toHaveBeenCalled();
+    expect(services.cancelRentalOrder.execute).not.toHaveBeenCalled();
+    expect(services.updateRentalOrder.execute).not.toHaveBeenCalled();
+    expect(services.createRentalOrder.execute).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when unauthenticated", async () => {
+    mockUnauthenticatedUser();
+    const services = createMockServices();
+
+    const response = await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-05T00:00:00.000Z`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe(ERROR_CODES.UNAUTHORIZED);
+    expect(services.getDateAwareAvailability.execute).not.toHaveBeenCalled();
+  });
+
+  it("forwards optional excludeRentalOrderId", async () => {
+    const services = createMockServices();
+    services.getDateAwareAvailability.execute.mockResolvedValue(
+      availabilitySnapshot,
+    );
+
+    await handleGetDateAwareAvailability(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/availability?productId=${PRODUCT_ID}&warehouseId=${WAREHOUSE_ID}&startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-05T00:00:00.000Z&excludeRentalOrderId=${RENTAL_ORDER_ID}`,
+      }),
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+
+    expect(services.getDateAwareAvailability.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        excludeRentalOrderId: RENTAL_ORDER_ID,
+      }),
+    );
   });
 });

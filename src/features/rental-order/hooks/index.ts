@@ -3,6 +3,7 @@ export {
   useCancelRentalOrder,
   useConfirmRentalOrder,
   useCreateRentalOrder,
+  useDateAwareAvailability,
   useRentalOrder,
   useRentalOrderFilterOptions,
   useRentalOrderPermissions,
