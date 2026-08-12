@@ -7,6 +7,7 @@ export const EXTERNAL_RENTAL_ROUTES = {
   returnToSupplier: (id: string) =>
     `/api/external-rentals/${id}/return-to-supplier`,
   settle: (id: string) => `/api/external-rentals/${id}/settle`,
+  cancel: (id: string) => `/api/external-rentals/${id}/cancel`,
 } as const;
 
 export type ExternalRentalRouteKey = keyof typeof EXTERNAL_RENTAL_ROUTES;

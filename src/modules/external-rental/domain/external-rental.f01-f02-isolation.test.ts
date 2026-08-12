@@ -67,7 +67,13 @@ describe("Phase 25.5.2 F-01/F-02 external-rental isolation guardrails", () => {
     expect(schema).toContain("model ExternalRentalAgreementItem");
     expect(schema).toContain("quantityReturnedFromCustomer");
     expect(schema).toContain("quantityReturnedToSupplier");
-    expect(schema).toContain("rentalOrderId                String                         @unique");
+    // Forever @unique on rentalOrderId removed — active-only uniqueness is DB partial index.
+    expect(schema).not.toMatch(
+      /rentalOrderId\s+String\s+@unique/,
+    );
+    expect(schema).toMatch(
+      /active-only partial unique/i,
+    );
     expect(schema).toMatch(
       /\/\/ OWNED-STOCK reservation only \(F-01\)\. External hire-in qty is NOT stored here\./,
     );

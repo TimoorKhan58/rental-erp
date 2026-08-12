@@ -26,6 +26,7 @@ export type { IExternalRentalRepository } from "./external-rental.repository.int
 export type { ExternalRentalListQuery } from "./external-rental-list.query";
 export {
   assertCanAllocate,
+  assertCanCancel,
   assertCanConfirm,
   assertCanCustomerReturnExternal,
   assertCanDispatchExternal,

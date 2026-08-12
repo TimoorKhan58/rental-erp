@@ -2,6 +2,7 @@ import type { IExternalRentalRepository } from "@/modules/external-rental/domain
 import type { ExecutionContext } from "@/shared/application/context";
 
 import type { AllocateExternalRentalService } from "./allocate-external-rental.service";
+import type { CancelExternalRentalService } from "./cancel-external-rental.service";
 import type { ConfirmExternalRentalService } from "./confirm-external-rental.service";
 import type { CreateExternalRentalService } from "./create-external-rental.service";
 import type { GetExternalRentalByIdService } from "./get-external-rental-by-id.service";
@@ -11,7 +12,7 @@ import type { SettleExternalRentalService } from "./settle-external-rental.servi
 import type { SupplierReturnExternalRentalService } from "./supplier-return-external-rental.service";
 
 /**
- * Application service surface for Phase 25.5.3–25.5.6.
+ * Application service surface for Phase 25.5.3–25.5.6 + 25.10 cancel.
  */
 export interface ExternalRentalApplicationServices {
   readonly repository: IExternalRentalRepository;
@@ -23,6 +24,7 @@ export interface ExternalRentalApplicationServices {
   readonly allocateExternalRental: AllocateExternalRentalService;
   readonly supplierReturnExternalRental: SupplierReturnExternalRentalService;
   readonly settleExternalRental: SettleExternalRentalService;
+  readonly cancelExternalRental: CancelExternalRentalService;
 }
 
 export type ExternalRentalServiceResolver = (

@@ -9,6 +9,7 @@ import { getWarehouses } from "@/features/warehouse/services";
 import type { ListExternalRentalsParams } from "../types";
 import {
   allocateExternalRental,
+  cancelExternalRental,
   confirmExternalRental,
   createExternalRental,
   getExternalRental,
@@ -52,6 +53,7 @@ export function useExternalRentalPermissions() {
       PERMISSIONS.externalRentals.returnToSupplier,
     ),
     canSettle: permissions.includes(PERMISSIONS.externalRentals.settle),
+    canCancel: permissions.includes(PERMISSIONS.externalRentals.cancel),
   };
 }
 
@@ -211,6 +213,18 @@ export function useSettleExternalRental() {
     successMessage: "Settlement recorded.",
     onSuccess: async (_data, variables) => {
       await invalidateExternalRental(queryClient, variables.id);
+    },
+  });
+}
+
+export function useCancelExternalRental() {
+  const queryClient = useQueryClient();
+  return useAppMutation({
+    mutationFn: (id: string) => cancelExternalRental(id),
+    showSuccessToast: true,
+    successMessage: "External rental cancelled.",
+    onSuccess: async (_data, id) => {
+      await invalidateExternalRental(queryClient, id);
     },
   });
 }

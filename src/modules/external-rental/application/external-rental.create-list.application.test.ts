@@ -97,7 +97,7 @@ describe("CreateExternalRentalService", () => {
     );
   });
 
-  it("conflicts when rental order already has an agreement", async () => {
+  it("conflicts when rental order already has an active agreement", async () => {
     const repository = createSeededExternalRentalRepository([
       buildExternalRentalAgreementEntity(),
     ]);
@@ -119,7 +119,11 @@ describe("CreateExternalRentalService", () => {
           rentalOrderId: RENTAL_ORDER_ID,
         }),
       ),
-    ).rejects.toBeInstanceOf(ConflictError);
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof ConflictError &&
+        /Active external rental agreement/i.test(error.message),
+    );
   });
 });
 

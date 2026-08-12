@@ -65,11 +65,14 @@ export class InMemoryExternalRentalRepository
     return null;
   }
 
-  async findByRentalOrderId(
+  async findActiveByRentalOrderId(
     rentalOrderId: RentalOrderId,
   ): Promise<ExternalRentalAgreement | null> {
     for (const entry of this.store.values()) {
-      if (entry.record.rentalOrderId === rentalOrderId) {
+      if (
+        entry.record.rentalOrderId === rentalOrderId &&
+        entry.record.status !== "CANCELLED"
+      ) {
         return ExternalRentalAgreement.reconstitute(entry.record);
       }
     }

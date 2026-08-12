@@ -561,8 +561,9 @@ model RentalOrder {
   dispatches               Dispatch[]
   returnInspections        ReturnInspection[]
   rentalInvoices           RentalInvoice[]
-  // MVP: at most one hire-in agreement per rental order (@unique on agreement.rentalOrderId).
-  externalRentalAgreement  ExternalRentalAgreement?
+  // Active-only uniqueness: at most one non-CANCELLED hire-in agreement per rental order
+  // (PostgreSQL partial unique index; see migration external_rental_active_only_uniqueness).
+  externalRentalAgreements ExternalRentalAgreement[]
 
   @@index([customerId])
   @@index([warehouseId])
@@ -630,7 +631,9 @@ model ExternalRentalAgreement {
   supplier                     Supplier                       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   warehouseId                  String                         @db.Uuid
   warehouse                    Warehouse                      @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  rentalOrderId                String                         @unique @db.Uuid
+  // Not forever-unique: DB enforces active-only partial unique via migration
+  // (WHERE status <> 'CANCELLED'). Cancelled rows may share rentalOrderId for history.
+  rentalOrderId                String                         @db.Uuid
   rentalOrder                  RentalOrder                    @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
   status                       ExternalRentalAgreementStatus  @default(DRAFT)
   settlementStatus             ExternalRentalSettlementStatus @default(UNSETTLED)
@@ -647,6 +650,7 @@ model ExternalRentalAgreement {
   updatedAt                    DateTime                       @updatedAt
   items                        ExternalRentalAgreementItem[]
 
+  @@index([rentalOrderId])
   @@index([supplierId])
   @@index([warehouseId])
   @@index([status])
@@ -662,7 +666,10 @@ model ExternalRentalAgreementItem {
   agreement                    ExternalRentalAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
   productId                    String                  @db.Uuid
   product                      Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
-  rentalOrderItemId            String                  @unique @db.Uuid
+  // Forever-unique on rentalOrderItemId removed so a replacement agreement can
+  // re-attach the same RO lines after cancel. Active-only at item level is
+  // implied by one active ERA per RO (no parent-status partial unique here).
+  rentalOrderItemId            String                  @db.Uuid
   rentalOrderItem              RentalOrderItem         @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
   quantityRequested            Int
   quantityConfirmed            Int                     @default(0)
@@ -678,6 +685,7 @@ model ExternalRentalAgreementItem {
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
+  @@unique([agreementId, rentalOrderItemId])
   @@index([agreementId])
   @@index([productId])
   @@map("external_rental_agreement_items")

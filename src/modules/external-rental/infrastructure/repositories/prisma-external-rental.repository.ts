@@ -128,17 +128,20 @@ export class PrismaExternalRentalRepository
     );
   }
 
-  findByRentalOrderId(
+  findActiveByRentalOrderId(
     rentalOrderId: RentalOrderId,
   ): Promise<ExternalRentalAgreement | null> {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.externalRentalAgreement.findUnique({
-          where: { rentalOrderId },
+        db.externalRentalAgreement.findFirst({
+          where: {
+            rentalOrderId,
+            status: { not: "CANCELLED" },
+          },
           include: EXTERNAL_RENTAL_AGREEMENT_INCLUDE,
         }),
-      { model: MODEL, operation: "findByRentalOrderId" },
+      { model: MODEL, operation: "findActiveByRentalOrderId" },
     ).then((record) =>
       record ? toExternalRentalAgreementDomain(record) : null,
     );

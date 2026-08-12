@@ -25,6 +25,7 @@ import type { ExternalRentalApplicationServices } from "@/modules/external-renta
 import { runExternalRentalApiRoute } from "@/modules/external-rental/presentation/http/external-rental-api.route-runner";
 import {
   handleAllocateExternalRental,
+  handleCancelExternalRental,
   handleConfirmExternalRental,
   handleCreateExternalRental,
   handleGetExternalRentalById,
@@ -87,6 +88,7 @@ function createMockServices() {
     allocateExternalRental: { execute: vi.fn() },
     supplierReturnExternalRental: { execute: vi.fn() },
     settleExternalRental: { execute: vi.fn() },
+    cancelExternalRental: { execute: vi.fn() },
   };
 }
 
@@ -306,6 +308,69 @@ describe("external rental route handlers", () => {
     );
 
     expect(response.status).toBe(200);
+  });
+
+  it("handleCancelExternalRental returns 200 when permitted", async () => {
+    const services = createMockServices();
+    services.cancelExternalRental.execute.mockResolvedValue(
+      createMockDto({ status: "CANCELLED" }),
+    );
+
+    const response = await handleCancelExternalRental(
+      createMockNextRequest({ method: "POST", json: {} }),
+      AGREEMENT_ID,
+      () => services as unknown as ExternalRentalApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.cancelExternalRental.execute).toHaveBeenCalled();
+  });
+
+  it("handleCancelExternalRental returns 401 when unauthenticated", async () => {
+    mockUnauthenticatedUser();
+    const services = createMockServices();
+
+    const response = await handleCancelExternalRental(
+      createMockNextRequest({ method: "POST", json: {} }),
+      AGREEMENT_ID,
+      () => services as unknown as ExternalRentalApplicationServices,
+    );
+
+    expect(response.status).toBe(401);
+    expect(services.cancelExternalRental.execute).not.toHaveBeenCalled();
+  });
+
+  it("handleCancelExternalRental returns 403 when permission missing", async () => {
+    mockSession(USER_ROLES.VIEWER);
+    const services = createMockServices();
+
+    const response = await handleCancelExternalRental(
+      createMockNextRequest({ method: "POST", json: {} }),
+      AGREEMENT_ID,
+      () => services as unknown as ExternalRentalApplicationServices,
+    );
+
+    expect(response.status).toBe(403);
+    expect(services.cancelExternalRental.execute).not.toHaveBeenCalled();
+  });
+
+  it("handleCancelExternalRental maps invalid state to 422", async () => {
+    const services = createMockServices();
+    services.cancelExternalRental.execute.mockRejectedValue(
+      new UnprocessableError({
+        message: "Cannot cancel external rental agreement in RECEIVED status",
+      }),
+    );
+
+    const response = await handleCancelExternalRental(
+      createMockNextRequest({ method: "POST", json: {} }),
+      AGREEMENT_ID,
+      () => services as unknown as ExternalRentalApplicationServices,
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(422);
+    expect(body.error.code).toBe(ERROR_CODES.INVALID_STATE);
   });
 
   it("rejects invalid create body", async () => {

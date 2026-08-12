@@ -48,4 +48,5 @@ export { ReceiveExternalRentalService } from "./services/receive-external-rental
 export { AllocateExternalRentalService } from "./services/allocate-external-rental.service";
 export { SupplierReturnExternalRentalService } from "./services/supplier-return-external-rental.service";
 export { SettleExternalRentalService } from "./services/settle-external-rental.service";
+export { CancelExternalRentalService } from "./services/cancel-external-rental.service";
 export { toExternalRentalAuditValues } from "./services/external-rental-audit.mapper";

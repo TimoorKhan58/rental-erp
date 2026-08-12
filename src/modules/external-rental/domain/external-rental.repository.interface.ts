@@ -21,7 +21,11 @@ export interface IExternalRentalRepository {
   findByAgreementNumber(
     agreementNumber: string,
   ): Promise<ExternalRentalAgreement | null>;
-  findByRentalOrderId(
+  /**
+   * Active (non-CANCELLED) agreement for a rental order, if any.
+   * Enforces BD-4 / BD-C3 claim slot used by create and dispatch/return.
+   */
+  findActiveByRentalOrderId(
     rentalOrderId: RentalOrderId,
   ): Promise<ExternalRentalAgreement | null>;
   findPaged(

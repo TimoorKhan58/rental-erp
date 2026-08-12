@@ -18,6 +18,7 @@ import {
   ExternalRentalSettlementBadge,
   ExternalRentalStatusBadge,
   canAllocateExternalRental,
+  canCancelExternalRental,
   canConfirmExternalRental,
   canReceiveExternalRental,
   canSettleExternalRental,
@@ -25,6 +26,7 @@ import {
 } from "../components/external-rental-status-badge";
 import {
   AllocateExternalRentalDialog,
+  CancelExternalRentalDialog,
   ConfirmExternalRentalDialog,
   ReceiveExternalRentalDialog,
   SettleExternalRentalDialog,
@@ -70,6 +72,7 @@ export function ExternalRentalDetailPage({
     canAllocate,
     canReturnToSupplier,
     canSettle,
+    canCancel,
   } = useExternalRentalPermissions();
   const { productLabelById, supplierLabelById, warehouseLabelById } =
     useExternalRentalFilterOptions();
@@ -79,6 +82,7 @@ export function ExternalRentalDetailPage({
   const [allocateOpen, setAllocateOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [settleOpen, setSettleOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -160,6 +164,14 @@ export function ExternalRentalDetailPage({
             ) ? (
               <AppButton variant="outline" onClick={() => setSettleOpen(true)}>
                 Settle
+              </AppButton>
+            ) : null}
+            {canCancel && canCancelExternalRental(agreement.status) ? (
+              <AppButton
+                variant="destructive"
+                onClick={() => setCancelOpen(true)}
+              >
+                Cancel
               </AppButton>
             ) : null}
           </>
@@ -315,6 +327,13 @@ export function ExternalRentalDetailPage({
           agreement={agreement}
           open={settleOpen}
           onOpenChange={setSettleOpen}
+        />
+      ) : null}
+      {cancelOpen ? (
+        <CancelExternalRentalDialog
+          agreement={agreement}
+          open={cancelOpen}
+          onOpenChange={setCancelOpen}
         />
       ) : null}
     </PageContainer>

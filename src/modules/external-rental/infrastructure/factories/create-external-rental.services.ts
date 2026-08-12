@@ -1,5 +1,6 @@
 import type { ExternalRentalApplicationServices } from "@/modules/external-rental/application/services/external-rental-application-services.interface";
 import { AllocateExternalRentalService } from "@/modules/external-rental/application/services/allocate-external-rental.service";
+import { CancelExternalRentalService } from "@/modules/external-rental/application/services/cancel-external-rental.service";
 import { ConfirmExternalRentalService } from "@/modules/external-rental/application/services/confirm-external-rental.service";
 import { CreateExternalRentalService } from "@/modules/external-rental/application/services/create-external-rental.service";
 import { GetExternalRentalByIdService } from "@/modules/external-rental/application/services/get-external-rental-by-id.service";
@@ -16,7 +17,7 @@ import { createExternalRentalTransactionRunner } from "./create-external-rental-
 export type { ExternalRentalApplicationServices };
 
 /**
- * Phase 25.5.3–25.5.6: list / get / create + confirm / receive / allocate / supplier-return / settle.
+ * Phase 25.5.3–25.5.6 + 25.10: list / get / create + workflow + cancel.
  */
 export function createExternalRentalApplicationServices(
   deps: SharedDeps,
@@ -46,5 +47,6 @@ export function createExternalRentalApplicationServices(
       transactionRunner,
     ),
     settleExternalRental: new SettleExternalRentalService(transactionRunner),
+    cancelExternalRental: new CancelExternalRentalService(transactionRunner),
   };
 }

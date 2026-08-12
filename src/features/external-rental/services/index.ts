@@ -66,3 +66,9 @@ export async function settleExternalRental(
 ): Promise<ExternalRentalResponse> {
   return apiPost<ExternalRentalResponse>(`${BASE}/${id}/settle`, payload);
 }
+
+export async function cancelExternalRental(
+  id: string,
+): Promise<ExternalRentalResponse> {
+  return apiPost<ExternalRentalResponse>(`${BASE}/${id}/cancel`, {});
+}

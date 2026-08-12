@@ -80,13 +80,14 @@ export class CreateExternalRentalService {
         }
 
         const existingByOrder =
-          await externalRentalRepository.findByRentalOrderId(
+          await externalRentalRepository.findActiveByRentalOrderId(
             createData.rentalOrderId,
           );
 
         if (existingByOrder !== null) {
           throw new ConflictError({
-            message: "External rental agreement already exists for rental order",
+            message:
+              "Active external rental agreement already exists for rental order",
             details: { rentalOrderId: createData.rentalOrderId },
           });
         }

@@ -62,6 +62,7 @@ export const PERMISSIONS = {
     allocate: "external-rentals:allocate",
     returnToSupplier: "external-rentals:return-to-supplier",
     settle: "external-rentals:settle",
+    cancel: "external-rentals:cancel",
   },
   rentalOrders: {
     read: "rental-orders:read",

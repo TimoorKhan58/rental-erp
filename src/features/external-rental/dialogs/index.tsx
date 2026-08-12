@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { AppModal } from "@/components/design-system/modal";
+import { AppModal, ConfirmModal } from "@/components/design-system/modal";
 import { AppButton } from "@/components/design-system/button";
 import { Input } from "@/components/ui/input";
 import type { ExternalRentalResponse } from "../types";
 import {
   useAllocateExternalRental,
+  useCancelExternalRental,
   useConfirmExternalRental,
   useReceiveExternalRental,
   useSettleExternalRental,
@@ -335,5 +336,30 @@ export function SettleExternalRentalDialog({
         </div>
       </div>
     </AppModal>
+  );
+}
+
+export function CancelExternalRentalDialog({
+  agreement,
+  open,
+  onOpenChange,
+}: QtyDialogProps) {
+  const mutation = useCancelExternalRental();
+
+  const handleConfirm = async () => {
+    await mutation.mutateAsync(agreement.id);
+    onOpenChange(false);
+  };
+
+  return (
+    <ConfirmModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Cancel external rental"
+      description={`Cancel "${agreement.agreementNumber}"? You can create a replacement agreement for the same rental order after cancellation.`}
+      confirmLabel="Cancel agreement"
+      onConfirm={() => void handleConfirm()}
+      isLoading={mutation.isPending}
+    />
   );
 }

@@ -121,7 +121,7 @@ export class CreateDispatchService {
           existingForOrder.items,
         );
 
-        const agreement = await externalRentalRepository.findByRentalOrderId(
+        const agreement = await externalRentalRepository.findActiveByRentalOrderId(
           rentalOrder.id,
         );
         const externalRemaining = buildExternalRemainingByItem(

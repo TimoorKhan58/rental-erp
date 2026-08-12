@@ -506,3 +506,58 @@ describe("ExternalRentalAgreement.withSupplierReturned / withPaymentRecorded (25
     ).toThrow(/greater than zero/);
   });
 });
+
+describe("ExternalRentalAgreement cancel (Phase 25.10)", () => {
+  const statuses = [
+    "DRAFT",
+    "CONFIRMED",
+    "PARTIALLY_RECEIVED",
+    "RECEIVED",
+    "ALLOCATED",
+    "IN_USE",
+    "RETURN_PENDING",
+    "RETURNED",
+    "CANCELLED",
+  ] as const;
+
+  it.each(["DRAFT", "CONFIRMED"] as const)(
+    "allows cancel from %s",
+    (status) => {
+      const agreement = buildExternalRentalAgreementEntity({
+        status,
+        amountDue: status === "CONFIRMED" ? 5000 : 0,
+        totalHireInCost: 0,
+      });
+
+      const cancelled = agreement.withCancelled();
+
+      expect(cancelled.status).toBe("CANCELLED");
+      expect(cancelled.amountDue).toBe(0);
+      expect(cancelled.amountPaid).toBe(0);
+      expect(cancelled.totalHireInCost).toBe(0);
+    },
+  );
+
+  it.each(
+    statuses.filter((status) => status !== "DRAFT" && status !== "CONFIRMED"),
+  )("rejects cancel from %s", (status) => {
+    const agreement = buildExternalRentalAgreementEntity({ status });
+
+    expect(() => agreement.withCancelled()).toThrow(/Cannot cancel/);
+  });
+
+  it("zeros provisional amountDue on CONFIRMED cancel", () => {
+    const confirmed = buildExternalRentalAgreementEntity({
+      status: "CONFIRMED",
+      amountDue: 5000,
+      amountPaid: 0,
+      totalHireInCost: 0,
+    });
+
+    const cancelled = confirmed.withCancelled();
+
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(cancelled.amountDue).toBe(0);
+    expect(cancelled.totalHireInCost).toBe(0);
+  });
+});

@@ -201,7 +201,7 @@ export class CompleteReturnService {
         }
 
         if (externalReturnItems.length > 0) {
-          const agreement = await externalRentalRepository.findByRentalOrderId(
+          const agreement = await externalRentalRepository.findActiveByRentalOrderId(
             rentalOrder.id,
           );
 

@@ -186,7 +186,7 @@ export class CompleteDispatchService {
         }
 
         if (externalDispatchItems.length > 0) {
-          const agreement = await externalRentalRepository.findByRentalOrderId(
+          const agreement = await externalRentalRepository.findActiveByRentalOrderId(
             rentalOrder.id,
           );
 

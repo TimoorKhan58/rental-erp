@@ -1,5 +1,6 @@
 export {
   handleAllocateExternalRental,
+  handleCancelExternalRental,
   handleConfirmExternalRental,
   handleCreateExternalRental,
   handleGetExternalRentalById,

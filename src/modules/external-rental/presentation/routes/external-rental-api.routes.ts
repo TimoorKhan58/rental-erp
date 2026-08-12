@@ -308,3 +308,37 @@ export async function handleSettleExternalRental(
     return toJsonResponse(result);
   });
 }
+
+export async function handleCancelExternalRental(
+  request: NextRequest,
+  id: string,
+  resolveServices: ExternalRentalServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExternalRentalIdParamSchema, { id });
+
+    const result = await runExternalRentalApiRoute({
+      request,
+      route: EXTERNAL_RENTAL_ROUTES.cancel(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.externalRentals.cancel,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.cancelExternalRental.execute(params),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExternalRentalResponse(
+            result.body.data as ExternalRentalAgreementDto,
+          ),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}

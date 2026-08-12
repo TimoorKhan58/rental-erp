@@ -380,6 +380,14 @@ export function assertCanConfirm(
   }
 }
 
+export function assertCanCancel(
+  status: ExternalRentalAgreementStatus,
+): void {
+  if (status !== "DRAFT" && status !== "CONFIRMED") {
+    throw new ExternalRentalInvalidStatusError(status, "cancel");
+  }
+}
+
 export function assertCanReceive(
   status: ExternalRentalAgreementStatus,
 ): void {

@@ -17,6 +17,7 @@ import {
 } from "./external-rental.errors";
 import {
   assertCanAllocate,
+  assertCanCancel,
   assertCanConfirm,
   assertCanCustomerReturnExternal,
   assertCanDispatchExternal,
@@ -169,6 +170,26 @@ export class ExternalRentalAgreement
 
   isCancelled(): boolean {
     return this.status === "CANCELLED";
+  }
+
+  /**
+   * DRAFT | CONFIRMED → CANCELLED.
+   * Discards provisional amountDue on CONFIRMED cancel. Never mutates Inventory.
+   * Post-receive cancel is not supported — use supplier return / settlement.
+   */
+  withCancelled(): ExternalRentalAgreement {
+    assertCanCancel(this.status);
+
+    return ExternalRentalAgreement.reconstitute({
+      ...this.toProps(),
+      status: "CANCELLED",
+      // BD-C5: zero provisional amountDue; totalHireInCost stays 0; amountPaid 0.
+      amountDue: 0,
+      amountPaid: 0,
+      totalHireInCost: 0,
+      settlementStatus: "UNSETTLED",
+      updatedAt: new Date(),
+    });
   }
 
   /**

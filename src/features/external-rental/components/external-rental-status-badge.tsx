@@ -105,3 +105,7 @@ export function canSettleExternalRental(
 ) {
   return status !== "DRAFT" && status !== "CANCELLED" && amountDue > amountPaid;
 }
+
+export function canCancelExternalRental(status: ExternalRentalAgreementStatus) {
+  return status === "DRAFT" || status === "CONFIRMED";
+}
