@@ -2,17 +2,24 @@ import type { Dispatch } from "@/modules/dispatch/domain/dispatch.entity";
 import type { IReturnRepository } from "@/modules/return/domain";
 import {
   ReturnInvalidItemError,
+  ReturnInvariantError,
   assertDispatchEligibleForReturn,
   validateReturnItemsAgainstDispatch,
 } from "@/modules/return/domain";
 import type { CreateReturnItemData } from "@/modules/return/domain";
 import { UnprocessableError } from "@/shared/infrastructure/errors";
 
-function buildPriorReturnedMap(
+function buildPriorReturnedMaps(
   returns: Awaited<ReturnType<IReturnRepository["findByDispatchId"]>>,
   excludeReturnId?: string,
-): Map<string, number> {
-  const map = new Map<string, number>();
+): {
+  total: Map<string, number>;
+  owned: Map<string, number>;
+  external: Map<string, number>;
+} {
+  const total = new Map<string, number>();
+  const owned = new Map<string, number>();
+  const external = new Map<string, number>();
 
   for (const returnRecord of returns) {
     if (excludeReturnId !== undefined && returnRecord.id === excludeReturnId) {
@@ -24,12 +31,31 @@ function buildPriorReturnedMap(
     }
 
     for (const item of returnRecord.items) {
-      const existing = map.get(item.rentalOrderItemId) ?? 0;
-      map.set(item.rentalOrderItemId, existing + item.returnedQuantity);
+      const ownedQty =
+        item.ownedQuantity === null || item.ownedQuantity === undefined
+          ? item.returnedQuantity
+          : item.ownedQuantity;
+      const externalQty =
+        item.externalQuantity === null || item.externalQuantity === undefined
+          ? 0
+          : item.externalQuantity;
+
+      total.set(
+        item.rentalOrderItemId,
+        (total.get(item.rentalOrderItemId) ?? 0) + item.returnedQuantity,
+      );
+      owned.set(
+        item.rentalOrderItemId,
+        (owned.get(item.rentalOrderItemId) ?? 0) + ownedQty,
+      );
+      external.set(
+        item.rentalOrderItemId,
+        (external.get(item.rentalOrderItemId) ?? 0) + externalQty,
+      );
     }
   }
 
-  return map;
+  return { total, owned, external };
 }
 
 export function validateDispatchForReturn(dispatch: Dispatch): void {
@@ -49,16 +75,21 @@ export function validateReturnItemsForDispatch(
   dispatch: Dispatch,
   priorReturns: Awaited<ReturnType<IReturnRepository["findByDispatchId"]>>,
   excludeReturnId?: string,
-): void {
+): CreateReturnItemData[] {
   try {
-    validateReturnItemsAgainstDispatch(
+    const prior = buildPriorReturnedMaps(priorReturns, excludeReturnId);
+    return validateReturnItemsAgainstDispatch(
       items,
       dispatch.items.map((item) => ({
         id: item.id,
         rentalOrderItemId: item.rentalOrderItemId,
         quantity: item.quantity,
+        ownedQuantity: item.ownedQuantity,
+        externalQuantity: item.externalQuantity,
       })),
-      buildPriorReturnedMap(priorReturns, excludeReturnId),
+      prior.total,
+      prior.owned,
+      prior.external,
     );
   } catch (error) {
     if (error instanceof ReturnInvalidItemError) {
@@ -68,6 +99,13 @@ export function validateReturnItemsForDispatch(
           error.rentalOrderItemId !== undefined
             ? { rentalOrderItemId: error.rentalOrderItemId }
             : undefined,
+      });
+    }
+
+    if (error instanceof ReturnInvariantError) {
+      throw new UnprocessableError({
+        message: error.message,
+        details: error.field !== undefined ? { field: error.field } : undefined,
       });
     }
 

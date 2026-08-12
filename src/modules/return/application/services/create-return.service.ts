@@ -115,7 +115,7 @@ export class CreateReturnService {
           dispatch.id,
         );
 
-        validateReturnItemsForDispatch(
+        const resolvedItems = validateReturnItemsForDispatch(
           createData.items,
           dispatch,
           priorReturns,
@@ -132,7 +132,10 @@ export class CreateReturnService {
           });
         }
 
-        const returnRecord = await returnRepository.create(createData);
+        const returnRecord = await returnRepository.create({
+          ...createData,
+          items: resolvedItems,
+        });
 
         await auditLogger.log({
           module: RETURN_MODULE,

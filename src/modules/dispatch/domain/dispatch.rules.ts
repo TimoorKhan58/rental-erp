@@ -8,6 +8,10 @@ import {
   DispatchInvariantError,
   createDispatchNumber,
 } from "./dispatch.errors";
+import {
+  resolveDispatchSourceSplit,
+  toPersistedDispatchSourceFields,
+} from "./dispatch.source.rules";
 import type {
   CreateDispatchItemData,
   DispatchItemProps,
@@ -44,11 +48,47 @@ export function validateDispatchItems(
 
     productIds.add(item.productId);
 
+    const hasOwned =
+      item.ownedQuantity !== undefined && item.ownedQuantity !== null;
+    const hasExternal =
+      item.externalQuantity !== undefined && item.externalQuantity !== null;
+
+    if (hasOwned || hasExternal) {
+      const owned = item.ownedQuantity ?? 0;
+      const external = item.externalQuantity ?? 0;
+
+      if (owned < 0 || external < 0) {
+        throw new DispatchInvariantError(
+          "Source quantities cannot be negative",
+          `items[${index}].ownedQuantity`,
+        );
+      }
+
+      if (owned + external !== item.quantity) {
+        throw new DispatchInvariantError(
+          "ownedQuantity + externalQuantity must equal quantity",
+          `items[${index}].quantity`,
+        );
+      }
+
+      return {
+        id: "",
+        productId: item.productId,
+        rentalOrderItemId: item.rentalOrderItemId ?? null,
+        quantity: item.quantity,
+        ownedQuantity: owned,
+        externalQuantity: external,
+        notes: normalizeOptionalText(item.notes),
+      };
+    }
+
     return {
       id: "",
       productId: item.productId,
       rentalOrderItemId: item.rentalOrderItemId ?? null,
       quantity: item.quantity,
+      ownedQuantity: null,
+      externalQuantity: null,
       notes: normalizeOptionalText(item.notes),
     };
   });
@@ -119,6 +159,8 @@ export type DispatchQuantityClaimSource = {
     rentalOrderItemId: string | null;
     productId: string;
     quantity: number;
+    ownedQuantity?: number | null;
+    externalQuantity?: number | null;
   }>;
 };
 
@@ -149,12 +191,56 @@ export function sumClaimedDispatchQuantitiesByRentalOrderItem(
   return claimed;
 }
 
+/**
+ * Owned / external claims from non-CANCELLED dispatches.
+ * Null source fields count as fully owned (legacy).
+ */
+export function sumClaimedSourceDispatchQuantitiesByRentalOrderItem(
+  dispatches: DispatchQuantityClaimSource[],
+  options?: { excludeDispatchId?: string },
+): { owned: Map<string, number>; external: Map<string, number> } {
+  const owned = new Map<string, number>();
+  const external = new Map<string, number>();
+
+  for (const dispatch of dispatches) {
+    if (dispatch.status === "CANCELLED") {
+      continue;
+    }
+
+    if (
+      options?.excludeDispatchId !== undefined &&
+      dispatch.id === options.excludeDispatchId
+    ) {
+      continue;
+    }
+
+    for (const item of dispatch.items) {
+      const key = item.rentalOrderItemId ?? item.productId;
+      const ownedQty =
+        item.ownedQuantity === null || item.ownedQuantity === undefined
+          ? item.quantity
+          : item.ownedQuantity;
+      const externalQty =
+        item.externalQuantity === null || item.externalQuantity === undefined
+          ? 0
+          : item.externalQuantity;
+
+      owned.set(key, (owned.get(key) ?? 0) + ownedQty);
+      external.set(key, (external.get(key) ?? 0) + externalQty);
+    }
+  }
+
+  return { owned, external };
+}
+
 export function validateDispatchItemsAgainstRentalOrder(
   dispatchItems: CreateDispatchItemData[],
   rentalOrderItems: RentalOrderItemProps[],
   claimedByRentalOrderItem: Map<string, number> = new Map(),
-): void {
-  for (const dispatchItem of dispatchItems) {
+  externalRemainingByRentalOrderItem: Map<string, number> = new Map(),
+  claimedOwnedByRentalOrderItem: Map<string, number> = claimedByRentalOrderItem,
+): CreateDispatchItemData[] {
+  return dispatchItems.map((dispatchItem) => {
     const rentalItem = findRentalOrderItem(
       dispatchItem,
       rentalOrderItems,
@@ -167,21 +253,32 @@ export function validateDispatchItemsAgainstRentalOrder(
       );
     }
 
-    const claimed =
-      claimedByRentalOrderItem.get(rentalItem.id) ??
-      claimedByRentalOrderItem.get(rentalItem.productId) ??
+    const ownedClaimed =
+      claimedOwnedByRentalOrderItem.get(rentalItem.id) ??
+      claimedOwnedByRentalOrderItem.get(rentalItem.productId) ??
       0;
-    const remaining = rentalItem.reservedQuantity - claimed;
+    const ownedRemaining = rentalItem.reservedQuantity - ownedClaimed;
+    const externalRemaining =
+      externalRemainingByRentalOrderItem.get(rentalItem.id) ?? 0;
 
-    if (dispatchItem.quantity > remaining) {
-      throw new DispatchInvalidItemError(
-        remaining <= 0
-          ? "No remaining reserved quantity available for dispatch"
-          : "Dispatch quantity exceeds remaining reserved quantity",
-        dispatchItem.productId,
-      );
-    }
-  }
+    const split = resolveDispatchSourceSplit(
+      dispatchItem.quantity,
+      dispatchItem.ownedQuantity,
+      dispatchItem.externalQuantity,
+      ownedRemaining,
+      externalRemaining,
+      dispatchItem.productId,
+    );
+
+    const persisted = toPersistedDispatchSourceFields(split);
+
+    return {
+      ...dispatchItem,
+      rentalOrderItemId: rentalItem.id,
+      ownedQuantity: persisted.ownedQuantity,
+      externalQuantity: persisted.externalQuantity,
+    };
+  });
 }
 
 function findRentalOrderItem(

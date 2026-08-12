@@ -44,11 +44,11 @@ export class UpdateReturnService {
   ): Promise<ReturnDto> {
     const { id } = parseRequest(ReturnIdParamSchema, params);
     const data = parseRequest(UpdateReturnSchema, input);
-    const updateData = toUpdateReturnData(data);
+    const baseUpdateData = toUpdateReturnData(data);
 
-    if (updateData.items !== undefined) {
+    if (baseUpdateData.items !== undefined) {
       try {
-        validateReturnItems(updateData.items);
+        validateReturnItems(baseUpdateData.items);
       } catch (error) {
         if (error instanceof ReturnInvariantError) {
           throw new UnprocessableError({
@@ -88,7 +88,9 @@ export class UpdateReturnService {
           throw error;
         }
 
-        if (updateData.items !== undefined) {
+        let updateData = baseUpdateData;
+
+        if (baseUpdateData.items !== undefined) {
           const dispatch = await dispatchRepository.findById(
             toDispatchId(existing.dispatchId),
           );
@@ -105,12 +107,17 @@ export class UpdateReturnService {
             dispatch.id,
           );
 
-          validateReturnItemsForDispatch(
-            updateData.items,
+          const resolvedItems = validateReturnItemsForDispatch(
+            baseUpdateData.items,
             dispatch,
             priorReturns,
             existing.id,
           );
+
+          updateData = {
+            ...baseUpdateData,
+            items: resolvedItems,
+          };
         }
 
         const previousValues = toReturnAuditValues(existing);

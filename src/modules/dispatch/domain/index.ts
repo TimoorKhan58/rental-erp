@@ -30,10 +30,17 @@ export {
   assertCanUpdate,
   assertRentalOrderEligibleForDispatch,
   sumClaimedDispatchQuantitiesByRentalOrderItem,
+  sumClaimedSourceDispatchQuantitiesByRentalOrderItem,
   validateDispatchItems,
   validateDispatchItemsAgainstRentalOrder,
   type DispatchQuantityClaimSource,
 } from "./dispatch.rules";
+export {
+  effectiveExternalDispatchQuantity,
+  effectiveOwnedDispatchQuantity,
+  resolveDispatchSourceSplit,
+  toPersistedDispatchSourceFields,
+} from "./dispatch.source.rules";
 export type {
   CreateDispatchData,
   CreateDispatchItemData,

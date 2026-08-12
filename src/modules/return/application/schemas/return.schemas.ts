@@ -11,6 +11,8 @@ const ReturnItemInputSchema = z.object({
   rentalOrderItemId: UUIDSchema,
   dispatchItemId: UUIDSchema.optional().nullable(),
   quantity: PositiveIntSchema,
+  ownedQuantity: z.coerce.number().int().min(0).optional().nullable(),
+  externalQuantity: z.coerce.number().int().min(0).optional().nullable(),
   notes: TrimmedStringSchema.max(500).optional().nullable(),
 });
 

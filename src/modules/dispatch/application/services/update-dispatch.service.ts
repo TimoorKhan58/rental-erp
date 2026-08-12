@@ -1,9 +1,10 @@
 import {
   DispatchInvalidStatusError,
   DispatchInvariantError,
-  sumClaimedDispatchQuantitiesByRentalOrderItem,
+  sumClaimedSourceDispatchQuantitiesByRentalOrderItem,
   validateDispatchItems,
 } from "@/modules/dispatch/domain";
+import type { ExternalRentalAgreement } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
   NotFoundError,
@@ -29,6 +30,27 @@ import {
   DISPATCH_MODULE,
 } from "./dispatch-service.constants";
 import type { IDispatchTransactionRunner } from "./dispatch-transaction.runner";
+
+function buildExternalRemainingByItem(
+  agreement: ExternalRentalAgreement | null,
+  claimedExternal: Map<string, number>,
+): Map<string, number> {
+  const remaining = new Map<string, number>();
+
+  if (agreement === null) {
+    return remaining;
+  }
+
+  for (const item of agreement.items) {
+    const claimed = claimedExternal.get(item.rentalOrderItemId) ?? 0;
+    remaining.set(
+      item.rentalOrderItemId,
+      Math.max(0, item.quantityAllocated - claimed),
+    );
+  }
+
+  return remaining;
+}
 
 export class UpdateDispatchService {
   constructor(
@@ -59,7 +81,12 @@ export class UpdateDispatchService {
     }
 
     return this.transactionRunner.run(
-      async ({ dispatchRepository, rentalOrderRepository, auditLogger }) => {
+      async ({
+        dispatchRepository,
+        rentalOrderRepository,
+        externalRentalRepository,
+        auditLogger,
+      }) => {
         const existing = await dispatchRepository.findById(toDispatchId(id));
 
         if (existing === null) {
@@ -85,6 +112,8 @@ export class UpdateDispatchService {
           throw error;
         }
 
+        let resolvedUpdate = updateData;
+
         if (updateData.items !== undefined) {
           const rentalOrder = await rentalOrderRepository.findById(
             existing.rentalOrderId,
@@ -103,20 +132,33 @@ export class UpdateDispatchService {
             sortOrder: "desc",
             rentalOrderId: rentalOrder.id,
           });
-          const claimedByItem = sumClaimedDispatchQuantitiesByRentalOrderItem(
+          const claimedSources = sumClaimedSourceDispatchQuantitiesByRentalOrderItem(
             existingForOrder.items,
             { excludeDispatchId: existing.id },
           );
+          const agreement = await externalRentalRepository.findByRentalOrderId(
+            rentalOrder.id,
+          );
+          const externalRemaining = buildExternalRemainingByItem(
+            agreement,
+            claimedSources.external,
+          );
 
-          validateRentalOrderForDispatch(
+          const resolvedItems = validateRentalOrderForDispatch(
             rentalOrder,
             updateData.items,
-            claimedByItem,
+            claimedSources.owned,
+            externalRemaining,
           );
+
+          resolvedUpdate = {
+            ...updateData,
+            items: resolvedItems,
+          };
         }
 
         const previousValues = toDispatchAuditValues(existing);
-        const { markReady, ...persistableUpdate } = updateData;
+        const { markReady, ...persistableUpdate } = resolvedUpdate;
         const hasPersistableUpdate = Object.keys(persistableUpdate).length > 0;
 
         let updated = existing;

@@ -13,6 +13,7 @@ import {
   FileText,
   LayoutDashboard,
   Package,
+  PackageOpen,
   Receipt,
   ScrollText,
   Settings,
@@ -53,6 +54,11 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     label: "Operations",
     items: [
       { label: "Procurement", href: ROUTES.procurements, icon: ShoppingCart },
+      {
+        label: "External Rentals",
+        href: ROUTES.externalRentals,
+        icon: PackageOpen,
+      },
       { label: "Rental Orders", href: ROUTES.rentalOrders, icon: ClipboardList },
       {
         label: "Reservation Calendar",

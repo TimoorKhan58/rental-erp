@@ -1,5 +1,6 @@
 import type { IReturnRepository } from "@/modules/return/domain";
 import type { IDispatchRepository } from "@/modules/dispatch/domain/dispatch.repository.interface";
+import type { IExternalRentalRepository } from "@/modules/external-rental/domain";
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
 import type { IInventoryRepository } from "@/modules/inventory/domain/inventory.repository.interface";
 import type { IStockMovementRepository } from "@/modules/stock-movement/domain/stock-movement.repository.interface";
@@ -13,6 +14,7 @@ export interface ReturnWriteScope {
   readonly rentalOrderRepository: IRentalOrderRepository;
   readonly inventoryRepository: IInventoryRepository;
   readonly stockMovementRepository: IStockMovementRepository;
+  readonly externalRentalRepository: IExternalRentalRepository;
   readonly auditLogger: IAuditLogger;
   readonly notificationService: INotificationService;
   readonly db: DbClient;

@@ -28,11 +28,18 @@ export {
   assertCanUpdate,
   assertDispatchEligibleForReturn,
   applyInspectionToItems,
+  computeExternalCustomerReturnQuantity,
   computeRestockQuantity,
   computeReleaseQuantity,
   validateReturnItems,
   validateReturnItemsAgainstDispatch,
 } from "./return.rules";
+export {
+  effectiveExternalReturnQuantity,
+  effectiveOwnedReturnQuantity,
+  resolveReturnSourceSplit,
+  toPersistedReturnSourceFields,
+} from "./return.source.rules";
 export type {
   CreateReturnData,
   CreateReturnItemData,

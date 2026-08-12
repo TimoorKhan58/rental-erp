@@ -44,6 +44,8 @@ export function toReturnDomain(record: {
     id: string;
     rentalOrderItemId: string;
     returnedQuantity: number;
+    ownedQuantity?: number | null;
+    externalQuantity?: number | null;
     goodQuantity: number;
     brokenQuantity: number;
     lostQuantity: number;
@@ -67,6 +69,8 @@ export function toReturnDomain(record: {
       rentalOrderItemId: item.rentalOrderItemId,
       dispatchItemId: null,
       returnedQuantity: item.returnedQuantity,
+      ownedQuantity: item.ownedQuantity ?? null,
+      externalQuantity: item.externalQuantity ?? null,
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.brokenQuantity,
       lostQuantity: item.lostQuantity,
@@ -96,6 +100,8 @@ export function toReturnCreateInput(
       create: normalized.items.map((item) => ({
         rentalOrderItem: { connect: { id: item.rentalOrderItemId } },
         returnedQuantity: item.returnedQuantity,
+        ownedQuantity: item.ownedQuantity,
+        externalQuantity: item.externalQuantity,
         goodQuantity: 0,
         brokenQuantity: 0,
         repairQuantity: 0,
@@ -129,6 +135,8 @@ export function toReturnUpdateInput(
       create: normalizedItems.map((item) => ({
         rentalOrderItem: { connect: { id: item.rentalOrderItemId } },
         returnedQuantity: item.returnedQuantity,
+        ownedQuantity: item.ownedQuantity,
+        externalQuantity: item.externalQuantity,
         goodQuantity: 0,
         brokenQuantity: 0,
         repairQuantity: 0,

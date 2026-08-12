@@ -6,6 +6,8 @@ export interface DispatchItemResponse {
   productId: string;
   rentalOrderItemId: string | null;
   quantity: number;
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   notes: string | null;
 }
 
@@ -56,6 +58,8 @@ export function toDispatchResponse(dto: DispatchDto): DispatchResponse {
       productId: item.productId,
       rentalOrderItemId: item.rentalOrderItemId,
       quantity: item.quantity,
+      ownedQuantity: item.ownedQuantity,
+      externalQuantity: item.externalQuantity,
       notes: item.notes,
     })),
     createdById: dto.createdById,

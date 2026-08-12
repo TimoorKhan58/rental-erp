@@ -112,6 +112,15 @@ export const queryKeys = {
     details: () => [...queryKeys.procurement.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.procurement.details(), id] as const,
   },
+  externalRentals: {
+    all: ["app", "external-rentals"] as const,
+    lists: () => [...queryKeys.externalRentals.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.externalRentals.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.externalRentals.all, "detail"] as const,
+    detail: (id: string) =>
+      [...queryKeys.externalRentals.details(), id] as const,
+  },
   rentalOrders: {
     all: ["app", "rental-orders"] as const,
     lists: () => [...queryKeys.rentalOrders.all, "list"] as const,

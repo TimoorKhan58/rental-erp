@@ -1,4 +1,5 @@
 import type { IDispatchTransactionRunner } from "@/modules/dispatch/application/services/dispatch-transaction.runner";
+import { createExternalRentalRepositoryFromUnitOfWork } from "@/modules/external-rental/infrastructure/factories/create-external-rental.repository";
 import { createInventoryRepositoryFromUnitOfWork } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
 import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
 import { createStockMovementRepositoryFromUnitOfWork } from "@/modules/stock-movement/infrastructure/factories/create-stock-movement.repository";
@@ -25,6 +26,8 @@ export function createDispatchTransactionRunner(
           stockMovementRepository: createStockMovementRepositoryFromUnitOfWork(
             context,
           ),
+          externalRentalRepository:
+            createExternalRentalRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           notificationService: context.deps.notificationService,
           db: context.tx,

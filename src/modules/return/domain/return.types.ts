@@ -12,6 +12,9 @@ export interface ReturnItemProps {
   rentalOrderItemId: string;
   dispatchItemId: string | null;
   returnedQuantity: number;
+  /** Null = legacy owned-only return. */
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
@@ -40,6 +43,8 @@ export interface CreateReturnItemData {
   rentalOrderItemId: string;
   dispatchItemId?: string | null;
   quantity: number;
+  ownedQuantity?: number | null;
+  externalQuantity?: number | null;
   notes?: string | null;
 }
 

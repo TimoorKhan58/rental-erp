@@ -12,6 +12,9 @@ export interface DispatchItemProps {
   productId: ProductId;
   rentalOrderItemId: string | null;
   quantity: number;
+  /** Null = legacy owned-only (ownedQuantity = quantity, externalQuantity = 0). */
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   notes: string | null;
 }
 
@@ -40,6 +43,8 @@ export interface CreateDispatchItemData {
   productId: ProductId;
   rentalOrderItemId?: string | null;
   quantity: number;
+  ownedQuantity?: number | null;
+  externalQuantity?: number | null;
   notes?: string | null;
 }
 

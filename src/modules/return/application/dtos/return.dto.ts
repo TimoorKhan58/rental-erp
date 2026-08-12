@@ -5,6 +5,8 @@ export interface ReturnItemDto {
   rentalOrderItemId: string;
   dispatchItemId: string | null;
   returnedQuantity: number;
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
@@ -33,6 +35,8 @@ export interface CreateReturnItemDto {
   rentalOrderItemId: string;
   dispatchItemId?: string | null;
   quantity: number;
+  ownedQuantity?: number | null;
+  externalQuantity?: number | null;
   notes?: string | null;
 }
 

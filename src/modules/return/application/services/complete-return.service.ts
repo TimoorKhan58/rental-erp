@@ -3,10 +3,18 @@ import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/renta
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
   ReturnInvalidStatusError,
+  computeExternalCustomerReturnQuantity,
   computeReleaseQuantity,
   computeRestockQuantity,
 } from "@/modules/return/domain";
+import {
+  ExternalRentalInvalidCustomerReturnError,
+  ExternalRentalInvalidStatusError,
+  ExternalRentalInvariantError,
+} from "@/modules/external-rental/domain";
+import { toExternalRentalWorkflowData } from "@/modules/external-rental/application/mappers/external-rental.mapper";
 import { parseRequest } from "@/shared/application/validation";
+import type { RentalOrderItemId } from "@/shared/domain/ids";
 import {
   NotFoundError,
   UnauthorizedError,
@@ -45,6 +53,7 @@ export class CompleteReturnService {
         rentalOrderRepository,
         inventoryRepository,
         stockMovementRepository,
+        externalRentalRepository,
         auditLogger,
         notificationService,
         db,
@@ -95,6 +104,10 @@ export class CompleteReturnService {
         }
 
         const previousValues = toReturnAuditValues(existing);
+        const externalReturnItems: Array<{
+          rentalOrderItemId: RentalOrderItemId;
+          quantity: number;
+        }> = [];
 
         for (const item of existing.items) {
           const rentalItem = rentalOrder.items.find(
@@ -110,6 +123,15 @@ export class CompleteReturnService {
 
           const releaseQuantity = computeReleaseQuantity(item);
           const restockQuantity = computeRestockQuantity(item);
+          const externalReturnQuantity =
+            computeExternalCustomerReturnQuantity(item);
+
+          if (externalReturnQuantity > 0) {
+            externalReturnItems.push({
+              rentalOrderItemId: item.rentalOrderItemId as RentalOrderItemId,
+              quantity: externalReturnQuantity,
+            });
+          }
 
           if (releaseQuantity > 0 || restockQuantity > 0) {
             const inventory = await inventoryRepository.findByProductAndWarehouse(
@@ -134,8 +156,6 @@ export class CompleteReturnService {
               userId,
             };
 
-            // Clear any leftover reservation so returned stock becomes available.
-            // (Dispatch usually releases first; this covers partial / leftover reserve.)
             const releaseNow = Math.min(
               releaseQuantity,
               inventory.reservedQuantity,
@@ -180,6 +200,75 @@ export class CompleteReturnService {
           }
         }
 
+        if (externalReturnItems.length > 0) {
+          const agreement = await externalRentalRepository.findByRentalOrderId(
+            rentalOrder.id,
+          );
+
+          if (agreement === null) {
+            throw new UnprocessableError({
+              message:
+                "External return quantity requires an external rental agreement",
+            });
+          }
+
+          const supplierReturnedBefore = agreement.items.map((item) => ({
+            rentalOrderItemId: item.rentalOrderItemId,
+            quantityReturnedToSupplier: item.quantityReturnedToSupplier,
+          }));
+
+          let customerReturned;
+
+          try {
+            customerReturned = agreement.withCustomerReturned(externalReturnItems);
+          } catch (error) {
+            if (
+              error instanceof ExternalRentalInvalidStatusError ||
+              error instanceof ExternalRentalInvalidCustomerReturnError ||
+              error instanceof ExternalRentalInvariantError
+            ) {
+              throw new UnprocessableError({
+                message: error.message,
+                details:
+                  error instanceof ExternalRentalInvalidCustomerReturnError &&
+                  error.rentalOrderItemId !== undefined
+                    ? { rentalOrderItemId: error.rentalOrderItemId }
+                    : error instanceof ExternalRentalInvalidStatusError
+                      ? {
+                          currentStatus: error.currentStatus,
+                          action: error.action,
+                        }
+                      : {
+                          field: (error as ExternalRentalInvariantError).field,
+                        },
+              });
+            }
+
+            throw error;
+          }
+
+          for (const before of supplierReturnedBefore) {
+            const after = customerReturned.items.find(
+              (item) => item.rentalOrderItemId === before.rentalOrderItemId,
+            );
+            if (
+              after !== undefined &&
+              after.quantityReturnedToSupplier !==
+                before.quantityReturnedToSupplier
+            ) {
+              throw new UnprocessableError({
+                message:
+                  "Customer return must not modify quantityReturnedToSupplier",
+              });
+            }
+          }
+
+          await externalRentalRepository.updateWorkflow(
+            agreement.id,
+            toExternalRentalWorkflowData(customerReturned),
+          );
+        }
+
         const updated = await returnRepository.updateStatus(existing.id, {
           status: completed.status,
           completedAt: completed.completedAt,
@@ -192,7 +281,14 @@ export class CompleteReturnService {
           action: "UPDATE",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toReturnAuditValues(updated),
+          newValues: {
+            ...toReturnAuditValues(updated),
+            sourceQuantities: updated.items.map((item) => ({
+              rentalOrderItemId: item.rentalOrderItemId,
+              ownedQuantity: computeReleaseQuantity(item),
+              externalQuantity: computeExternalCustomerReturnQuantity(item),
+            })),
+          },
         });
 
         await syncRentalOrderStatusFromReturns(existing.rentalOrderId, {

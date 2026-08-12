@@ -17,6 +17,7 @@ const READ_PERMISSIONS: Permission[] = [
   PERMISSIONS.inventory.read,
   PERMISSIONS.stockMovements.read,
   PERMISSIONS.purchaseOrders.read,
+  PERMISSIONS.externalRentals.read,
   PERMISSIONS.rentalOrders.read,
   PERMISSIONS.dispatches.read,
   PERMISSIONS.returns.read,
@@ -57,6 +58,10 @@ const WORKER_PERMISSIONS: Permission[] = [
   PERMISSIONS.stockMovements.create,
   PERMISSIONS.purchaseOrders.read,
   PERMISSIONS.purchaseOrders.receive,
+  PERMISSIONS.externalRentals.read,
+  PERMISSIONS.externalRentals.receive,
+  PERMISSIONS.externalRentals.allocate,
+  PERMISSIONS.externalRentals.returnToSupplier,
   PERMISSIONS.rentalOrders.read,
   PERMISSIONS.rentalOrders.reserve,
   PERMISSIONS.dispatches.read,
@@ -115,6 +120,7 @@ const WORKER_PERMISSIONS: Permission[] = [
 
 const ACCOUNTANT_PERMISSIONS: Permission[] = [
   ...READ_PERMISSIONS,
+  PERMISSIONS.externalRentals.settle,
   PERMISSIONS.rentalInvoices.create,
   PERMISSIONS.rentalInvoices.update,
   PERMISSIONS.rentalInvoices.issue,

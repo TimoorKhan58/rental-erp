@@ -30,6 +30,12 @@ export type RoleId = Brand<string, "RoleId">;
 export type InventoryId = Brand<string, "InventoryId">;
 export type StockMovementId = Brand<string, "StockMovementId">;
 export type PurchaseOrderId = Brand<string, "PurchaseOrderId">;
+export type ExternalRentalAgreementId = Brand<string, "ExternalRentalAgreementId">;
+export type ExternalRentalAgreementItemId = Brand<
+  string,
+  "ExternalRentalAgreementItemId"
+>;
+export type RentalOrderItemId = Brand<string, "RentalOrderItemId">;
 export type NotificationId = Brand<string, "NotificationId">;
 export type AuditLogId = Brand<string, "AuditLogId">;
 export type DashboardId = Brand<string, "DashboardId">;

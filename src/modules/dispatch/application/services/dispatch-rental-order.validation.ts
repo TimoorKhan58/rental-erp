@@ -2,6 +2,7 @@ import type { RentalOrder } from "@/modules/rental-order/domain/rental-order.ent
 import {
   assertRentalOrderEligibleForDispatch,
   DispatchInvalidItemError,
+  DispatchInvariantError,
   validateDispatchItemsAgainstRentalOrder,
 } from "@/modules/dispatch/domain";
 import type { CreateDispatchItemData } from "@/modules/dispatch/domain";
@@ -10,14 +11,17 @@ import { UnprocessableError } from "@/shared/infrastructure/errors";
 export function validateRentalOrderForDispatch(
   rentalOrder: RentalOrder,
   items: CreateDispatchItemData[],
-  claimedByRentalOrderItem: Map<string, number> = new Map(),
-): void {
+  claimedOwnedByRentalOrderItem: Map<string, number> = new Map(),
+  externalRemainingByRentalOrderItem: Map<string, number> = new Map(),
+): CreateDispatchItemData[] {
   try {
     assertRentalOrderEligibleForDispatch(rentalOrder.status);
-    validateDispatchItemsAgainstRentalOrder(
+    return validateDispatchItemsAgainstRentalOrder(
       items,
       rentalOrder.items,
-      claimedByRentalOrderItem,
+      claimedOwnedByRentalOrderItem,
+      externalRemainingByRentalOrderItem,
+      claimedOwnedByRentalOrderItem,
     );
   } catch (error) {
     if (error instanceof DispatchInvalidItemError) {
@@ -26,6 +30,13 @@ export function validateRentalOrderForDispatch(
         details: error.productId !== undefined
           ? { productId: error.productId }
           : undefined,
+      });
+    }
+
+    if (error instanceof DispatchInvariantError) {
+      throw new UnprocessableError({
+        message: error.message,
+        details: error.field !== undefined ? { field: error.field } : undefined,
       });
     }
 

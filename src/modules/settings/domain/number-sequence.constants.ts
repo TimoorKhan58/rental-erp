@@ -16,6 +16,7 @@ export const DOCUMENT_TYPE_PREFIXES: Record<DocumentType, string> = {
   PURCHASE_ORDER: "PO-",
   RETURN: "RET-",
   MAINTENANCE: "MNT-",
+  EXTERNAL_RENTAL_AGREEMENT: "ERA-",
 };
 
 export const DEFAULT_SEQUENCE_PADDING_LENGTH = 3;

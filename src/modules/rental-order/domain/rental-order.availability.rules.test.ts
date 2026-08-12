@@ -218,6 +218,49 @@ describe("calculateCommitmentQuantity", () => {
     });
   });
 
+  it("external-only COMPLETED dispatch does not inflate outstandingOut", () => {
+    const result = calculateCommitmentQuantity({
+      reservedQuantity: 60,
+      dispatches: [
+        {
+          status: "COMPLETED",
+          quantity: 100,
+          ownedQuantity: 60,
+        },
+      ],
+      returns: [],
+    });
+
+    expect(result).toEqual({
+      undispatchedHold: 0,
+      outstandingOut: 60,
+      commitmentQty: 60,
+    });
+  });
+
+  it("owned return claim ignores external returned quantity", () => {
+    const result = calculateCommitmentQuantity({
+      reservedQuantity: 60,
+      dispatches: [
+        {
+          status: "COMPLETED",
+          quantity: 100,
+          ownedQuantity: 60,
+        },
+      ],
+      returns: [
+        {
+          status: "COMPLETED",
+          returnedQuantity: 100,
+          ownedReturnedQuantity: 50,
+        },
+      ],
+    });
+
+    expect(result.outstandingOut).toBe(10);
+    expect(result.commitmentQty).toBe(10);
+  });
+
   it("C: full dispatch → commitment 100", () => {
     const result = calculateCommitmentQuantity({
       reservedQuantity: 100,

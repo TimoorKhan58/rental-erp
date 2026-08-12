@@ -56,6 +56,7 @@ import {
   createPassThroughTransactionRunner,
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
+import { InMemoryExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 function createWriteScope(
@@ -66,6 +67,7 @@ function createWriteScope(
   stockMovementRepository: InMemoryStockMovementRepository,
   auditLogger: MockAuditLogger,
   userId?: string,
+  externalRentalRepository: InMemoryExternalRentalRepository = new InMemoryExternalRentalRepository(),
 ) {
   return createPassThroughTransactionRunner({
     returnRepository,
@@ -73,6 +75,7 @@ function createWriteScope(
     rentalOrderRepository,
     inventoryRepository,
     stockMovementRepository,
+    externalRentalRepository,
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId,
@@ -1042,7 +1045,7 @@ describe("CreateReturnService prior returns aggregation", () => {
             rentalOrderItemId: ITEM_ID,
             dispatchItemId: ITEM_ID,
             returnedQuantity: 3,
-            goodQuantity: 0,
+            ownedQuantity: null,            externalQuantity: null,            goodQuantity: 0,
             damagedQuantity: 0,
             lostQuantity: 0,
             missingQuantity: 0,
@@ -1089,7 +1092,7 @@ describe("CreateReturnService prior returns aggregation", () => {
             rentalOrderItemId: ITEM_ID,
             dispatchItemId: ITEM_ID,
             returnedQuantity: 2,
-            goodQuantity: 0,
+            ownedQuantity: null,            externalQuantity: null,            goodQuantity: 0,
             damagedQuantity: 0,
             lostQuantity: 0,
             missingQuantity: 0,
@@ -1137,7 +1140,7 @@ describe("CreateReturnService prior returns aggregation", () => {
             rentalOrderItemId: ITEM_ID,
             dispatchItemId: ITEM_ID,
             returnedQuantity: 5,
-            goodQuantity: 0,
+            ownedQuantity: null,            externalQuantity: null,            goodQuantity: 0,
             damagedQuantity: 0,
             lostQuantity: 0,
             missingQuantity: 0,

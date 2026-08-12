@@ -6,6 +6,8 @@ export interface ReturnItemResponse {
   rentalOrderItemId: string;
   dispatchItemId: string | null;
   returnedQuantity: number;
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
@@ -52,6 +54,8 @@ export function toReturnResponse(dto: ReturnDto): ReturnResponse {
       rentalOrderItemId: item.rentalOrderItemId,
       dispatchItemId: item.dispatchItemId,
       returnedQuantity: item.returnedQuantity,
+      ownedQuantity: item.ownedQuantity,
+      externalQuantity: item.externalQuantity,
       goodQuantity: item.goodQuantity,
       damagedQuantity: item.damagedQuantity,
       lostQuantity: item.lostQuantity,

@@ -54,6 +54,15 @@ export const PERMISSIONS = {
     receive: "purchase-orders:receive",
     cancel: "purchase-orders:cancel",
   },
+  externalRentals: {
+    read: "external-rentals:read",
+    create: "external-rentals:create",
+    confirm: "external-rentals:confirm",
+    receive: "external-rentals:receive",
+    allocate: "external-rentals:allocate",
+    returnToSupplier: "external-rentals:return-to-supplier",
+    settle: "external-rentals:settle",
+  },
   rentalOrders: {
     read: "rental-orders:read",
     create: "rental-orders:create",

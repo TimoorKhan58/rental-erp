@@ -1,8 +1,19 @@
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
-import { DispatchInvalidStatusError } from "@/modules/dispatch/domain";
+import {
+  DispatchInvalidStatusError,
+  effectiveExternalDispatchQuantity,
+  effectiveOwnedDispatchQuantity,
+} from "@/modules/dispatch/domain";
+import {
+  ExternalRentalInvalidDispatchError,
+  ExternalRentalInvalidStatusError,
+  ExternalRentalInvariantError,
+} from "@/modules/external-rental/domain";
+import { toExternalRentalWorkflowData } from "@/modules/external-rental/application/mappers/external-rental.mapper";
 import { parseRequest } from "@/shared/application/validation";
+import type { RentalOrderItemId } from "@/shared/domain/ids";
 import {
   NotFoundError,
   UnauthorizedError,
@@ -40,6 +51,7 @@ export class CompleteDispatchService {
         rentalOrderRepository,
         inventoryRepository,
         stockMovementRepository,
+        externalRentalRepository,
         auditLogger,
         notificationService,
         db,
@@ -96,7 +108,34 @@ export class CompleteDispatchService {
           { dispatchedAt: dispatched.dispatchedAt },
         );
 
+        const externalDispatchItems: Array<{
+          rentalOrderItemId: RentalOrderItemId;
+          quantity: number;
+        }> = [];
+
         for (const item of updated.items) {
+          const ownedQuantity = effectiveOwnedDispatchQuantity(item);
+          const externalQuantity = effectiveExternalDispatchQuantity(item);
+
+          if (externalQuantity > 0) {
+            if (item.rentalOrderItemId === null) {
+              throw new UnprocessableError({
+                message:
+                  "External dispatch requires rentalOrderItemId on dispatch item",
+                details: { productId: item.productId },
+              });
+            }
+
+            externalDispatchItems.push({
+              rentalOrderItemId: item.rentalOrderItemId as RentalOrderItemId,
+              quantity: externalQuantity,
+            });
+          }
+
+          if (ownedQuantity <= 0) {
+            continue;
+          }
+
           const inventory = await inventoryRepository.findByProductAndWarehouse(
             toProductId(item.productId),
             rentalOrder.warehouseId,
@@ -119,10 +158,9 @@ export class CompleteDispatchService {
             userId,
           };
 
-          // Consume reservation when stock leaves the warehouse so available
-          // quantity is no longer held against items that are already on rent.
+          // Consume reservation when owned stock leaves the warehouse.
           const releaseQuantity = Math.min(
-            item.quantity,
+            ownedQuantity,
             inventory.reservedQuantity,
           );
 
@@ -140,11 +178,59 @@ export class CompleteDispatchService {
           await executeCreateStockMovementInScope(movementScope, {
             inventoryId: inventory.id,
             movementType: "OUT",
-            quantity: item.quantity,
+            quantity: ownedQuantity,
             referenceType: RENTAL_ORDER_REFERENCE_TYPE,
             referenceId: rentalOrder.id,
             remarks: `Dispatched for rental order ${rentalOrder.orderNumber}`,
           });
+        }
+
+        if (externalDispatchItems.length > 0) {
+          const agreement = await externalRentalRepository.findByRentalOrderId(
+            rentalOrder.id,
+          );
+
+          if (agreement === null) {
+            throw new UnprocessableError({
+              message:
+                "External dispatch quantity requires an external rental agreement",
+            });
+          }
+
+          let externalDispatched;
+
+          try {
+            externalDispatched = agreement.withDispatched(externalDispatchItems);
+          } catch (error) {
+            if (
+              error instanceof ExternalRentalInvalidStatusError ||
+              error instanceof ExternalRentalInvalidDispatchError ||
+              error instanceof ExternalRentalInvariantError
+            ) {
+              throw new UnprocessableError({
+                message: error.message,
+                details:
+                  error instanceof ExternalRentalInvalidDispatchError &&
+                  error.rentalOrderItemId !== undefined
+                    ? { rentalOrderItemId: error.rentalOrderItemId }
+                    : error instanceof ExternalRentalInvalidStatusError
+                      ? {
+                          currentStatus: error.currentStatus,
+                          action: error.action,
+                        }
+                      : {
+                          field: (error as ExternalRentalInvariantError).field,
+                        },
+              });
+            }
+
+            throw error;
+          }
+
+          await externalRentalRepository.updateWorkflow(
+            agreement.id,
+            toExternalRentalWorkflowData(externalDispatched),
+          );
         }
 
         const completed = updated.withCompleted();
@@ -155,7 +241,6 @@ export class CompleteDispatchService {
         );
 
         // First physical completion: ephemeral DISPATCHED → persist ON_RENT.
-        // Subsequent completions on an already ON_RENT order leave status unchanged.
         if (rentalOrder.status !== "ON_RENT") {
           let onRentOrder;
 
@@ -188,7 +273,14 @@ export class CompleteDispatchService {
           action: "UPDATE",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toDispatchAuditValues(updated),
+          newValues: {
+            ...toDispatchAuditValues(updated),
+            sourceQuantities: updated.items.map((item) => ({
+              rentalOrderItemId: item.rentalOrderItemId,
+              ownedQuantity: effectiveOwnedDispatchQuantity(item),
+              externalQuantity: effectiveExternalDispatchQuantity(item),
+            })),
+          },
         });
 
         await enqueueWorkflowNotification(notificationService, db, {

@@ -157,6 +157,8 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
             dispatchItems: {
               select: {
                 quantity: true,
+                ownedQuantity: true,
+                externalQuantity: true,
                 dispatch: {
                   select: {
                     status: true,
@@ -167,6 +169,8 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
             returnInspectionItems: {
               select: {
                 returnedQuantity: true,
+                ownedQuantity: true,
+                externalQuantity: true,
                 returnInspection: {
                   select: {
                     status: true,
@@ -190,10 +194,12 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
         dispatches: row.dispatchItems.map((item) => ({
           status: item.dispatch.status,
           quantity: item.quantity,
+          ownedQuantity: item.ownedQuantity ?? item.quantity,
         })),
         returns: row.returnInspectionItems.map((item) => ({
           status: item.returnInspection.status,
           returnedQuantity: item.returnedQuantity,
+          ownedReturnedQuantity: item.ownedQuantity ?? item.returnedQuantity,
         })),
       })),
     );

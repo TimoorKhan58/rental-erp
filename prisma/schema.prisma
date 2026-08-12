@@ -131,6 +131,7 @@ model User {
   disposedAssets         Asset[]                 @relation("AssetDisposedBy")
   assetTransfers         AssetTransfer[]
   assetMaintenanceRecords AssetMaintenanceHistory[]
+  createdExternalRentalAgreements ExternalRentalAgreement[]
 
   @@index([roleId])
   @@index([isActive])
@@ -178,10 +179,11 @@ model Supplier {
   isActive       Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-  purchaseOrders   PurchaseOrder[]
-  supplierPayments SupplierPayment[]
-  assets           Asset[]
-  expenses         Expense[]
+  purchaseOrders             PurchaseOrder[]
+  supplierPayments           SupplierPayment[]
+  assets                     Asset[]
+  expenses                   Expense[]
+  externalRentalAgreements   ExternalRentalAgreement[]
 
   @@index([name])
   @@index([isActive])
@@ -204,14 +206,15 @@ model Warehouse {
   isActive      Boolean     @default(true)
   createdAt     DateTime    @default(now())
   updatedAt      DateTime        @updatedAt
-  inventories    Inventory[]
-  purchaseOrders PurchaseOrder[]
-  rentalOrders   RentalOrder[]
-  repairs              Repair[]
-  maintenances         Maintenance[]
-  assets               Asset[]
-  assetTransfersFrom   AssetTransfer[] @relation("AssetTransferFrom")
-  assetTransfersTo     AssetTransfer[] @relation("AssetTransferTo")
+  inventories                Inventory[]
+  purchaseOrders             PurchaseOrder[]
+  rentalOrders               RentalOrder[]
+  repairs                    Repair[]
+  maintenances               Maintenance[]
+  assets                     Asset[]
+  assetTransfersFrom         AssetTransfer[] @relation("AssetTransferFrom")
+  assetTransfersTo           AssetTransfer[] @relation("AssetTransferTo")
+  externalRentalAgreements   ExternalRentalAgreement[]
 
   @@index([name])
   @@index([isActive])
@@ -386,18 +389,19 @@ model Product {
   isActive          Boolean   @default(true)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  inventories          Inventory[]
-  purchaseOrderItems   PurchaseOrderItem[]
-  rentalOrderItems     RentalOrderItem[]
-  dispatchItems        DispatchItem[]
-  repairItems          RepairItem[]
-  repairs              Repair[]
-  maintenances         Maintenance[]
-  tagAssignments       ProductTagAssignment[]
-  images               ProductImage[]
-  specifications       ProductSpecification[]
-  attributeValues      ProductAttributeValue[]
-  variants             ProductVariant[]
+  inventories                  Inventory[]
+  purchaseOrderItems           PurchaseOrderItem[]
+  rentalOrderItems             RentalOrderItem[]
+  dispatchItems                DispatchItem[]
+  repairItems                  RepairItem[]
+  repairs                      Repair[]
+  maintenances                 Maintenance[]
+  tagAssignments               ProductTagAssignment[]
+  images                       ProductImage[]
+  specifications               ProductSpecification[]
+  attributeValues              ProductAttributeValue[]
+  variants                     ProductVariant[]
+  externalRentalAgreementItems ExternalRentalAgreementItem[]
 
   @@index([categoryId])
   @@index([brandId])
@@ -553,10 +557,12 @@ model RentalOrder {
   createdBy          User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  items              RentalOrderItem[]
-  dispatches         Dispatch[]
-  returnInspections  ReturnInspection[]
-  rentalInvoices     RentalInvoice[]
+  items                    RentalOrderItem[]
+  dispatches               Dispatch[]
+  returnInspections        ReturnInspection[]
+  rentalInvoices           RentalInvoice[]
+  // MVP: at most one hire-in agreement per rental order (@unique on agreement.rentalOrderId).
+  externalRentalAgreement  ExternalRentalAgreement?
 
   @@index([customerId])
   @@index([warehouseId])
@@ -575,20 +581,106 @@ model RentalOrderItem {
   product           Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity          Int
   rentalPricePerDay Decimal     @db.Decimal(12, 2)
+  // OWNED-STOCK reservation only (F-01). External hire-in qty is NOT stored here.
   reservedQuantity  Int         @default(0)
   eventStartDate    DateTime    @db.Date
   eventEndDate      DateTime    @db.Date
   numberOfDays      Int
   lineTotal         Decimal     @db.Decimal(12, 2)
   notes             String?
-  dispatchItems         DispatchItem[]
-  returnInspectionItems ReturnInspectionItem[]
+  dispatchItems                DispatchItem[]
+  returnInspectionItems        ReturnInspectionItem[]
+  externalRentalAgreementItems ExternalRentalAgreementItem[]
 
   @@index([rentalOrderId])
   @@index([productId])
   @@index([eventStartDate])
   @@index([eventEndDate])
   @@map("rental_order_items")
+}
+
+// ── External rental (supplier hire-in / cross-rental) ────────────
+//
+// Phase 25.5.2: schema + skeleton only.
+// Custody lives on ExternalRentalAgreementItem counters — NOT Inventory.quantityOnHand.
+// PurchaseOrder remains buy-only. F-02 owned availability must not read these tables.
+
+enum ExternalRentalAgreementStatus {
+  DRAFT
+  CONFIRMED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  ALLOCATED
+  IN_USE
+  RETURN_PENDING
+  RETURNED
+  CANCELLED
+}
+
+enum ExternalRentalSettlementStatus {
+  UNSETTLED
+  PARTIALLY_SETTLED
+  SETTLED
+}
+
+model ExternalRentalAgreement {
+  id                           String                         @id @default(uuid()) @db.Uuid
+  agreementNumber              String                         @unique
+  supplierId                   String                         @db.Uuid
+  supplier                     Supplier                       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  warehouseId                  String                         @db.Uuid
+  warehouse                    Warehouse                      @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  rentalOrderId                String                         @unique @db.Uuid
+  rentalOrder                  RentalOrder                    @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  status                       ExternalRentalAgreementStatus  @default(DRAFT)
+  settlementStatus             ExternalRentalSettlementStatus @default(UNSETTLED)
+  hireStartDate                DateTime                       @db.Date
+  hireEndDate                  DateTime                       @db.Date
+  expectedReturnToSupplierDate DateTime                       @db.Date
+  totalHireInCost              Decimal                        @default(0) @db.Decimal(12, 2)
+  amountDue                    Decimal                        @default(0) @db.Decimal(12, 2)
+  amountPaid                   Decimal                        @default(0) @db.Decimal(12, 2)
+  remarks                      String?
+  createdById                  String                         @db.Uuid
+  createdBy                    User                           @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  items                        ExternalRentalAgreementItem[]
+
+  @@index([supplierId])
+  @@index([warehouseId])
+  @@index([status])
+  @@index([settlementStatus])
+  @@index([hireStartDate])
+  @@index([hireEndDate])
+  @@map("external_rental_agreements")
+}
+
+model ExternalRentalAgreementItem {
+  id                           String                  @id @default(uuid()) @db.Uuid
+  agreementId                  String                  @db.Uuid
+  agreement                    ExternalRentalAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  productId                    String                  @db.Uuid
+  product                      Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
+  rentalOrderItemId            String                  @unique @db.Uuid
+  rentalOrderItem              RentalOrderItem         @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
+  quantityRequested            Int
+  quantityConfirmed            Int                     @default(0)
+  quantityReceived             Int                     @default(0)
+  quantityAllocated            Int                     @default(0)
+  quantityDispatched           Int                     @default(0)
+  quantityReturnedFromCustomer Int                     @default(0)
+  quantityReturnedToSupplier   Int                     @default(0)
+  quantityWrittenOff           Int                     @default(0)
+  unitCost                     Decimal                 @db.Decimal(12, 2)
+  lineHireInCost               Decimal                 @default(0) @db.Decimal(12, 2)
+  notes                        String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+
+  @@index([agreementId])
+  @@index([productId])
+  @@map("external_rental_agreement_items")
 }
 
 // ── Dispatch & delivery ─────────────────────────────────────────
@@ -650,6 +742,9 @@ model DispatchItem {
   rentalOrderItemId String?          @db.Uuid
   rentalOrderItem   RentalOrderItem? @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
   quantity          Int
+  // Source split (Phase 25.5.4). Null = legacy owned-only (ownedQuantity = quantity).
+  ownedQuantity     Int?
+  externalQuantity  Int?
   notes             String?
 
   @@index([dispatchId])
@@ -701,6 +796,9 @@ model ReturnInspectionItem {
   rentalOrderItemId  String           @db.Uuid
   rentalOrderItem    RentalOrderItem  @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
   returnedQuantity   Int
+  // Source split (Phase 25.5.4). Null = legacy owned-only return.
+  ownedQuantity      Int?
+  externalQuantity   Int?
   goodQuantity       Int
   brokenQuantity     Int
   repairQuantity     Int
@@ -1160,6 +1258,7 @@ enum DocumentType {
   PURCHASE_ORDER
   RETURN
   MAINTENANCE
+  EXTERNAL_RENTAL_AGREEMENT
 }
 
 model CompanySetting {

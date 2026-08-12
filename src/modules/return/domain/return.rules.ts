@@ -5,6 +5,12 @@ import {
   ReturnInvariantError,
   createReturnNumber,
 } from "./return.errors";
+import {
+  resolveReturnSourceSplit,
+  toPersistedReturnSourceFields,
+  effectiveOwnedReturnQuantity,
+  effectiveExternalReturnQuantity,
+} from "./return.source.rules";
 import type {
   CreateReturnItemData,
   InspectReturnItemData,
@@ -39,11 +45,51 @@ export function validateReturnItems(
 
     rentalOrderItemIds.add(item.rentalOrderItemId);
 
+    const hasOwned =
+      item.ownedQuantity !== undefined && item.ownedQuantity !== null;
+    const hasExternal =
+      item.externalQuantity !== undefined && item.externalQuantity !== null;
+
+    if (hasOwned || hasExternal) {
+      const owned = item.ownedQuantity ?? 0;
+      const external = item.externalQuantity ?? 0;
+
+      if (owned < 0 || external < 0) {
+        throw new ReturnInvariantError(
+          "Source quantities cannot be negative",
+          `items[${index}].ownedQuantity`,
+        );
+      }
+
+      if (owned + external !== item.quantity) {
+        throw new ReturnInvariantError(
+          "ownedQuantity + externalQuantity must equal quantity",
+          `items[${index}].quantity`,
+        );
+      }
+
+      return {
+        id: "",
+        rentalOrderItemId: item.rentalOrderItemId,
+        dispatchItemId: item.dispatchItemId ?? null,
+        returnedQuantity: item.quantity,
+        ownedQuantity: owned,
+        externalQuantity: external,
+        goodQuantity: 0,
+        damagedQuantity: 0,
+        lostQuantity: 0,
+        missingQuantity: 0,
+        notes: normalizeOptionalText(item.notes),
+      };
+    }
+
     return {
       id: "",
       rentalOrderItemId: item.rentalOrderItemId,
       dispatchItemId: item.dispatchItemId ?? null,
       returnedQuantity: item.quantity,
+      ownedQuantity: null,
+      externalQuantity: null,
       goodQuantity: 0,
       damagedQuantity: 0,
       lostQuantity: 0,
@@ -106,23 +152,48 @@ export function validateReturnItemsAgainstDispatch(
     id: string;
     rentalOrderItemId: string | null;
     quantity: number;
+    ownedQuantity?: number | null;
+    externalQuantity?: number | null;
   }>,
   priorReturnedByItem: Map<string, number> = new Map(),
-): void {
-  const dispatchByRentalItem = new Map<string, { id: string; quantity: number }>();
+  priorOwnedReturnedByItem: Map<string, number> = new Map(),
+  priorExternalReturnedByItem: Map<string, number> = new Map(),
+): CreateReturnItemData[] {
+  const dispatchByRentalItem = new Map<
+    string,
+    {
+      id: string;
+      quantity: number;
+      ownedQuantity: number;
+      externalQuantity: number;
+    }
+  >();
 
   for (const dispatchItem of dispatchItems) {
     if (dispatchItem.rentalOrderItemId === null) {
       continue;
     }
 
+    const ownedQuantity =
+      dispatchItem.ownedQuantity === null ||
+      dispatchItem.ownedQuantity === undefined
+        ? dispatchItem.quantity
+        : dispatchItem.ownedQuantity;
+    const externalQuantity =
+      dispatchItem.externalQuantity === null ||
+      dispatchItem.externalQuantity === undefined
+        ? 0
+        : dispatchItem.externalQuantity;
+
     dispatchByRentalItem.set(dispatchItem.rentalOrderItemId, {
       id: dispatchItem.id,
       quantity: dispatchItem.quantity,
+      ownedQuantity,
+      externalQuantity,
     });
   }
 
-  for (const returnItem of returnItems) {
+  return returnItems.map((returnItem) => {
     const dispatchItem = dispatchByRentalItem.get(returnItem.rentalOrderItemId);
 
     if (dispatchItem === undefined) {
@@ -134,6 +205,14 @@ export function validateReturnItemsAgainstDispatch(
 
     const priorReturned =
       priorReturnedByItem.get(returnItem.rentalOrderItemId) ?? 0;
+    const priorOwned =
+      priorOwnedReturnedByItem.get(returnItem.rentalOrderItemId) ??
+      priorReturned;
+    const priorExternal =
+      priorExternalReturnedByItem.get(returnItem.rentalOrderItemId) ?? 0;
+
+    const ownedRemaining = dispatchItem.ownedQuantity - priorOwned;
+    const externalRemaining = dispatchItem.externalQuantity - priorExternal;
     const remaining = dispatchItem.quantity - priorReturned;
 
     if (returnItem.quantity > remaining) {
@@ -142,7 +221,24 @@ export function validateReturnItemsAgainstDispatch(
         returnItem.rentalOrderItemId,
       );
     }
-  }
+
+    const split = resolveReturnSourceSplit(
+      returnItem.quantity,
+      returnItem.ownedQuantity,
+      returnItem.externalQuantity,
+      ownedRemaining,
+      externalRemaining,
+      returnItem.rentalOrderItemId,
+    );
+    const persisted = toPersistedReturnSourceFields(split);
+
+    return {
+      ...returnItem,
+      dispatchItemId: returnItem.dispatchItemId ?? dispatchItem.id,
+      ownedQuantity: persisted.ownedQuantity,
+      externalQuantity: persisted.externalQuantity,
+    };
+  });
 }
 
 export function applyInspectionToItems(
@@ -229,10 +325,17 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 }
 
 export function computeRestockQuantity(item: ReturnItemProps): number {
-  return item.goodQuantity;
+  const ownedReturned = effectiveOwnedReturnQuantity(item);
+  return Math.min(item.goodQuantity, ownedReturned);
 }
 
 /** Qty whose rental reservation should clear when the return is completed. */
 export function computeReleaseQuantity(item: ReturnItemProps): number {
-  return item.returnedQuantity;
+  return effectiveOwnedReturnQuantity(item);
+}
+
+export function computeExternalCustomerReturnQuantity(
+  item: ReturnItemProps,
+): number {
+  return effectiveExternalReturnQuantity(item);
 }

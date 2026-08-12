@@ -13,11 +13,21 @@ export type AvailabilityPeriod = {
 export type AvailabilityDispatchClaim = {
   status: string;
   quantity: number;
+  /**
+   * Owned portion of this dispatch claim.
+   * When omitted, treated as fully owned (`quantity`) for backward compatibility.
+   */
+  ownedQuantity?: number;
 };
 
 export type AvailabilityReturnClaim = {
   status: string;
   returnedQuantity: number;
+  /**
+   * Owned portion of this return claim.
+   * When omitted, treated as fully owned (`returnedQuantity`).
+   */
+  ownedReturnedQuantity?: number;
 };
 
 /** Statuses that consume future date-aware capacity (≠ analytics Active Rentals). */
@@ -93,6 +103,7 @@ export function isAvailabilityCommitmentStatus(
 /**
  * Sum of dispatch item quantities that claim against line reservedQuantity.
  * READY / DISPATCHED / COMPLETED count; CANCELLED does not.
+ * Uses ownedQuantity when present so external dispatch does not consume owned hold.
  */
 export function sumNonCancelledDispatchClaims(
   dispatches: AvailabilityDispatchClaim[],
@@ -104,14 +115,14 @@ export function sumNonCancelledDispatchClaims(
       continue;
     }
 
-    total += dispatch.quantity;
+    total += dispatch.ownedQuantity ?? dispatch.quantity;
   }
 
   return total;
 }
 
 /**
- * Sum of COMPLETED dispatch quantities (physical OUT).
+ * Sum of COMPLETED owned dispatch quantities (physical OUT of owned fleet).
  */
 export function sumCompletedDispatchQuantities(
   dispatches: AvailabilityDispatchClaim[],
@@ -123,14 +134,14 @@ export function sumCompletedDispatchQuantities(
       continue;
     }
 
-    total += dispatch.quantity;
+    total += dispatch.ownedQuantity ?? dispatch.quantity;
   }
 
   return total;
 }
 
 /**
- * Sum of COMPLETED return returnedQuantity.
+ * Sum of COMPLETED owned return returnedQuantity.
  */
 export function sumCompletedReturnQuantities(
   returns: AvailabilityReturnClaim[],
@@ -142,7 +153,8 @@ export function sumCompletedReturnQuantities(
       continue;
     }
 
-    total += returnRecord.returnedQuantity;
+    total +=
+      returnRecord.ownedReturnedQuantity ?? returnRecord.returnedQuantity;
   }
 
   return total;

@@ -3,8 +3,9 @@ import type { INumberSequenceRepository } from "@/modules/settings/domain/number
 import { Dispatch } from "@/modules/dispatch/domain";
 import {
   DispatchInvariantError,
-  sumClaimedDispatchQuantitiesByRentalOrderItem,
+  sumClaimedSourceDispatchQuantitiesByRentalOrderItem,
 } from "@/modules/dispatch/domain";
+import type { ExternalRentalAgreement } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
   ConflictError,
@@ -32,6 +33,27 @@ import {
 } from "./dispatch-service.constants";
 import type { IDispatchTransactionRunner } from "./dispatch-transaction.runner";
 
+function buildExternalRemainingByItem(
+  agreement: ExternalRentalAgreement | null,
+  claimedExternal: Map<string, number>,
+): Map<string, number> {
+  const remaining = new Map<string, number>();
+
+  if (agreement === null) {
+    return remaining;
+  }
+
+  for (const item of agreement.items) {
+    const claimed = claimedExternal.get(item.rentalOrderItemId) ?? 0;
+    remaining.set(
+      item.rentalOrderItemId,
+      Math.max(0, item.quantityAllocated - claimed),
+    );
+  }
+
+  return remaining;
+}
+
 export class CreateDispatchService {
   constructor(
     private readonly transactionRunner: IDispatchTransactionRunner,
@@ -50,6 +72,7 @@ export class CreateDispatchService {
       async ({
         dispatchRepository,
         rentalOrderRepository,
+        externalRentalRepository,
         auditLogger,
         userId,
       }) => {
@@ -94,14 +117,23 @@ export class CreateDispatchService {
           sortOrder: "desc",
           rentalOrderId: rentalOrder.id,
         });
-        const claimedByItem = sumClaimedDispatchQuantitiesByRentalOrderItem(
+        const claimedSources = sumClaimedSourceDispatchQuantitiesByRentalOrderItem(
           existingForOrder.items,
         );
 
-        validateRentalOrderForDispatch(
+        const agreement = await externalRentalRepository.findByRentalOrderId(
+          rentalOrder.id,
+        );
+        const externalRemaining = buildExternalRemainingByItem(
+          agreement,
+          claimedSources.external,
+        );
+
+        const resolvedItems = validateRentalOrderForDispatch(
           rentalOrder,
           createData.items,
-          claimedByItem,
+          claimedSources.owned,
+          externalRemaining,
         );
 
         const existing = await dispatchRepository.findByDispatchNumber(
@@ -115,7 +147,10 @@ export class CreateDispatchService {
           });
         }
 
-        const dispatch = await dispatchRepository.create(createData);
+        const dispatch = await dispatchRepository.create({
+          ...createData,
+          items: resolvedItems,
+        });
 
         await auditLogger.log({
           module: DISPATCH_MODULE,

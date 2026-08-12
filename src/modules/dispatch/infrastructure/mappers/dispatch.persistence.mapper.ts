@@ -56,6 +56,8 @@ export function toDispatchDomain(record: {
     productId: string;
     rentalOrderItemId: string | null;
     quantity: number;
+    ownedQuantity?: number | null;
+    externalQuantity?: number | null;
     notes: string | null;
   }>;
 }): Dispatch {
@@ -79,6 +81,8 @@ export function toDispatchDomain(record: {
       productId: item.productId as ProductId,
       rentalOrderItemId: item.rentalOrderItemId,
       quantity: item.quantity,
+      ownedQuantity: item.ownedQuantity ?? null,
+      externalQuantity: item.externalQuantity ?? null,
       notes: item.notes,
     })),
     createdById: record.createdById as UserId,
@@ -111,6 +115,8 @@ export function toDispatchCreateInput(
           ? { connect: { id: item.rentalOrderItemId } }
           : undefined,
         quantity: item.quantity,
+        ownedQuantity: item.ownedQuantity,
+        externalQuantity: item.externalQuantity,
         notes: item.notes,
       })),
     },
@@ -162,6 +168,8 @@ export function toDispatchUpdateInput(
           ? { connect: { id: item.rentalOrderItemId } }
           : undefined,
         quantity: item.quantity,
+        ownedQuantity: item.ownedQuantity,
+        externalQuantity: item.externalQuantity,
         notes: item.notes,
       })),
     };
