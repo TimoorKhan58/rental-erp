@@ -20,6 +20,7 @@ import type { RentalOrderStatus } from "@/modules/rental-order/domain/rental-ord
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import { buildDispatchEntity } from "@/modules/dispatch/tests/helpers/dispatch.fixtures";
 import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
+import { InMemoryExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 import {
   OTHER_WAREHOUSE_ID,
   buildInventoryEntity,
@@ -78,6 +79,7 @@ function createWriteScope(
       options.stockMovementRepository ?? new InMemoryStockMovementRepository(),
     dispatchRepository:
       options.dispatchRepository ?? new InMemoryDispatchRepository(),
+    externalRentalRepository: new InMemoryExternalRentalRepository(),
     auditLogger: options.auditLogger ?? new MockAuditLogger(),
     ...mockNotificationWriteScopeDeps,
     userId: options.userId ?? USER_ID,

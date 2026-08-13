@@ -3,6 +3,8 @@ import type { IRentalOrderTransactionRunner } from "@/modules/rental-order/appli
 import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
+import type { InMemoryExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
+import { InMemoryExternalRentalRepository as ExternalRentalRepo } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 import type { InMemoryRentalOrderRepository } from "./in-memory-rental-order.repository";
@@ -23,6 +25,7 @@ export function createRollbackTransactionRunner(
   auditLogger: MockAuditLogger,
   userId: string | undefined,
   dispatchRepository: InMemoryDispatchRepository = new InMemoryDispatchRepository(),
+  externalRentalRepository: InMemoryExternalRentalRepository = new ExternalRentalRepo(),
 ): IRentalOrderTransactionRunner {
   return {
     run: async (operation) => {
@@ -31,6 +34,7 @@ export function createRollbackTransactionRunner(
       const stockMovementSnapshot = stockMovementRepository.snapshot();
       const auditSnapshot = auditLogger.snapshot();
       const dispatchSnapshot = dispatchRepository.snapshot();
+      const externalSnapshot = externalRentalRepository.snapshot();
 
       try {
         return await operation({
@@ -38,6 +42,7 @@ export function createRollbackTransactionRunner(
           inventoryRepository,
           stockMovementRepository,
           dispatchRepository,
+          externalRentalRepository,
           auditLogger,
           ...mockNotificationWriteScopeDeps,
           userId,
@@ -48,6 +53,7 @@ export function createRollbackTransactionRunner(
         stockMovementRepository.restore(stockMovementSnapshot);
         auditLogger.restore(auditSnapshot);
         dispatchRepository.restore(dispatchSnapshot);
+        externalRentalRepository.restore(externalSnapshot);
         throw error;
       }
     },

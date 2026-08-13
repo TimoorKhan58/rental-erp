@@ -18,6 +18,7 @@ import {
   DISPATCH_ID,
   buildDispatchEntity,
 } from "@/modules/dispatch/tests/helpers/dispatch.fixtures";
+import { InMemoryExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
@@ -64,12 +65,14 @@ function createWriteScope(
   auditLogger: MockAuditLogger,
   userId?: string,
   dispatchRepository: InMemoryDispatchRepository = new InMemoryDispatchRepository(),
+  externalRentalRepository: InMemoryExternalRentalRepository = new InMemoryExternalRentalRepository(),
 ) {
   return createPassThroughTransactionRunner({
     rentalOrderRepository,
     inventoryRepository,
     stockMovementRepository,
     dispatchRepository,
+    externalRentalRepository,
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId,

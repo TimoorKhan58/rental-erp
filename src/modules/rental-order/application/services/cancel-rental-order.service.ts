@@ -1,12 +1,22 @@
+import { toExternalRentalAuditValues } from "@/modules/external-rental/application/services/external-rental-audit.mapper";
+import { toExternalRentalWorkflowData } from "@/modules/external-rental/application/mappers/external-rental.mapper";
+import {
+  EXTERNAL_RENTAL_ENTITY_NAME,
+  EXTERNAL_RENTAL_MODULE,
+  ExternalRentalInvalidStatusError,
+  type IExternalRentalRepository,
+} from "@/modules/external-rental/domain";
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { parseRequest } from "@/shared/application/validation";
+import type { RentalOrderId } from "@/shared/domain/ids";
 import {
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import type { IAuditLogger } from "@/shared/infrastructure/audit/audit-logger.interface";
 import {
   NOTIFICATION_EVENT_KEYS,
   enqueueWorkflowNotification,
@@ -43,6 +53,7 @@ export class CancelRentalOrderService {
         inventoryRepository,
         stockMovementRepository,
         dispatchRepository,
+        externalRentalRepository,
         auditLogger,
         notificationService,
         userId,
@@ -193,6 +204,12 @@ export class CancelRentalOrderService {
           newValues: toRentalOrderAuditValues(updated),
         });
 
+        await cascadeCancelEligibleExternalRental({
+          rentalOrderId: updated.id,
+          externalRentalRepository,
+          auditLogger,
+        });
+
         await enqueueWorkflowNotification(notificationService, db, {
           eventKey: NOTIFICATION_EVENT_KEYS.RENTAL_ORDER_CANCELLED,
           module: RENTAL_ORDER_MODULE,
@@ -206,4 +223,47 @@ export class CancelRentalOrderService {
       },
     );
   }
+}
+
+async function cascadeCancelEligibleExternalRental(params: {
+  rentalOrderId: RentalOrderId;
+  externalRentalRepository: IExternalRentalRepository;
+  auditLogger: IAuditLogger;
+}): Promise<void> {
+  const agreement =
+    await params.externalRentalRepository.findActiveByRentalOrderId(
+      params.rentalOrderId,
+    );
+
+  if (agreement === null) {
+    return;
+  }
+
+  let cancelled;
+
+  try {
+    cancelled = agreement.withCancelled();
+  } catch (error) {
+    if (error instanceof ExternalRentalInvalidStatusError) {
+      return;
+    }
+
+    throw error;
+  }
+
+  const previousValues = toExternalRentalAuditValues(agreement);
+  const updated = await params.externalRentalRepository.updateWorkflow(
+    agreement.id,
+    toExternalRentalWorkflowData(cancelled),
+  );
+
+  await params.auditLogger.log({
+    module: EXTERNAL_RENTAL_MODULE,
+    entityName: EXTERNAL_RENTAL_ENTITY_NAME,
+    recordId: updated.id,
+    action: "CANCEL",
+    status: "SUCCESS",
+    oldValues: previousValues,
+    newValues: toExternalRentalAuditValues(updated),
+  });
 }

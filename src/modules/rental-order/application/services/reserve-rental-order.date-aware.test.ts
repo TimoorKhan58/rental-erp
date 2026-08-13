@@ -38,6 +38,7 @@ import {
   createRollbackTransactionRunner,
 } from "../../tests/helpers/transaction-test-runner";
 import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
+import { InMemoryExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 
 function d(year: number, month: number, day: number): Date {
   return new Date(Date.UTC(year, month - 1, day));
@@ -55,6 +56,7 @@ function createWriteScope(
     inventoryRepository,
     stockMovementRepository,
     dispatchRepository: new InMemoryDispatchRepository(),
+    externalRentalRepository: new InMemoryExternalRentalRepository(),
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId,
