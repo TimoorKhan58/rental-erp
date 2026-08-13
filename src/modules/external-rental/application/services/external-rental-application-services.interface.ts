@@ -10,9 +10,10 @@ import type { ListExternalRentalsService } from "./list-external-rentals.service
 import type { ReceiveExternalRentalService } from "./receive-external-rental.service";
 import type { SettleExternalRentalService } from "./settle-external-rental.service";
 import type { SupplierReturnExternalRentalService } from "./supplier-return-external-rental.service";
+import type { WriteOffExternalRentalService } from "./write-off-external-rental.service";
 
 /**
- * Application service surface for Phase 25.5.3–25.5.6 + 25.10 cancel.
+ * Application service surface for Phase 25.5.3–25.5.6 + 25.10 cancel + 27 write-off.
  */
 export interface ExternalRentalApplicationServices {
   readonly repository: IExternalRentalRepository;
@@ -23,6 +24,7 @@ export interface ExternalRentalApplicationServices {
   readonly receiveExternalRental: ReceiveExternalRentalService;
   readonly allocateExternalRental: AllocateExternalRentalService;
   readonly supplierReturnExternalRental: SupplierReturnExternalRentalService;
+  readonly writeOffExternalRental: WriteOffExternalRentalService;
   readonly settleExternalRental: SettleExternalRentalService;
   readonly cancelExternalRental: CancelExternalRentalService;
 }

@@ -82,6 +82,11 @@ export interface SupplierReturnExternalRentalItemData {
   quantity: number;
 }
 
+export interface WriteOffExternalRentalItemData {
+  rentalOrderItemId: RentalOrderItemId;
+  quantity: number;
+}
+
 export interface RecordExternalRentalPaymentData {
   paymentAmount: number;
 }

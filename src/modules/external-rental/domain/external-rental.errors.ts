@@ -72,6 +72,16 @@ export class ExternalRentalInvalidSupplierReturnError extends Error {
   }
 }
 
+export class ExternalRentalInvalidWriteOffError extends Error {
+  constructor(
+    message: string,
+    readonly rentalOrderItemId?: string,
+  ) {
+    super(message);
+    this.name = "ExternalRentalInvalidWriteOffError";
+  }
+}
+
 export class ExternalRentalInvalidSettlementError extends Error {
   constructor(
     message: string,

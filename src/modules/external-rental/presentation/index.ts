@@ -8,6 +8,7 @@ export {
   handleReceiveExternalRental,
   handleSettleExternalRental,
   handleSupplierReturnExternalRental,
+  handleWriteOffExternalRental,
 } from "./routes/external-rental-api.routes";
 export {
   runExternalRentalApiRoute,

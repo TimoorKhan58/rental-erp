@@ -12,6 +12,7 @@ import {
   useReceiveExternalRental,
   useSettleExternalRental,
   useSupplierReturnExternalRental,
+  useWriteOffExternalRental,
 } from "../hooks";
 
 type QtyDialogProps = {
@@ -286,6 +287,68 @@ export function SupplierReturnExternalRentalDialog({
             }}
           >
             Return
+          </AppButton>
+        </div>
+      </div>
+    </AppModal>
+  );
+}
+
+export function WriteOffExternalRentalDialog({
+  agreement,
+  open,
+  onOpenChange,
+}: QtyDialogProps) {
+  const mutation = useWriteOffExternalRental();
+  const [lines, setLines] = useState(() =>
+    agreement.items
+      .map((item) => ({
+        rentalOrderItemId: item.rentalOrderItemId,
+        label: item.productId,
+        remaining: Math.max(0, item.qtyInCompanyCustody),
+        quantity: Math.max(0, item.qtyInCompanyCustody),
+      }))
+      .filter((line) => line.remaining > 0),
+  );
+
+  if (lines.length === 0) return null;
+
+  return (
+    <AppModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Write off external quantity"
+      description={`Permanently write off company-custody qty for ${agreement.agreementNumber}. This cannot be undone.`}
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Only quantity currently in company custody can be written off. Quantity
+          still with the customer cannot be written off.
+        </p>
+        <QtyLinesEditor lines={lines} onChange={setLines} />
+        <div className="flex justify-end gap-2">
+          <AppButton variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </AppButton>
+          <AppButton
+            variant="destructive"
+            loading={mutation.isPending}
+            onClick={async () => {
+              await mutation.mutateAsync({
+                id: agreement.id,
+                payload: {
+                  items: lines
+                    .filter((line) => line.quantity > 0)
+                    .map((line) => ({
+                      rentalOrderItemId: line.rentalOrderItemId,
+                      quantity: line.quantity,
+                    })),
+                },
+              });
+              onOpenChange(false);
+            }}
+          >
+            Write off
           </AppButton>
         </div>
       </div>

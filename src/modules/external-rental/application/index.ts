@@ -20,6 +20,7 @@ export {
   ReceiveExternalRentalSchema,
   SettleExternalRentalSchema,
   SupplierReturnExternalRentalSchema,
+  WriteOffExternalRentalSchema,
   type AllocateExternalRentalInput,
   type ConfirmExternalRentalInput,
   type CreateExternalRentalInput,
@@ -27,6 +28,7 @@ export {
   type ReceiveExternalRentalInput,
   type SettleExternalRentalInput,
   type SupplierReturnExternalRentalInput,
+  type WriteOffExternalRentalInput,
 } from "./schemas/external-rental.schemas";
 export {
   ListExternalRentalsSchema,
@@ -47,6 +49,7 @@ export { ConfirmExternalRentalService } from "./services/confirm-external-rental
 export { ReceiveExternalRentalService } from "./services/receive-external-rental.service";
 export { AllocateExternalRentalService } from "./services/allocate-external-rental.service";
 export { SupplierReturnExternalRentalService } from "./services/supplier-return-external-rental.service";
+export { WriteOffExternalRentalService } from "./services/write-off-external-rental.service";
 export { SettleExternalRentalService } from "./services/settle-external-rental.service";
 export { CancelExternalRentalService } from "./services/cancel-external-rental.service";
 export { toExternalRentalAuditValues } from "./services/external-rental-audit.mapper";

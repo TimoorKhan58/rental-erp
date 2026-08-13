@@ -446,6 +446,23 @@ export function assertCanSupplierReturn(
   }
 }
 
+/**
+ * Phase 27 — write-off allowed only after receive (post-receive operational states).
+ * Same status gate as supplier return; per-item received/custody checks are separate.
+ */
+export function assertCanWriteOff(
+  status: ExternalRentalAgreementStatus,
+): void {
+  if (
+    status === "DRAFT" ||
+    status === "CONFIRMED" ||
+    status === "CANCELLED" ||
+    status === "RETURNED"
+  ) {
+    throw new ExternalRentalInvalidStatusError(status, "write-off");
+  }
+}
+
 export function assertCanRecordSettlement(
   status: ExternalRentalAgreementStatus,
 ): void {
@@ -506,6 +523,25 @@ export function computeStatusAfterCustomerReturn(
  * otherwise IN_USE if customer still holds stock, else RETURN_PENDING.
  */
 export function computeStatusAfterSupplierReturn(
+  items: Array<
+    Pick<
+      ExternalRentalAgreementItemProps,
+      | "quantityDispatched"
+      | "quantityReturnedFromCustomer"
+      | "quantityReturnedToSupplier"
+      | "quantityWrittenOff"
+      | "quantityReceived"
+    >
+  >,
+): ExternalRentalAgreementStatus {
+  return computeStatusAfterCustomerReturn(items);
+}
+
+/**
+ * After write-off: reuse existing closure semantics (RETURNED when owed closed
+ * and no customer holdings remain).
+ */
+export function computeStatusAfterWriteOff(
   items: Array<
     Pick<
       ExternalRentalAgreementItemProps,

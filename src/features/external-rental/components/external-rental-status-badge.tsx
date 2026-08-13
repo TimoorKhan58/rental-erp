@@ -98,6 +98,13 @@ export function canSupplierReturnExternalRental(
   );
 }
 
+/** UI gating mirrors domain assertCanWriteOff (not authorization). */
+export function canWriteOffExternalRental(
+  status: ExternalRentalAgreementStatus,
+) {
+  return canSupplierReturnExternalRental(status);
+}
+
 export function canSettleExternalRental(
   status: ExternalRentalAgreementStatus,
   amountDue: number,

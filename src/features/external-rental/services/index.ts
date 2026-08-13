@@ -60,6 +60,13 @@ export async function returnExternalRentalToSupplier(
   );
 }
 
+export async function writeOffExternalRental(
+  id: string,
+  payload: QtyItemsPayload,
+): Promise<ExternalRentalResponse> {
+  return apiPost<ExternalRentalResponse>(`${BASE}/${id}/write-off`, payload);
+}
+
 export async function settleExternalRental(
   id: string,
   payload: SettleExternalRentalPayload,

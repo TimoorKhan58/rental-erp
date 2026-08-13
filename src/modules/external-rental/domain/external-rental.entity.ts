@@ -12,6 +12,7 @@ import {
   ExternalRentalInvalidReceiveError,
   ExternalRentalInvalidSettlementError,
   ExternalRentalInvalidSupplierReturnError,
+  ExternalRentalInvalidWriteOffError,
   ExternalRentalInvariantError,
   createExternalRentalAgreementNumber,
 } from "./external-rental.errors";
@@ -24,6 +25,7 @@ import {
   assertCanReceive,
   assertCanRecordSettlement,
   assertCanSupplierReturn,
+  assertCanWriteOff,
   assertQuantityPipelineInvariants,
   assertValidHirePeriod,
   computeCustodyBalances,
@@ -34,6 +36,7 @@ import {
   computeStatusAfterExternalDispatch,
   computeStatusAfterReceive,
   computeStatusAfterSupplierReturn,
+  computeStatusAfterWriteOff,
   deriveSettlementStatus,
   normalizeExternalRentalAgreementProps,
   normalizeOptionalText,
@@ -53,6 +56,7 @@ import type {
   ReceiveExternalRentalItemData,
   RecordExternalRentalPaymentData,
   SupplierReturnExternalRentalItemData,
+  WriteOffExternalRentalItemData,
 } from "./external-rental.types";
 
 /**
@@ -617,6 +621,81 @@ export class ExternalRentalAgreement
     return ExternalRentalAgreement.reconstitute({
       ...this.toProps(),
       status: computeStatusAfterSupplierReturn(items),
+      items,
+      updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Phase 27 — write off supplier-hire-in qty permanently lost in company custody.
+   * Locked: delta ≤ qtyInCompanyCustody; never mutates Inventory / F-02 / settlement.
+   */
+  withWrittenOff(
+    writeOffItems: WriteOffExternalRentalItemData[],
+  ): ExternalRentalAgreement {
+    assertCanWriteOff(this.status);
+
+    if (writeOffItems.length === 0) {
+      throw new ExternalRentalInvalidWriteOffError(
+        "At least one item must be provided for write-off",
+      );
+    }
+
+    const writeOffMap = new Map<string, number>();
+
+    for (const writeOffItem of writeOffItems) {
+      const qty = validatePositiveQuantity(writeOffItem.quantity, "quantity");
+      const existingDelta = writeOffMap.get(writeOffItem.rentalOrderItemId) ?? 0;
+      writeOffMap.set(writeOffItem.rentalOrderItemId, existingDelta + qty);
+    }
+
+    for (const rentalOrderItemId of writeOffMap.keys()) {
+      if (
+        !this.items.some((item) => item.rentalOrderItemId === rentalOrderItemId)
+      ) {
+        throw new ExternalRentalInvalidWriteOffError(
+          "Write-off item does not belong to this agreement",
+          rentalOrderItemId,
+        );
+      }
+    }
+
+    const items = this.items.map((item) => {
+      const delta = writeOffMap.get(item.rentalOrderItemId) ?? 0;
+      if (delta === 0) {
+        return { ...item };
+      }
+
+      if (item.quantityReceived <= 0) {
+        throw new ExternalRentalInvalidWriteOffError(
+          "Write-off requires quantityReceived > 0",
+          item.rentalOrderItemId,
+        );
+      }
+
+      const custody = computeCustodyBalances(item);
+      if (delta > custody.qtyInCompanyCustody) {
+        throw new ExternalRentalInvalidWriteOffError(
+          custody.qtyInCompanyCustody <= 0
+            ? "No external company custody available for write-off"
+            : "Write-off quantity exceeds qtyInCompanyCustody",
+          item.rentalOrderItemId,
+        );
+      }
+
+      const quantityWrittenOff = item.quantityWrittenOff + delta;
+
+      const next: ExternalRentalAgreementItemProps = {
+        ...item,
+        quantityWrittenOff,
+      };
+      assertQuantityPipelineInvariants(next);
+      return next;
+    });
+
+    return ExternalRentalAgreement.reconstitute({
+      ...this.toProps(),
+      status: computeStatusAfterWriteOff(items),
       items,
       updatedAt: new Date(),
     });

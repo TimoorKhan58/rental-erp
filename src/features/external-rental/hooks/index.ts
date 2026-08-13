@@ -17,6 +17,7 @@ import {
   receiveExternalRental,
   returnExternalRentalToSupplier,
   settleExternalRental,
+  writeOffExternalRental,
 } from "../services";
 
 async function invalidateExternalRental(
@@ -52,6 +53,7 @@ export function useExternalRentalPermissions() {
     canReturnToSupplier: permissions.includes(
       PERMISSIONS.externalRentals.returnToSupplier,
     ),
+    canWriteOff: permissions.includes(PERMISSIONS.externalRentals.writeOff),
     canSettle: permissions.includes(PERMISSIONS.externalRentals.settle),
     canCancel: permissions.includes(PERMISSIONS.externalRentals.cancel),
   };
@@ -193,6 +195,24 @@ export function useSupplierReturnExternalRental() {
     }) => returnExternalRentalToSupplier(id, payload),
     showSuccessToast: true,
     successMessage: "Returned to supplier.",
+    onSuccess: async (_data, variables) => {
+      await invalidateExternalRental(queryClient, variables.id);
+    },
+  });
+}
+
+export function useWriteOffExternalRental() {
+  const queryClient = useQueryClient();
+  return useAppMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Parameters<typeof writeOffExternalRental>[1];
+    }) => writeOffExternalRental(id, payload),
+    showSuccessToast: true,
+    successMessage: "External rental quantity written off.",
     onSuccess: async (_data, variables) => {
       await invalidateExternalRental(queryClient, variables.id);
     },

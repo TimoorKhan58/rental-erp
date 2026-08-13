@@ -11,6 +11,7 @@ import {
   ReceiveExternalRentalSchema,
   SettleExternalRentalSchema,
   SupplierReturnExternalRentalSchema,
+  WriteOffExternalRentalSchema,
 } from "@/modules/external-rental/application";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
@@ -255,6 +256,45 @@ export async function handleSupplierReturnExternalRental(
       resolveServices,
       handler: async (_ctx, services) =>
         services.supplierReturnExternalRental.execute(params, returnInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExternalRentalResponse(
+            result.body.data as ExternalRentalAgreementDto,
+          ),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+/**
+ * Phase 27 — write off supplier-hire-in qty in company custody.
+ */
+export async function handleWriteOffExternalRental(
+  request: NextRequest,
+  id: string,
+  resolveServices: ExternalRentalServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(ExternalRentalIdParamSchema, { id });
+    const body = await request.json();
+    const writeOffInput = parseRequest(WriteOffExternalRentalSchema, body);
+
+    const result = await runExternalRentalApiRoute({
+      request,
+      route: EXTERNAL_RENTAL_ROUTES.writeOff(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.externalRentals.writeOff,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.writeOffExternalRental.execute(params, writeOffInput),
     });
 
     if (result.status === 200 && "data" in result.body) {

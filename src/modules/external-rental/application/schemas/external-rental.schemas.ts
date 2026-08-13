@@ -91,6 +91,19 @@ export const SupplierReturnExternalRentalSchema = z
   })
   .strict();
 
+export const WriteOffExternalRentalSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          rentalOrderItemId: UUIDSchema,
+          quantity: PositiveIntSchema,
+        }),
+      )
+      .min(1),
+  })
+  .strict();
+
 export const SettleExternalRentalSchema = z
   .object({
     paymentAmount: PositiveNumberSchema,
@@ -118,6 +131,9 @@ export type AllocateExternalRentalInput = z.infer<
 >;
 export type SupplierReturnExternalRentalInput = z.infer<
   typeof SupplierReturnExternalRentalSchema
+>;
+export type WriteOffExternalRentalInput = z.infer<
+  typeof WriteOffExternalRentalSchema
 >;
 export type SettleExternalRentalInput = z.infer<
   typeof SettleExternalRentalSchema

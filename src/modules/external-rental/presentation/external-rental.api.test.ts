@@ -33,6 +33,7 @@ import {
   handleReceiveExternalRental,
   handleSettleExternalRental,
   handleSupplierReturnExternalRental,
+  handleWriteOffExternalRental,
 } from "@/modules/external-rental/presentation/routes/external-rental-api.routes";
 import {
   createMockNextRequest,
@@ -87,6 +88,7 @@ function createMockServices() {
     receiveExternalRental: { execute: vi.fn() },
     allocateExternalRental: { execute: vi.fn() },
     supplierReturnExternalRental: { execute: vi.fn() },
+    writeOffExternalRental: { execute: vi.fn() },
     settleExternalRental: { execute: vi.fn() },
     cancelExternalRental: { execute: vi.fn() },
   };
@@ -285,6 +287,52 @@ describe("external rental route handlers", () => {
     );
 
     expect(response.status).toBe(200);
+    expect(services.supplierReturnExternalRental.execute).toHaveBeenCalled();
+  });
+
+  it("handleWriteOffExternalRental requires external-rentals:write-off", async () => {
+    mockSession(USER_ROLES.VIEWER);
+    const services = createMockServices();
+
+    const response = await handleWriteOffExternalRental(
+      createMockNextRequest({
+        method: "POST",
+        json: {
+          items: [{ rentalOrderItemId: RENTAL_ORDER_ITEM_ID, quantity: 10 }],
+        },
+      }),
+      AGREEMENT_ID,
+      () => services as unknown as ExternalRentalApplicationServices,
+    );
+
+    expect(response.status).toBe(403);
+    expect(services.writeOffExternalRental.execute).not.toHaveBeenCalled();
+  });
+
+  it("handleWriteOffExternalRental delegates to service", async () => {
+    const services = createMockServices();
+    services.writeOffExternalRental.execute.mockResolvedValue(
+      createMockDto({ status: "RETURN_PENDING" }),
+    );
+
+    const response = await handleWriteOffExternalRental(
+      createMockNextRequest({
+        method: "POST",
+        json: {
+          items: [{ rentalOrderItemId: RENTAL_ORDER_ITEM_ID, quantity: 10 }],
+        },
+      }),
+      AGREEMENT_ID,
+      () => services as unknown as ExternalRentalApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.writeOffExternalRental.execute).toHaveBeenCalledWith(
+      { id: AGREEMENT_ID },
+      expect.objectContaining({
+        items: [{ rentalOrderItemId: RENTAL_ORDER_ITEM_ID, quantity: 10 }],
+      }),
+    );
   });
 
   it("handleSettleExternalRental delegates to service", async () => {

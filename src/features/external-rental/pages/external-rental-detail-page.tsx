@@ -23,6 +23,7 @@ import {
   canReceiveExternalRental,
   canSettleExternalRental,
   canSupplierReturnExternalRental,
+  canWriteOffExternalRental,
 } from "../components/external-rental-status-badge";
 import {
   AllocateExternalRentalDialog,
@@ -31,6 +32,7 @@ import {
   ReceiveExternalRentalDialog,
   SettleExternalRentalDialog,
   SupplierReturnExternalRentalDialog,
+  WriteOffExternalRentalDialog,
 } from "../dialogs";
 
 type ExternalRentalDetailPageProps = {
@@ -71,6 +73,7 @@ export function ExternalRentalDetailPage({
     canReceive,
     canAllocate,
     canReturnToSupplier,
+    canWriteOff,
     canSettle,
     canCancel,
   } = useExternalRentalPermissions();
@@ -81,8 +84,13 @@ export function ExternalRentalDetailPage({
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [allocateOpen, setAllocateOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [writeOffOpen, setWriteOffOpen] = useState(false);
   const [settleOpen, setSettleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  const hasCompanyCustody = agreement
+    ? agreement.items.some((item) => item.qtyInCompanyCustody > 0)
+    : false;
 
   if (isLoading) {
     return (
@@ -154,6 +162,16 @@ export function ExternalRentalDetailPage({
             canSupplierReturnExternalRental(agreement.status) ? (
               <AppButton variant="outline" onClick={() => setReturnOpen(true)}>
                 Supplier return
+              </AppButton>
+            ) : null}
+            {canWriteOff &&
+            canWriteOffExternalRental(agreement.status) &&
+            hasCompanyCustody ? (
+              <AppButton
+                variant="outline"
+                onClick={() => setWriteOffOpen(true)}
+              >
+                Write off
               </AppButton>
             ) : null}
             {canSettle &&
@@ -258,6 +276,7 @@ export function ExternalRentalDetailPage({
                 <th className="px-3 py-2 font-medium">Disp</th>
                 <th className="px-3 py-2 font-medium">Cust ret</th>
                 <th className="px-3 py-2 font-medium">Supp ret</th>
+                <th className="px-3 py-2 font-medium">Written off</th>
                 <th className="px-3 py-2 font-medium">With customer</th>
                 <th className="px-3 py-2 font-medium">In custody</th>
                 <th className="px-3 py-2 font-medium">Owed</th>
@@ -281,6 +300,7 @@ export function ExternalRentalDetailPage({
                   <td className="px-3 py-2">
                     {item.quantityReturnedToSupplier}
                   </td>
+                  <td className="px-3 py-2">{item.quantityWrittenOff}</td>
                   <td className="px-3 py-2">{item.qtyWithCustomer}</td>
                   <td className="px-3 py-2">{item.qtyInCompanyCustody}</td>
                   <td className="px-3 py-2">{item.qtyOwedToSupplier}</td>
@@ -320,6 +340,13 @@ export function ExternalRentalDetailPage({
           agreement={agreement}
           open={returnOpen}
           onOpenChange={setReturnOpen}
+        />
+      ) : null}
+      {writeOffOpen ? (
+        <WriteOffExternalRentalDialog
+          agreement={agreement}
+          open={writeOffOpen}
+          onOpenChange={setWriteOffOpen}
         />
       ) : null}
       {settleOpen ? (

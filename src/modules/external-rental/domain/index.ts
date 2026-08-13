@@ -19,6 +19,7 @@ export {
   ExternalRentalInvalidSettlementError,
   ExternalRentalInvalidStatusError,
   ExternalRentalInvalidSupplierReturnError,
+  ExternalRentalInvalidWriteOffError,
   ExternalRentalInvariantError,
   createExternalRentalAgreementNumber,
 } from "./external-rental.errors";
@@ -33,6 +34,7 @@ export {
   assertCanReceive,
   assertCanRecordSettlement,
   assertCanSupplierReturn,
+  assertCanWriteOff,
   assertQuantityPipelineInvariants,
   assertValidHirePeriod,
   computeCustodyBalances,
@@ -45,6 +47,7 @@ export {
   computeStatusAfterExternalDispatch,
   computeStatusAfterReceive,
   computeStatusAfterSupplierReturn,
+  computeStatusAfterWriteOff,
   deriveSettlementStatus,
   normalizeExternalRentalAgreementProps,
   roundMoney,
@@ -67,4 +70,5 @@ export type {
   RecordExternalRentalPaymentData,
   SupplierReturnExternalRentalItemData,
   UpdateExternalRentalWorkflowData,
+  WriteOffExternalRentalItemData,
 } from "./external-rental.types";

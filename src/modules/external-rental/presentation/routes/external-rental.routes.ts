@@ -6,6 +6,7 @@ export const EXTERNAL_RENTAL_ROUTES = {
   allocate: (id: string) => `/api/external-rentals/${id}/allocate`,
   returnToSupplier: (id: string) =>
     `/api/external-rentals/${id}/return-to-supplier`,
+  writeOff: (id: string) => `/api/external-rentals/${id}/write-off`,
   settle: (id: string) => `/api/external-rentals/${id}/settle`,
   cancel: (id: string) => `/api/external-rentals/${id}/cancel`,
 } as const;

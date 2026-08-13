@@ -8,6 +8,7 @@ import { ListExternalRentalsService } from "@/modules/external-rental/applicatio
 import { ReceiveExternalRentalService } from "@/modules/external-rental/application/services/receive-external-rental.service";
 import { SettleExternalRentalService } from "@/modules/external-rental/application/services/settle-external-rental.service";
 import { SupplierReturnExternalRentalService } from "@/modules/external-rental/application/services/supplier-return-external-rental.service";
+import { WriteOffExternalRentalService } from "@/modules/external-rental/application/services/write-off-external-rental.service";
 import { createNumberSequenceRepositoryFromSharedDeps } from "@/modules/settings/infrastructure/factories/create-number-sequence.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 
@@ -17,7 +18,7 @@ import { createExternalRentalTransactionRunner } from "./create-external-rental-
 export type { ExternalRentalApplicationServices };
 
 /**
- * Phase 25.5.3–25.5.6 + 25.10: list / get / create + workflow + cancel.
+ * Phase 25.5.3–25.5.6 + 25.10 + 27: list / get / create + workflow + cancel + write-off.
  */
 export function createExternalRentalApplicationServices(
   deps: SharedDeps,
@@ -46,6 +47,7 @@ export function createExternalRentalApplicationServices(
     supplierReturnExternalRental: new SupplierReturnExternalRentalService(
       transactionRunner,
     ),
+    writeOffExternalRental: new WriteOffExternalRentalService(transactionRunner),
     settleExternalRental: new SettleExternalRentalService(transactionRunner),
     cancelExternalRental: new CancelExternalRentalService(transactionRunner),
   };
