@@ -38,6 +38,14 @@ export {
   type DateAwareAvailabilitySnapshot,
   type DateAwareAvailabilitySnapshotInput,
 } from "./rental-order.availability.rules";
+export {
+  SOURCE_EXTERNALLY_ELIGIBLE_STATUSES,
+  calculateExternalSourcingShortfall,
+  isSourceExternallyEligibleStatus,
+  type ExternalSourcingShortfallInput,
+  type ExternalSourcingShortfallResult,
+  type SourceExternallyEligibleStatus,
+} from "./rental-order.shortfall.rules";
 export type {
   AvailabilityCommitmentLineProjection,
   FindAvailabilityCommitmentLinesParams,

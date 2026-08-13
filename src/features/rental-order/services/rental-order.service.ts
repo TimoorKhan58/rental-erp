@@ -5,9 +5,12 @@ import type {
   ListRentalOrdersParams,
   RentalOrderListResponse,
   RentalOrderResponse,
+  RentalOrderShortfallResponse,
   ReserveRentalOrderPayload,
+  SourceRentalOrderExternallyPayload,
   UpdateRentalOrderPayload,
 } from "../types";
+import type { ExternalRentalResponse } from "@/features/external-rental/types";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
 
 const BASE = "/rental-orders";
@@ -60,4 +63,17 @@ export async function reserveRentalOrder(
 
 export async function cancelRentalOrder(id: string): Promise<RentalOrderResponse> {
   return apiPost<RentalOrderResponse>(`${BASE}/${id}/cancel`);
+}
+
+export async function getRentalOrderShortfall(
+  id: string,
+): Promise<RentalOrderShortfallResponse> {
+  return apiGet<RentalOrderShortfallResponse>(`${BASE}/${id}/shortfall`);
+}
+
+export async function sourceRentalOrderExternally(
+  id: string,
+  payload: SourceRentalOrderExternallyPayload,
+): Promise<ExternalRentalResponse> {
+  return apiPost<ExternalRentalResponse>(`${BASE}/${id}/external-rental`, payload);
 }

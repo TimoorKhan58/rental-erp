@@ -13,8 +13,10 @@ import type { ConfirmRentalOrderService } from "./confirm-rental-order.service";
 import type { CreateRentalOrderService } from "./create-rental-order.service";
 import type { GetDateAwareAvailabilityService } from "./get-date-aware-availability.service";
 import type { GetRentalOrderByIdService } from "./get-rental-order-by-id.service";
+import type { GetRentalOrderShortfallService } from "./get-rental-order-shortfall.service";
 import type { ListRentalOrdersService } from "./list-rental-orders.service";
 import type { ReserveRentalOrderService } from "./reserve-rental-order.service";
+import type { SourceRentalOrderExternallyService } from "./source-rental-order-externally.service";
 import type { UpdateRentalOrderService } from "./update-rental-order.service";
 
 export interface RentalOrderApplicationServices {
@@ -26,6 +28,8 @@ export interface RentalOrderApplicationServices {
   reserveRentalOrder: ReserveRentalOrderService;
   cancelRentalOrder: CancelRentalOrderService;
   getDateAwareAvailability: GetDateAwareAvailabilityService;
+  getRentalOrderShortfall: GetRentalOrderShortfallService;
+  sourceRentalOrderExternally: SourceRentalOrderExternallyService;
 }
 
 export type RentalOrderServiceResolver = (

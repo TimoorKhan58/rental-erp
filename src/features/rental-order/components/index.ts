@@ -7,6 +7,7 @@ export { RentalOrderReservationFilterChips } from "./rental-order-reservation-fi
 export { RentalOrderReservationProgressBar } from "./rental-order-reservation-progress-bar";
 export { RentalOrderLineItemsTable } from "./rental-order-line-items-table";
 export { DateAwareAvailabilityHint } from "./date-aware-availability-hint";
+export { RentalOrderShortfallSection } from "./rental-order-shortfall-section";
 export { ReservationCalendar } from "./reservation-calendar";
 export { ReservationCalendarWeekView } from "./reservation-calendar-week-view";
 export { ReservationCalendarMonthView } from "./reservation-calendar-month-view";

@@ -55,13 +55,23 @@ export { ConfirmRentalOrderService } from "./services/confirm-rental-order.servi
 export { CreateRentalOrderService } from "./services/create-rental-order.service";
 export { GetDateAwareAvailabilityService } from "./services/get-date-aware-availability.service";
 export { GetRentalOrderByIdService } from "./services/get-rental-order-by-id.service";
+export { GetRentalOrderShortfallService } from "./services/get-rental-order-shortfall.service";
 export { ListRentalOrdersService } from "./services/list-rental-orders.service";
 export { ReserveRentalOrderService } from "./services/reserve-rental-order.service";
+export { SourceRentalOrderExternallyService } from "./services/source-rental-order-externally.service";
 export { UpdateRentalOrderService } from "./services/update-rental-order.service";
 export { RentalOrderService } from "./services/rental-order.service";
 export type { DateAwareAvailabilityDto } from "./dtos/date-aware-availability.dto";
+export type {
+  RentalOrderItemShortfallDto,
+  RentalOrderShortfallDto,
+} from "./dtos/rental-order-shortfall.dto";
 export {
   GetDateAwareAvailabilitySchema,
   type GetDateAwareAvailabilityInput,
   type GetDateAwareAvailabilityParams,
 } from "./schemas/date-aware-availability.schema";
+export {
+  SourceRentalOrderExternallySchema,
+  type SourceRentalOrderExternallyInput,
+} from "./schemas/source-rental-order-externally.schema";

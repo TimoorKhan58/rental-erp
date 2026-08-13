@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import type { RentalOrderServiceResolver } from "@/modules/rental-order/application/services/rental-order-application-services.interface";
 import type { RentalOrderDto } from "@/modules/rental-order/application/dtos/rental-order.dto";
+import type { ExternalRentalAgreementDto } from "@/modules/external-rental/application/dtos/external-rental.dto";
 import {
   CreateRentalOrderSchema,
   GetDateAwareAvailabilitySchema,
@@ -10,6 +11,8 @@ import {
   UpdateRentalOrderSchema,
 } from "@/modules/rental-order/application";
 import { ListRentalOrdersSchema } from "@/modules/rental-order/application/schemas/list-rental-orders.schema";
+import { SourceRentalOrderExternallySchema } from "@/modules/rental-order/application/schemas/source-rental-order-externally.schema";
+import { toExternalRentalResponse } from "@/modules/external-rental/presentation/mappers/external-rental-response.mapper";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 
@@ -262,6 +265,71 @@ export async function handleCancelRentalOrder(
         body: {
           ...result.body,
           data: toRentalOrderResponse(result.body.data as RentalOrderDto),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+/**
+ * Phase 26 — owned shortfall read model (F-02 based, informational).
+ */
+export async function handleGetRentalOrderShortfall(
+  request: NextRequest,
+  id: string,
+  resolveServices: RentalOrderServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
+
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.shortfall(id),
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getRentalOrderShortfall.execute(params),
+    });
+
+    return toJsonResponse(result);
+  });
+}
+
+/**
+ * Phase 26 — Source Externally: create ERA from rental-order shortfall context.
+ * Server permission: external-rentals:create.
+ */
+export async function handleSourceRentalOrderExternally(
+  request: NextRequest,
+  id: string,
+  resolveServices: RentalOrderServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const params = parseRequest(RentalOrderIdParamSchema, { id });
+    const body = await request.json();
+    const sourceInput = parseRequest(SourceRentalOrderExternallySchema, body);
+
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.externalRental(id),
+      httpMethod: "POST",
+      permission: PERMISSIONS.externalRentals.create,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.sourceRentalOrderExternally.execute(params, sourceInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExternalRentalResponse(
+            result.body.data as ExternalRentalAgreementDto,
+          ),
         },
       });
     }

@@ -130,6 +130,8 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.rentalOrders.details(), id] as const,
     availability: (params?: Record<string, unknown>) =>
       [...queryKeys.rentalOrders.all, "availability", params ?? {}] as const,
+    shortfall: (id: string) =>
+      [...queryKeys.rentalOrders.all, "shortfall", id] as const,
   },
   dispatches: {
     all: ["app", "dispatches"] as const,

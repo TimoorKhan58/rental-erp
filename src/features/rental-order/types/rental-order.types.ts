@@ -72,6 +72,40 @@ export type GetDateAwareAvailabilityParams = {
   excludeRentalOrderId?: string;
 };
 
+export type RentalOrderItemShortfallResponse = {
+  rentalOrderItemId: string;
+  productId: string;
+  requiredQuantity: number;
+  ownedFulfillableQuantity: number;
+  dateAwareAvailableQuantity: number;
+  shortfallQuantity: number;
+  alreadyExternallyRequestedQuantity: number;
+  remainingShortfallQuantity: number;
+  canSourceExternally: boolean;
+  hireStartDate: string;
+  hireEndDate: string;
+};
+
+export type RentalOrderShortfallResponse = {
+  rentalOrderId: string;
+  orderNumber: string;
+  status: string;
+  warehouseId: string;
+  startDate: string;
+  endDate: string;
+  activeExternalRentalAgreementId: string | null;
+  hasActiveExternalRentalAgreement: boolean;
+  canSourceExternally: boolean;
+  items: RentalOrderItemShortfallResponse[];
+};
+
+export type SourceRentalOrderExternallyPayload = {
+  rentalOrderItemId: string;
+  supplierId: string;
+  quantity: number;
+  unitCost: number;
+};
+
 export type RentalOrderSortField =
   | "orderNumber"
   | "eventStartDate"

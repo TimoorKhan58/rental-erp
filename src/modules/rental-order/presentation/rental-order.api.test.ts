@@ -26,8 +26,10 @@ import {
   handleCreateRentalOrder,
   handleGetDateAwareAvailability,
   handleGetRentalOrderById,
+  handleGetRentalOrderShortfall,
   handleListRentalOrders,
   handleReserveRentalOrder,
+  handleSourceRentalOrderExternally,
   handleUpdateRentalOrder,
 } from "@/modules/rental-order/presentation/routes/rental-order-api.routes";
 import {
@@ -35,6 +37,7 @@ import {
   readJsonResponse,
 } from "@/modules/rental-order/tests/helpers/api-request.factory";
 import {
+  ITEM_ID,
   PRODUCT_ID,
   RENTAL_ORDER_ID,
   VALID_CREATE_INPUT,
@@ -51,6 +54,8 @@ function createMockServices() {
     reserveRentalOrder: { execute: vi.fn() },
     cancelRentalOrder: { execute: vi.fn() },
     getDateAwareAvailability: { execute: vi.fn() },
+    getRentalOrderShortfall: { execute: vi.fn() },
+    sourceRentalOrderExternally: { execute: vi.fn() },
   };
 }
 
@@ -517,6 +522,143 @@ describe("handleGetDateAwareAvailability", () => {
     expect(services.getDateAwareAvailability.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         excludeRentalOrderId: RENTAL_ORDER_ID,
+      }),
+    );
+  });
+});
+
+describe("Phase 26 shortfall / source externally API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSession(USER_ROLES.MANAGER);
+  });
+
+  it("GET shortfall requires rental-orders:read", async () => {
+    mockSession(USER_ROLES.VIEWER);
+    const services = createMockServices();
+    services.getRentalOrderShortfall.execute.mockResolvedValue({
+      rentalOrderId: RENTAL_ORDER_ID,
+      orderNumber: "RO-1",
+      status: "CONFIRMED",
+      warehouseId: WAREHOUSE_ID,
+      startDate: "2026-02-01T00:00:00.000Z",
+      endDate: "2026-02-05T00:00:00.000Z",
+      activeExternalRentalAgreementId: null,
+      hasActiveExternalRentalAgreement: false,
+      canSourceExternally: true,
+      items: [],
+    });
+
+    const response = await handleGetRentalOrderShortfall(
+      createMockNextRequest({
+        url: `http://localhost/api/rental-orders/${RENTAL_ORDER_ID}/shortfall`,
+      }),
+      RENTAL_ORDER_ID,
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.getRentalOrderShortfall.execute).toHaveBeenCalledWith({
+      id: RENTAL_ORDER_ID,
+    });
+  });
+
+  it("POST external-rental requires external-rentals:create", async () => {
+    mockSession(USER_ROLES.VIEWER);
+    const services = createMockServices();
+
+    const response = await handleSourceRentalOrderExternally(
+      createMockNextRequest({
+        method: "POST",
+        url: `http://localhost/api/rental-orders/${RENTAL_ORDER_ID}/external-rental`,
+        json: {
+          rentalOrderItemId: ITEM_ID,
+          supplierId: "aa0e8400-e29b-41d4-a716-446655440011",
+          quantity: 50,
+          unitCost: 25,
+        },
+      }),
+      RENTAL_ORDER_ID,
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe(ERROR_CODES.FORBIDDEN);
+    expect(services.sourceRentalOrderExternally.execute).not.toHaveBeenCalled();
+  });
+
+  it("POST external-rental creates via application service", async () => {
+    const services = createMockServices();
+    services.sourceRentalOrderExternally.execute.mockResolvedValue({
+      id: "ee0e8400-e29b-41d4-a716-446655440001",
+      agreementNumber: "ERA-2026-SHORTFALL",
+      supplierId: "aa0e8400-e29b-41d4-a716-446655440011",
+      warehouseId: WAREHOUSE_ID,
+      rentalOrderId: RENTAL_ORDER_ID,
+      status: "DRAFT",
+      settlementStatus: "UNSETTLED",
+      hireStartDate: "2026-02-01T00:00:00.000Z",
+      hireEndDate: "2026-02-05T00:00:00.000Z",
+      expectedReturnToSupplierDate: "2026-02-05T00:00:00.000Z",
+      totalHireInCost: 0,
+      amountDue: 0,
+      amountPaid: 0,
+      outstandingBalance: 0,
+      remarks: null,
+      createdById: "770e8400-e29b-41d4-a716-446655440000",
+      items: [
+        {
+          id: "ee0e8400-e29b-41d4-a716-446655440002",
+          productId: PRODUCT_ID,
+          rentalOrderItemId: ITEM_ID,
+          quantityRequested: 50,
+          quantityConfirmed: 0,
+          quantityReceived: 0,
+          quantityAllocated: 0,
+          quantityDispatched: 0,
+          quantityReturnedFromCustomer: 0,
+          quantityReturnedToSupplier: 0,
+          quantityWrittenOff: 0,
+          unitCost: 25,
+          lineHireInCost: 0,
+          notes: null,
+          qtyWithCustomer: 0,
+          qtyInCompanyCustody: 0,
+          qtyOwedToSupplier: 0,
+        },
+      ],
+      createdAt: "2026-02-01T00:00:00.000Z",
+      updatedAt: "2026-02-01T00:00:00.000Z",
+    });
+
+    const response = await handleSourceRentalOrderExternally(
+      createMockNextRequest({
+        method: "POST",
+        url: `http://localhost/api/rental-orders/${RENTAL_ORDER_ID}/external-rental`,
+        json: {
+          rentalOrderItemId: ITEM_ID,
+          supplierId: "aa0e8400-e29b-41d4-a716-446655440011",
+          quantity: 50,
+          unitCost: 25,
+        },
+      }),
+      RENTAL_ORDER_ID,
+      () => services as unknown as RentalOrderApplicationServices,
+    );
+    const body = await readJsonResponse<{
+      data: { agreementNumber: string; items: Array<{ quantityRequested: number }> };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data.agreementNumber).toBe("ERA-2026-SHORTFALL");
+    expect(body.data.items[0]?.quantityRequested).toBe(50);
+    expect(services.sourceRentalOrderExternally.execute).toHaveBeenCalledWith(
+      { id: RENTAL_ORDER_ID },
+      expect.objectContaining({
+        rentalOrderItemId: ITEM_ID,
+        quantity: 50,
+        unitCost: 25,
       }),
     );
   });

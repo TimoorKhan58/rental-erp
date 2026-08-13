@@ -20,11 +20,17 @@ import {
   createRentalOrder,
   getDateAwareAvailability,
   getRentalOrder,
+  getRentalOrderShortfall,
   getRentalOrders,
   reserveRentalOrder,
+  sourceRentalOrderExternally,
   updateRentalOrder,
 } from "../services";
-import type { GetDateAwareAvailabilityParams } from "../types";
+import type {
+  GetDateAwareAvailabilityParams,
+  SourceRentalOrderExternallyPayload,
+} from "../types";
+import { useExternalRentalPermissions } from "@/features/external-rental/hooks";
 
 type LookupOption = {
   id: string;
@@ -331,6 +337,50 @@ export function useCancelRentalOrder() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.detail(data.id) }),
+      ]);
+    },
+  });
+}
+
+export function useRentalOrderShortfall(orderId: string) {
+  return useQuery({
+    queryKey: queryKeys.rentalOrders.shortfall(orderId),
+    queryFn: () => getRentalOrderShortfall(orderId),
+    enabled: Boolean(orderId),
+    staleTime: 30_000,
+  });
+}
+
+export function useCanSourceExternallyPermission() {
+  const { canCreate, isLoading } = useExternalRentalPermissions();
+  return { canCreateExternalRental: canCreate, isLoading };
+}
+
+export function useSourceRentalOrderExternally(orderId: string) {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: (payload: SourceRentalOrderExternallyPayload) =>
+      sourceRentalOrderExternally(orderId, payload),
+    showSuccessToast: true,
+    successMessage: "External rental agreement created from shortfall.",
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.detail(orderId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.shortfall(orderId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...queryKeys.rentalOrders.all, "availability"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.externalRentals.lists(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.externalRentals.detail(data.id),
+        }),
       ]);
     },
   });

@@ -4,7 +4,9 @@ export {
   createRentalOrder,
   getDateAwareAvailability,
   getRentalOrder,
+  getRentalOrderShortfall,
   getRentalOrders,
   reserveRentalOrder,
+  sourceRentalOrderExternally,
   updateRentalOrder,
 } from "./rental-order.service";
