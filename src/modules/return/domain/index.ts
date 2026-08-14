@@ -37,6 +37,8 @@ export {
 export {
   effectiveExternalReturnQuantity,
   effectiveOwnedReturnQuantity,
+  hasSourceConditionAttribution,
+  isMixedSourceReturnItem,
   resolveReturnSourceSplit,
   toPersistedReturnSourceFields,
 } from "./return.source.rules";

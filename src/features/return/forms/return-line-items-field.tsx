@@ -30,51 +30,89 @@ export function ReturnLineItemsField({
           {fields.map((field, index) => {
             const rentalOrderItemId = form.watch(`items.${index}.rentalOrderItemId`);
             const maxQuantity = form.watch(`items.${index}.maxQuantity`);
+            const requiresSourceSplit = form.watch(
+              `items.${index}.requiresSourceSplit`,
+            );
+            const maxOwnedQuantity = form.watch(`items.${index}.maxOwnedQuantity`);
+            const maxExternalQuantity = form.watch(
+              `items.${index}.maxExternalQuantity`,
+            );
 
             return (
-              <div
-                key={field.id}
-                className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr_120px_1fr_auto]"
-              >
-                <div className="space-y-1">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Item
-                  </p>
-                  <p className="text-sm font-medium">
-                    {itemLabelById.get(rentalOrderItemId) ?? (rentalOrderItemId || "—")}
-                  </p>
+              <div key={field.id} className="space-y-3 rounded-lg border p-4">
+                <div className="grid gap-3 md:grid-cols-[1fr_120px_1fr_auto]">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Item
+                    </p>
+                    <p className="text-sm font-medium">
+                      {itemLabelById.get(rentalOrderItemId) ??
+                        (rentalOrderItemId || "—")}
+                    </p>
+                  </div>
+
+                  <NumberField
+                    control={form.control}
+                    name={`items.${index}.quantity`}
+                    label="Quantity"
+                    min={1}
+                    max={maxQuantity}
+                    disabled={readOnly}
+                    description={
+                      maxQuantity !== undefined ? `Max: ${maxQuantity}` : undefined
+                    }
+                  />
+
+                  <TextField
+                    control={form.control}
+                    name={`items.${index}.notes`}
+                    label="Notes"
+                    disabled={readOnly}
+                  />
+
+                  {!readOnly && fields.length > 1 ? (
+                    <div className="flex items-end">
+                      <AppButton
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Remove item"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2Icon className="size-4" aria-hidden="true" />
+                      </AppButton>
+                    </div>
+                  ) : null}
                 </div>
 
-                <NumberField
-                  control={form.control}
-                  name={`items.${index}.quantity`}
-                  label="Quantity"
-                  min={1}
-                  max={maxQuantity}
-                  disabled={readOnly}
-                  description={
-                    maxQuantity !== undefined ? `Max: ${maxQuantity}` : undefined
-                  }
-                />
-
-                <TextField
-                  control={form.control}
-                  name={`items.${index}.notes`}
-                  label="Notes"
-                  disabled={readOnly}
-                />
-
-                {!readOnly && fields.length > 1 ? (
-                  <div className="flex items-end">
-                    <AppButton
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label="Remove item"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2Icon className="size-4" aria-hidden="true" />
-                    </AppButton>
+                {requiresSourceSplit ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <NumberField
+                      control={form.control}
+                      name={`items.${index}.ownedQuantity`}
+                      label="Owned quantity"
+                      min={0}
+                      max={maxOwnedQuantity}
+                      disabled={readOnly}
+                      description={
+                        maxOwnedQuantity !== undefined
+                          ? `Remaining owned: ${maxOwnedQuantity}`
+                          : undefined
+                      }
+                    />
+                    <NumberField
+                      control={form.control}
+                      name={`items.${index}.externalQuantity`}
+                      label="External quantity"
+                      min={0}
+                      max={maxExternalQuantity}
+                      disabled={readOnly}
+                      description={
+                        maxExternalQuantity !== undefined
+                          ? `Remaining external: ${maxExternalQuantity}`
+                          : undefined
+                      }
+                    />
                   </div>
                 ) : null}
               </div>

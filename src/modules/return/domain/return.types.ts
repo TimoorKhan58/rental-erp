@@ -19,6 +19,13 @@ export interface ReturnItemProps {
   damagedQuantity: number;
   lostQuantity: number;
   missingQuantity: number;
+  /** Phase 28.1 — source × condition (0 = unset / legacy). */
+  ownedGoodQuantity: number;
+  ownedDamagedQuantity: number;
+  ownedLostQuantity: number;
+  externalGoodQuantity: number;
+  externalDamagedQuantity: number;
+  externalLostQuantity: number;
   notes: string | null;
 }
 
@@ -70,6 +77,12 @@ export interface InspectReturnItemData {
   damagedQuantity: number;
   lostQuantity: number;
   missingQuantity: number;
+  ownedGoodQuantity?: number;
+  ownedDamagedQuantity?: number;
+  ownedLostQuantity?: number;
+  externalGoodQuantity?: number;
+  externalDamagedQuantity?: number;
+  externalLostQuantity?: number;
   notes?: string | null;
 }
 

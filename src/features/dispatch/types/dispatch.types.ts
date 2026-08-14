@@ -19,6 +19,8 @@ export type DispatchItemResponse = {
   productId: string;
   rentalOrderItemId: string | null;
   quantity: number;
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   notes: string | null;
 };
 

@@ -12,6 +12,12 @@ export interface ReturnItemResponse {
   damagedQuantity: number;
   lostQuantity: number;
   missingQuantity: number;
+  ownedGoodQuantity: number;
+  ownedDamagedQuantity: number;
+  ownedLostQuantity: number;
+  externalGoodQuantity: number;
+  externalDamagedQuantity: number;
+  externalLostQuantity: number;
   notes: string | null;
 }
 
@@ -60,6 +66,12 @@ export function toReturnResponse(dto: ReturnDto): ReturnResponse {
       damagedQuantity: item.damagedQuantity,
       lostQuantity: item.lostQuantity,
       missingQuantity: item.missingQuantity,
+      ownedGoodQuantity: item.ownedGoodQuantity,
+      ownedDamagedQuantity: item.ownedDamagedQuantity,
+      ownedLostQuantity: item.ownedLostQuantity,
+      externalGoodQuantity: item.externalGoodQuantity,
+      externalDamagedQuantity: item.externalDamagedQuantity,
+      externalLostQuantity: item.externalLostQuantity,
       notes: item.notes,
     })),
     createdById: dto.createdById,

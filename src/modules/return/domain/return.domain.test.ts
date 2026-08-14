@@ -314,6 +314,27 @@ describe("Return rules", () => {
     expect(computeRestockQuantity(item)).toBe(3);
   });
 
+  it("computes restock from ownedGoodQuantity when source×condition is present", () => {
+    const inspected = buildInspectedReturnEntity({
+      goodQuantity: 35,
+      damagedQuantity: 8,
+      lostQuantity: 7,
+    });
+    const item = {
+      ...inspected.items[0]!,
+      ownedQuantity: 30,
+      externalQuantity: 20,
+      ownedGoodQuantity: 20,
+      ownedDamagedQuantity: 5,
+      ownedLostQuantity: 5,
+      externalGoodQuantity: 15,
+      externalDamagedQuantity: 3,
+      externalLostQuantity: 2,
+    };
+
+    expect(computeRestockQuantity(item)).toBe(20);
+  });
+
   it("computes zero restock when all items are lost", () => {
     const item = buildInspectedReturnEntity({
       goodQuantity: 0,

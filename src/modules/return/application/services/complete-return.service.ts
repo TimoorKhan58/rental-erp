@@ -2,6 +2,7 @@ import { syncRentalOrderStatusFromReturns } from "@/modules/rental-order/applica
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
+  ReturnInvalidItemError,
   ReturnInvalidStatusError,
   computeExternalCustomerReturnQuantity,
   computeReleaseQuantity,
@@ -122,7 +123,21 @@ export class CompleteReturnService {
           }
 
           const releaseQuantity = computeReleaseQuantity(item);
-          const restockQuantity = computeRestockQuantity(item);
+          let restockQuantity: number;
+          try {
+            restockQuantity = computeRestockQuantity(item);
+          } catch (error) {
+            if (error instanceof ReturnInvalidItemError) {
+              throw new UnprocessableError({
+                message: error.message,
+                details:
+                  error.rentalOrderItemId !== undefined
+                    ? { rentalOrderItemId: error.rentalOrderItemId }
+                    : undefined,
+              });
+            }
+            throw error;
+          }
           const externalReturnQuantity =
             computeExternalCustomerReturnQuantity(item);
 
@@ -287,6 +302,12 @@ export class CompleteReturnService {
               rentalOrderItemId: item.rentalOrderItemId,
               ownedQuantity: computeReleaseQuantity(item),
               externalQuantity: computeExternalCustomerReturnQuantity(item),
+              ownedGoodQuantity: item.ownedGoodQuantity,
+              ownedDamagedQuantity: item.ownedDamagedQuantity,
+              ownedLostQuantity: item.ownedLostQuantity,
+              externalGoodQuantity: item.externalGoodQuantity,
+              externalDamagedQuantity: item.externalDamagedQuantity,
+              externalLostQuantity: item.externalLostQuantity,
             })),
           },
         });

@@ -10,6 +10,8 @@ import {
   toPersistedReturnSourceFields,
   effectiveOwnedReturnQuantity,
   effectiveExternalReturnQuantity,
+  hasSourceConditionAttribution,
+  isMixedSourceReturnItem,
 } from "./return.source.rules";
 import type {
   CreateReturnItemData,
@@ -79,6 +81,12 @@ export function validateReturnItems(
         damagedQuantity: 0,
         lostQuantity: 0,
         missingQuantity: 0,
+        ownedGoodQuantity: 0,
+        ownedDamagedQuantity: 0,
+        ownedLostQuantity: 0,
+        externalGoodQuantity: 0,
+        externalDamagedQuantity: 0,
+        externalLostQuantity: 0,
         notes: normalizeOptionalText(item.notes),
       };
     }
@@ -94,6 +102,12 @@ export function validateReturnItems(
       damagedQuantity: 0,
       lostQuantity: 0,
       missingQuantity: 0,
+      ownedGoodQuantity: 0,
+      ownedDamagedQuantity: 0,
+      ownedLostQuantity: 0,
+      externalGoodQuantity: 0,
+      externalDamagedQuantity: 0,
+      externalLostQuantity: 0,
       notes: normalizeOptionalText(item.notes),
     };
   });
@@ -274,6 +288,85 @@ export function applyInspectionToItems(
       );
     }
 
+    const ownedGood = inspectItem.ownedGoodQuantity ?? 0;
+    const ownedDamaged = inspectItem.ownedDamagedQuantity ?? 0;
+    const ownedLost = inspectItem.ownedLostQuantity ?? 0;
+    const externalGood = inspectItem.externalGoodQuantity ?? 0;
+    const externalDamaged = inspectItem.externalDamagedQuantity ?? 0;
+    const externalLost = inspectItem.externalLostQuantity ?? 0;
+
+    if (
+      ownedGood < 0 ||
+      ownedDamaged < 0 ||
+      ownedLost < 0 ||
+      externalGood < 0 ||
+      externalDamaged < 0 ||
+      externalLost < 0
+    ) {
+      throw new ReturnInvalidItemError(
+        "Source×condition quantities cannot be negative",
+        item.rentalOrderItemId,
+      );
+    }
+
+    const sourceConditionTotal =
+      ownedGood +
+      ownedDamaged +
+      ownedLost +
+      externalGood +
+      externalDamaged +
+      externalLost;
+    const hasSourceCondition = sourceConditionTotal > 0;
+    const mixed = isMixedSourceReturnItem(item);
+
+    if (mixed && !hasSourceCondition) {
+      throw new ReturnInvalidItemError(
+        "Mixed-source return requires explicit source×condition attribution",
+        item.rentalOrderItemId,
+      );
+    }
+
+    if (hasSourceCondition) {
+      const ownedReturned = effectiveOwnedReturnQuantity(item);
+      const externalReturned = effectiveExternalReturnQuantity(item);
+
+      if (ownedGood + ownedDamaged + ownedLost !== ownedReturned) {
+        throw new ReturnInvalidItemError(
+          "Owned GOOD/DAMAGED/LOST must sum to ownedQuantity",
+          item.rentalOrderItemId,
+        );
+      }
+
+      if (externalGood + externalDamaged + externalLost !== externalReturned) {
+        throw new ReturnInvalidItemError(
+          "External GOOD/DAMAGED/LOST must sum to externalQuantity",
+          item.rentalOrderItemId,
+        );
+      }
+
+      const derivedGood = ownedGood + externalGood;
+      const derivedDamaged = ownedDamaged + externalDamaged;
+      const derivedLost = ownedLost + externalLost;
+
+      if (
+        inspectItem.goodQuantity !== derivedGood ||
+        inspectItem.damagedQuantity !== derivedDamaged ||
+        inspectItem.lostQuantity !== derivedLost
+      ) {
+        throw new ReturnInvalidItemError(
+          "Global condition quantities must equal source×condition totals",
+          item.rentalOrderItemId,
+        );
+      }
+
+      if (inspectItem.missingQuantity !== 0) {
+        throw new ReturnInvalidItemError(
+          "missingQuantity must be 0 when source×condition attribution is provided",
+          item.rentalOrderItemId,
+        );
+      }
+    }
+
     const total =
       inspectItem.goodQuantity +
       inspectItem.damagedQuantity +
@@ -293,6 +386,12 @@ export function applyInspectionToItems(
       damagedQuantity: inspectItem.damagedQuantity,
       lostQuantity: inspectItem.lostQuantity,
       missingQuantity: inspectItem.missingQuantity,
+      ownedGoodQuantity: ownedGood,
+      ownedDamagedQuantity: ownedDamaged,
+      ownedLostQuantity: ownedLost,
+      externalGoodQuantity: externalGood,
+      externalDamagedQuantity: externalDamaged,
+      externalLostQuantity: externalLost,
       notes:
         inspectItem.notes !== undefined
           ? normalizeOptionalText(inspectItem.notes)
@@ -324,8 +423,24 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/**
+ * Owned restock uses owned GOOD only when source×condition attribution exists.
+ * Mixed lines without attribution must not guess from global GOOD.
+ */
 export function computeRestockQuantity(item: ReturnItemProps): number {
   const ownedReturned = effectiveOwnedReturnQuantity(item);
+
+  if (hasSourceConditionAttribution(item)) {
+    return item.ownedGoodQuantity;
+  }
+
+  if (isMixedSourceReturnItem(item)) {
+    throw new ReturnInvalidItemError(
+      "Mixed-source return requires explicit source×condition attribution",
+      item.rentalOrderItemId,
+    );
+  }
+
   return Math.min(item.goodQuantity, ownedReturned);
 }
 

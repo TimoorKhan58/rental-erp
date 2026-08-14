@@ -394,6 +394,8 @@ async function completeCustomerReturn(options: {
   } as CreateReturnInput);
 
   await receiveReturn.execute({ id: ret.id });
+  const mixed =
+    options.ownedQuantity > 0 && options.externalQuantity > 0;
   await inspectReturn.execute(
     { id: ret.id },
     {
@@ -404,6 +406,16 @@ async function completeCustomerReturn(options: {
           damagedQuantity: 0,
           lostQuantity: 0,
           missingQuantity: 0,
+          ...(mixed
+            ? {
+                ownedGoodQuantity: options.ownedQuantity,
+                ownedDamagedQuantity: 0,
+                ownedLostQuantity: 0,
+                externalGoodQuantity: options.externalQuantity,
+                externalDamagedQuantity: 0,
+                externalLostQuantity: 0,
+              }
+            : {}),
         },
       ],
     },

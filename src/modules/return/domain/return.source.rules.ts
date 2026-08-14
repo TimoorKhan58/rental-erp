@@ -10,6 +10,10 @@ export type ResolvedReturnSourceSplit = {
   legacyOwnedOnly: boolean;
 };
 
+/**
+ * Phase 28 — explicit source attribution for mixed outstanding lines.
+ * Owned-first / external-first inference is rejected when both sources remain.
+ */
 export function resolveReturnSourceSplit(
   quantity: number,
   ownedInput: number | null | undefined,
@@ -20,22 +24,56 @@ export function resolveReturnSourceSplit(
 ): ResolvedReturnSourceSplit {
   const hasOwned = ownedInput !== undefined && ownedInput !== null;
   const hasExternal = externalInput !== undefined && externalInput !== null;
+  const mixedOutstanding = ownedRemaining > 0 && externalRemaining > 0;
 
   if (!hasOwned && !hasExternal) {
-    const owned = Math.min(quantity, Math.max(0, ownedRemaining));
-    const external = quantity - owned;
-
-    if (external > externalRemaining) {
+    if (quantity <= 0) {
       throw new ReturnInvalidItemError(
-        "Return quantity exceeds remaining dispatched quantity",
+        "Return quantity must be positive",
+        rentalOrderItemId,
+      );
+    }
+
+    if (ownedRemaining <= 0 && externalRemaining <= 0) {
+      throw new ReturnInvalidItemError(
+        "No outstanding owned or external quantity available for return",
+        rentalOrderItemId,
+      );
+    }
+
+    if (mixedOutstanding) {
+      throw new ReturnInvalidItemError(
+        "Mixed-source return requires explicit ownedQuantity and externalQuantity",
+        rentalOrderItemId,
+      );
+    }
+
+    if (externalRemaining > 0) {
+      if (quantity > externalRemaining) {
+        throw new ReturnInvalidItemError(
+          "External return quantity exceeds remaining external dispatched quantity",
+          rentalOrderItemId,
+        );
+      }
+
+      return {
+        ownedQuantity: 0,
+        externalQuantity: quantity,
+        legacyOwnedOnly: false,
+      };
+    }
+
+    if (quantity > ownedRemaining) {
+      throw new ReturnInvalidItemError(
+        "Owned return quantity exceeds remaining owned dispatched quantity",
         rentalOrderItemId,
       );
     }
 
     return {
-      ownedQuantity: owned,
-      externalQuantity: external,
-      legacyOwnedOnly: external === 0,
+      ownedQuantity: quantity,
+      externalQuantity: 0,
+      legacyOwnedOnly: true,
     };
   }
 
@@ -73,7 +111,7 @@ export function resolveReturnSourceSplit(
   return {
     ownedQuantity: owned,
     externalQuantity: external,
-    legacyOwnedOnly: false,
+    legacyOwnedOnly: external === 0 && !hasOwned && !hasExternal,
   };
 }
 
@@ -95,6 +133,43 @@ export function effectiveExternalReturnQuantity(
   }
 
   return item.externalQuantity;
+}
+
+export function isMixedSourceReturnItem(
+  item: Pick<ReturnItemProps, "ownedQuantity" | "externalQuantity">,
+): boolean {
+  const owned = item.ownedQuantity ?? 0;
+  const external = item.externalQuantity ?? 0;
+  return (
+    item.ownedQuantity !== null &&
+    item.ownedQuantity !== undefined &&
+    item.externalQuantity !== null &&
+    item.externalQuantity !== undefined &&
+    owned > 0 &&
+    external > 0
+  );
+}
+
+export function hasSourceConditionAttribution(
+  item: Pick<
+    ReturnItemProps,
+    | "ownedGoodQuantity"
+    | "ownedDamagedQuantity"
+    | "ownedLostQuantity"
+    | "externalGoodQuantity"
+    | "externalDamagedQuantity"
+    | "externalLostQuantity"
+  >,
+): boolean {
+  return (
+    item.ownedGoodQuantity +
+      item.ownedDamagedQuantity +
+      item.ownedLostQuantity +
+      item.externalGoodQuantity +
+      item.externalDamagedQuantity +
+      item.externalLostQuantity >
+    0
+  );
 }
 
 export function toPersistedReturnSourceFields(

@@ -19,7 +19,10 @@ import {
   type CreateReturnFormValues,
   type UpdateReturnFormValues,
 } from "../schemas";
-import { computePriorReturnedByItem } from "../mappers";
+import {
+  computePriorReturnedByItem,
+  computePriorSourceReturnedByItem,
+} from "../mappers";
 import { useReturnFilterOptions, useReturnsByDispatch } from "../hooks";
 import { ReturnLineItemsField } from "./return-line-items-field";
 
@@ -122,6 +125,7 @@ function CreateReturnForm({
     }
 
     const priorReturned = computePriorReturnedByItem(priorReturns.items);
+    const priorSource = computePriorSourceReturnedByItem(priorReturns.items);
 
     const items = dispatch.items
       .filter((item) => item.rentalOrderItemId)
@@ -129,12 +133,28 @@ function CreateReturnForm({
         const rentalOrderItemId = item.rentalOrderItemId!;
         const prior = priorReturned.get(rentalOrderItemId) ?? 0;
         const remaining = item.quantity - prior;
+        const dispatchedOwned = item.ownedQuantity ?? item.quantity;
+        const dispatchedExternal = item.externalQuantity ?? 0;
+        const priorOwned = priorSource.get(rentalOrderItemId)?.owned ?? 0;
+        const priorExternal = priorSource.get(rentalOrderItemId)?.external ?? 0;
+        const maxOwnedQuantity = Math.max(0, dispatchedOwned - priorOwned);
+        const maxExternalQuantity = Math.max(
+          0,
+          dispatchedExternal - priorExternal,
+        );
+        const requiresSourceSplit =
+          maxOwnedQuantity > 0 && maxExternalQuantity > 0;
 
         return {
           rentalOrderItemId,
           dispatchItemId: item.id,
           quantity: remaining > 0 ? remaining : 1,
           maxQuantity: remaining > 0 ? remaining : 0,
+          ownedQuantity: requiresSourceSplit ? maxOwnedQuantity : null,
+          externalQuantity: requiresSourceSplit ? maxExternalQuantity : null,
+          maxOwnedQuantity,
+          maxExternalQuantity,
+          requiresSourceSplit,
           notes: "",
         };
       })

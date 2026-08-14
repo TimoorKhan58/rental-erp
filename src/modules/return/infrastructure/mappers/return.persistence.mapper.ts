@@ -50,6 +50,12 @@ export function toReturnDomain(record: {
     brokenQuantity: number;
     lostQuantity: number;
     missingQuantity?: number;
+    ownedGoodQuantity?: number;
+    ownedDamagedQuantity?: number;
+    ownedLostQuantity?: number;
+    externalGoodQuantity?: number;
+    externalDamagedQuantity?: number;
+    externalLostQuantity?: number;
     notes: string | null;
   }>;
 }): Return {
@@ -75,6 +81,12 @@ export function toReturnDomain(record: {
       damagedQuantity: item.brokenQuantity,
       lostQuantity: item.lostQuantity,
       missingQuantity: item.missingQuantity ?? 0,
+      ownedGoodQuantity: item.ownedGoodQuantity ?? 0,
+      ownedDamagedQuantity: item.ownedDamagedQuantity ?? 0,
+      ownedLostQuantity: item.ownedLostQuantity ?? 0,
+      externalGoodQuantity: item.externalGoodQuantity ?? 0,
+      externalDamagedQuantity: item.externalDamagedQuantity ?? 0,
+      externalLostQuantity: item.externalLostQuantity ?? 0,
       notes: item.notes,
     })),
     createdById: record.inspectedById as UserId,
@@ -107,6 +119,12 @@ export function toReturnCreateInput(
         repairQuantity: 0,
         lostQuantity: 0,
         missingQuantity: 0,
+        ownedGoodQuantity: 0,
+        ownedDamagedQuantity: 0,
+        ownedLostQuantity: 0,
+        externalGoodQuantity: 0,
+        externalDamagedQuantity: 0,
+        externalLostQuantity: 0,
         damageCharge: new PrismaNamespace.Decimal(0),
         notes: item.notes,
       })),
@@ -142,6 +160,12 @@ export function toReturnUpdateInput(
         repairQuantity: 0,
         lostQuantity: 0,
         missingQuantity: 0,
+        ownedGoodQuantity: 0,
+        ownedDamagedQuantity: 0,
+        ownedLostQuantity: 0,
+        externalGoodQuantity: 0,
+        externalDamagedQuantity: 0,
+        externalLostQuantity: 0,
         damageCharge: new PrismaNamespace.Decimal(0),
         notes: item.notes,
       })),
@@ -179,6 +203,12 @@ export function toReturnStatusUpdateInput(
           brokenQuantity: item.damagedQuantity,
           lostQuantity: item.lostQuantity,
           missingQuantity: item.missingQuantity,
+          ownedGoodQuantity: item.ownedGoodQuantity,
+          ownedDamagedQuantity: item.ownedDamagedQuantity,
+          ownedLostQuantity: item.ownedLostQuantity,
+          externalGoodQuantity: item.externalGoodQuantity,
+          externalDamagedQuantity: item.externalDamagedQuantity,
+          externalLostQuantity: item.externalLostQuantity,
           notes: item.notes,
         },
       })),

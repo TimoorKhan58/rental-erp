@@ -15,10 +15,18 @@ export type ReturnItemResponse = {
   rentalOrderItemId: string;
   dispatchItemId: string | null;
   returnedQuantity: number;
+  ownedQuantity: number | null;
+  externalQuantity: number | null;
   goodQuantity: number;
   damagedQuantity: number;
   lostQuantity: number;
   missingQuantity: number;
+  ownedGoodQuantity: number;
+  ownedDamagedQuantity: number;
+  ownedLostQuantity: number;
+  externalGoodQuantity: number;
+  externalDamagedQuantity: number;
+  externalLostQuantity: number;
   notes: string | null;
 };
 
@@ -65,6 +73,8 @@ export type ReturnLineItemPayload = {
   rentalOrderItemId: string;
   dispatchItemId?: string | null;
   quantity: number;
+  ownedQuantity?: number | null;
+  externalQuantity?: number | null;
   notes?: string | null;
 };
 
@@ -89,6 +99,12 @@ export type InspectReturnItemPayload = {
   damagedQuantity: number;
   lostQuantity: number;
   missingQuantity: number;
+  ownedGoodQuantity?: number;
+  ownedDamagedQuantity?: number;
+  ownedLostQuantity?: number;
+  externalGoodQuantity?: number;
+  externalDamagedQuantity?: number;
+  externalLostQuantity?: number;
   notes?: string | null;
 };
 

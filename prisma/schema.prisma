@@ -812,6 +812,13 @@ model ReturnInspectionItem {
   repairQuantity     Int
   lostQuantity       Int
   missingQuantity    Int
+  // Phase 28.1 — source × condition attribution (additive; legacy rows remain 0).
+  ownedGoodQuantity      Int @default(0)
+  ownedDamagedQuantity   Int @default(0)
+  ownedLostQuantity      Int @default(0)
+  externalGoodQuantity   Int @default(0)
+  externalDamagedQuantity Int @default(0)
+  externalLostQuantity   Int @default(0)
   damageCharge       Decimal          @db.Decimal(12, 2)
   notes              String?
 
