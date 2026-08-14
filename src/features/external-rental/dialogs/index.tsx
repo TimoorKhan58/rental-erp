@@ -4,11 +4,13 @@ import { useState } from "react";
 import { AppModal, ConfirmModal } from "@/components/design-system/modal";
 import { AppButton } from "@/components/design-system/button";
 import { Input } from "@/components/ui/input";
+import { formatCurrency } from "@/lib/utils";
 import type { ExternalRentalResponse } from "../types";
 import {
   useAllocateExternalRental,
   useCancelExternalRental,
   useConfirmExternalRental,
+  useExternalRentalFilterOptions,
   useReceiveExternalRental,
   useSettleExternalRental,
   useSupplierReturnExternalRental,
@@ -25,7 +27,12 @@ function QtyLinesEditor({
   lines,
   onChange,
 }: {
-  lines: Array<{ rentalOrderItemId: string; label: string; remaining: number; quantity: number }>;
+  lines: Array<{
+    rentalOrderItemId: string;
+    label: string;
+    remaining: number;
+    quantity: number;
+  }>;
   onChange: (next: typeof lines) => void;
 }) {
   return (
@@ -64,10 +71,11 @@ export function ConfirmExternalRentalDialog({
   onOpenChange,
 }: QtyDialogProps) {
   const mutation = useConfirmExternalRental();
+  const { productLabelById } = useExternalRentalFilterOptions();
   const [lines, setLines] = useState(() =>
     agreement.items.map((item) => ({
       rentalOrderItemId: item.rentalOrderItemId,
-      label: item.productId,
+      label: productLabelById.get(item.productId) ?? item.productId,
       remaining: item.quantityRequested,
       quantity: item.quantityRequested,
     })),
@@ -117,6 +125,7 @@ export function ReceiveExternalRentalDialog({
   onOpenChange,
 }: QtyDialogProps) {
   const mutation = useReceiveExternalRental();
+  const { productLabelById } = useExternalRentalFilterOptions();
   const [lines, setLines] = useState(() =>
     agreement.items
       .map((item) => {
@@ -126,7 +135,7 @@ export function ReceiveExternalRentalDialog({
         );
         return {
           rentalOrderItemId: item.rentalOrderItemId,
-          label: item.productId,
+          label: productLabelById.get(item.productId) ?? item.productId,
           remaining,
           quantity: remaining,
         };
@@ -180,6 +189,7 @@ export function AllocateExternalRentalDialog({
   onOpenChange,
 }: QtyDialogProps) {
   const mutation = useAllocateExternalRental();
+  const { productLabelById } = useExternalRentalFilterOptions();
   const [lines, setLines] = useState(() =>
     agreement.items
       .map((item) => {
@@ -189,7 +199,7 @@ export function AllocateExternalRentalDialog({
         );
         return {
           rentalOrderItemId: item.rentalOrderItemId,
-          label: item.productId,
+          label: productLabelById.get(item.productId) ?? item.productId,
           remaining,
           quantity: remaining,
         };
@@ -243,11 +253,12 @@ export function SupplierReturnExternalRentalDialog({
   onOpenChange,
 }: QtyDialogProps) {
   const mutation = useSupplierReturnExternalRental();
+  const { productLabelById } = useExternalRentalFilterOptions();
   const [lines, setLines] = useState(() =>
     agreement.items
       .map((item) => ({
         rentalOrderItemId: item.rentalOrderItemId,
-        label: item.productId,
+        label: productLabelById.get(item.productId) ?? item.productId,
         remaining: Math.max(0, item.qtyInCompanyCustody),
         quantity: Math.max(0, item.qtyInCompanyCustody),
       }))
@@ -300,11 +311,12 @@ export function WriteOffExternalRentalDialog({
   onOpenChange,
 }: QtyDialogProps) {
   const mutation = useWriteOffExternalRental();
+  const { productLabelById } = useExternalRentalFilterOptions();
   const [lines, setLines] = useState(() =>
     agreement.items
       .map((item) => ({
         rentalOrderItemId: item.rentalOrderItemId,
-        label: item.productId,
+        label: productLabelById.get(item.productId) ?? item.productId,
         remaining: Math.max(0, item.qtyInCompanyCustody),
         quantity: Math.max(0, item.qtyInCompanyCustody),
       }))
@@ -362,24 +374,29 @@ export function SettleExternalRentalDialog({
   onOpenChange,
 }: QtyDialogProps) {
   const mutation = useSettleExternalRental();
-  const [paymentAmount, setPaymentAmount] = useState(agreement.outstandingBalance);
+  const [paymentAmount, setPaymentAmount] = useState(
+    agreement.outstandingBalance,
+  );
 
   return (
     <AppModal
       open={open}
       onOpenChange={onOpenChange}
       title="Record settlement"
-      description={`Outstanding balance: ${agreement.outstandingBalance}`}
+      description={`Outstanding balance: ${formatCurrency(agreement.outstandingBalance)}`}
     >
       <div className="space-y-4">
-        <Input
-          type="number"
-          min={0.01}
-          max={agreement.outstandingBalance}
-          step="0.01"
-          value={paymentAmount}
-          onChange={(event) => setPaymentAmount(Number(event.target.value))}
-        />
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Payment amount</label>
+          <Input
+            type="number"
+            min={0.01}
+            max={agreement.outstandingBalance}
+            step="0.01"
+            value={paymentAmount}
+            onChange={(event) => setPaymentAmount(Number(event.target.value))}
+          />
+        </div>
         <div className="flex justify-end gap-2">
           <AppButton variant="outline" onClick={() => onOpenChange(false)}>
             Cancel

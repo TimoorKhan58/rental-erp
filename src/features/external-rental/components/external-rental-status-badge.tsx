@@ -116,3 +116,66 @@ export function canSettleExternalRental(
 export function canCancelExternalRental(status: ExternalRentalAgreementStatus) {
   return status === "DRAFT" || status === "CONFIRMED";
 }
+
+/** Primary next action for operators on the detail page. */
+export function getNextExternalRentalStep(
+  status: ExternalRentalAgreementStatus,
+  options?: {
+    hasCompanyCustody?: boolean;
+    outstandingBalance?: number;
+  },
+): { label: string; hint: string } | null {
+  switch (status) {
+    case "DRAFT":
+      return {
+        label: "Confirm",
+        hint: "Confirm requested quantities with the supplier.",
+      };
+    case "CONFIRMED":
+      return {
+        label: "Receive",
+        hint: "Record what arrived from the supplier.",
+      };
+    case "PARTIALLY_RECEIVED":
+      return {
+        label: "Receive / Allocate",
+        hint: "Finish receiving remaining qty, or allocate what you already have.",
+      };
+    case "RECEIVED":
+      return {
+        label: "Allocate",
+        hint: "Allocate received hire-in qty to the rental order.",
+      };
+    case "ALLOCATED":
+      return {
+        label: "Dispatch",
+        hint: "Create a dispatch with external quantity for this rental order.",
+      };
+    case "IN_USE":
+      return {
+        label: "Customer return",
+        hint: "When the customer returns items, process a return (external qty).",
+      };
+    case "RETURN_PENDING":
+      if (options?.hasCompanyCustody) {
+        return {
+          label: "Supplier return",
+          hint: "Return company-custody qty to the supplier (or write off).",
+        };
+      }
+      return {
+        label: "Wait for customer return",
+        hint: "Customer still holds external qty.",
+      };
+    case "RETURNED":
+      if ((options?.outstandingBalance ?? 0) > 0) {
+        return {
+          label: "Settle",
+          hint: "Record supplier payment for the hire-in cost.",
+        };
+      }
+      return null;
+    default:
+      return null;
+  }
+}

@@ -24,6 +24,7 @@ import {
   canSettleExternalRental,
   canSupplierReturnExternalRental,
   canWriteOffExternalRental,
+  getNextExternalRentalStep,
 } from "../components/external-rental-status-badge";
 import {
   AllocateExternalRentalDialog,
@@ -77,7 +78,7 @@ export function ExternalRentalDetailPage({
     canSettle,
     canCancel,
   } = useExternalRentalPermissions();
-  const { productLabelById, supplierLabelById, warehouseLabelById } =
+  const { productLabelById, supplierLabelById, warehouseLabelById, rentalOrderLabelById } =
     useExternalRentalFilterOptions();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -91,6 +92,13 @@ export function ExternalRentalDetailPage({
   const hasCompanyCustody = agreement
     ? agreement.items.some((item) => item.qtyInCompanyCustody > 0)
     : false;
+
+  const nextStep = agreement
+    ? getNextExternalRentalStep(agreement.status, {
+        hasCompanyCustody,
+        outstandingBalance: agreement.outstandingBalance,
+      })
+    : null;
 
   if (isLoading) {
     return (
@@ -196,6 +204,13 @@ export function ExternalRentalDetailPage({
         }
       />
 
+      {nextStep ? (
+        <div className="mb-4 rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+          <p className="text-sm font-medium">Next: {nextStep.label}</p>
+          <p className="text-sm text-muted-foreground">{nextStep.hint}</p>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <SectionCard title="Agreement" className="lg:col-span-2">
           <dl className="grid gap-4 sm:grid-cols-2">
@@ -224,7 +239,20 @@ export function ExternalRentalDetailPage({
                 agreement.warehouseId
               }
             />
-            <DetailField label="Rental order" value={agreement.rentalOrderId} />
+            <div className="space-y-1">
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Rental order
+              </dt>
+              <dd className="text-sm">
+                <Link
+                  href={ROUTES.rentalOrderDetail(agreement.rentalOrderId)}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {rentalOrderLabelById.get(agreement.rentalOrderId) ??
+                    agreement.rentalOrderId}
+                </Link>
+              </dd>
+            </div>
             <DetailField
               label="Hire start"
               value={formatDate(agreement.hireStartDate)}

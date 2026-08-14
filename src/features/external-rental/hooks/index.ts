@@ -4,6 +4,7 @@ import { queryKeys } from "@/lib/query";
 import { useAppMutation } from "@/lib/query";
 import { getCurrentUserPermissions } from "@/features/customer/services";
 import { getProducts } from "@/features/product/services";
+import { getRentalOrders } from "@/features/rental-order/services";
 import { getSuppliers } from "@/features/supplier/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListExternalRentalsParams } from "../types";
@@ -78,6 +79,12 @@ export function useExternalRentalFilterOptions() {
     staleTime: 5 * 60_000,
   });
 
+  const rentalOrders = useQuery({
+    queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
+    queryFn: () => getRentalOrders({ pageSize: 100 }),
+    staleTime: 5 * 60_000,
+  });
+
   const supplierOptions = (suppliers.data?.items ?? []).map((item) => ({
     id: item.id,
     label: `${item.supplierCode} — ${item.name}`,
@@ -90,15 +97,32 @@ export function useExternalRentalFilterOptions() {
     id: item.id,
     label: `${item.productCode} — ${item.name}`,
   }));
+  const rentalOrderOptions = (rentalOrders.data?.items ?? [])
+    .filter((order) => order.status !== "CANCELLED")
+    .map((order) => ({
+      id: order.id,
+      label: `${order.orderNumber} — ${order.status}`,
+      warehouseId: order.warehouseId,
+      startDate: order.startDate,
+      endDate: order.endDate,
+    }));
 
   return {
     supplierOptions,
     warehouseOptions,
     productOptions,
+    rentalOrderOptions,
     supplierLabelById: new Map(supplierOptions.map((o) => [o.id, o.label])),
     warehouseLabelById: new Map(warehouseOptions.map((o) => [o.id, o.label])),
     productLabelById: new Map(productOptions.map((o) => [o.id, o.label])),
-    isLoading: suppliers.isLoading || warehouses.isLoading || products.isLoading,
+    rentalOrderLabelById: new Map(
+      rentalOrderOptions.map((o) => [o.id, o.label]),
+    ),
+    isLoading:
+      suppliers.isLoading ||
+      warehouses.isLoading ||
+      products.isLoading ||
+      rentalOrders.isLoading,
   };
 }
 
