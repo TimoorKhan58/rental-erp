@@ -1,8 +1,15 @@
 import {
   ExternalRentalAgreement,
   computeCustodyBalances,
+  computeLineHireInCost,
 } from "@/modules/external-rental/domain";
-import type { CreateExternalRentalAgreementData } from "@/modules/external-rental/domain";
+import type {
+  ApplyExternalRentalWorkflowDeltaData,
+  CreateExternalRentalAgreementData,
+  ExternalRentalAgreementStatus,
+  ExternalRentalWorkflowItemDelta,
+  ExternalRentalWorkflowKind,
+} from "@/modules/external-rental/domain";
 import type {
   ExternalRentalAgreementId,
   ProductId,
@@ -125,5 +132,97 @@ export function toExternalRentalWorkflowData(
       quantityWrittenOff: item.quantityWrittenOff,
       lineHireInCost: item.lineHireInCost,
     })),
+  };
+}
+
+/**
+ * Phase 29 (F-02): compute per-item deltas from before/after aggregate
+ * snapshots produced by the domain (e.g. `existing.withReceived(input)`).
+ * Deltas are consumed by `applyWorkflowDelta` to drive atomic
+ * `{ increment }` operators; callers never persist absolute counter values.
+ */
+export function computeExternalRentalWorkflowDelta(args: {
+  workflowKind: ExternalRentalWorkflowKind;
+  before: ExternalRentalAgreement;
+  after: ExternalRentalAgreement;
+  expectedStatuses: ReadonlyArray<ExternalRentalAgreementStatus>;
+  recomputeMoney: boolean;
+}): ApplyExternalRentalWorkflowDeltaData {
+  const beforeItems = new Map(
+    args.before.items.map((item) => [String(item.id), item]),
+  );
+
+  const items: ExternalRentalWorkflowItemDelta[] = args.after.items.map(
+    (afterItem) => {
+      const itemId = String(afterItem.id);
+      const beforeItem = beforeItems.get(itemId);
+      if (beforeItem === undefined) {
+        return { itemId };
+      }
+
+      const delta: ExternalRentalWorkflowItemDelta = { itemId };
+
+      if (
+        afterItem.quantityConfirmed !== beforeItem.quantityConfirmed &&
+        beforeItem.quantityConfirmed === 0
+      ) {
+        delta.quantityConfirmedAbsolute = afterItem.quantityConfirmed;
+      }
+
+      const receivedDelta =
+        afterItem.quantityReceived - beforeItem.quantityReceived;
+      if (receivedDelta !== 0) {
+        delta.quantityReceivedDelta = receivedDelta;
+      }
+
+      const allocatedDelta =
+        afterItem.quantityAllocated - beforeItem.quantityAllocated;
+      if (allocatedDelta !== 0) {
+        delta.quantityAllocatedDelta = allocatedDelta;
+      }
+
+      const dispatchedDelta =
+        afterItem.quantityDispatched - beforeItem.quantityDispatched;
+      if (dispatchedDelta !== 0) {
+        delta.quantityDispatchedDelta = dispatchedDelta;
+      }
+
+      const returnedFromCustomerDelta =
+        afterItem.quantityReturnedFromCustomer -
+        beforeItem.quantityReturnedFromCustomer;
+      if (returnedFromCustomerDelta !== 0) {
+        delta.quantityReturnedFromCustomerDelta = returnedFromCustomerDelta;
+      }
+
+      const returnedToSupplierDelta =
+        afterItem.quantityReturnedToSupplier -
+        beforeItem.quantityReturnedToSupplier;
+      if (returnedToSupplierDelta !== 0) {
+        delta.quantityReturnedToSupplierDelta = returnedToSupplierDelta;
+      }
+
+      const writtenOffDelta =
+        afterItem.quantityWrittenOff - beforeItem.quantityWrittenOff;
+      if (writtenOffDelta !== 0) {
+        delta.quantityWrittenOffDelta = writtenOffDelta;
+      }
+
+      if (receivedDelta !== 0) {
+        // BD-11 recognition: lineHireInCost tracks quantityReceived × unitCost.
+        delta.lineHireInCostDelta =
+          computeLineHireInCost(afterItem.quantityReceived, afterItem.unitCost) -
+          computeLineHireInCost(beforeItem.quantityReceived, beforeItem.unitCost);
+      }
+
+      return delta;
+    },
+  );
+
+  return {
+    workflowKind: args.workflowKind,
+    expectedStatuses: args.expectedStatuses,
+    nextStatus: args.after.status,
+    items,
+    recomputeMoney: args.recomputeMoney,
   };
 }

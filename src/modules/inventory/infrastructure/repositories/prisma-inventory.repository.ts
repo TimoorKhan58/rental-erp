@@ -330,6 +330,175 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     );
   }
 
+  /**
+   * Phase 29 (F-03): OUT is enforced by one atomic SQL UPDATE.
+   * Predicate: quantityOnHand >= quantity AND isActive = true.
+   * When zero rows match, the caller must translate to a business error;
+   * the database — not stale application state — is the concurrency
+   * authority for the non-negativity invariant.
+   */
+  decrementOnHand(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<
+          Array<{
+            id: string;
+            productId: string;
+            warehouseId: string;
+            quantityOnHand: number;
+            reservedQuantity: number;
+            minimumStock: number;
+            maximumStock: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >`
+          UPDATE "inventory"
+          SET
+            "quantityOnHand" = "quantityOnHand" - ${quantity},
+            "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${id}
+            AND "quantityOnHand" >= ${quantity}
+            AND "isActive" = true
+          RETURNING
+            "id",
+            "productId",
+            "warehouseId",
+            "quantityOnHand",
+            "reservedQuantity",
+            "minimumStock",
+            "maximumStock",
+            "isActive",
+            "createdAt",
+            "updatedAt"
+        `;
+
+        const record = rows[0];
+        return record === undefined ? null : toInventoryDomain(record);
+      },
+      { model: MODEL, operation: "decrementOnHand" },
+    );
+  }
+
+  /**
+   * Phase 29 (F-03): IN is enforced by one atomic SQL UPDATE.
+   * Predicate: isActive = true. quantityOnHand is monotonically added
+   * inside the database statement — no read-modify-write.
+   */
+  incrementOnHand(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<
+          Array<{
+            id: string;
+            productId: string;
+            warehouseId: string;
+            quantityOnHand: number;
+            reservedQuantity: number;
+            minimumStock: number;
+            maximumStock: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >`
+          UPDATE "inventory"
+          SET
+            "quantityOnHand" = "quantityOnHand" + ${quantity},
+            "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${id}
+            AND "isActive" = true
+          RETURNING
+            "id",
+            "productId",
+            "warehouseId",
+            "quantityOnHand",
+            "reservedQuantity",
+            "minimumStock",
+            "maximumStock",
+            "isActive",
+            "createdAt",
+            "updatedAt"
+        `;
+
+        const record = rows[0];
+        return record === undefined ? null : toInventoryDomain(record);
+      },
+      { model: MODEL, operation: "incrementOnHand" },
+    );
+  }
+
+  /**
+   * Phase 29 (F-03): ADJUSTMENT applies a signed delta atomically while
+   * preserving `reservedQuantity <= quantityOnHand`. Predicate:
+   *   isActive = true AND quantityOnHand + delta >= reservedQuantity.
+   */
+  applyAdjustment(
+    id: InventoryId,
+    signedDelta: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(signedDelta) || signedDelta === 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<
+          Array<{
+            id: string;
+            productId: string;
+            warehouseId: string;
+            quantityOnHand: number;
+            reservedQuantity: number;
+            minimumStock: number;
+            maximumStock: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >`
+          UPDATE "inventory"
+          SET
+            "quantityOnHand" = "quantityOnHand" + ${signedDelta},
+            "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${id}
+            AND "isActive" = true
+            AND "quantityOnHand" + ${signedDelta} >= "reservedQuantity"
+          RETURNING
+            "id",
+            "productId",
+            "warehouseId",
+            "quantityOnHand",
+            "reservedQuantity",
+            "minimumStock",
+            "maximumStock",
+            "isActive",
+            "createdAt",
+            "updatedAt"
+        `;
+
+        const record = rows[0];
+        return record === undefined ? null : toInventoryDomain(record);
+      },
+      { model: MODEL, operation: "applyAdjustment" },
+    );
+  }
+
   delete(id: InventoryId): Promise<void> {
     return repositoryDelete(
       this.runner,

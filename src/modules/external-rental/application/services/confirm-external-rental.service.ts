@@ -6,15 +6,16 @@ import {
 } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 
 import type { ExternalRentalAgreementDto } from "../dtos/external-rental.dto";
 import {
+  computeExternalRentalWorkflowDelta,
   toExternalRentalAgreementDto,
   toExternalRentalAgreementId,
-  toExternalRentalWorkflowData,
   toRentalOrderItemId,
 } from "../mappers/external-rental.mapper";
 import {
@@ -81,10 +82,39 @@ export class ConfirmExternalRentalService {
         }
 
         const previousValues = toExternalRentalAuditValues(existing);
-        const updated = await externalRentalRepository.updateWorkflow(
+
+        // Phase 29 (F-02): atomic DRAFT → CONFIRMED status claim; per-item
+        // quantityConfirmed set-absolute (once-only, guarded by the claim);
+        // amountDue is set from the domain-computed provisional total
+        // (quantityConfirmed × unitCost); totalHireInCost stays 0 until
+        // Receive per BD-11.
+        const baseDelta = computeExternalRentalWorkflowDelta({
+          workflowKind: "confirm",
+          before: existing,
+          after: confirmed,
+          expectedStatuses: ["DRAFT"],
+          recomputeMoney: false,
+        });
+        const updated = await externalRentalRepository.applyWorkflowDelta(
           existing.id,
-          toExternalRentalWorkflowData(confirmed),
+          {
+            ...baseDelta,
+            moneyOverride: {
+              totalHireInCost: confirmed.totalHireInCost,
+              amountDue: confirmed.amountDue,
+              settlementStatus: confirmed.settlementStatus,
+            },
+          },
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: EXTERNAL_RENTAL_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "DRAFT",
+            action: "confirm",
+          });
+        }
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

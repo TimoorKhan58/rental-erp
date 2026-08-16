@@ -14,7 +14,6 @@ import {
   toInventoryId,
   toUserId,
 } from "../mappers/stock-movement.mapper";
-import { computeMovementEffect } from "./movement-effect";
 import { toStockMovementAuditValues } from "./stock-movement-audit.mapper";
 import {
   STOCK_MOVEMENT_ENTITY_NAME,
@@ -81,49 +80,20 @@ export async function executeCreateStockMovementInScope(
     });
   }
 
-  let effect;
-
-  try {
-    effect = computeMovementEffect(
-      inventory,
-      input.movementType,
-      input.quantity,
-    );
-  } catch (error) {
-    if (error instanceof StockMovementInsufficientQuantityError) {
-      throw toInsufficientUnprocessable(error);
-    }
-
-    throw error;
+  if (input.movementType === "OUT") {
+    return executeOutStockMovementInScope(scope, input, inventory);
   }
 
-  try {
-    Inventory.reconstitute({
-      ...inventory.toProps(),
-      quantityOnHand: effect.quantityOnHand,
-      reservedQuantity: effect.reservedQuantity,
-      updatedAt: new Date(),
-    });
-  } catch (error) {
-    if (error instanceof InventoryInvariantError) {
-      throw new UnprocessableError({
-        message: error.message,
-        details: { field: error.field },
-      });
-    }
-
-    throw error;
+  if (input.movementType === "IN") {
+    return executeInStockMovementInScope(scope, input, inventory);
   }
 
-  await inventoryRepository.update(inventory.id, {
-    quantityOnHand: effect.quantityOnHand,
-    reservedQuantity: effect.reservedQuantity,
-  });
+  if (input.movementType === "ADJUSTMENT") {
+    return executeAdjustmentStockMovementInScope(scope, input, inventory);
+  }
 
-  return createStockMovementAndAudit(scope, input, inventory, {
-    previousQuantity: effect.previousQuantity,
-    newQuantity: effect.newQuantity,
-  });
+  const exhaustive: never = input.movementType;
+  throw new Error(`Unsupported movement type: ${String(exhaustive)}`);
 }
 
 async function executeReserveStockMovementInScope(
@@ -221,6 +191,130 @@ async function executeReleaseStockMovementInScope(
   const newQuantity = released.reservedQuantity;
 
   return createStockMovementAndAudit(scope, input, released, {
+    previousQuantity,
+    newQuantity,
+  });
+}
+
+async function executeOutStockMovementInScope(
+  scope: StockMovementWriteScope,
+  input: CreateStockMovementInput,
+  inventory: Inventory,
+): Promise<StockMovement> {
+  const { inventoryRepository } = scope;
+
+  // Phase 29 (F-03): database atomic UPDATE is the concurrency authority for OUT.
+  const updated = await inventoryRepository.decrementOnHand(
+    inventory.id,
+    input.quantity,
+  );
+
+  if (updated === null) {
+    const latest = await inventoryRepository.findById(inventory.id);
+    const availableQuantity =
+      latest?.quantityOnHand ?? inventory.quantityOnHand;
+
+    throw toInsufficientUnprocessable(
+      new StockMovementInsufficientQuantityError(
+        "Insufficient quantity on hand for OUT movement",
+        "OUT",
+        input.quantity,
+        availableQuantity,
+      ),
+    );
+  }
+
+  try {
+    Inventory.reconstitute(updated.toProps());
+  } catch (error) {
+    if (error instanceof InventoryInvariantError) {
+      throw new UnprocessableError({
+        message: error.message,
+        details: { field: error.field },
+      });
+    }
+
+    throw error;
+  }
+
+  const previousQuantity = updated.quantityOnHand + input.quantity;
+  const newQuantity = updated.quantityOnHand;
+
+  return createStockMovementAndAudit(scope, input, updated, {
+    previousQuantity,
+    newQuantity,
+  });
+}
+
+async function executeInStockMovementInScope(
+  scope: StockMovementWriteScope,
+  input: CreateStockMovementInput,
+  inventory: Inventory,
+): Promise<StockMovement> {
+  const { inventoryRepository } = scope;
+
+  // Phase 29 (F-03): database atomic UPDATE is the concurrency authority for IN.
+  const updated = await inventoryRepository.incrementOnHand(
+    inventory.id,
+    input.quantity,
+  );
+
+  if (updated === null) {
+    throw new UnprocessableError({
+      message: "Inventory is inactive",
+      details: { inventoryId: input.inventoryId },
+    });
+  }
+
+  const previousQuantity = updated.quantityOnHand - input.quantity;
+  const newQuantity = updated.quantityOnHand;
+
+  return createStockMovementAndAudit(scope, input, updated, {
+    previousQuantity,
+    newQuantity,
+  });
+}
+
+async function executeAdjustmentStockMovementInScope(
+  scope: StockMovementWriteScope,
+  input: CreateStockMovementInput,
+  inventory: Inventory,
+): Promise<StockMovement> {
+  const { inventoryRepository } = scope;
+
+  // Phase 29 (F-03): ADJUSTMENT delta applied atomically; the database
+  // predicate enforces `quantityOnHand + delta >= reservedQuantity`, which
+  // also guarantees non-negativity.
+  const updated = await inventoryRepository.applyAdjustment(
+    inventory.id,
+    input.quantity,
+  );
+
+  if (updated === null) {
+    const latest = await inventoryRepository.findById(inventory.id);
+    const availableQuantity =
+      (latest?.quantityOnHand ?? inventory.quantityOnHand) -
+      (latest?.reservedQuantity ?? inventory.reservedQuantity);
+
+    const message =
+      input.quantity < 0
+        ? "Adjustment would leave on-hand below reserved quantity"
+        : "Adjustment rejected by inventory concurrency guard";
+
+    throw toInsufficientUnprocessable(
+      new StockMovementInsufficientQuantityError(
+        message,
+        "ADJUSTMENT",
+        input.quantity,
+        availableQuantity,
+      ),
+    );
+  }
+
+  const previousQuantity = updated.quantityOnHand - input.quantity;
+  const newQuantity = updated.quantityOnHand;
+
+  return createStockMovementAndAudit(scope, input, updated, {
     previousQuantity,
     newQuantity,
   });

@@ -1,5 +1,13 @@
-import { ExternalRentalAgreement } from "@/modules/external-rental/domain";
-import type { IExternalRentalRepository } from "@/modules/external-rental/domain";
+import {
+  ExternalRentalAgreement,
+  deriveSettlementStatus,
+} from "@/modules/external-rental/domain";
+import type {
+  ApplyExternalRentalWorkflowDeltaData,
+  ExternalRentalAgreementStatus,
+  ExternalRentalSettlementStatus,
+  IExternalRentalRepository,
+} from "@/modules/external-rental/domain";
 import type { ExternalRentalListQuery } from "@/modules/external-rental/domain";
 import type {
   CreateExternalRentalAgreementData,
@@ -11,6 +19,7 @@ import type {
   RentalOrderId,
 } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { ConcurrentUpdateError } from "@/shared/infrastructure/errors";
 
 import {
   AGREEMENT_ID,
@@ -216,6 +225,286 @@ export class InMemoryExternalRentalRepository
           lineHireInCost: patch.lineHireInCost,
         };
       }),
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  /**
+   * Phase 29 (F-02): mirror of production atomic status claim; used by
+   * Confirm and Cancel paths + Cascade Cancel.
+   */
+  async claimStatusTransition(
+    id: ExternalRentalAgreementId,
+    expected:
+      | ExternalRentalAgreementStatus
+      | ReadonlyArray<ExternalRentalAgreementStatus>,
+    next: {
+      status: ExternalRentalAgreementStatus;
+      settlementStatus?: ExternalRentalSettlementStatus;
+      amountDueAbsolute?: number;
+      amountPaidAbsolute?: number;
+      totalHireInCostAbsolute?: number;
+    },
+  ): Promise<ExternalRentalAgreement | null> {
+    const existing = this.store.get(id);
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    const updated = ExternalRentalAgreement.reconstitute({
+      ...existing.record,
+      status: next.status,
+      settlementStatus:
+        next.settlementStatus ?? existing.record.settlementStatus,
+      amountDue:
+        next.amountDueAbsolute !== undefined
+          ? next.amountDueAbsolute
+          : existing.record.amountDue,
+      amountPaid:
+        next.amountPaidAbsolute !== undefined
+          ? next.amountPaidAbsolute
+          : existing.record.amountPaid,
+      totalHireInCost:
+        next.totalHireInCostAbsolute !== undefined
+          ? next.totalHireInCostAbsolute
+          : existing.record.totalHireInCost,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  /**
+   * Phase 29 (F-02): mirror of production predicated per-item delta
+   * application + status claim. Enforces the same domain invariants the
+   * DB predicate enforces (received <= confirmed, allocated <= received,
+   * dispatched <= allocated, customer-return <= dispatched, supplier-
+   * return / write-off within remaining supplier-side capacity).
+   */
+  async applyWorkflowDelta(
+    id: ExternalRentalAgreementId,
+    data: ApplyExternalRentalWorkflowDeltaData,
+  ): Promise<ExternalRentalAgreement | null> {
+    const existing = this.store.get(id);
+    if (!existing) {
+      return null;
+    }
+
+    if (!data.expectedStatuses.includes(existing.record.status)) {
+      return null;
+    }
+
+    const itemMap = new Map(
+      existing.record.items.map((item) => [String(item.id), { ...item }]),
+    );
+
+    for (const delta of data.items) {
+      const item = itemMap.get(delta.itemId);
+      if (!item) {
+        continue;
+      }
+
+      switch (data.workflowKind) {
+        case "confirm": {
+          if (delta.quantityConfirmedAbsolute !== undefined) {
+            item.quantityConfirmed = delta.quantityConfirmedAbsolute;
+          }
+          if (
+            delta.lineHireInCostDelta !== undefined &&
+            delta.lineHireInCostDelta !== 0
+          ) {
+            item.lineHireInCost += delta.lineHireInCostDelta;
+          }
+          break;
+        }
+        case "receive": {
+          const qty = delta.quantityReceivedDelta ?? 0;
+          if (qty === 0) break;
+          if (item.quantityReceived + qty > item.quantityConfirmed) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreementItem",
+              id: delta.itemId,
+              action: "receive",
+            });
+          }
+          item.quantityReceived += qty;
+          if (
+            delta.lineHireInCostDelta !== undefined &&
+            delta.lineHireInCostDelta !== 0
+          ) {
+            item.lineHireInCost += delta.lineHireInCostDelta;
+          }
+          break;
+        }
+        case "allocate": {
+          const qty = delta.quantityAllocatedDelta ?? 0;
+          if (qty === 0) break;
+          if (item.quantityAllocated + qty > item.quantityReceived) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreementItem",
+              id: delta.itemId,
+              action: "allocate",
+            });
+          }
+          item.quantityAllocated += qty;
+          break;
+        }
+        case "dispatch": {
+          const qty = delta.quantityDispatchedDelta ?? 0;
+          if (qty === 0) break;
+          if (item.quantityDispatched + qty > item.quantityAllocated) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreementItem",
+              id: delta.itemId,
+              action: "dispatch",
+            });
+          }
+          item.quantityDispatched += qty;
+          break;
+        }
+        case "customer-return": {
+          const qty = delta.quantityReturnedFromCustomerDelta ?? 0;
+          if (qty === 0) break;
+          if (
+            item.quantityReturnedFromCustomer + qty >
+            item.quantityDispatched
+          ) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreementItem",
+              id: delta.itemId,
+              action: "customer-return",
+            });
+          }
+          item.quantityReturnedFromCustomer += qty;
+          break;
+        }
+        case "supplier-return": {
+          const qty = delta.quantityReturnedToSupplierDelta ?? 0;
+          if (qty === 0) break;
+          const cap =
+            item.quantityReceived -
+            item.quantityWrittenOff -
+            Math.max(
+              item.quantityDispatched - item.quantityReturnedFromCustomer,
+              0,
+            );
+          if (item.quantityReturnedToSupplier + qty > cap) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreementItem",
+              id: delta.itemId,
+              action: "supplier-return",
+            });
+          }
+          item.quantityReturnedToSupplier += qty;
+          break;
+        }
+        case "write-off": {
+          const qty = delta.quantityWrittenOffDelta ?? 0;
+          if (qty === 0) break;
+          const cap =
+            item.quantityReceived -
+            item.quantityReturnedToSupplier -
+            Math.max(
+              item.quantityDispatched - item.quantityReturnedFromCustomer,
+              0,
+            );
+          if (item.quantityWrittenOff + qty > cap) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreementItem",
+              id: delta.itemId,
+              action: "write-off",
+            });
+          }
+          item.quantityWrittenOff += qty;
+          break;
+        }
+      }
+
+      itemMap.set(delta.itemId, item);
+    }
+
+    const nextItems = existing.record.items.map(
+      (item) => itemMap.get(String(item.id)) ?? item,
+    );
+
+    let totalHireInCost = existing.record.totalHireInCost;
+    let amountDue = existing.record.amountDue;
+    let settlementStatus = existing.record.settlementStatus;
+
+    if (data.moneyOverride !== undefined) {
+      totalHireInCost = data.moneyOverride.totalHireInCost;
+      amountDue = data.moneyOverride.amountDue;
+      settlementStatus = data.moneyOverride.settlementStatus;
+    } else if (data.recomputeMoney) {
+      totalHireInCost = nextItems.reduce(
+        (sum, item) => sum + item.lineHireInCost,
+        0,
+      );
+      amountDue = totalHireInCost;
+      settlementStatus = deriveSettlementStatus(
+        amountDue,
+        existing.record.amountPaid,
+      );
+    }
+
+    const updated = ExternalRentalAgreement.reconstitute({
+      ...existing.record,
+      status: data.nextStatus,
+      settlementStatus,
+      totalHireInCost,
+      amountDue,
+      items: nextItems,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  /**
+   * Phase 29 (F-02, decision §12.3): mirror of production predicated
+   * settlement — atomically applies `amountPaid + delta <= amountDue`.
+   */
+  async applySettlement(
+    id: ExternalRentalAgreementId,
+    paymentAmount: number,
+  ): Promise<ExternalRentalAgreement | null> {
+    const existing = this.store.get(id);
+    if (!existing) {
+      return null;
+    }
+    if (
+      existing.record.status === "DRAFT" ||
+      existing.record.status === "CANCELLED"
+    ) {
+      return null;
+    }
+    if (existing.record.amountDue <= 0) {
+      return null;
+    }
+    if (existing.record.amountPaid + paymentAmount > existing.record.amountDue) {
+      return null;
+    }
+
+    const nextPaid = existing.record.amountPaid + paymentAmount;
+    const nextSettlement = deriveSettlementStatus(
+      existing.record.amountDue,
+      nextPaid,
+    );
+
+    const updated = ExternalRentalAgreement.reconstitute({
+      ...existing.record,
+      amountPaid: nextPaid,
+      settlementStatus: nextSettlement,
       updatedAt: new Date(),
     });
 

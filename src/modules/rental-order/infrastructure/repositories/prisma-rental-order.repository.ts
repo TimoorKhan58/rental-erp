@@ -418,4 +418,39 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
       { model: MODEL, operation: "updateStatus" },
     ).then(toRentalOrderDomain);
   }
+
+  claimStatusTransition(
+    id: RentalOrderId,
+    expected: RentalOrder["status"] | ReadonlyArray<RentalOrder["status"]>,
+    next: RentalOrder["status"],
+  ): Promise<RentalOrder | null> {
+    return this.runner.run(
+      async (db) => {
+        // Phase 29 (F-08): expected-status predicate is the concurrency authority.
+        const expectedList = Array.isArray(expected)
+          ? [...expected]
+          : [expected];
+
+        const claimed = await db.rentalOrder.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data: { status: next },
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.rentalOrder.findUnique({
+          where: { id },
+          include: RENTAL_ORDER_INCLUDE,
+        });
+
+        return record === null ? null : toRentalOrderDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
 }

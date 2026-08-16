@@ -1,6 +1,7 @@
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -67,10 +68,24 @@ export class ConfirmRentalOrderService {
       }
 
       const previousValues = toRentalOrderAuditValues(existing);
-      const updated = await rentalOrderRepository.updateStatus(
+
+      // Phase 29 (F-08): atomically claim DRAFT → CONFIRMED so only one
+      // concurrent confirmation wins. Losers surface as HTTP 409 without
+      // performing duplicate audit or notification side effects.
+      const updated = await rentalOrderRepository.claimStatusTransition(
         existing.id,
+        "DRAFT",
         confirmed.status,
       );
+
+      if (updated === null) {
+        throw new ConcurrentUpdateError({
+          entity: RENTAL_ORDER_ENTITY_NAME,
+          id: existing.id,
+          expectedStatus: "DRAFT",
+          action: "confirm",
+        });
+      }
 
       await auditLogger.log({
         module: RENTAL_ORDER_MODULE,

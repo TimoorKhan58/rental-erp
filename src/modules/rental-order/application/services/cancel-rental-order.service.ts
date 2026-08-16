@@ -1,5 +1,4 @@
 import { toExternalRentalAuditValues } from "@/modules/external-rental/application/services/external-rental-audit.mapper";
-import { toExternalRentalWorkflowData } from "@/modules/external-rental/application/mappers/external-rental.mapper";
 import {
   EXTERNAL_RENTAL_ENTITY_NAME,
   EXTERNAL_RENTAL_MODULE,
@@ -252,10 +251,26 @@ async function cascadeCancelEligibleExternalRental(params: {
   }
 
   const previousValues = toExternalRentalAuditValues(agreement);
-  const updated = await params.externalRentalRepository.updateWorkflow(
+
+  // Phase 29 (F-02, BD-C5): atomic DRAFT|CONFIRMED → CANCELLED claim;
+  // money fields reset absolutely under the same transaction.
+  const updated = await params.externalRentalRepository.claimStatusTransition(
     agreement.id,
-    toExternalRentalWorkflowData(cancelled),
+    ["DRAFT", "CONFIRMED"],
+    {
+      status: cancelled.status,
+      settlementStatus: cancelled.settlementStatus,
+      amountDueAbsolute: cancelled.amountDue,
+      totalHireInCostAbsolute: cancelled.totalHireInCost,
+      amountPaidAbsolute: cancelled.amountPaid,
+    },
   );
+
+  if (updated === null) {
+    // Concurrent Cancel or state-drift: skip cascading side effects; the
+    // owning RO cancel proceeds. Callers do not treat this as a failure.
+    return;
+  }
 
   await params.auditLogger.log({
     module: EXTERNAL_RENTAL_MODULE,

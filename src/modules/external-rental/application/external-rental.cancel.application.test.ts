@@ -60,13 +60,15 @@ describe("CancelExternalRentalService (Phase 25.10 / BD-C4)", () => {
       auditLogger,
       userId: USER_ID,
     });
-    const updateSpy = vi.spyOn(repository, "updateWorkflow");
+    // Phase 29 (F-02): Cancel now uses the atomic claimStatusTransition
+    // primitive instead of updateWorkflow.
+    const claimSpy = vi.spyOn(repository, "claimStatusTransition");
     const service = new CancelExternalRentalService(runner);
 
     const result = await service.execute({ id: AGREEMENT_ID });
 
     expect(result.status).toBe("CANCELLED");
-    expect(updateSpy).toHaveBeenCalledTimes(1);
+    expect(claimSpy).toHaveBeenCalledTimes(1);
     expect(auditLogger.entries).toHaveLength(1);
     expect(auditLogger.entries[0]?.action).toBe("CANCEL");
   });

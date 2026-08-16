@@ -7,15 +7,16 @@ import {
 } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 
 import type { ExternalRentalAgreementDto } from "../dtos/external-rental.dto";
 import {
+  computeExternalRentalWorkflowDelta,
   toExternalRentalAgreementDto,
   toExternalRentalAgreementId,
-  toExternalRentalWorkflowData,
   toRentalOrderItemId,
 } from "../mappers/external-rental.mapper";
 import {
@@ -91,10 +92,33 @@ export class ReceiveExternalRentalService {
         }
 
         const previousValues = toExternalRentalAuditValues(existing);
-        const updated = await externalRentalRepository.updateWorkflow(
+
+        // Phase 29 (F-02): atomic status transition + per-item receive
+        // increments; totalHireInCost / amountDue recomputed from
+        // SUM(lineHireInCost) in the same tx (BD-11 recognition on receive).
+        const updated = await externalRentalRepository.applyWorkflowDelta(
           existing.id,
-          toExternalRentalWorkflowData(received),
+          computeExternalRentalWorkflowDelta({
+            workflowKind: "receive",
+            before: existing,
+            after: received,
+            // BD receive allows CONFIRMED and PARTIALLY_RECEIVED; the atomic
+            // parent updateMany serializes concurrent workflow ops on this
+            // agreement and the per-item predicate enforces
+            // received + delta <= confirmed.
+            expectedStatuses: ["CONFIRMED", "PARTIALLY_RECEIVED"],
+            recomputeMoney: true,
+          }),
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: EXTERNAL_RENTAL_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "CONFIRMED|PARTIALLY_RECEIVED",
+            action: "receive",
+          });
+        }
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

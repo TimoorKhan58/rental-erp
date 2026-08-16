@@ -5,6 +5,7 @@ import {
 } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -13,7 +14,6 @@ import type { ExternalRentalAgreementDto } from "../dtos/external-rental.dto";
 import {
   toExternalRentalAgreementDto,
   toExternalRentalAgreementId,
-  toExternalRentalWorkflowData,
 } from "../mappers/external-rental.mapper";
 import {
   ExternalRentalIdParamSchema,
@@ -64,10 +64,30 @@ export class CancelExternalRentalService {
         }
 
         const previousValues = toExternalRentalAuditValues(existing);
-        const updated = await externalRentalRepository.updateWorkflow(
+
+        // Phase 29 (F-02, BD-C5): atomic once-only DRAFT|CONFIRMED →
+        // CANCELLED claim. Money fields are reset absolutely under the
+        // same tx; item counters are unchanged by cancel.
+        const updated = await externalRentalRepository.claimStatusTransition(
           existing.id,
-          toExternalRentalWorkflowData(cancelled),
+          ["DRAFT", "CONFIRMED"],
+          {
+            status: cancelled.status,
+            settlementStatus: cancelled.settlementStatus,
+            amountDueAbsolute: cancelled.amountDue,
+            totalHireInCostAbsolute: cancelled.totalHireInCost,
+            amountPaidAbsolute: cancelled.amountPaid,
+          },
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: EXTERNAL_RENTAL_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "DRAFT|CONFIRMED",
+            action: "cancel",
+          });
+        }
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

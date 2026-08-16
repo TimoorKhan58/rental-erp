@@ -13,10 +13,11 @@ import {
   ExternalRentalInvalidStatusError,
   ExternalRentalInvariantError,
 } from "@/modules/external-rental/domain";
-import { toExternalRentalWorkflowData } from "@/modules/external-rental/application/mappers/external-rental.mapper";
+import { computeExternalRentalWorkflowDelta } from "@/modules/external-rental/application/mappers/external-rental.mapper";
 import { parseRequest } from "@/shared/application/validation";
 import type { RentalOrderItemId } from "@/shared/domain/ids";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
@@ -105,6 +106,30 @@ export class CompleteReturnService {
         }
 
         const previousValues = toReturnAuditValues(existing);
+
+        // Phase 29 (F-01): atomically claim INSPECTED → COMPLETED BEFORE any
+        // side effect (owned RELEASE/IN, external custody counters, audit,
+        // notifications, RO sync). If a concurrent CompleteReturn already
+        // advanced this return, we surface 409 and skip all side effects so
+        // they run at most once per return.
+        const claimed = await returnRepository.claimStatusTransition(
+          existing.id,
+          "INSPECTED",
+          {
+            status: completed.status,
+            completedAt: completed.completedAt,
+          },
+        );
+
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: RETURN_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "INSPECTED",
+            action: "complete",
+          });
+        }
+
         const externalReturnItems: Array<{
           rentalOrderItemId: RentalOrderItemId;
           quantity: number;
@@ -278,16 +303,38 @@ export class CompleteReturnService {
             }
           }
 
-          await externalRentalRepository.updateWorkflow(
+          // Phase 29 (F-02): atomic parent status claim + per-item
+          // customer-return delta increment predicated by
+          // returnedFromCustomer + delta <= dispatched in DB.
+          const eraUpdated = await externalRentalRepository.applyWorkflowDelta(
             agreement.id,
-            toExternalRentalWorkflowData(customerReturned),
+            computeExternalRentalWorkflowDelta({
+              workflowKind: "customer-return",
+              before: agreement,
+              after: customerReturned,
+              expectedStatuses: [
+                "IN_USE",
+                "RETURN_PENDING",
+                "ALLOCATED",
+              ],
+              recomputeMoney: false,
+            }),
           );
+
+          if (eraUpdated === null) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreement",
+              id: agreement.id,
+              expectedStatus: "IN_USE|RETURN_PENDING|ALLOCATED",
+              action: "external-customer-return",
+            });
+          }
         }
 
-        const updated = await returnRepository.updateStatus(existing.id, {
-          status: completed.status,
-          completedAt: completed.completedAt,
-        });
+        // Status claim is already committed to the transaction; use the
+        // returned record (with side effects applied above) for downstream
+        // audit and notifications.
+        const updated = claimed;
 
         await auditLogger.log({
           module: RETURN_MODULE,

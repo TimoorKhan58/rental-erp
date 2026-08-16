@@ -219,6 +219,33 @@ export class InMemoryDispatchRepository implements IDispatchRepository {
     return updated;
   }
 
+  /**
+   * Phase 29 (F-04): mirrors production atomic status-claim semantics.
+   */
+  async claimStatusTransition(
+    id: DispatchId,
+    expected: Dispatch["status"] | ReadonlyArray<Dispatch["status"]>,
+    next: Dispatch["status"],
+    timestamps?: {
+      readyAt?: Date | null;
+      dispatchedAt?: Date | null;
+      completedAt?: Date | null;
+    },
+  ): Promise<Dispatch | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, next, timestamps);
+  }
+
   count(): number {
     return this.store.size;
   }

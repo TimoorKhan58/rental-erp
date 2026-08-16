@@ -225,4 +225,55 @@ export class PrismaReturnRepository implements IReturnRepository {
       { model: MODEL, operation: "updateStatus" },
     ).then(toReturnDomain);
   }
+
+  claimStatusTransition(
+    id: ReturnInspectionId,
+    expected: Return["status"] | ReadonlyArray<Return["status"]>,
+    data: UpdateReturnStatusData,
+  ): Promise<Return | null> {
+    return this.runner.run(
+      async (db) => {
+        // Phase 29 (F-01): expected-status predicate is the concurrency authority.
+        const update: Prisma.ReturnInspectionUpdateManyMutationInput = {
+          status: data.status,
+        };
+
+        if (data.receivedAt !== undefined) {
+          update.receivedAt = data.receivedAt;
+        }
+
+        if (data.inspectedAt !== undefined) {
+          update.inspectedAt = data.inspectedAt;
+        }
+
+        if (data.completedAt !== undefined) {
+          update.completedAt = data.completedAt;
+        }
+
+        const expectedList = Array.isArray(expected)
+          ? [...expected]
+          : [expected];
+
+        const claimed = await db.returnInspection.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data: update,
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.returnInspection.findUnique({
+          where: { id },
+          include: RETURN_INCLUDE,
+        });
+
+        return record === null ? null : toReturnDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
 }

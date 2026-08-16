@@ -185,4 +185,58 @@ export class PrismaDispatchRepository implements IDispatchRepository {
       { model: MODEL, operation: "updateStatus" },
     ).then(toDispatchDomain);
   }
+
+  claimStatusTransition(
+    id: DispatchId,
+    expected: Dispatch["status"] | ReadonlyArray<Dispatch["status"]>,
+    next: Dispatch["status"],
+    timestamps?: {
+      readyAt?: Date | null;
+      dispatchedAt?: Date | null;
+      completedAt?: Date | null;
+    },
+  ): Promise<Dispatch | null> {
+    return this.runner.run(
+      async (db) => {
+        // Phase 29 (F-04): expected-status predicate is the concurrency authority.
+        const data: Prisma.DispatchUpdateManyMutationInput = { status: next };
+
+        if (timestamps?.readyAt !== undefined) {
+          data.loadedAt = timestamps.readyAt;
+        }
+
+        if (timestamps?.dispatchedAt !== undefined) {
+          data.departedAt = timestamps.dispatchedAt;
+        }
+
+        if (timestamps?.completedAt !== undefined) {
+          data.deliveredAt = timestamps.completedAt;
+        }
+
+        const expectedList = Array.isArray(expected)
+          ? [...expected]
+          : [expected];
+
+        const claimed = await db.dispatch.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data,
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.dispatch.findUnique({
+          where: { id },
+          include: DISPATCH_INCLUDE,
+        });
+
+        return record === null ? null : toDispatchDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
 }

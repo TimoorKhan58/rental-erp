@@ -1,21 +1,23 @@
 import {
   EXTERNAL_RENTAL_ENTITY_NAME,
   EXTERNAL_RENTAL_MODULE,
+  type ExternalRentalAgreementStatus,
   ExternalRentalInvalidStatusError,
   ExternalRentalInvalidWriteOffError,
   ExternalRentalInvariantError,
 } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 
 import type { ExternalRentalAgreementDto } from "../dtos/external-rental.dto";
 import {
+  computeExternalRentalWorkflowDelta,
   toExternalRentalAgreementDto,
   toExternalRentalAgreementId,
-  toExternalRentalWorkflowData,
   toRentalOrderItemId,
 } from "../mappers/external-rental.mapper";
 import {
@@ -90,10 +92,36 @@ export class WriteOffExternalRentalService {
         }
 
         const previousValues = toExternalRentalAuditValues(existing);
-        const updated = await externalRentalRepository.updateWorkflow(
+
+        // Phase 29 (F-02): atomic parent status claim; per-item
+        // quantityWrittenOff increment enforced by write-off capacity
+        // predicate in DB.
+        const allowedStatuses: readonly ExternalRentalAgreementStatus[] = [
+          "PARTIALLY_RECEIVED",
+          "RECEIVED",
+          "ALLOCATED",
+          "IN_USE",
+          "RETURN_PENDING",
+        ];
+        const updated = await externalRentalRepository.applyWorkflowDelta(
           existing.id,
-          toExternalRentalWorkflowData(writtenOff),
+          computeExternalRentalWorkflowDelta({
+            workflowKind: "write-off",
+            before: existing,
+            after: writtenOff,
+            expectedStatuses: allowedStatuses,
+            recomputeMoney: false,
+          }),
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: EXTERNAL_RENTAL_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: allowedStatuses.join("|"),
+            action: "write-off",
+          });
+        }
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

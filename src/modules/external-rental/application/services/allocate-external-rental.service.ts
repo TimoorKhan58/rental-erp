@@ -7,15 +7,16 @@ import {
 } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 
 import type { ExternalRentalAgreementDto } from "../dtos/external-rental.dto";
 import {
+  computeExternalRentalWorkflowDelta,
   toExternalRentalAgreementDto,
   toExternalRentalAgreementId,
-  toExternalRentalWorkflowData,
   toRentalOrderItemId,
 } from "../mappers/external-rental.mapper";
 import {
@@ -90,10 +91,33 @@ export class AllocateExternalRentalService {
         }
 
         const previousValues = toExternalRentalAuditValues(existing);
-        const updated = await externalRentalRepository.updateWorkflow(
+
+        // Phase 29 (F-02): atomic parent status claim; per-item
+        // quantityAllocated increment enforced by
+        // `allocated + delta <= received` in DB.
+        const updated = await externalRentalRepository.applyWorkflowDelta(
           existing.id,
-          toExternalRentalWorkflowData(allocated),
+          computeExternalRentalWorkflowDelta({
+            workflowKind: "allocate",
+            before: existing,
+            after: allocated,
+            expectedStatuses: [
+              "PARTIALLY_RECEIVED",
+              "RECEIVED",
+              "ALLOCATED",
+            ],
+            recomputeMoney: false,
+          }),
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: EXTERNAL_RENTAL_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "PARTIALLY_RECEIVED|RECEIVED|ALLOCATED",
+            action: "allocate",
+          });
+        }
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

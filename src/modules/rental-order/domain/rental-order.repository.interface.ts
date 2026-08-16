@@ -47,4 +47,18 @@ export interface IRentalOrderRepository {
     id: RentalOrderId,
     status: RentalOrder["status"],
   ): Promise<RentalOrder>;
+  /**
+   * Phase 29 (F-08): atomically claims a status transition using an
+   * expected-status predicate. Returns the updated rental order on success,
+   * or null when zero rows match (concurrent update lost the race, or the
+   * expected precondition no longer holds).
+   *
+   * Callers should translate a null result into ConcurrentUpdateError
+   * (mapped to HTTP 409) and refetch domain state.
+   */
+  claimStatusTransition(
+    id: RentalOrderId,
+    expected: RentalOrder["status"] | ReadonlyArray<RentalOrder["status"]>,
+    next: RentalOrder["status"],
+  ): Promise<RentalOrder | null>;
 }

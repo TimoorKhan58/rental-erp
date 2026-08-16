@@ -97,6 +97,52 @@ export class ConflictError extends AppError {
   }
 }
 
+interface ConcurrentUpdateErrorOptions extends SubclassOptions {
+  entity?: string;
+  id?: string;
+  expectedStatus?: string;
+  action?: string;
+}
+
+/**
+ * Phase 29: raised when an atomic state claim or predicated counter mutation
+ * loses to a concurrent transaction. Consumers should refetch and retry.
+ * Extends ConflictError so existing HTTP mapping surfaces it as 409.
+ */
+export class ConcurrentUpdateError extends ConflictError {
+  readonly entity?: string;
+  readonly entityId?: string;
+  readonly expectedStatus?: string;
+  readonly action?: string;
+
+  constructor(options: ConcurrentUpdateErrorOptions = {}) {
+    const detailPayload: Record<string, unknown> = {};
+    if (options.entity !== undefined) detailPayload.entity = options.entity;
+    if (options.id !== undefined) detailPayload.id = options.id;
+    if (options.expectedStatus !== undefined)
+      detailPayload.expectedStatus = options.expectedStatus;
+    if (options.action !== undefined) detailPayload.action = options.action;
+
+    super({
+      code: options.code ?? ERROR_CODES.CONCURRENT_UPDATE,
+      message:
+        options.message ??
+        (options.entity !== undefined
+          ? `Concurrent update on ${options.entity}${options.id !== undefined ? `(${options.id})` : ""}`
+          : "Concurrent update detected"),
+      details:
+        options.details ??
+        (Object.keys(detailPayload).length > 0 ? detailPayload : undefined),
+      cause: options.cause,
+    });
+
+    this.entity = options.entity;
+    this.entityId = options.id;
+    this.expectedStatus = options.expectedStatus;
+    this.action = options.action;
+  }
+}
+
 export class UnprocessableError extends AppError {
   constructor(options: SubclassOptions = {}) {
     super({

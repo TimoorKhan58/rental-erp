@@ -304,7 +304,8 @@ describe("CancelRentalOrderService BD-C9 ERA cascade (Phase 25.12)", () => {
     externalRentalRepository.seed([seedLinkedAgreement("DRAFT")]);
     const auditLogger = new MockAuditLogger();
 
-    vi.spyOn(externalRentalRepository, "updateWorkflow").mockRejectedValue(
+    // Phase 29 (F-02): cascade cancel now uses claimStatusTransition.
+    vi.spyOn(externalRentalRepository, "claimStatusTransition").mockRejectedValue(
       new Error("ERA persist failed"),
     );
 

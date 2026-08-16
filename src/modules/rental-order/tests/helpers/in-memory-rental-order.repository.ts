@@ -314,6 +314,28 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     return updated;
   }
 
+  /**
+   * Phase 29 (F-08): mirrors production atomic status-claim semantics.
+   */
+  async claimStatusTransition(
+    id: RentalOrderId,
+    expected: RentalOrder["status"] | ReadonlyArray<RentalOrder["status"]>,
+    next: RentalOrder["status"],
+  ): Promise<RentalOrder | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, next);
+  }
+
   count(): number {
     return this.store.size;
   }

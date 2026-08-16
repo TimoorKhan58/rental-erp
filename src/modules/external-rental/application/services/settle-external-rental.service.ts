@@ -7,6 +7,7 @@ import {
 } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -15,7 +16,6 @@ import type { ExternalRentalAgreementDto } from "../dtos/external-rental.dto";
 import {
   toExternalRentalAgreementDto,
   toExternalRentalAgreementId,
-  toExternalRentalWorkflowData,
 } from "../mappers/external-rental.mapper";
 import {
   ExternalRentalIdParamSchema,
@@ -55,6 +55,12 @@ export class SettleExternalRentalService {
           });
         }
 
+        // Phase 29 (F-02 / decision §10.2): domain validation on stale
+        // aggregate still runs to preserve status/positive-amount rules,
+        // but the persistence uses a predicated raw SQL UPDATE so the
+        // additive invariant amountPaid + delta <= amountDue is enforced
+        // atomically by the database (two valid concurrent partials both
+        // succeed additively; an overshoot returns null and we surface 409).
         let settled;
 
         try {
@@ -88,10 +94,21 @@ export class SettleExternalRentalService {
         }
 
         const previousValues = toExternalRentalAuditValues(existing);
-        const updated = await externalRentalRepository.updateWorkflow(
+
+        const updated = await externalRentalRepository.applySettlement(
           existing.id,
-          toExternalRentalWorkflowData(settled),
+          data.paymentAmount,
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: EXTERNAL_RENTAL_ENTITY_NAME,
+            id: existing.id,
+            action: "settle",
+          });
+        }
+
+        void settled;
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

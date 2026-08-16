@@ -11,10 +11,11 @@ import {
   ExternalRentalInvalidStatusError,
   ExternalRentalInvariantError,
 } from "@/modules/external-rental/domain";
-import { toExternalRentalWorkflowData } from "@/modules/external-rental/application/mappers/external-rental.mapper";
+import { computeExternalRentalWorkflowDelta } from "@/modules/external-rental/application/mappers/external-rental.mapper";
 import { parseRequest } from "@/shared/application/validation";
 import type { RentalOrderItemId } from "@/shared/domain/ids";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
@@ -102,11 +103,27 @@ export class CompleteDispatchService {
         }
 
         const previousValues = toDispatchAuditValues(existing);
-        let updated = await dispatchRepository.updateStatus(
+
+        // Phase 29 (F-04): atomically claim READY → DISPATCHED before any
+        // side effects. If a concurrent completion already advanced this
+        // dispatch, we surface 409 and skip inventory OUT, external counter
+        // increments, RO transition, audit, and notifications so those
+        // once-only effects run at most once.
+        let updated = await dispatchRepository.claimStatusTransition(
           existing.id,
+          "READY",
           dispatched.status,
           { dispatchedAt: dispatched.dispatchedAt },
         );
+
+        if (updated === null) {
+          throw new ConcurrentUpdateError({
+            entity: DISPATCH_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "READY",
+            action: "complete",
+          });
+        }
 
         const externalDispatchItems: Array<{
           rentalOrderItemId: RentalOrderItemId;
@@ -227,10 +244,33 @@ export class CompleteDispatchService {
             throw error;
           }
 
-          await externalRentalRepository.updateWorkflow(
+          // Phase 29 (F-02): atomic parent status claim + per-item
+          // dispatched-delta increment predicated by
+          // dispatched + delta <= allocated in DB.
+          const eraUpdated = await externalRentalRepository.applyWorkflowDelta(
             agreement.id,
-            toExternalRentalWorkflowData(externalDispatched),
+            computeExternalRentalWorkflowDelta({
+              workflowKind: "dispatch",
+              before: agreement,
+              after: externalDispatched,
+              expectedStatuses: [
+                "ALLOCATED",
+                "IN_USE",
+                "PARTIALLY_RECEIVED",
+                "RECEIVED",
+              ],
+              recomputeMoney: false,
+            }),
           );
+
+          if (eraUpdated === null) {
+            throw new ConcurrentUpdateError({
+              entity: "ExternalRentalAgreement",
+              id: agreement.id,
+              expectedStatus: "ALLOCATED|IN_USE|PARTIALLY_RECEIVED|RECEIVED",
+              action: "external-dispatch",
+            });
+          }
         }
 
         const completed = updated.withCompleted();
@@ -260,10 +300,33 @@ export class CompleteDispatchService {
             throw error;
           }
 
-          await rentalOrderRepository.updateStatus(
-            onRentOrder.id,
-            onRentOrder.status,
-          );
+          // Phase 29 (F-08): atomically flip RO to ON_RENT from any
+          // pre-dispatch dispatchable status. Concurrent CompleteDispatch
+          // calls on different dispatches of the same RO cannot double-flip
+          // or leave the RO stuck in a stale status.
+          const claimedOnRent =
+            await rentalOrderRepository.claimStatusTransition(
+              onRentOrder.id,
+              ["CONFIRMED", "RESERVED"],
+              onRentOrder.status,
+            );
+
+          if (claimedOnRent === null) {
+            // Loser: refetch. If another dispatch already advanced the RO to
+            // ON_RENT, treat as success. Otherwise the RO moved elsewhere
+            // (e.g., cancelled) and we surface 409.
+            const latest = await rentalOrderRepository.findById(
+              onRentOrder.id,
+            );
+            if (latest === null || latest.status !== "ON_RENT") {
+              throw new ConcurrentUpdateError({
+                entity: "RentalOrder",
+                id: onRentOrder.id,
+                expectedStatus: "CONFIRMED|RESERVED",
+                action: "mark on rent",
+              });
+            }
+          }
         }
 
         await auditLogger.log({

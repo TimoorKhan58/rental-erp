@@ -23,7 +23,12 @@ export {
   ExternalRentalInvariantError,
   createExternalRentalAgreementNumber,
 } from "./external-rental.errors";
-export type { IExternalRentalRepository } from "./external-rental.repository.interface";
+export type {
+  ApplyExternalRentalWorkflowDeltaData,
+  ExternalRentalWorkflowItemDelta,
+  ExternalRentalWorkflowKind,
+  IExternalRentalRepository,
+} from "./external-rental.repository.interface";
 export type { ExternalRentalListQuery } from "./external-rental-list.query";
 export {
   assertCanAllocate,

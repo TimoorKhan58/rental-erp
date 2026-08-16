@@ -106,7 +106,20 @@ export async function syncRentalOrderStatusFromReturns(
   }
 
   if (rentalOrder.status !== nextStatus) {
-    await deps.rentalOrderRepository.updateStatus(rentalOrderId, nextStatus);
+    // Phase 29 (F-08): sync writer uses atomic expected-status claim so
+    // concurrent return completions on different returns of the same RO
+    // cannot race and overwrite each other with a stale target status.
+    // A null result means another concurrent sync already advanced the RO;
+    // the next return-completion will re-run this reconciliation.
+    const claimed = await deps.rentalOrderRepository.claimStatusTransition(
+      rentalOrderId,
+      rentalOrder.status,
+      nextStatus,
+    );
+
+    if (claimed === null) {
+      return null;
+    }
   }
 
   return nextStatus;

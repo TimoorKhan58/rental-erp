@@ -244,6 +244,96 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
     return updated;
   }
 
+  /**
+   * Phase 29 (F-03): mirrors production atomic OUT semantics.
+   */
+  async decrementOnHand(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return null;
+    }
+
+    const existing = this.store.get(id);
+
+    if (!existing || !existing.record.isActive) {
+      return null;
+    }
+
+    if (existing.record.quantityOnHand < quantity) {
+      return null;
+    }
+
+    const updated = Inventory.reconstitute({
+      ...existing.record,
+      quantityOnHand: existing.record.quantityOnHand - quantity,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  /**
+   * Phase 29 (F-03): mirrors production atomic IN semantics.
+   */
+  async incrementOnHand(
+    id: InventoryId,
+    quantity: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return null;
+    }
+
+    const existing = this.store.get(id);
+
+    if (!existing || !existing.record.isActive) {
+      return null;
+    }
+
+    const updated = Inventory.reconstitute({
+      ...existing.record,
+      quantityOnHand: existing.record.quantityOnHand + quantity,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  /**
+   * Phase 29 (F-03): mirrors production atomic ADJUSTMENT semantics.
+   */
+  async applyAdjustment(
+    id: InventoryId,
+    signedDelta: number,
+  ): Promise<Inventory | null> {
+    if (!Number.isInteger(signedDelta) || signedDelta === 0) {
+      return null;
+    }
+
+    const existing = this.store.get(id);
+
+    if (!existing || !existing.record.isActive) {
+      return null;
+    }
+
+    const nextOnHand = existing.record.quantityOnHand + signedDelta;
+    if (nextOnHand < existing.record.reservedQuantity) {
+      return null;
+    }
+
+    const updated = Inventory.reconstitute({
+      ...existing.record,
+      quantityOnHand: nextOnHand,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
   async delete(id: InventoryId): Promise<void> {
     this.store.delete(id);
   }
