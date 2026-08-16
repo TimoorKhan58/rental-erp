@@ -61,4 +61,9 @@ export interface IRentalOrderRepository {
     expected: RentalOrder["status"] | ReadonlyArray<RentalOrder["status"]>,
     next: RentalOrder["status"],
   ): Promise<RentalOrder | null>;
+  /**
+   * Phase 30 (F-05): serializes dispatch create/update capacity checks for one
+   * rental order. Must run inside the existing UoW before Rollup A is read.
+   */
+  lockForDispatchClaim(id: RentalOrderId): Promise<void>;
 }

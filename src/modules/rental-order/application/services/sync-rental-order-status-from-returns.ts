@@ -24,16 +24,10 @@ export async function syncRentalOrderStatusFromReturns(
     return null;
   }
 
-  const dispatches = await deps.dispatchRepository.findPaged({
-    page: 1,
-    pageSize: 100,
-    rentalOrderId,
-    sortOrder: "desc",
-  });
-
-  const completedDispatches = dispatches.items.filter(
-    (dispatch) => dispatch.status === "COMPLETED",
-  );
+  const completedDispatches =
+    await deps.dispatchRepository.findCompletedDispatchesByRentalOrderId(
+      rentalOrderId,
+    );
 
   if (completedDispatches.length === 0) {
     return null;

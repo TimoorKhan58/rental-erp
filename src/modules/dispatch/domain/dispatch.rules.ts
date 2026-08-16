@@ -233,6 +233,27 @@ export function sumClaimedSourceDispatchQuantitiesByRentalOrderItem(
   return { owned, external };
 }
 
+/** Phase 30: maps SQL aggregate rows to domain claim maps (Rollup A). */
+export function toClaimedSourceQuantityMaps(
+  rows: ReadonlyArray<{
+    rentalOrderItemId: string | null;
+    productId: string;
+    ownedClaimed: number;
+    externalClaimed: number;
+  }>,
+): { owned: Map<string, number>; external: Map<string, number> } {
+  const owned = new Map<string, number>();
+  const external = new Map<string, number>();
+
+  for (const row of rows) {
+    const key = row.rentalOrderItemId ?? row.productId;
+    owned.set(key, (owned.get(key) ?? 0) + row.ownedClaimed);
+    external.set(key, (external.get(key) ?? 0) + row.externalClaimed);
+  }
+
+  return { owned, external };
+}
+
 export function validateDispatchItemsAgainstRentalOrder(
   dispatchItems: CreateDispatchItemData[],
   rentalOrderItems: RentalOrderItemProps[],

@@ -85,25 +85,17 @@ export class CancelRentalOrderService {
           throw error;
         }
 
-        const dispatches = await dispatchRepository.findPaged({
-          page: 1,
-          pageSize: 100,
-          sortOrder: "desc",
-          rentalOrderId: existing.id,
-        });
+        const hasActiveDispatch =
+          await dispatchRepository.existsNonCancelledDispatchByRentalOrderId(
+            existing.id,
+          );
 
-        const conflictingDispatch = dispatches.items.find(
-          (dispatch) => dispatch.status !== "CANCELLED",
-        );
-
-        if (conflictingDispatch !== undefined) {
+        if (hasActiveDispatch) {
           throw new UnprocessableError({
             message:
               "Rental order cannot be cancelled because it has an active dispatch",
             details: {
               rentalOrderId: existing.id,
-              dispatchId: conflictingDispatch.id,
-              dispatchStatus: conflictingDispatch.status,
             },
           });
         }

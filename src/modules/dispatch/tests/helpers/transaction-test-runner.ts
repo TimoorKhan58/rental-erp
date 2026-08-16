@@ -8,6 +8,7 @@ import type {
   DispatchWriteScope,
   IDispatchTransactionRunner,
 } from "@/modules/dispatch/application/services/dispatch-transaction.runner";
+import { runWithDispatchClaimLockScope } from "@/modules/dispatch/infrastructure/dispatch-claim-lock";
 
 import type { InMemoryDispatchRepository } from "./in-memory-dispatch.repository";
 import type { MockAuditLogger } from "./mock-audit-logger";
@@ -16,7 +17,8 @@ export function createPassThroughTransactionRunner(
   scope: DispatchWriteScope,
 ): IDispatchTransactionRunner {
   return {
-    run: (operation) => operation(scope),
+    run: (operation) =>
+      runWithDispatchClaimLockScope(() => operation(scope)),
   };
 }
 
@@ -39,16 +41,18 @@ export function createRollbackTransactionRunner(
       const auditSnapshot = auditLogger.snapshot();
 
       try {
-        return await operation({
-          dispatchRepository,
-          rentalOrderRepository,
-          inventoryRepository,
-          stockMovementRepository,
-          externalRentalRepository,
-          auditLogger,
-          ...mockNotificationWriteScopeDeps,
-          userId,
-        });
+        return await runWithDispatchClaimLockScope(() =>
+          operation({
+            dispatchRepository,
+            rentalOrderRepository,
+            inventoryRepository,
+            stockMovementRepository,
+            externalRentalRepository,
+            auditLogger,
+            ...mockNotificationWriteScopeDeps,
+            userId,
+          }),
+        );
       } catch (error) {
         dispatchRepository.restore(dispatchSnapshot);
         rentalOrderRepository.restore(rentalOrderSnapshot);

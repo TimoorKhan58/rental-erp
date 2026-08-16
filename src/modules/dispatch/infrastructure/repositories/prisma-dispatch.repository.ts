@@ -1,6 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { DispatchListQuery } from "@/modules/dispatch/domain/dispatch-list.query";
-import type { DispatchId } from "@/shared/domain/ids";
+import type {
+  DispatchClaimedSourceQuantities,
+  SumClaimedSourceQuantitiesOptions,
+} from "@/modules/dispatch/domain/dispatch.repository.interface";
+import type { DispatchId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
@@ -12,6 +16,7 @@ import {
 } from "@/shared/infrastructure/database";
 
 import { Dispatch } from "@/modules/dispatch/domain/dispatch.entity";
+import { toClaimedSourceQuantityMaps } from "@/modules/dispatch/domain/dispatch.rules";
 import type { IDispatchRepository } from "@/modules/dispatch/domain/dispatch.repository.interface";
 import type {
   CreateDispatchData,
@@ -132,6 +137,101 @@ export class PrismaDispatchRepository implements IDispatchRepository {
       items: result.items.map(toDispatchDomain),
       meta: result.meta,
     }));
+  }
+
+  sumClaimedSourceQuantitiesByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+    options?: SumClaimedSourceQuantitiesOptions,
+  ): Promise<DispatchClaimedSourceQuantities> {
+    return this.runner.run(
+      async (db) => {
+        const excludeDispatchId = options?.excludeDispatchId;
+
+        const rows =
+          excludeDispatchId === undefined
+            ? await db.$queryRaw<
+                Array<{
+                  rentalOrderItemId: string | null;
+                  productId: string;
+                  ownedClaimed: number;
+                  externalClaimed: number;
+                }>
+              >`
+                SELECT
+                  di."rentalOrderItemId" AS "rentalOrderItemId",
+                  di."productId" AS "productId",
+                  SUM(COALESCE(di."ownedQuantity", di."quantity"))::int AS "ownedClaimed",
+                  SUM(COALESCE(di."externalQuantity", 0))::int AS "externalClaimed"
+                FROM "dispatch_items" di
+                INNER JOIN "dispatches" d ON d."id" = di."dispatchId"
+                WHERE d."rentalOrderId" = ${rentalOrderId}
+                  AND d."status" <> 'CANCELLED'
+                GROUP BY di."rentalOrderItemId", di."productId"
+              `
+            : await db.$queryRaw<
+                Array<{
+                  rentalOrderItemId: string | null;
+                  productId: string;
+                  ownedClaimed: number;
+                  externalClaimed: number;
+                }>
+              >`
+                SELECT
+                  di."rentalOrderItemId" AS "rentalOrderItemId",
+                  di."productId" AS "productId",
+                  SUM(COALESCE(di."ownedQuantity", di."quantity"))::int AS "ownedClaimed",
+                  SUM(COALESCE(di."externalQuantity", 0))::int AS "externalClaimed"
+                FROM "dispatch_items" di
+                INNER JOIN "dispatches" d ON d."id" = di."dispatchId"
+                WHERE d."rentalOrderId" = ${rentalOrderId}
+                  AND d."status" <> 'CANCELLED'
+                  AND d."id" <> ${excludeDispatchId}
+                GROUP BY di."rentalOrderItemId", di."productId"
+              `;
+
+        return toClaimedSourceQuantityMaps(rows);
+      },
+      { model: MODEL, operation: "sumClaimedSourceQuantitiesByRentalOrderId" },
+    );
+  }
+
+  existsNonCancelledDispatchByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<boolean> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ exists: boolean }>>`
+          SELECT EXISTS(
+            SELECT 1
+            FROM "dispatches" d
+            WHERE d."rentalOrderId" = ${rentalOrderId}
+              AND d."status" <> 'CANCELLED'
+          ) AS "exists"
+        `;
+
+        return rows[0]?.exists === true;
+      },
+      { model: MODEL, operation: "existsNonCancelledDispatchByRentalOrderId" },
+    );
+  }
+
+  findCompletedDispatchesByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<Dispatch[]> {
+    return this.runner.run(
+      async (db) => {
+        const records = await db.dispatch.findMany({
+          where: {
+            rentalOrderId,
+            status: "COMPLETED",
+          },
+          include: DISPATCH_INCLUDE,
+        });
+
+        return records.map(toDispatchDomain);
+      },
+      { model: MODEL, operation: "findCompletedDispatchesByRentalOrderId" },
+    );
   }
 
   create(data: CreateDispatchData): Promise<Dispatch> {

@@ -14,6 +14,8 @@ import type {
 import type { RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
+import { acquireDispatchClaimLock } from "@/modules/dispatch/infrastructure/dispatch-claim-lock";
+
 import { buildRentalOrderEntity } from "./rental-order.fixtures";
 
 interface StoredRentalOrder {
@@ -334,6 +336,14 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     }
 
     return this.updateStatus(id, next);
+  }
+
+  async lockForDispatchClaim(id: RentalOrderId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Rental order not found");
+    }
+
+    await acquireDispatchClaimLock(id);
   }
 
   count(): number {

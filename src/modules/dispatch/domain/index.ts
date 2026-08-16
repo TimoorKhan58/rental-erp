@@ -20,8 +20,10 @@ export {
 } from "./dispatch.errors";
 export type { DispatchListQuery } from "./dispatch-list.query";
 export type {
+  DispatchClaimedSourceQuantities,
   IDispatchRepository,
   IDispatchRentalOrderLookup,
+  SumClaimedSourceQuantitiesOptions,
 } from "./dispatch.repository.interface";
 export {
   assertCanCancel,
@@ -31,6 +33,7 @@ export {
   assertRentalOrderEligibleForDispatch,
   sumClaimedDispatchQuantitiesByRentalOrderItem,
   sumClaimedSourceDispatchQuantitiesByRentalOrderItem,
+  toClaimedSourceQuantityMaps,
   validateDispatchItems,
   validateDispatchItemsAgainstRentalOrder,
   type DispatchQuantityClaimSource,

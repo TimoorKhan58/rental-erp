@@ -1,12 +1,17 @@
 import { Dispatch } from "@/modules/dispatch/domain/dispatch.entity";
 import type { DispatchListQuery } from "@/modules/dispatch/domain/dispatch-list.query";
-import type { IDispatchRepository } from "@/modules/dispatch/domain/dispatch.repository.interface";
+import type {
+  DispatchClaimedSourceQuantities,
+  IDispatchRepository,
+  SumClaimedSourceQuantitiesOptions,
+} from "@/modules/dispatch/domain/dispatch.repository.interface";
 import type {
   CreateDispatchData,
   UpdateDispatchData,
 } from "@/modules/dispatch/domain/dispatch.types";
+import { toClaimedSourceQuantityMaps } from "@/modules/dispatch/domain/dispatch.rules";
 import { validateDispatchItems } from "@/modules/dispatch/domain/dispatch.rules";
-import type { DispatchId } from "@/shared/domain/ids";
+import type { DispatchId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { buildDispatchEntity } from "./dispatch.fixtures";
@@ -113,6 +118,103 @@ export class InMemoryDispatchRepository implements IDispatchRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  async sumClaimedSourceQuantitiesByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+    options?: SumClaimedSourceQuantitiesOptions,
+  ): Promise<DispatchClaimedSourceQuantities> {
+    const rows: Array<{
+      rentalOrderItemId: string | null;
+      productId: string;
+      ownedClaimed: number;
+      externalClaimed: number;
+    }> = [];
+
+    const aggregate = new Map<
+      string,
+      { rentalOrderItemId: string | null; productId: string; owned: number; external: number }
+    >();
+
+    for (const stored of this.store.values()) {
+      const dispatch = stored.record;
+
+      if (dispatch.rentalOrderId !== rentalOrderId) {
+        continue;
+      }
+
+      if (dispatch.status === "CANCELLED") {
+        continue;
+      }
+
+      if (
+        options?.excludeDispatchId !== undefined &&
+        dispatch.id === options.excludeDispatchId
+      ) {
+        continue;
+      }
+
+      for (const item of dispatch.items) {
+        const key = `${item.rentalOrderItemId ?? ""}:${item.productId}`;
+        const ownedQty =
+          item.ownedQuantity === null || item.ownedQuantity === undefined
+            ? item.quantity
+            : item.ownedQuantity;
+        const externalQty =
+          item.externalQuantity === null || item.externalQuantity === undefined
+            ? 0
+            : item.externalQuantity;
+
+        const current = aggregate.get(key) ?? {
+          rentalOrderItemId: item.rentalOrderItemId,
+          productId: item.productId,
+          owned: 0,
+          external: 0,
+        };
+
+        current.owned += ownedQty;
+        current.external += externalQty;
+        aggregate.set(key, current);
+      }
+    }
+
+    for (const value of aggregate.values()) {
+      rows.push({
+        rentalOrderItemId: value.rentalOrderItemId,
+        productId: value.productId,
+        ownedClaimed: value.owned,
+        externalClaimed: value.external,
+      });
+    }
+
+    return toClaimedSourceQuantityMaps(rows);
+  }
+
+  async existsNonCancelledDispatchByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<boolean> {
+    for (const stored of this.store.values()) {
+      if (
+        stored.record.rentalOrderId === rentalOrderId &&
+        stored.record.status !== "CANCELLED"
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  async findCompletedDispatchesByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<Dispatch[]> {
+    return Array.from(this.store.values())
+      .filter(
+        (stored) =>
+          stored.record.rentalOrderId === rentalOrderId &&
+          stored.record.status === "COMPLETED",
+      )
+      .map((stored) => Dispatch.reconstitute(stored.record));
   }
 
   async create(data: CreateDispatchData): Promise<Dispatch> {

@@ -8,10 +8,40 @@ import type {
   UpdateDispatchData,
 } from "./dispatch.types";
 
+/** Phase 30 Rollup A — derived owned/external claimed qty per RO line. */
+export interface DispatchClaimedSourceQuantities {
+  readonly owned: ReadonlyMap<string, number>;
+  readonly external: ReadonlyMap<string, number>;
+}
+
+export interface SumClaimedSourceQuantitiesOptions {
+  readonly excludeDispatchId?: DispatchId;
+}
+
 export interface IDispatchRepository {
   findById(id: DispatchId): Promise<Dispatch | null>;
   findByDispatchNumber(dispatchNumber: string): Promise<Dispatch | null>;
   findPaged(query: DispatchListQuery): Promise<PaginatedResult<Dispatch>>;
+  /**
+   * Phase 30 (F-05): exact SQL aggregate of Rollup A claimed quantities for a
+   * rental order. Must not use list pagination caps.
+   */
+  sumClaimedSourceQuantitiesByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+    options?: SumClaimedSourceQuantitiesOptions,
+  ): Promise<DispatchClaimedSourceQuantities>;
+  /**
+   * Phase 30 (F-30-05): true when any non-CANCELLED dispatch exists for the order.
+   */
+  existsNonCancelledDispatchByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<boolean>;
+  /**
+   * Phase 30 (F-30-06): unbounded COMPLETED dispatches for return-sync Rollup B.
+   */
+  findCompletedDispatchesByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<Dispatch[]>;
   create(data: CreateDispatchData): Promise<Dispatch>;
   update(id: DispatchId, data: UpdateDispatchData): Promise<Dispatch>;
   updateStatus(

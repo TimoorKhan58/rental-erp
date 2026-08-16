@@ -1,7 +1,6 @@
 import {
   DispatchInvalidStatusError,
   DispatchInvariantError,
-  sumClaimedSourceDispatchQuantitiesByRentalOrderItem,
   validateDispatchItems,
 } from "@/modules/dispatch/domain";
 import type { ExternalRentalAgreement } from "@/modules/external-rental/domain";
@@ -33,7 +32,7 @@ import type { IDispatchTransactionRunner } from "./dispatch-transaction.runner";
 
 function buildExternalRemainingByItem(
   agreement: ExternalRentalAgreement | null,
-  claimedExternal: Map<string, number>,
+  claimedExternal: ReadonlyMap<string, number>,
 ): Map<string, number> {
   const remaining = new Map<string, number>();
 
@@ -126,16 +125,13 @@ export class UpdateDispatchService {
             });
           }
 
-          const existingForOrder = await dispatchRepository.findPaged({
-            page: 1,
-            pageSize: 100,
-            sortOrder: "desc",
-            rentalOrderId: rentalOrder.id,
-          });
-          const claimedSources = sumClaimedSourceDispatchQuantitiesByRentalOrderItem(
-            existingForOrder.items,
-            { excludeDispatchId: existing.id },
-          );
+          await rentalOrderRepository.lockForDispatchClaim(rentalOrder.id);
+
+          const claimedSources =
+            await dispatchRepository.sumClaimedSourceQuantitiesByRentalOrderId(
+              rentalOrder.id,
+              { excludeDispatchId: existing.id },
+            );
           const agreement = await externalRentalRepository.findActiveByRentalOrderId(
             rentalOrder.id,
           );
@@ -147,7 +143,7 @@ export class UpdateDispatchService {
           const resolvedItems = validateRentalOrderForDispatch(
             rentalOrder,
             updateData.items,
-            claimedSources.owned,
+            new Map(claimedSources.owned),
             externalRemaining,
           );
 
