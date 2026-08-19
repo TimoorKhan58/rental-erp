@@ -3,6 +3,7 @@ import { MaintenanceInvalidStatusError } from "@/modules/maintenance/domain";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
@@ -89,6 +90,24 @@ export class StartMaintenanceService {
 
         const previousValues = toMaintenanceAuditValues(existing);
 
+        const claimed = await maintenanceRepository.claimStatusTransition(
+          existing.id,
+          "SCHEDULED",
+          {
+            status: started.status,
+            startedAt: started.startedAt,
+          },
+        );
+
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: MAINTENANCE_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "SCHEDULED",
+            action: "start",
+          });
+        }
+
         await executeCreateStockMovementInScope(
           {
             stockMovementRepository,
@@ -106,22 +125,17 @@ export class StartMaintenanceService {
           },
         );
 
-        const updated = await maintenanceRepository.updateStatus(existing.id, {
-          status: started.status,
-          startedAt: started.startedAt,
-        });
-
         await auditLogger.log({
           module: MAINTENANCE_MODULE,
           entityName: MAINTENANCE_ENTITY_NAME,
-          recordId: updated.id,
+          recordId: claimed.id,
           action: "UPDATE",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toMaintenanceAuditValues(updated),
+          newValues: toMaintenanceAuditValues(claimed),
         });
 
-        return toMaintenanceDto(updated);
+        return toMaintenanceDto(claimed);
       },
     );
   }

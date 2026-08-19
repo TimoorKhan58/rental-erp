@@ -1,5 +1,7 @@
 import type { RentalOrderWriteScope } from "@/modules/rental-order/application/services/rental-order-transaction.runner";
 import type { IRentalOrderTransactionRunner } from "@/modules/rental-order/application/services/rental-order-transaction.runner";
+import { runWithAvailabilityCommitLockScope } from "@/modules/inventory/infrastructure/availability-commit-lock";
+import { runWithReserveCommandLockScope } from "@/modules/rental-order/infrastructure/reserve-command-lock";
 import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
 import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
@@ -14,7 +16,10 @@ export function createPassThroughTransactionRunner(
   scope: RentalOrderWriteScope,
 ): IRentalOrderTransactionRunner {
   return {
-    run: (operation) => operation(scope),
+    run: (operation) =>
+      runWithAvailabilityCommitLockScope(() =>
+        runWithReserveCommandLockScope(() => operation(scope)),
+      ),
   };
 }
 
@@ -37,16 +42,20 @@ export function createRollbackTransactionRunner(
       const externalSnapshot = externalRentalRepository.snapshot();
 
       try {
-        return await operation({
-          rentalOrderRepository,
-          inventoryRepository,
-          stockMovementRepository,
-          dispatchRepository,
-          externalRentalRepository,
-          auditLogger,
-          ...mockNotificationWriteScopeDeps,
-          userId,
-        });
+        return await runWithAvailabilityCommitLockScope(() =>
+          runWithReserveCommandLockScope(() =>
+            operation({
+              rentalOrderRepository,
+              inventoryRepository,
+              stockMovementRepository,
+              dispatchRepository,
+              externalRentalRepository,
+              auditLogger,
+              ...mockNotificationWriteScopeDeps,
+              userId,
+            }),
+          ),
+        );
       } catch (error) {
         rentalOrderRepository.restore(rentalOrderSnapshot);
         inventoryRepository.restore(inventorySnapshot);

@@ -3,6 +3,7 @@ import { RepairInvalidStatusError } from "@/modules/repair/domain";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
@@ -70,8 +71,6 @@ export class CompleteRepairService {
           throw error;
         }
 
-        const previousValues = toRepairAuditValues(existing);
-
         const inventory = await inventoryRepository.findByProductAndWarehouse(
           toProductId(existing.productId),
           existing.warehouseId,
@@ -84,6 +83,26 @@ export class CompleteRepairService {
               productId: existing.productId,
               warehouseId: existing.warehouseId,
             },
+          });
+        }
+
+        const previousValues = toRepairAuditValues(existing);
+
+        const claimed = await repairRepository.claimStatusTransition(
+          existing.id,
+          "IN_PROGRESS",
+          {
+            status: completed.status,
+            completedAt: completed.completedAt,
+          },
+        );
+
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: REPAIR_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "IN_PROGRESS",
+            action: "complete",
           });
         }
 
@@ -104,22 +123,17 @@ export class CompleteRepairService {
           },
         );
 
-        const updated = await repairRepository.updateStatus(existing.id, {
-          status: completed.status,
-          completedAt: completed.completedAt,
-        });
-
         await auditLogger.log({
           module: REPAIR_MODULE,
           entityName: REPAIR_ENTITY_NAME,
-          recordId: updated.id,
+          recordId: claimed.id,
           action: "UPDATE",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toRepairAuditValues(updated),
+          newValues: toRepairAuditValues(claimed),
         });
 
-        return toRepairDto(updated);
+        return toRepairDto(claimed);
       },
     );
   }

@@ -198,4 +198,44 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
       { model: MODEL, operation: "updateStatus" },
     ).then(toMaintenanceDomain);
   }
+
+  claimStatusTransition(
+    id: MaintenanceId,
+    expected: Maintenance["status"] | ReadonlyArray<Maintenance["status"]>,
+    data: UpdateMaintenanceStatusData,
+  ): Promise<Maintenance | null> {
+    return this.runner.run(
+      async (db) => {
+        const update: Prisma.MaintenanceUpdateManyMutationInput = {
+          status: data.status,
+        };
+
+        if (data.startedAt !== undefined) {
+          update.startedAt = data.startedAt;
+        }
+
+        if (data.completedAt !== undefined) {
+          update.completedAt = data.completedAt;
+        }
+
+        const expectedList = Array.isArray(expected) ? [...expected] : [expected];
+
+        const claimed = await db.maintenance.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data: update,
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.maintenance.findUnique({ where: { id } });
+        return record === null ? null : toMaintenanceDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
 }

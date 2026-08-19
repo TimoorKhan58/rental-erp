@@ -21,4 +21,15 @@ export interface IMaintenanceRepository {
     id: MaintenanceId,
     data: UpdateMaintenanceStatusData,
   ): Promise<Maintenance>;
+  /**
+   * Phase 33 (F-30-07): atomically claims a status transition using an
+   * expected-status predicate. Returns the updated maintenance on success,
+   * or null when zero rows match. Callers translate null into
+   * ConcurrentUpdateError (HTTP 409) before any stock side effects.
+   */
+  claimStatusTransition(
+    id: MaintenanceId,
+    expected: Maintenance["status"] | ReadonlyArray<Maintenance["status"]>,
+    data: UpdateMaintenanceStatusData,
+  ): Promise<Maintenance | null>;
 }

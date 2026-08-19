@@ -9,7 +9,7 @@ import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/renta
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { parseRequest } from "@/shared/application/validation";
-import type { RentalOrderId } from "@/shared/domain/ids";
+import type { RentalOrderId, InventoryId } from "@/shared/domain/ids";
 import {
   NotFoundError,
   UnauthorizedError,
@@ -131,7 +131,7 @@ export class CancelRentalOrderService {
         }
 
         const releaseTargets: Array<{
-          inventoryId: string;
+          inventoryId: InventoryId;
           quantity: number;
         }> = [];
 
@@ -161,6 +161,10 @@ export class CancelRentalOrderService {
         releaseTargets.sort((left, right) =>
           left.inventoryId.localeCompare(right.inventoryId),
         );
+
+        for (const target of releaseTargets) {
+          await inventoryRepository.lockForAvailabilityCommit(target.inventoryId);
+        }
 
         for (const target of releaseTargets) {
           await executeCreateStockMovementInScope(

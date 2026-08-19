@@ -82,5 +82,10 @@ export interface IInventoryRepository {
     id: InventoryId,
     signedDelta: number,
   ): Promise<Inventory | null>;
+  /**
+   * Phase 31 (F-31-01): acquires a PostgreSQL row lock on the inventory row
+   * so competing F-02 date-aware reservations serialize on shared capacity.
+   */
+  lockForAvailabilityCommit(id: InventoryId): Promise<void>;
   delete(id: InventoryId): Promise<void>;
 }

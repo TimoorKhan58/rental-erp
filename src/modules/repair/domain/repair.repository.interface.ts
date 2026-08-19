@@ -17,4 +17,15 @@ export interface IRepairRepository {
   create(data: CreateRepairData): Promise<Repair>;
   update(id: RepairId, data: UpdateRepairData): Promise<Repair>;
   updateStatus(id: RepairId, data: UpdateRepairStatusData): Promise<Repair>;
+  /**
+   * Phase 33 (F-30-07): atomically claims a status transition using an
+   * expected-status predicate. Returns the updated repair on success,
+   * or null when zero rows match. Callers translate null into
+   * ConcurrentUpdateError (HTTP 409) before any stock side effects.
+   */
+  claimStatusTransition(
+    id: RepairId,
+    expected: Repair["status"] | ReadonlyArray<Repair["status"]>,
+    data: UpdateRepairStatusData,
+  ): Promise<Repair | null>;
 }

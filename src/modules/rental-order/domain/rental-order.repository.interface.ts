@@ -66,4 +66,9 @@ export interface IRentalOrderRepository {
    * rental order. Must run inside the existing UoW before Rollup A is read.
    */
   lockForDispatchClaim(id: RentalOrderId): Promise<void>;
+  /**
+   * Phase 32 (F-32-01): serializes same-order reserve commands on the parent
+   * rental order row. Must run after inventory availability locks.
+   */
+  lockForReserveCommand(id: RentalOrderId): Promise<void>;
 }

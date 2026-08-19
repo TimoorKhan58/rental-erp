@@ -196,6 +196,25 @@ export class InMemoryRepairRepository implements IRepairRepository {
     return updated;
   }
 
+  async claimStatusTransition(
+    id: RepairId,
+    expected: Repair["status"] | ReadonlyArray<Repair["status"]>,
+    data: UpdateRepairStatusData,
+  ): Promise<Repair | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, data);
+  }
+
   count(): number {
     return this.store.size;
   }

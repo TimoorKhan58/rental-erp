@@ -499,6 +499,24 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     );
   }
 
+  /**
+   * Phase 31 (F-31-01): row-level lock for F-02 date-aware reservation serialization.
+   */
+  lockForAvailabilityCommit(id: InventoryId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "inventory" WHERE id = ${id} FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Inventory not found");
+        }
+      },
+      { model: MODEL, operation: "lockForAvailabilityCommit" },
+    );
+  }
+
   delete(id: InventoryId): Promise<void> {
     return repositoryDelete(
       this.runner,

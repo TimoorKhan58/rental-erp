@@ -1,6 +1,7 @@
 import { RepairInvalidStatusError } from "@/modules/repair/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -55,22 +56,36 @@ export class StartRepairService {
       }
 
       const previousValues = toRepairAuditValues(existing);
-      const updated = await repairRepository.updateStatus(existing.id, {
-        status: started.status,
-        startedAt: started.startedAt,
-      });
+
+      const claimed = await repairRepository.claimStatusTransition(
+        existing.id,
+        "PENDING",
+        {
+          status: started.status,
+          startedAt: started.startedAt,
+        },
+      );
+
+      if (claimed === null) {
+        throw new ConcurrentUpdateError({
+          entity: REPAIR_ENTITY_NAME,
+          id: existing.id,
+          expectedStatus: "PENDING",
+          action: "start",
+        });
+      }
 
       await auditLogger.log({
         module: REPAIR_MODULE,
         entityName: REPAIR_ENTITY_NAME,
-        recordId: updated.id,
+        recordId: claimed.id,
         action: "UPDATE",
         status: "SUCCESS",
         oldValues: previousValues,
-        newValues: toRepairAuditValues(updated),
+        newValues: toRepairAuditValues(claimed),
       });
 
-      return toRepairDto(updated);
+      return toRepairDto(claimed);
     });
   }
 }

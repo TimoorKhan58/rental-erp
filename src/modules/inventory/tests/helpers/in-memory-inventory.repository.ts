@@ -8,6 +8,8 @@ import type {
 import type { InventoryId, ProductId, WarehouseId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
+import { acquireAvailabilityCommitLock } from "@/modules/inventory/infrastructure/availability-commit-lock";
+
 import { buildInventoryEntity } from "./inventory.fixtures";
 
 interface StoredInventory {
@@ -332,6 +334,14 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
 
     this.store.set(id, { record: updated.toProps() });
     return updated;
+  }
+
+  async lockForAvailabilityCommit(id: InventoryId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Inventory not found");
+    }
+
+    await acquireAvailabilityCommitLock(id);
   }
 
   async delete(id: InventoryId): Promise<void> {

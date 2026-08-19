@@ -15,6 +15,7 @@ import type { RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { acquireDispatchClaimLock } from "@/modules/dispatch/infrastructure/dispatch-claim-lock";
+import { acquireReserveCommandLock } from "@/modules/rental-order/infrastructure/reserve-command-lock";
 
 import { buildRentalOrderEntity } from "./rental-order.fixtures";
 
@@ -77,19 +78,61 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     params: FindAvailabilityCommitmentLinesParams,
   ): Promise<AvailabilityCommitmentLineProjection[]> {
     const allowed = new Set<string>(AVAILABILITY_COMMITMENT_STATUSES);
+    const storeOrderIds = new Set(this.store.keys());
 
-    return Promise.resolve(
-      this.availabilityLines
-        .filter(
-          (line) =>
-            line.productId === params.productId &&
-            line.warehouseId === params.warehouseId &&
-            allowed.has(line.status) &&
-            (params.excludeRentalOrderId === undefined ||
-              line.rentalOrderId !== params.excludeRentalOrderId),
-        )
-        .map((line) => structuredClone(line)),
-    );
+    const fromStore: AvailabilityCommitmentLineProjection[] = [];
+
+    for (const stored of this.store.values()) {
+      const order = stored.record;
+
+      if (!allowed.has(order.status)) {
+        continue;
+      }
+
+      if (order.warehouseId !== params.warehouseId) {
+        continue;
+      }
+
+      if (
+        params.excludeRentalOrderId !== undefined &&
+        order.id === params.excludeRentalOrderId
+      ) {
+        continue;
+      }
+
+      for (const item of order.items) {
+        if (item.productId !== params.productId) {
+          continue;
+        }
+
+        fromStore.push({
+          rentalOrderItemId: item.id,
+          rentalOrderId: order.id,
+          productId: item.productId,
+          warehouseId: order.warehouseId,
+          status: order.status,
+          reservedQuantity: item.reservedQuantity,
+          eventStartDate: item.startDate,
+          eventEndDate: item.endDate,
+          dispatches: [],
+          returns: [],
+        });
+      }
+    }
+
+    const fromSeed = this.availabilityLines
+      .filter(
+        (line) =>
+          line.productId === params.productId &&
+          line.warehouseId === params.warehouseId &&
+          allowed.has(line.status) &&
+          (params.excludeRentalOrderId === undefined ||
+            line.rentalOrderId !== params.excludeRentalOrderId) &&
+          !storeOrderIds.has(line.rentalOrderId),
+      )
+      .map((line) => structuredClone(line));
+
+    return Promise.resolve([...fromStore, ...fromSeed]);
   }
 
   async findPaged(
@@ -344,6 +387,14 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     }
 
     await acquireDispatchClaimLock(id);
+  }
+
+  async lockForReserveCommand(id: RentalOrderId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Rental order not found");
+    }
+
+    await acquireReserveCommandLock(id);
   }
 
   count(): number {
