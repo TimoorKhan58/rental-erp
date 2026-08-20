@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { ROUTES } from "@/config/routes";
 import { useCreateReturn } from "../hooks";
@@ -10,7 +10,10 @@ import type { CreateReturnFormValues } from "../schemas";
 
 export function ReturnCreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const createMutation = useCreateReturn();
+  const rentalOrderId = searchParams.get("rentalOrderId") ?? undefined;
+  const dispatchId = searchParams.get("dispatchId") ?? undefined;
 
   const handleSubmit = async (values: CreateReturnFormValues) => {
     const returnRecord = await createMutation.mutateAsync(toCreateReturnPayload(values));
@@ -31,6 +34,14 @@ export function ReturnCreatePage() {
 
       <ReturnForm
         mode="create"
+        defaultValues={
+          rentalOrderId || dispatchId
+            ? {
+                rentalOrderId: rentalOrderId ?? "",
+                dispatchId: dispatchId ?? "",
+              }
+            : undefined
+        }
         onSubmit={handleSubmit}
         onCancel={() => router.push(ROUTES.returns)}
         isSubmitting={createMutation.isPending}

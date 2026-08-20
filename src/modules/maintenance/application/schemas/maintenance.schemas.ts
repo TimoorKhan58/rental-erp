@@ -62,16 +62,34 @@ export const ListMaintenancesSchema = PaginationSchema.extend({
   productId: UUIDSchema.optional(),
   warehouseId: UUIDSchema.optional(),
   inventoryId: UUIDSchema.optional(),
+  serviceType: z.enum(MAINTENANCE_SERVICE_TYPES).optional(),
+  scheduledDateFrom: DateSchema.optional(),
+  scheduledDateTo: DateSchema.optional(),
+  technician: TrimmedStringSchema.max(100).optional(),
   sortBy: z.enum(MAINTENANCE_SORT_FIELDS).optional(),
-}).superRefine((value, ctx) => {
-  if (value.search !== undefined && value.search.length > 200) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Search term must not exceed 200 characters",
-      path: ["search"],
-    });
-  }
-});
+})
+  .superRefine((value, ctx) => {
+    if (value.search !== undefined && value.search.length > 200) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Search term must not exceed 200 characters",
+        path: ["search"],
+      });
+    }
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.scheduledDateFrom !== undefined &&
+      value.scheduledDateTo !== undefined &&
+      value.scheduledDateFrom > value.scheduledDateTo
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "scheduledDateFrom must be on or before scheduledDateTo",
+        path: ["scheduledDateTo"],
+      });
+    }
+  });
 
 export type CreateMaintenanceInput = z.infer<typeof CreateMaintenanceSchema>;
 export type UpdateMaintenanceInput = z.infer<typeof UpdateMaintenanceSchema>;

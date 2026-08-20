@@ -52,6 +52,13 @@ function mapPurchaseOrderFilter(
     where.warehouseId = String(filter.warehouseId);
   }
 
+  if (filter.orderDateFrom !== undefined || filter.orderDateTo !== undefined) {
+    where.orderDate = {
+      ...(filter.orderDateFrom !== undefined ? { gte: filter.orderDateFrom as Date } : {}),
+      ...(filter.orderDateTo !== undefined ? { lte: filter.orderDateTo as Date } : {}),
+    };
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 

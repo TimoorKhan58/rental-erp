@@ -10,4 +10,7 @@ export interface DispatchListQuery {
   search?: string;
   status?: DispatchStatus;
   rentalOrderId?: RentalOrderId;
+  warehouseId?: string;
+  dispatchDateFrom?: Date;
+  dispatchDateTo?: Date;
 }

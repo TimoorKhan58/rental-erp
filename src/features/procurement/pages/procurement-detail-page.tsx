@@ -11,8 +11,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard, MetricCard } from "@/components/design-system/card";
+import { SectionCard, MetricCard } from "@/components/design-system/card";
 import { SupplierPaymentsSection } from "../components/supplier-payments-section";
+import { ProcurementInventoryImpactSection } from "../components/procurement-inventory-impact-section";
+import {
+  ProcurementAccountingSection,
+  ProcurementAuditSection,
+} from "../components/procurement-detail-sections";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
@@ -32,6 +37,7 @@ import {
   useProcurement,
   useProcurementFilterOptions,
   useProcurementPermissions,
+  useProcurementRelatedData,
 } from "../hooks";
 import { ProcurementStatusBadge } from "../components/procurement-status-badge";
 import { ProcurementStatusTimeline } from "../components/procurement-status-timeline";
@@ -73,6 +79,7 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
     useProcurementFilterOptions();
   const { data: supplier } = useSupplier(procurement?.supplierId ?? "");
   const { data: warehouse } = useWarehouse(procurement?.warehouseId ?? "");
+  const relatedData = useProcurementRelatedData(procurement);
 
   const [approveOpen, setApproveOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
@@ -110,7 +117,7 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
     );
   }
 
-  const orderTotal = calculateOrderTotal(procurement.items);
+  const orderTotal = procurement.orderTotal;
   const totalReceived = procurement.items.reduce(
     (sum, item) => sum + item.receivedQuantity,
     0,
@@ -174,17 +181,14 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <MetricCard label="Order total" value={formatCurrency(orderTotal)} />
+        <MetricCard label="Paid" value={formatCurrency(procurement.paidAmount)} />
+        <MetricCard label="Balance" value={formatCurrency(procurement.balance)} />
         <MetricCard
           label="Received"
           value={`${totalReceived} / ${totalOrdered}`}
           hint="Units received vs ordered"
-        />
-        <MetricCard
-          label="Line items"
-          value={procurement.items.length}
-          hint="Products on this order"
         />
         <MetricCard
           label="Status"
@@ -264,7 +268,12 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
                   {procurement.items.map((item) => (
                     <tr key={item.id} className="border-b last:border-b-0">
                       <td className="px-3 py-2">
-                        {productLabelById.get(item.productId) ?? item.productId}
+                        <Link
+                          href={ROUTES.productDetail(item.productId)}
+                          className="text-primary hover:underline"
+                        >
+                          {productLabelById.get(item.productId) ?? item.productId}
+                        </Link>
                       </td>
                       <td className="px-3 py-2">{item.quantity}</td>
                       <td className="px-3 py-2">{item.receivedQuantity}</td>
@@ -290,15 +299,9 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
             </div>
           </SectionCard>
 
-          <EmptyCard
-            title="Inventory impact"
-            description="Inventory posting details will appear here when stock movement integration is connected."
-          />
+          <ProcurementInventoryImpactSection procurement={procurement} />
 
-          <EmptyCard
-            title="Accounting entries"
-            description="Journal entries will appear here when the accounting module is connected."
-          />
+          <ProcurementAccountingSection />
         </div>
 
         <div className="space-y-6">
@@ -328,9 +331,12 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
 
           <SupplierPaymentsSection procurement={procurement} />
 
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
+          <ProcurementAuditSection
+            procurementId={procurement.id}
+            auditLogs={relatedData.auditLogs}
+            auditTotal={relatedData.auditTotal}
+            canReadAudit={relatedData.permissions.canReadAudit}
+            isLoading={relatedData.isLoading}
           />
         </div>
       </div>

@@ -56,6 +56,22 @@ function mapRepairFilter(
     where.warehouseId = String(filter.warehouseId);
   }
 
+  if (filter.repairDateFrom !== undefined || filter.repairDateTo !== undefined) {
+    where.repairDate = {
+      ...(filter.repairDateFrom !== undefined
+        ? { gte: filter.repairDateFrom as Date }
+        : {}),
+      ...(filter.repairDateTo !== undefined ? { lte: filter.repairDateTo as Date } : {}),
+    };
+  }
+
+  if (filter.technician !== undefined) {
+    const technician = String(filter.technician).trim();
+    if (technician.length > 0) {
+      where.assignedTo = { contains: technician, mode: "insensitive" };
+    }
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -135,6 +151,18 @@ export class PrismaRepairRepository implements IRepairRepository {
 
     if (query.warehouseId !== undefined) {
       filter.warehouseId = query.warehouseId;
+    }
+
+    if (query.repairDateFrom !== undefined) {
+      filter.repairDateFrom = query.repairDateFrom;
+    }
+
+    if (query.repairDateTo !== undefined) {
+      filter.repairDateTo = query.repairDateTo;
+    }
+
+    if (query.technician !== undefined) {
+      filter.technician = query.technician;
     }
 
     return runRepositoryPagedQuery(

@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesDispatchDateRange } from "../mappers";
 import { DispatchStatusFilterChips } from "../components";
 import {
   useDispatchFilterOptions,
@@ -41,7 +40,6 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
   const queryClient = useQueryClient();
   const {
     params,
-    warehouseId,
     dispatchDateFrom,
     dispatchDateTo,
     localSearch,
@@ -79,25 +77,7 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-
-    return items.filter((item) => {
-      const matchesWarehouse =
-        !warehouseId || rentalOrderWarehouseById.get(item.rentalOrderId) === warehouseId;
-
-      return (
-        matchesWarehouse &&
-        matchesDispatchDateRange(item.dispatchDate, dispatchDateFrom, dispatchDateTo)
-      );
-    });
-  }, [
-    data?.items,
-    warehouseId,
-    dispatchDateFrom,
-    dispatchDateTo,
-    rentalOrderWarehouseById,
-  ]);
+  const rows = useMemo(() => data?.items ?? [], [data?.items]);
 
   const statusFilterValue = params.status ?? "all";
 
@@ -125,9 +105,9 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     Boolean(params.search) ||
     Boolean(params.rentalOrderId) ||
     Boolean(params.status) ||
-    Boolean(warehouseId) ||
-    Boolean(dispatchDateFrom) ||
-    Boolean(dispatchDateTo);
+    Boolean(params.warehouseId) ||
+    Boolean(params.dispatchDateFrom) ||
+    Boolean(params.dispatchDateTo);
 
   if (isError) {
     return (
@@ -194,7 +174,7 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
             </Select>
 
             <Select
-              value={warehouseId ?? "all"}
+              value={params.warehouseId ?? "all"}
               onValueChange={(value) => {
                 if (!value || value === "all") {
                   setWarehouseFilter(undefined);

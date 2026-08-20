@@ -288,6 +288,7 @@ export function useAdjustInventory() {
         queryClient.invalidateQueries({
           queryKey: queryKeys.inventory.detail(data.inventoryId),
         }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
   });

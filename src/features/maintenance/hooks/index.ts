@@ -1,4 +1,5 @@
 export { useMaintenanceListParams } from "./use-maintenance-list-params";
+export { useMaintenanceRelatedData } from "./use-maintenance-related-data";
 export {
   useCancelMaintenance,
   useCompleteMaintenance,

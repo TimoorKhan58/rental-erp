@@ -47,6 +47,8 @@ import { RentalReservationBadge } from "../components/rental-reservation-badge";
 import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
 import { RentalOrderLineItemsTable } from "../components/rental-order-line-items-table";
 import { RentalOrderShortfallSection } from "../components/rental-order-shortfall-section";
+import { RentalOrderDispatchesSection } from "@/features/dispatch/components";
+import { RentalOrderReturnsSection } from "@/features/return/components";
 import { CancelRentalOrderDialog } from "../dialogs/cancel-rental-order-dialog";
 import { ConfirmRentalOrderDialog } from "../dialogs/confirm-rental-order-dialog";
 import { ReserveRentalOrderDialog } from "../dialogs/reserve-rental-order-dialog";
@@ -357,6 +359,10 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
               productLabelById={productLabelById}
             />
           ) : null}
+
+          <RentalOrderDispatchesSection rentalOrderId={order.id} orderStatus={order.status} />
+
+          <RentalOrderReturnsSection rentalOrderId={order.id} orderStatus={order.status} />
 
           <RelatedEntityCard
             title="Customer"

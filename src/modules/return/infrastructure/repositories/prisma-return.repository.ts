@@ -53,6 +53,15 @@ function mapReturnFilter(
     where.dispatchId = String(filter.dispatchId);
   }
 
+  if (filter.returnDateFrom !== undefined || filter.returnDateTo !== undefined) {
+    where.inspectionDate = {
+      ...(filter.returnDateFrom !== undefined
+        ? { gte: filter.returnDateFrom as Date }
+        : {}),
+      ...(filter.returnDateTo !== undefined ? { lte: filter.returnDateTo as Date } : {}),
+    };
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -137,6 +146,14 @@ export class PrismaReturnRepository implements IReturnRepository {
 
     if (query.dispatchId !== undefined) {
       filter.dispatchId = query.dispatchId;
+    }
+
+    if (query.returnDateFrom !== undefined) {
+      filter.returnDateFrom = query.returnDateFrom;
+    }
+
+    if (query.returnDateTo !== undefined) {
+      filter.returnDateTo = query.returnDateTo;
     }
 
     return runRepositoryPagedQuery(

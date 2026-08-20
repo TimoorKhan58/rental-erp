@@ -10,6 +10,7 @@ import type {
 import {
   createPurchaseOrderSupplierPayment,
   getPurchaseOrderSupplierPayments,
+  getSupplierPayments,
   postSupplierPayment,
   voidSupplierPayment,
 } from "../services/supplier-payment.service";
@@ -53,6 +54,13 @@ export function usePurchaseOrderSupplierPayments(
     }),
     queryFn: () => getPurchaseOrderSupplierPayments(purchaseOrderId, params),
     enabled: Boolean(purchaseOrderId),
+  });
+}
+
+export function useSupplierPayments(params: ListSupplierPaymentsParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.supplierPayments.list(params),
+    queryFn: () => getSupplierPayments(params),
   });
 }
 

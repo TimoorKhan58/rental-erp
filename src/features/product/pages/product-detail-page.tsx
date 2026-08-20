@@ -9,15 +9,22 @@ import {
   UserCheckIcon,
   UserXIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import { useProduct, useProductPermissions } from "../hooks";
+import {
+  useProduct,
+  useProductCatalogOptions,
+  useProductExtendedCatalogOptions,
+  useProductPermissions,
+  useProductRelatedData,
+} from "../hooks";
 import { ProductStatusBadge } from "../components/product-status-badge";
+import { ProductDetailSections } from "../components/product-detail-sections";
 import { DeleteProductDialog } from "../dialogs/delete-product-dialog";
 import { ToggleProductStatusDialog } from "../dialogs/toggle-product-status-dialog";
 
@@ -45,8 +52,49 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
   const router = useRouter();
   const { data: product, isLoading, isError, error, refetch } = useProduct(productId);
   const { canUpdate, canDelete } = useProductPermissions();
+  const { categoryOptions, brandOptions, unitOptions } = useProductCatalogOptions();
+  const { tagNameById, attributeNameById } = useProductExtendedCatalogOptions();
+  const relatedData = useProductRelatedData(product);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+
+  const categoryName = useMemo(() => {
+    if (!product?.categoryId) {
+      return null;
+    }
+
+    return categoryOptions.find((option) => option.value === product.categoryId)?.label ?? null;
+  }, [categoryOptions, product?.categoryId]);
+
+  const brandName = useMemo(() => {
+    if (!product?.brandId) {
+      return null;
+    }
+
+    return brandOptions.find((option) => option.value === product.brandId)?.label ?? null;
+  }, [brandOptions, product?.brandId]);
+
+  const unitName = useMemo(() => {
+    if (!product?.unitId) {
+      return null;
+    }
+
+    return unitOptions.find((option) => option.value === product.unitId)?.label ?? null;
+  }, [unitOptions, product?.unitId]);
+
+  const tagNames = useMemo(
+    () => (product?.tags ?? []).map((tagId) => tagNameById.get(tagId) ?? tagId),
+    [product?.tags, tagNameById],
+  );
+
+  const attributeEntries = useMemo(
+    () =>
+      (product?.attributeValues ?? []).map((entry) => ({
+        label: attributeNameById.get(entry.attributeId) ?? entry.attributeId,
+        value: entry.value,
+      })),
+    [attributeNameById, product?.attributeValues],
+  );
 
   if (isLoading) {
     return (
@@ -167,63 +215,21 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <SectionCard title="Classification">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Category ID" value={product.categoryId} />
-              <DetailField label="Brand ID" value={product.brandId} />
-              <DetailField label="Unit ID" value={product.unitId} />
-              <DetailField
-                label="Tags"
-                value={product.tags.length > 0 ? product.tags.join(", ") : null}
-              />
-            </dl>
-          </SectionCard>
-
-          {product.specifications.length > 0 ? (
-            <SectionCard title="Specifications">
-              <dl className="grid gap-4 sm:grid-cols-2">
-                {product.specifications.map((spec) => (
-                  <DetailField key={spec.id} label={spec.key} value={spec.value} />
-                ))}
-              </dl>
-            </SectionCard>
-          ) : null}
-
-          {product.images.length > 0 ? (
-            <SectionCard title="Images">
-              <ul className="space-y-2 text-sm">
-                {product.images.map((image) => (
-                  <li key={image.id}>
-                    <a
-                      href={image.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {image.altText ?? image.url}
-                    </a>
-                    {image.isPrimary ? (
-                      <span className="ml-2 text-xs text-muted-foreground">(Primary)</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          ) : null}
-
-          <EmptyCard
-            title="Inventory summary"
-            description="Stock levels and warehouse availability will appear here when the inventory module is connected."
-          />
-
-          <EmptyCard
-            title="Procurement history"
-            description="Purchase order history will appear here when the procurement module is connected."
-          />
-
-          <EmptyCard
-            title="Rental statistics"
-            description="Rental performance metrics will appear here when rental data is connected."
+          <ProductDetailSections
+            product={product}
+            categoryName={categoryName}
+            brandName={brandName}
+            unitName={unitName}
+            tagNames={tagNames}
+            attributeEntries={attributeEntries}
+            inventoryRows={relatedData.inventoryRows}
+            inventorySummary={relatedData.inventorySummary}
+            warehouseNameById={relatedData.warehouseNameById}
+            procurementRows={relatedData.procurementRows}
+            rentalStats={relatedData.rentalStats}
+            auditLogs={relatedData.auditLogs}
+            permissions={relatedData.permissions}
+            isLoading={relatedData.isLoading}
           />
         </div>
 
@@ -235,16 +241,6 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
               <DetailField label="Last updated" value={formatDateTime(product.updatedAt)} />
             </dl>
           </SectionCard>
-
-          <EmptyCard
-            title="Warehouse availability"
-            description="Per-warehouse stock assignments will be shown when warehouse inventory APIs are connected."
-          />
-
-          <EmptyCard
-            title="Audit summary"
-            description="Audit trail details will be shown when available from the API."
-          />
         </div>
       </div>
 

@@ -87,6 +87,14 @@ export class InMemoryReturnRepository implements IReturnRepository {
       items = items.filter((item) => item.dispatchId === query.dispatchId);
     }
 
+    if (query.returnDateFrom !== undefined) {
+      items = items.filter((item) => item.returnDate >= query.returnDateFrom!);
+    }
+
+    if (query.returnDateTo !== undefined) {
+      items = items.filter((item) => item.returnDate <= query.returnDateTo!);
+    }
+
     if (query.search) {
       const term = query.search.toLowerCase();
       items = items.filter(

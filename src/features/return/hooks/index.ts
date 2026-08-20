@@ -1,4 +1,5 @@
 export { useReturnListParams } from "./use-return-list-params";
+export { useReturnRelatedData } from "./use-return-related-data";
 export {
   useCancelReturn,
   useCompleteReturn,
@@ -11,5 +12,6 @@ export {
   useReturnSummaryStats,
   useReturns,
   useReturnsByDispatch,
+  useReturnsByRentalOrder,
   useUpdateReturn,
 } from "./use-return";

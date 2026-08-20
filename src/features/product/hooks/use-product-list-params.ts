@@ -26,6 +26,9 @@ export function useProductListParams() {
         isActiveParam === null
           ? undefined
           : isActiveParam === "true",
+      categoryId: searchParams.get("categoryId") ?? undefined,
+      brandId: searchParams.get("brandId") ?? undefined,
+      tagId: searchParams.get("tagId") ?? undefined,
     };
   }, [searchParams]);
 
@@ -59,6 +62,12 @@ export function useProductListParams() {
     },
     setStatusFilter: (isActive: boolean | undefined) =>
       updateParams({ isActive, page: DEFAULT_PAGE }),
+    setCategoryFilter: (categoryId: string | undefined) =>
+      updateParams({ categoryId, page: DEFAULT_PAGE }),
+    setBrandFilter: (brandId: string | undefined) =>
+      updateParams({ brandId, page: DEFAULT_PAGE }),
+    setTagFilter: (tagId: string | undefined) =>
+      updateParams({ tagId, page: DEFAULT_PAGE }),
     setSorting: (sortBy: ProductSortField, sortOrder: ListProductsParams["sortOrder"] = "asc") =>
       updateParams({ sortBy, sortOrder }),
     refreshKey: searchParams.toString(),

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
+  Building2Icon,
   CalendarIcon,
   CheckIcon,
   ClockIcon,
@@ -17,13 +18,14 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useReturn } from "@/features/return/hooks";
+import { useUser } from "@/features/users/hooks";
 import {
   canCancelRepair,
   canCompleteRepair,
@@ -34,11 +36,18 @@ import {
   useRepair,
   useRepairFilterOptions,
   useRepairPermissions,
+  useRepairRelatedData,
 } from "../hooks";
 import { RepairAssetDetailsTable } from "../components/repair-asset-details-table";
 import { RepairStatusBadge } from "../components/repair-status-badge";
 import { RepairStatusTimeline } from "../components/repair-status-timeline";
 import { RepairWorkflowProgressBar } from "../components/repair-workflow-progress-bar";
+import {
+  RepairAccountingSection,
+  RepairAuditSection,
+  RepairInventoryImpactSection,
+  RepairMaintenanceSection,
+} from "../components/repair-detail-sections";
 import { CancelRepairDialog } from "../dialogs/cancel-repair-dialog";
 import { CompleteRepairDialog } from "../dialogs/complete-repair-dialog";
 import { StartRepairDialog } from "../dialogs/start-repair-dialog";
@@ -148,6 +157,16 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
   const { canUpdate, canStart, canComplete, canCancel } = useRepairPermissions();
   const { returnLabelById, productLabelById, warehouseLabelById } = useRepairFilterOptions();
   const { data: returnRecord } = useReturn(repair?.returnId ?? "");
+  const { data: createdByUser } = useUser(repair?.createdById ?? "");
+  const {
+    auditLogs,
+    auditTotal,
+    inventoryRecord,
+    stockMovements,
+    maintenances,
+    permissions: relatedPermissions,
+    isLoading: isRelatedLoading,
+  } = useRepairRelatedData(repair);
 
   const returnItem = returnRecord?.items.find((item) => item.id === repair?.returnItemId);
 
@@ -363,18 +382,46 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
             title="Product"
             icon={<WrenchIcon className="size-5" aria-hidden="true" />}
             iconClass="bg-info/12 text-info"
-            fields={[
-              { label: "Product", value: labels.productLabel },
-              { label: "Warehouse", value: labels.warehouseLabel },
-            ]}
+            fields={[{ label: "Product", value: labels.productLabel }]}
             href={ROUTES.productDetail(repair.productId)}
             linkLabel="View product"
           />
 
-          <EmptyCard
-            title="Maintenance linkage"
-            description="Maintenance records will appear here when the maintenance module is connected."
+          <RelatedEntityCard
+            title="Warehouse"
+            icon={<Building2Icon className="size-5" aria-hidden="true" />}
+            iconClass="bg-success-muted text-success"
+            fields={[{ label: "Warehouse", value: labels.warehouseLabel }]}
+            href={ROUTES.warehouseDetail(repair.warehouseId)}
+            linkLabel="View warehouse"
           />
+
+          <RepairMaintenanceSection
+            repair={repair}
+            maintenances={maintenances}
+            canReadMaintenance={relatedPermissions.canReadMaintenance}
+            isLoading={isRelatedLoading}
+          />
+
+          <RepairInventoryImpactSection
+            repair={repair}
+            inventoryRecord={inventoryRecord}
+            stockMovements={stockMovements}
+            canReadMovements={relatedPermissions.canReadMovements}
+            canReadInventory={relatedPermissions.canReadInventory}
+            isLoading={isRelatedLoading}
+            productLabelById={productLabelById}
+          />
+
+          <RepairAuditSection
+            repairId={repair.id}
+            auditLogs={auditLogs}
+            auditTotal={auditTotal}
+            canReadAudit={relatedPermissions.canReadAudit}
+            isLoading={isRelatedLoading}
+          />
+
+          <RepairAccountingSection />
         </div>
 
         <div className="space-y-6">
@@ -405,6 +452,11 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
                 <div>
                   <p className="font-medium">Created</p>
                   <p className="text-muted-foreground">{formatDateTime(repair.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    By{" "}
+                    {createdByUser?.name ??
+                      (repair.createdById ? `User ${repair.createdById.slice(0, 8)}…` : "—")}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3 text-sm">
@@ -416,16 +468,6 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
               </div>
             </div>
           </SectionCard>
-
-          <EmptyCard
-            title="Inventory availability"
-            description="Inventory availability details will appear here when inventory integration is connected."
-          />
-
-          <EmptyCard
-            title="Accounting entries"
-            description="Accounting impact will appear here when accounting integration is connected."
-          />
         </div>
       </div>
 

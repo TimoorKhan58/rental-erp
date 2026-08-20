@@ -104,6 +104,14 @@ export const queryKeys = {
     details: () => [...queryKeys.inventory.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.inventory.details(), id] as const,
   },
+  stockMovements: {
+    all: ["app", "stock-movements"] as const,
+    lists: () => [...queryKeys.stockMovements.all, "list"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.stockMovements.lists(), params ?? {}] as const,
+    details: () => [...queryKeys.stockMovements.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.stockMovements.details(), id] as const,
+  },
   procurement: {
     all: ["app", "procurement"] as const,
     lists: () => [...queryKeys.procurement.all, "list"] as const,

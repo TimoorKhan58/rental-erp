@@ -14,12 +14,14 @@ import {
   PencilIcon,
   TruckIcon,
   UsersIcon,
+  Building2Icon,
   XIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { RentalOrderBillingSection } from "@/features/rental-invoice/components";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { ReturnRepairFollowUpSection } from "@/features/repair/components";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +29,9 @@ import { ROUTES } from "@/config/routes";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
+import { useWarehouse } from "@/features/warehouse/hooks";
+import { useUser } from "@/features/users/hooks";
+import { useInventoryFilterOptions } from "@/features/inventory/hooks";
 import {
   canCancelReturn,
   canCompleteReturn,
@@ -41,11 +46,17 @@ import {
   useReturn,
   useReturnFilterOptions,
   useReturnPermissions,
+  useReturnRelatedData,
 } from "../hooks";
-import { ReturnStatusBadge } from "../components/return-status-badge";
-import { ReturnStatusTimeline } from "../components/return-status-timeline";
-import { ReturnWorkflowProgressBar } from "../components/return-workflow-progress-bar";
-import { ReturnLineItemsTable } from "../components/return-line-items-table";
+import {
+  ReturnAccountingSection,
+  ReturnAuditSection,
+  ReturnInventoryImpactSection,
+  ReturnStatusBadge,
+  ReturnStatusTimeline,
+  ReturnWorkflowProgressBar,
+  ReturnLineItemsTable,
+} from "../components";
 import { CancelReturnDialog } from "../dialogs/cancel-return-dialog";
 import { CompleteReturnDialog } from "../dialogs/complete-return-dialog";
 import { InspectReturnDialog } from "../dialogs/inspect-return-dialog";
@@ -158,6 +169,10 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
     useReturnFilterOptions();
   const { data: rentalOrder } = useRentalOrder(returnRecord?.rentalOrderId ?? "");
   const { data: customer } = useCustomer(rentalOrder?.customerId ?? "");
+  const { data: warehouse } = useWarehouse(rentalOrder?.warehouseId ?? "");
+  const { data: createdByUser } = useUser(returnRecord?.createdById ?? "");
+  const { productLabelById } = useInventoryFilterOptions();
+  const relatedData = useReturnRelatedData(returnRecord, rentalOrder);
 
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [inspectOpen, setInspectOpen] = useState(false);
@@ -215,6 +230,10 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
   const rentalOrderLabel =
     rentalOrder?.orderNumber ?? rentalOrderLabelById.get(returnRecord.rentalOrderId);
   const dispatchLabel = dispatchLabelById.get(returnRecord.dispatchId);
+  const warehouseName = warehouse?.name;
+  const createdByLabel =
+    createdByUser?.name ??
+    (returnRecord.createdById ? `User ${returnRecord.createdById.slice(0, 8)}…` : "—");
 
   return (
     <PageContainer className="space-y-6">
@@ -417,10 +436,30 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
             linkLabel="View customer"
           />
 
-          <EmptyCard
-            title="Follow-up workflows"
-            description="Repair requests and maintenance records will appear here when those modules are connected."
+          <ReturnRepairFollowUpSection
+            returnId={returnRecord.id}
+            returnStatus={returnRecord.status}
           />
+
+          <ReturnInventoryImpactSection
+            returnRecord={returnRecord}
+            inventoryRecords={relatedData.inventoryRecords}
+            stockMovements={relatedData.stockMovements}
+            canReadMovements={relatedData.permissions.canReadMovements}
+            canReadInventory={relatedData.permissions.canReadInventory}
+            isLoading={relatedData.isLoading}
+            productLabelById={productLabelById}
+          />
+
+          <ReturnAuditSection
+            returnId={returnRecord.id}
+            auditLogs={relatedData.auditLogs}
+            auditTotal={relatedData.auditTotal}
+            canReadAudit={relatedData.permissions.canReadAudit}
+            isLoading={relatedData.isLoading}
+          />
+
+          <ReturnAccountingSection />
         </div>
 
         <div className="space-y-6">
@@ -430,6 +469,19 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
           >
             <ReturnStatusTimeline status={returnRecord.status} />
           </SectionCard>
+
+          <RelatedEntityCard
+            title="Warehouse"
+            icon={<Building2Icon className="size-5" aria-hidden="true" />}
+            iconClass="bg-success-muted text-success"
+            fields={[
+              { label: "Name", value: warehouseName },
+              { label: "Warehouse code", value: warehouse?.warehouseCode },
+              { label: "Address", value: warehouse?.address },
+            ]}
+            href={warehouse ? ROUTES.warehouseDetail(warehouse.id) : undefined}
+            linkLabel="View warehouse"
+          />
 
           <SectionCard title="Milestones">
             <dl className="space-y-4">
@@ -455,6 +507,7 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
                 <div>
                   <p className="font-medium">Created</p>
                   <p className="text-muted-foreground">{formatDateTime(returnRecord.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground">By {createdByLabel}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 text-sm">

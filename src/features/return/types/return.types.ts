@@ -67,6 +67,8 @@ export type ListReturnsParams = {
   status?: ReturnStatus;
   rentalOrderId?: string;
   dispatchId?: string;
+  returnDateFrom?: string;
+  returnDateTo?: string;
 };
 
 export type ReturnLineItemPayload = {

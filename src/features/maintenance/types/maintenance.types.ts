@@ -63,6 +63,10 @@ export type ListMaintenancesParams = {
   productId?: string;
   warehouseId?: string;
   inventoryId?: string;
+  serviceType?: MaintenanceServiceType;
+  scheduledDateFrom?: string;
+  scheduledDateTo?: string;
+  technician?: string;
 };
 
 export type CreateMaintenancePayload = {

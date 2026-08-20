@@ -20,6 +20,8 @@ import {
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
 import {
+  useProductCatalogOptions,
+  useProductExtendedCatalogOptions,
   useProductPermissions,
   useProducts,
   useProductListParams,
@@ -35,8 +37,20 @@ type ProductListTableProps = {
 
 export function ProductListTable({ onCreateClick }: ProductListTableProps) {
   const queryClient = useQueryClient();
-  const { params, localSearch, setLocalSearch, setSearch, setPage, setStatusFilter, setSorting } =
-    useProductListParams();
+  const {
+    params,
+    localSearch,
+    setLocalSearch,
+    setSearch,
+    setPage,
+    setStatusFilter,
+    setCategoryFilter,
+    setBrandFilter,
+    setTagFilter,
+    setSorting,
+  } = useProductListParams();
+  const { categoryOptions, brandOptions } = useProductCatalogOptions();
+  const { tagOptions } = useProductExtendedCatalogOptions();
   const { canCreate, canUpdate, canDelete } = useProductPermissions();
   const { data, isLoading, isError, error, refetch, isFetching } = useProducts(params);
 
@@ -129,32 +143,84 @@ export function ProductListTable({ onCreateClick }: ProductListTableProps) {
           />
         }
         filters={
-          <Select
-            value={
-              params.isActive === undefined
-                ? "all"
-                : params.isActive
-                  ? "active"
-                  : "inactive"
-            }
-            onValueChange={(value) => {
-              if (value === "all") {
-                setStatusFilter(undefined);
-                return;
+          <>
+            <Select
+              value={
+                params.isActive === undefined
+                  ? "all"
+                  : params.isActive
+                    ? "active"
+                    : "inactive"
               }
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setStatusFilter(undefined);
+                  return;
+                }
 
-              setStatusFilter(value === "active");
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
+                setStatusFilter(value === "active");
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={params.categoryId ?? "all"}
+              onValueChange={(value) =>
+                setCategoryFilter(value === "all" ? undefined : value)
+              }
+            >
+              <SelectTrigger className="w-full sm:w-44" aria-label="Filter by category">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categoryOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={params.brandId ?? "all"}
+              onValueChange={(value) => setBrandFilter(value === "all" ? undefined : value)}
+            >
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by brand">
+                <SelectValue placeholder="Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All brands</SelectItem>
+                {brandOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={params.tagId ?? "all"}
+              onValueChange={(value) => setTagFilter(value === "all" ? undefined : value)}
+            >
+              <SelectTrigger className="w-full sm:w-36" aria-label="Filter by tag">
+                <SelectValue placeholder="Tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tags</SelectItem>
+                {tagOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
         }
         actions={
           <>
@@ -179,7 +245,11 @@ export function ProductListTable({ onCreateClick }: ProductListTableProps) {
           <EmptyState
             title="No products found"
             description={
-              params.search || params.isActive !== undefined
+              params.search ||
+              params.isActive !== undefined ||
+              params.categoryId ||
+              params.brandId ||
+              params.tagId
                 ? "Try adjusting your search or filters."
                 : "Get started by creating your first product."
             }

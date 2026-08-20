@@ -26,7 +26,9 @@ import {
   useCreateBrandOption,
   useCreateCategoryOption,
   useProductCatalogOptions,
+  useProductExtendedCatalogOptions,
 } from "../hooks";
+import { ProductMetadataFields } from "./product-metadata-fields";
 
 type ProductFormBaseProps = {
   onCancel: () => void;
@@ -60,6 +62,10 @@ const createDefaults: CreateProductFormValues = {
   brandId: "",
   unitId: "",
   isActive: true,
+  tagIds: [],
+  images: [],
+  specifications: [],
+  attributeValues: [],
 };
 
 export function ProductForm(props: ProductFormProps) {
@@ -77,6 +83,7 @@ function CreateProductForm({
   isSubmitting = false,
 }: CreateProductFormProps) {
   const { categoryOptions, brandOptions, unitOptions } = useProductCatalogOptions();
+  const { tagOptions, attributeOptions } = useProductExtendedCatalogOptions();
   const { canCreate: canCreateCatalogOption } = useCatalogPermissions();
   const createCategory = useCreateCategoryOption();
   const createBrand = useCreateBrandOption();
@@ -178,6 +185,8 @@ function CreateProductForm({
         />
       </SectionCard>
 
+      <ProductMetadataFields tagOptions={tagOptions} attributeOptions={attributeOptions} />
+
       <SectionCard title="Status">
         <SwitchField
           control={form.control}
@@ -199,6 +208,7 @@ function EditProductForm({
   isSubmitting = false,
 }: EditProductFormProps) {
   const { categoryOptions, brandOptions, unitOptions } = useProductCatalogOptions();
+  const { tagOptions, attributeOptions } = useProductExtendedCatalogOptions();
   const { canCreate: canCreateCatalogOption } = useCatalogPermissions();
   const createCategory = useCreateCategoryOption();
   const createBrand = useCreateBrandOption();
@@ -296,6 +306,8 @@ function EditProductForm({
           rows={4}
         />
       </SectionCard>
+
+      <ProductMetadataFields tagOptions={tagOptions} attributeOptions={attributeOptions} />
 
       <SectionCard title="Status">
         <SwitchField

@@ -17,4 +17,8 @@ export interface MaintenanceListQuery {
   productId?: ProductId;
   warehouseId?: WarehouseId;
   inventoryId?: InventoryId;
+  serviceType?: string;
+  scheduledDateFrom?: Date;
+  scheduledDateTo?: Date;
+  technician?: string;
 }

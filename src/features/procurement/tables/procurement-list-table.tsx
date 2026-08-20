@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesOrderDateRange } from "../mappers";
 import { PURCHASE_ORDER_STATUSES } from "../types";
 import { STATUS_LABELS } from "../mappers";
 import {
@@ -38,8 +37,6 @@ export function ProcurementListTable() {
   const queryClient = useQueryClient();
   const {
     params,
-    orderDateFrom,
-    orderDateTo,
     localSearch,
     setLocalSearch,
     setSearch,
@@ -70,12 +67,7 @@ export function ProcurementListTable() {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-    return items.filter((item) =>
-      matchesOrderDateRange(item.orderDate, orderDateFrom, orderDateTo),
-    );
-  }, [data?.items, orderDateFrom, orderDateTo]);
+  const rows = useMemo(() => data?.items ?? [], [data?.items]);
 
   const columns = getProcurementTableColumns({
     params,
@@ -101,8 +93,8 @@ export function ProcurementListTable() {
     Boolean(params.supplierId) ||
     Boolean(params.warehouseId) ||
     Boolean(params.status) ||
-    Boolean(orderDateFrom) ||
-    Boolean(orderDateTo);
+    Boolean(params.orderDateFrom) ||
+    Boolean(params.orderDateTo);
 
   if (isError) {
     return (
@@ -211,18 +203,18 @@ export function ProcurementListTable() {
 
             <Input
               type="date"
-              value={orderDateFrom ?? ""}
+              value={params.orderDateFrom ?? ""}
               onChange={(event) =>
-                setDateRange(event.target.value || undefined, orderDateTo)
+                setDateRange(event.target.value || undefined, params.orderDateTo)
               }
               className="w-full sm:w-40"
               aria-label="Order date from"
             />
             <Input
               type="date"
-              value={orderDateTo ?? ""}
+              value={params.orderDateTo ?? ""}
               onChange={(event) =>
-                setDateRange(orderDateFrom, event.target.value || undefined)
+                setDateRange(params.orderDateFrom, event.target.value || undefined)
               }
               className="w-full sm:w-40"
               aria-label="Order date to"

@@ -64,6 +64,9 @@ export type ListDispatchesParams = {
   search?: string;
   status?: DispatchStatus;
   rentalOrderId?: string;
+  warehouseId?: string;
+  dispatchDateFrom?: string;
+  dispatchDateTo?: string;
 };
 
 export type DispatchLineItemPayload = {

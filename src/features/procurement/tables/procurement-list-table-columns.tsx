@@ -13,7 +13,7 @@ import {
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { calculateOrderTotal, canApproveProcurement, canCancelProcurement, canEditProcurement, canReceiveProcurement } from "../mappers";
+import { canApproveProcurement, canCancelProcurement, canEditProcurement, canReceiveProcurement } from "../mappers";
 import { ProcurementStatusBadge } from "../components/procurement-status-badge";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { ListProcurementsParams, ProcurementResponse, ProcurementSortField } from "../types";
@@ -92,7 +92,17 @@ export function getProcurementTableColumns({
     {
       id: "total",
       header: "Total",
-      cell: (row) => formatCurrency(calculateOrderTotal(row.items)),
+      cell: (row) => formatCurrency(row.orderTotal),
+    },
+    {
+      id: "paidAmount",
+      header: "Paid",
+      cell: (row) => formatCurrency(row.paidAmount),
+    },
+    {
+      id: "balance",
+      header: "Balance",
+      cell: (row) => formatCurrency(row.balance),
     },
     {
       id: "orderDate",
@@ -106,6 +116,19 @@ export function getProcurementTableColumns({
         />
       ),
       cell: (row) => formatDate(row.orderDate),
+    },
+    {
+      id: "expectedDate",
+      header: (
+        <SortableColumnHeader
+          label="Expected"
+          field="expectedDate"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
+        />
+      ),
+      cell: (row) => (row.expectedDate ? formatDate(row.expectedDate) : "—"),
     },
     {
       id: "actions",

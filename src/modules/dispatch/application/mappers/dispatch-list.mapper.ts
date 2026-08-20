@@ -10,6 +10,9 @@ export function toDispatchListQuery(input: ListDispatchesInput): DispatchListQue
     sortOrder: input.sortOrder,
     status: input.status,
     rentalOrderId: input.rentalOrderId as RentalOrderId | undefined,
+    warehouseId: input.warehouseId,
+    dispatchDateFrom: input.dispatchDateFrom,
+    dispatchDateTo: input.dispatchDateTo,
     sortBy: input.sortBy,
     search: input.search,
   };

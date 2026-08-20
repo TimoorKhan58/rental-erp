@@ -71,6 +71,24 @@ export type ListProductsParams = {
   tagId?: string;
 };
 
+export type ProductImagePayload = {
+  url: string;
+  altText?: string | null;
+  sortOrder?: number;
+  isPrimary?: boolean;
+};
+
+export type ProductSpecificationPayload = {
+  key: string;
+  value: string;
+  sortOrder?: number;
+};
+
+export type ProductAttributeValuePayload = {
+  attributeId: string;
+  value: string;
+};
+
 export type CreateProductPayload = {
   productCode?: string;
   name: string;
@@ -82,6 +100,10 @@ export type CreateProductPayload = {
   categoryId?: string | null;
   brandId?: string | null;
   unitId?: string | null;
+  tagIds?: string[];
+  images?: ProductImagePayload[];
+  specifications?: ProductSpecificationPayload[];
+  attributeValues?: ProductAttributeValuePayload[];
 };
 
 export type UpdateProductPayload = {
@@ -94,4 +116,8 @@ export type UpdateProductPayload = {
   categoryId?: string | null;
   brandId?: string | null;
   unitId?: string | null;
+  tagIds?: string[];
+  images?: ProductImagePayload[];
+  specifications?: ProductSpecificationPayload[];
+  attributeValues?: ProductAttributeValuePayload[];
 };

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
+  Building2Icon,
   CalendarIcon,
   CheckIcon,
   ClockIcon,
@@ -18,7 +19,9 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { RepairHistorySection } from "@/features/repair/components";
+import { useUser } from "@/features/users/hooks";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,11 +39,17 @@ import {
   useMaintenance,
   useMaintenanceFilterOptions,
   useMaintenancePermissions,
+  useMaintenanceRelatedData,
 } from "../hooks";
 import { MaintenanceAssetDetailsTable } from "../components/maintenance-asset-details-table";
 import { MaintenanceStatusBadge } from "../components/maintenance-status-badge";
 import { MaintenanceStatusTimeline } from "../components/maintenance-status-timeline";
 import { MaintenanceWorkflowProgressBar } from "../components/maintenance-workflow-progress-bar";
+import {
+  MaintenanceAccountingSection,
+  MaintenanceAuditSection,
+  MaintenanceInventoryImpactSection,
+} from "../components/maintenance-detail-sections";
 import { CancelMaintenanceDialog } from "../dialogs/cancel-maintenance-dialog";
 import { CompleteMaintenanceDialog } from "../dialogs/complete-maintenance-dialog";
 import { StartMaintenanceDialog } from "../dialogs/start-maintenance-dialog";
@@ -150,6 +159,15 @@ export function MaintenanceDetailPage({ maintenanceId }: MaintenanceDetailPagePr
     useMaintenance(maintenanceId);
   const { canUpdate, canStart, canComplete, canCancel } = useMaintenancePermissions();
   const { productLabelById, warehouseLabelById } = useMaintenanceFilterOptions();
+  const { data: createdByUser } = useUser(maintenance?.createdById ?? "");
+  const {
+    auditLogs,
+    auditTotal,
+    inventoryRecord,
+    stockMovements,
+    permissions: relatedPermissions,
+    isLoading: isRelatedLoading,
+  } = useMaintenanceRelatedData(maintenance);
 
   const [startOpen, setStartOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
@@ -358,12 +376,18 @@ export function MaintenanceDetailPage({ maintenanceId }: MaintenanceDetailPagePr
             title="Product"
             icon={<PackageIcon className="size-5" aria-hidden="true" />}
             iconClass="bg-primary/12 text-primary"
-            fields={[
-              { label: "Product", value: labels.productLabel },
-              { label: "Warehouse", value: labels.warehouseLabel },
-            ]}
+            fields={[{ label: "Product", value: labels.productLabel }]}
             href={ROUTES.productDetail(maintenance.productId)}
             linkLabel="View product"
+          />
+
+          <RelatedEntityCard
+            title="Warehouse"
+            icon={<Building2Icon className="size-5" aria-hidden="true" />}
+            iconClass="bg-success-muted text-success"
+            fields={[{ label: "Warehouse", value: labels.warehouseLabel }]}
+            href={ROUTES.warehouseDetail(maintenance.warehouseId)}
+            linkLabel="View warehouse"
           />
 
           <RelatedEntityCard
@@ -378,10 +402,30 @@ export function MaintenanceDetailPage({ maintenanceId }: MaintenanceDetailPagePr
             linkLabel="View inventory"
           />
 
-          <EmptyCard
-            title="Repair history"
-            description="Related repair records will appear here when repair integration is connected."
+          <RepairHistorySection
+            productId={maintenance.productId}
+            warehouseId={maintenance.warehouseId}
           />
+
+          <MaintenanceInventoryImpactSection
+            maintenance={maintenance}
+            inventoryRecord={inventoryRecord}
+            stockMovements={stockMovements}
+            canReadMovements={relatedPermissions.canReadMovements}
+            canReadInventory={relatedPermissions.canReadInventory}
+            isLoading={isRelatedLoading}
+            productLabelById={productLabelById}
+          />
+
+          <MaintenanceAuditSection
+            maintenanceId={maintenance.id}
+            auditLogs={auditLogs}
+            auditTotal={auditTotal}
+            canReadAudit={relatedPermissions.canReadAudit}
+            isLoading={isRelatedLoading}
+          />
+
+          <MaintenanceAccountingSection />
         </div>
 
         <div className="space-y-6">
@@ -414,6 +458,13 @@ export function MaintenanceDetailPage({ maintenanceId }: MaintenanceDetailPagePr
                 <div>
                   <p className="font-medium">Created</p>
                   <p className="text-muted-foreground">{formatDateTime(maintenance.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    By{" "}
+                    {createdByUser?.name ??
+                      (maintenance.createdById
+                        ? `User ${maintenance.createdById.slice(0, 8)}…`
+                        : "—")}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3 text-sm">
@@ -425,16 +476,6 @@ export function MaintenanceDetailPage({ maintenanceId }: MaintenanceDetailPagePr
               </div>
             </div>
           </SectionCard>
-
-          <EmptyCard
-            title="Inventory impact"
-            description="Inventory movement details will appear here when inventory integration is connected."
-          />
-
-          <EmptyCard
-            title="Accounting entries"
-            description="Accounting impact will appear here when accounting integration is connected."
-          />
         </div>
       </div>
 

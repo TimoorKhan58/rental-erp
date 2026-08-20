@@ -177,6 +177,16 @@ export function useUpdateProcurement() {
   });
 }
 
+async function invalidateProcurementSideEffects(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.procurement.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
+  ]);
+}
+
 export function useApproveProcurement() {
   const queryClient = useQueryClient();
 
@@ -186,7 +196,7 @@ export function useApproveProcurement() {
     successMessage: "Purchase order approved.",
     onSuccess: async (data) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.procurement.lists() }),
+        invalidateProcurementSideEffects(queryClient),
         queryClient.invalidateQueries({ queryKey: queryKeys.procurement.detail(data.id) }),
       ]);
     },
@@ -208,9 +218,8 @@ export function useReceiveProcurement() {
     successMessage: "Goods received successfully.",
     onSuccess: async (data) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.procurement.lists() }),
+        invalidateProcurementSideEffects(queryClient),
         queryClient.invalidateQueries({ queryKey: queryKeys.procurement.detail(data.id) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
       ]);
     },
   });
@@ -225,7 +234,7 @@ export function useCancelProcurement() {
     successMessage: "Purchase order cancelled.",
     onSuccess: async (data) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.procurement.lists() }),
+        invalidateProcurementSideEffects(queryClient),
         queryClient.invalidateQueries({ queryKey: queryKeys.procurement.detail(data.id) }),
       ]);
     },

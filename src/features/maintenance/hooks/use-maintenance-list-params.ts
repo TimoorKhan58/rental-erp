@@ -31,14 +31,18 @@ export function useMaintenanceListParams() {
       productId: searchParams.get("productId") ?? undefined,
       warehouseId: searchParams.get("warehouseId") ?? undefined,
       inventoryId: searchParams.get("inventoryId") ?? undefined,
+      serviceType:
+        (searchParams.get("serviceType") as MaintenanceServiceType | null) ?? undefined,
+      scheduledDateFrom: searchParams.get("scheduledDateFrom") ?? undefined,
+      scheduledDateTo: searchParams.get("scheduledDateTo") ?? undefined,
+      technician: searchParams.get("technician") ?? undefined,
     };
   }, [searchParams]);
 
-  const scheduledDateFrom = searchParams.get("scheduledDateFrom") ?? undefined;
-  const scheduledDateTo = searchParams.get("scheduledDateTo") ?? undefined;
-  const technician = searchParams.get("technician") ?? undefined;
-  const serviceType =
-    (searchParams.get("serviceType") as MaintenanceServiceType | null) ?? undefined;
+  const scheduledDateFrom = params.scheduledDateFrom;
+  const scheduledDateTo = params.scheduledDateTo;
+  const technician = params.technician;
+  const serviceType = params.serviceType;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 

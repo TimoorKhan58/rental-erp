@@ -20,11 +20,6 @@ import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
 import {
-  matchesScheduledDateRange,
-  matchesServiceTypeFilter,
-  matchesTechnicianFilter,
-} from "../mappers";
-import {
   MaintenanceServiceTypeFilterChips,
   MaintenanceStatusFilterChips,
 } from "../components";
@@ -99,19 +94,10 @@ export function MaintenanceListTable({
     return () => window.clearTimeout(timer);
   }, [localTechnician, technician, setTechnicianFilter]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-
-    return items.filter(
-      (item) =>
-        matchesScheduledDateRange(item.scheduledDate, scheduledDateFrom, scheduledDateTo) &&
-        matchesTechnicianFilter(item.technician, technician) &&
-        matchesServiceTypeFilter(item.serviceType, serviceType),
-    );
-  }, [data?.items, scheduledDateFrom, scheduledDateTo, technician, serviceType]);
+  const rows = useMemo(() => data?.items ?? [], [data?.items]);
 
   const statusFilterValue = params.status ?? "all";
-  const serviceTypeFilterValue = serviceType ?? "all";
+  const serviceTypeFilterValue = params.serviceType ?? "all";
 
   const columns = getMaintenanceTableColumns({
     params,
@@ -135,11 +121,12 @@ export function MaintenanceListTable({
     Boolean(params.search) ||
     Boolean(params.productId) ||
     Boolean(params.warehouseId) ||
+    Boolean(params.inventoryId) ||
     Boolean(params.status) ||
-    Boolean(serviceType) ||
-    Boolean(technician) ||
-    Boolean(scheduledDateFrom) ||
-    Boolean(scheduledDateTo);
+    Boolean(params.serviceType) ||
+    Boolean(params.technician) ||
+    Boolean(params.scheduledDateFrom) ||
+    Boolean(params.scheduledDateTo);
 
   if (isError) {
     return (

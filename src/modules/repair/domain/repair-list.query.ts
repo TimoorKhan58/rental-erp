@@ -14,4 +14,7 @@ export interface RepairListQuery {
   returnId?: ReturnInspectionId;
   productId?: ProductId;
   warehouseId?: WarehouseId;
+  repairDateFrom?: Date;
+  repairDateTo?: Date;
+  technician?: string;
 }

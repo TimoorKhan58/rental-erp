@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { ROUTES } from "@/config/routes";
 import { useCreateMaintenance } from "../hooks";
@@ -10,7 +10,11 @@ import type { CreateMaintenanceFormValues } from "../schemas";
 
 export function MaintenanceCreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const createMutation = useCreateMaintenance();
+  const inventoryId = searchParams.get("inventoryId") ?? undefined;
+  const productId = searchParams.get("productId") ?? undefined;
+  const warehouseId = searchParams.get("warehouseId") ?? undefined;
 
   const handleSubmit = async (values: CreateMaintenanceFormValues) => {
     const maintenance = await createMutation.mutateAsync(toCreateMaintenancePayload(values));
@@ -31,6 +35,15 @@ export function MaintenanceCreatePage() {
 
       <MaintenanceForm
         mode="create"
+        defaultValues={
+          inventoryId || productId || warehouseId
+            ? {
+                inventoryId: inventoryId ?? "",
+                productId: productId ?? "",
+                warehouseId: warehouseId ?? "",
+              }
+            : undefined
+        }
         onSubmit={handleSubmit}
         onCancel={() => router.push(ROUTES.maintenance)}
         isSubmitting={createMutation.isPending}

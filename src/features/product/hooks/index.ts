@@ -11,4 +11,8 @@ export {
   useToggleProductStatus,
   useUpdateProduct,
 } from "./use-product";
+export {
+  useProductExtendedCatalogOptions,
+  useProductRelatedData,
+} from "./use-product-related-data";
 export { useProductListParams } from "./use-product-list-params";

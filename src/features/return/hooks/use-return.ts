@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
@@ -9,8 +9,8 @@ import { getDispatches } from "@/features/dispatch/services";
 import { getProducts } from "@/features/product/services";
 import { getRentalOrders } from "@/features/rental-order/services";
 import type { ListReturnsParams } from "../types";
+import { RETURN_STATUSES } from "../types";
 import {
-  computeReturnStatusCounts,
   computeReturnSummary,
 } from "../mappers/return-summary.mapper";
 import {
@@ -136,32 +136,68 @@ export function useReturns(params: ListReturnsParams) {
 }
 
 export function useReturnSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.returns.list({ pageSize: 100 }),
-    queryFn: () => getReturns({ pageSize: 100 }),
+  const totalQuery = useQuery({
+    queryKey: queryKeys.returns.list({ pageSize: 1 }),
+    queryFn: () => getReturns({ pageSize: 1 }),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
+  const unitsSampleQuery = useQuery({
+    queryKey: queryKeys.returns.list({ pageSize: 100, sortBy: "createdAt", sortOrder: "desc" }),
+    queryFn: () => getReturns({ pageSize: 100, sortBy: "createdAt", sortOrder: "desc" }),
+    staleTime: 60_000,
+  });
 
-    return computeReturnSummary(listQuery.data.items);
-  }, [listQuery.data]);
+  const statusQueries = useQueries({
+    queries: RETURN_STATUSES.map((status) => ({
+      queryKey: queryKeys.returns.list({ status, pageSize: 1 }),
+      queryFn: () => getReturns({ status, pageSize: 1 }),
+      staleTime: 60_000,
+    })),
+  });
 
   const statusCounts = useMemo(() => {
-    if (!listQuery.data) {
+    const counts: Partial<Record<"all" | (typeof RETURN_STATUSES)[number], number>> = {
+      all: totalQuery.data?.meta.total ?? 0,
+    };
+
+    RETURN_STATUSES.forEach((status, index) => {
+      counts[status] = statusQueries[index]?.data?.meta.total ?? 0;
+    });
+
+    return counts;
+  }, [totalQuery.data, statusQueries]);
+
+  const stats = useMemo(() => {
+    if (!totalQuery.data) {
       return undefined;
     }
 
-    return computeReturnStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
+    const total = totalQuery.data.meta.total;
+    const draftCount = statusCounts.DRAFT ?? 0;
+    const receivedCount = statusCounts.RECEIVED ?? 0;
+    const inspectedCount = statusCounts.INSPECTED ?? 0;
+    const completedCount = statusCounts.COMPLETED ?? 0;
+    const cancelledCount = statusCounts.CANCELLED ?? 0;
+    const unitsSample = computeReturnSummary(unitsSampleQuery.data?.items ?? []);
+
+    return {
+      totalReturns: total,
+      activeReturns: total - cancelledCount,
+      pendingActionCount: draftCount + receivedCount + inspectedCount,
+      awaitingInspectionCount: receivedCount,
+      completedCount,
+      totalReturnedUnits: unitsSample.totalReturnedUnits,
+    };
+  }, [totalQuery.data, unitsSampleQuery.data, statusCounts]);
 
   return {
     stats,
     statusCounts,
-    isLoading: listQuery.isLoading,
+    isLoading:
+      totalQuery.isLoading ||
+      unitsSampleQuery.isLoading ||
+      statusQueries.some((query) => query.isLoading),
   };
 }
 
@@ -180,6 +216,44 @@ export function useReturnsByDispatch(dispatchId: string) {
     enabled: Boolean(dispatchId),
     staleTime: 60_000,
   });
+}
+
+export function useReturnsByRentalOrder(rentalOrderId: string) {
+  return useQuery({
+    queryKey: queryKeys.returns.list({ rentalOrderId, pageSize: 100 }),
+    queryFn: () => getReturns({ rentalOrderId, pageSize: 100 }),
+    enabled: Boolean(rentalOrderId),
+    staleTime: 60_000,
+  });
+}
+
+async function invalidateReturnWorkflowQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  data: { id: string; rentalOrderId: string; dispatchId: string },
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
+  ]);
+}
+
+async function invalidateReturnCompletionQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  data: { id: string; rentalOrderId: string; dispatchId: string },
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.rentalOrders.detail(data.rentalOrderId),
+    }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.dispatchId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.repairs.lists() }),
+  ]);
 }
 
 export function useCreateReturn() {
@@ -229,10 +303,7 @@ export function useUpdateReturn() {
       }
     },
     onSuccess: async (data) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
-      ]);
+      await invalidateReturnWorkflowQueries(queryClient, data);
     },
   });
 }
@@ -245,10 +316,7 @@ export function useReceiveReturn() {
     showSuccessToast: true,
     successMessage: "Return marked as received.",
     onSuccess: async (data) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
-      ]);
+      await invalidateReturnWorkflowQueries(queryClient, data);
     },
   });
 }
@@ -267,10 +335,7 @@ export function useInspectReturn() {
     showSuccessToast: true,
     successMessage: "Inspection recorded successfully.",
     onSuccess: async (data) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
-      ]);
+      await invalidateReturnWorkflowQueries(queryClient, data);
     },
   });
 }
@@ -283,11 +348,7 @@ export function useCompleteReturn() {
     showSuccessToast: true,
     successMessage: "Return completed successfully.",
     onSuccess: async (data) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
-      ]);
+      await invalidateReturnCompletionQueries(queryClient, data);
     },
   });
 }
@@ -300,10 +361,7 @@ export function useCancelReturn() {
     showSuccessToast: true,
     successMessage: "Return cancelled.",
     onSuccess: async (data) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.returns.detail(data.id) }),
-      ]);
+      await invalidateReturnWorkflowQueries(queryClient, data);
     },
   });
 }

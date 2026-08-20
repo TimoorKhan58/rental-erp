@@ -14,5 +14,7 @@ export function toPurchaseOrderListQuery(
     status: input.status,
     supplierId: input.supplierId,
     warehouseId: input.warehouseId,
+    orderDateFrom: input.orderDateFrom,
+    orderDateTo: input.orderDateTo,
   };
 }

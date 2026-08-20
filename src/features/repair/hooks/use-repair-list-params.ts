@@ -26,12 +26,15 @@ export function useRepairListParams() {
       returnId: searchParams.get("returnId") ?? undefined,
       productId: searchParams.get("productId") ?? undefined,
       warehouseId: searchParams.get("warehouseId") ?? undefined,
+      repairDateFrom: searchParams.get("repairDateFrom") ?? undefined,
+      repairDateTo: searchParams.get("repairDateTo") ?? undefined,
+      technician: searchParams.get("technician") ?? undefined,
     };
   }, [searchParams]);
 
-  const repairDateFrom = searchParams.get("repairDateFrom") ?? undefined;
-  const repairDateTo = searchParams.get("repairDateTo") ?? undefined;
-  const technician = searchParams.get("technician") ?? undefined;
+  const repairDateFrom = params.repairDateFrom;
+  const repairDateTo = params.repairDateTo;
+  const technician = params.technician;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 

@@ -7,4 +7,6 @@ export interface PurchaseOrderListQuery {
   status?: string;
   supplierId?: string;
   warehouseId?: string;
+  orderDateFrom?: Date;
+  orderDateTo?: Date;
 }

@@ -50,6 +50,9 @@ export type ListRepairsParams = {
   returnId?: string;
   productId?: string;
   warehouseId?: string;
+  repairDateFrom?: string;
+  repairDateTo?: string;
+  technician?: string;
 };
 
 export type CreateRepairPayload = {

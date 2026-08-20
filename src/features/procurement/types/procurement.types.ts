@@ -56,6 +56,8 @@ export type ListProcurementsParams = {
   status?: PurchaseOrderStatus;
   supplierId?: string;
   warehouseId?: string;
+  orderDateFrom?: string;
+  orderDateTo?: string;
 };
 
 export type ProcurementLineItemPayload = {

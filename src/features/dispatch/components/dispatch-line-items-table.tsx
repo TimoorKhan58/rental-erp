@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ROUTES } from "@/config/routes";
 import type { DispatchItemResponse } from "../types";
 
 type DispatchLineItemsTableProps = {
@@ -20,6 +22,17 @@ export function DispatchLineItemsTable({
     productNameById?.get(productId) ?? productLabelById.get(productId) ?? productId;
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalOwned = items.reduce(
+    (sum, item) => sum + (item.ownedQuantity ?? item.quantity),
+    0,
+  );
+  const totalExternal = items.reduce((sum, item) => sum + (item.externalQuantity ?? 0), 0);
+  const showSourceSplit = items.some(
+    (item) =>
+      item.ownedQuantity !== null ||
+      item.externalQuantity !== null ||
+      (item.externalQuantity ?? 0) > 0,
+  );
 
   return (
     <div className={cn("overflow-x-auto rounded-xl border border-border/60", className)}>
@@ -32,6 +45,16 @@ export function DispatchLineItemsTable({
             <th className="px-4 py-3 font-medium text-right" scope="col">
               Quantity
             </th>
+            {showSourceSplit ? (
+              <>
+                <th className="px-4 py-3 font-medium text-right" scope="col">
+                  Owned
+                </th>
+                <th className="px-4 py-3 font-medium text-right" scope="col">
+                  External
+                </th>
+              </>
+            ) : null}
             <th className="px-4 py-3 font-medium" scope="col">
               Notes
             </th>
@@ -43,8 +66,25 @@ export function DispatchLineItemsTable({
               key={item.id}
               className="border-b last:border-b-0 transition-colors hover:bg-muted/20"
             >
-              <td className="px-4 py-3 font-medium">{resolveProductName(item.productId)}</td>
+              <td className="px-4 py-3 font-medium">
+                <Link
+                  href={ROUTES.productDetail(item.productId)}
+                  className="text-primary hover:underline"
+                >
+                  {resolveProductName(item.productId)}
+                </Link>
+              </td>
               <td className="px-4 py-3 text-right tabular-nums">{item.quantity}</td>
+              {showSourceSplit ? (
+                <>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {item.ownedQuantity ?? item.quantity}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {item.externalQuantity ?? 0}
+                  </td>
+                </>
+              ) : null}
               <td className="px-4 py-3 text-muted-foreground">{item.notes ?? "—"}</td>
             </tr>
           ))}
@@ -55,6 +95,16 @@ export function DispatchLineItemsTable({
             <td className="px-4 py-3 text-right font-heading text-base font-semibold tabular-nums">
               {totalQuantity.toLocaleString()}
             </td>
+            {showSourceSplit ? (
+              <>
+                <td className="px-4 py-3 text-right font-medium tabular-nums">
+                  {totalOwned.toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-right font-medium tabular-nums">
+                  {totalExternal.toLocaleString()}
+                </td>
+              </>
+            ) : null}
             <td />
           </tr>
         </tfoot>

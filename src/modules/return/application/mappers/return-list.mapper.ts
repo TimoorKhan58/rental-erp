@@ -13,5 +13,7 @@ export function toReturnListQuery(input: ListReturnsInput): ReturnListQuery {
     dispatchId: input.dispatchId as DispatchId | undefined,
     sortBy: input.sortBy,
     search: input.search,
+    returnDateFrom: input.returnDateFrom,
+    returnDateTo: input.returnDateTo,
   };
 }

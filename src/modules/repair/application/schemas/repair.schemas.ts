@@ -53,16 +53,33 @@ export const ListRepairsSchema = PaginationSchema.extend({
   returnId: UUIDSchema.optional(),
   productId: UUIDSchema.optional(),
   warehouseId: UUIDSchema.optional(),
+  repairDateFrom: DateSchema.optional(),
+  repairDateTo: DateSchema.optional(),
+  technician: TrimmedStringSchema.max(100).optional(),
   sortBy: z.enum(REPAIR_SORT_FIELDS).optional(),
-}).superRefine((value, ctx) => {
-  if (value.search !== undefined && value.search.length > 200) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Search term must not exceed 200 characters",
-      path: ["search"],
-    });
-  }
-});
+})
+  .superRefine((value, ctx) => {
+    if (value.search !== undefined && value.search.length > 200) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Search term must not exceed 200 characters",
+        path: ["search"],
+      });
+    }
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.repairDateFrom !== undefined &&
+      value.repairDateTo !== undefined &&
+      value.repairDateFrom > value.repairDateTo
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "repairDateFrom must be on or before repairDateTo",
+        path: ["repairDateTo"],
+      });
+    }
+  });
 
 export type CreateRepairInput = z.infer<typeof CreateRepairSchema>;
 export type UpdateRepairInput = z.infer<typeof UpdateRepairSchema>;

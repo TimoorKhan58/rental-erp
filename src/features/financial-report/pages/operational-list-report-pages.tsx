@@ -683,7 +683,7 @@ export function ReturnReportPage() {
           <StatusFilter
             value={params.status}
             onChange={setStatusFilter}
-            options={["PENDING", "RECEIVED", "INSPECTED", "COMPLETED", "CANCELLED"]}
+            options={["DRAFT", "RECEIVED", "INSPECTED", "COMPLETED", "CANCELLED"]}
           />
         </>
       }

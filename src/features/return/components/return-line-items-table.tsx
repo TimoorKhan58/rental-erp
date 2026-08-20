@@ -29,6 +29,12 @@ export function ReturnLineItemsTable({
             <th className="px-4 py-3 font-medium text-right" scope="col">
               Returned
             </th>
+            <th className="px-4 py-3 font-medium text-right" scope="col">
+              Owned
+            </th>
+            <th className="px-4 py-3 font-medium text-right" scope="col">
+              External
+            </th>
             {showInspection ? (
               <>
                 <th className="px-4 py-3 font-medium text-right" scope="col">
@@ -57,6 +63,10 @@ export function ReturnLineItemsTable({
                 {itemLabelById.get(item.rentalOrderItemId) ?? item.rentalOrderItemId}
               </td>
               <td className="px-4 py-3 text-right tabular-nums">{item.returnedQuantity}</td>
+              <td className="px-4 py-3 text-right tabular-nums">
+                {item.ownedQuantity ?? item.returnedQuantity}
+              </td>
+              <td className="px-4 py-3 text-right tabular-nums">{item.externalQuantity ?? 0}</td>
               {showInspection ? (
                 <>
                   <td className="px-4 py-3 text-right tabular-nums text-success">
@@ -80,6 +90,7 @@ export function ReturnLineItemsTable({
             <td className="px-4 py-3 text-right font-heading text-base font-semibold tabular-nums">
               {totalReturned.toLocaleString()}
             </td>
+            <td colSpan={2} />
             {showInspection ? <td colSpan={4} /> : <td />}
           </tr>
         </tfoot>

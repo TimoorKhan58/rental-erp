@@ -28,12 +28,15 @@ export function useDispatchListParams() {
       search: searchParams.get("search") ?? undefined,
       status: (statusParam as DispatchStatus | null) ?? undefined,
       rentalOrderId: searchParams.get("rentalOrderId") ?? undefined,
+      warehouseId: searchParams.get("warehouseId") ?? undefined,
+      dispatchDateFrom: searchParams.get("dispatchDateFrom") ?? undefined,
+      dispatchDateTo: searchParams.get("dispatchDateTo") ?? undefined,
     };
   }, [searchParams]);
 
-  const warehouseId = searchParams.get("warehouseId") ?? undefined;
-  const dispatchDateFrom = searchParams.get("dispatchDateFrom") ?? undefined;
-  const dispatchDateTo = searchParams.get("dispatchDateTo") ?? undefined;
+  const dispatchDateFrom = params.dispatchDateFrom;
+  const dispatchDateTo = params.dispatchDateTo;
+  const warehouseId = params.warehouseId;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 

@@ -11,4 +11,6 @@ export interface ReturnListQuery {
   status?: ReturnStatus;
   rentalOrderId?: RentalOrderId;
   dispatchId?: DispatchId;
+  returnDateFrom?: Date;
+  returnDateTo?: Date;
 }

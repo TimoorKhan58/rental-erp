@@ -51,6 +51,19 @@ function mapDispatchFilter(
     where.rentalOrderId = String(filter.rentalOrderId);
   }
 
+  if (filter.warehouseId !== undefined) {
+    where.rentalOrder = { warehouseId: String(filter.warehouseId) };
+  }
+
+  if (filter.dispatchDateFrom !== undefined || filter.dispatchDateTo !== undefined) {
+    where.dispatchDate = {
+      ...(filter.dispatchDateFrom !== undefined
+        ? { gte: filter.dispatchDateFrom as Date }
+        : {}),
+      ...(filter.dispatchDateTo !== undefined ? { lte: filter.dispatchDateTo as Date } : {}),
+    };
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -100,6 +113,18 @@ export class PrismaDispatchRepository implements IDispatchRepository {
 
     if (query.rentalOrderId !== undefined) {
       filter.rentalOrderId = query.rentalOrderId;
+    }
+
+    if (query.warehouseId !== undefined) {
+      filter.warehouseId = query.warehouseId;
+    }
+
+    if (query.dispatchDateFrom !== undefined) {
+      filter.dispatchDateFrom = query.dispatchDateFrom;
+    }
+
+    if (query.dispatchDateTo !== undefined) {
+      filter.dispatchDateTo = query.dispatchDateTo;
     }
 
     return runRepositoryPagedQuery(

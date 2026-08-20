@@ -183,7 +183,10 @@ export function useCreateDispatch() {
     showSuccessToast: true,
     successMessage: "Dispatch created successfully.",
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
+      ]);
     },
   });
 }
@@ -225,6 +228,7 @@ export function useUpdateDispatch() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
   });
@@ -241,6 +245,7 @@ export function useMarkDispatchReady() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
   });
@@ -258,6 +263,8 @@ export function useCompleteDispatch() {
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
       ]);
     },
   });
@@ -274,6 +281,7 @@ export function useCancelDispatch() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
   });

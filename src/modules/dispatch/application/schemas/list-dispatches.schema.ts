@@ -1,4 +1,8 @@
-import { PaginationSchema, UUIDSchema } from "@/shared/application/validation";
+import {
+  DateSchema,
+  PaginationSchema,
+  UUIDSchema,
+} from "@/shared/application/validation";
 import { z } from "zod";
 
 import {
@@ -9,15 +13,32 @@ import {
 export const ListDispatchesSchema = PaginationSchema.extend({
   status: z.enum(DISPATCH_STATUSES).optional(),
   rentalOrderId: UUIDSchema.optional(),
+  warehouseId: UUIDSchema.optional(),
+  dispatchDateFrom: DateSchema.optional(),
+  dispatchDateTo: DateSchema.optional(),
   sortBy: z.enum(DISPATCH_SORT_FIELDS).optional(),
-}).superRefine((value, ctx) => {
-  if (value.search !== undefined && value.search.length > 200) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Search term must not exceed 200 characters",
-      path: ["search"],
-    });
-  }
-});
+})
+  .superRefine((value, ctx) => {
+    if (value.search !== undefined && value.search.length > 200) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Search term must not exceed 200 characters",
+        path: ["search"],
+      });
+    }
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.dispatchDateFrom !== undefined &&
+      value.dispatchDateTo !== undefined &&
+      value.dispatchDateFrom > value.dispatchDateTo
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "dispatchDateFrom must be on or before dispatchDateTo",
+        path: ["dispatchDateTo"],
+      });
+    }
+  });
 
 export type ListDispatchesInput = z.infer<typeof ListDispatchesSchema>;

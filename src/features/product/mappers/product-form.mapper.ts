@@ -27,9 +27,46 @@ function normalizeOptionalNumber(
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function mapMetadataPayload(
+  values: Pick<
+    CreateProductFormValues,
+    "tagIds" | "images" | "specifications" | "attributeValues"
+  >,
+) {
+  const images =
+    values.images?.map((image, index) => ({
+      url: image.url.trim(),
+      altText: normalizeOptionalString(image.altText),
+      sortOrder: index,
+      isPrimary: image.isPrimary ?? index === 0,
+    })) ?? [];
+
+  const specifications =
+    values.specifications?.map((specification, index) => ({
+      key: specification.key.trim(),
+      value: specification.value.trim(),
+      sortOrder: index,
+    })) ?? [];
+
+  const attributeValues =
+    values.attributeValues?.map((attributeValue) => ({
+      attributeId: attributeValue.attributeId,
+      value: attributeValue.value.trim(),
+    })) ?? [];
+
+  return {
+    tagIds: values.tagIds ?? [],
+    images,
+    specifications,
+    attributeValues,
+  };
+}
+
 export function toCreateProductPayload(
   values: CreateProductFormValues,
 ): CreateProductPayload {
+  const metadata = mapMetadataPayload(values);
+
   return {
     ...(values.productCode?.trim()
       ? { productCode: values.productCode.trim() }
@@ -43,12 +80,15 @@ export function toCreateProductPayload(
     brandId: normalizeOptionalString(values.brandId),
     unitId: normalizeOptionalString(values.unitId),
     isActive: values.isActive,
+    ...metadata,
   };
 }
 
 export function toUpdateProductPayload(
   values: UpdateProductFormValues,
 ): UpdateProductPayload {
+  const metadata = mapMetadataPayload(values);
+
   return {
     name: values.name.trim(),
     description: normalizeOptionalString(values.description),
@@ -59,6 +99,7 @@ export function toUpdateProductPayload(
     brandId: normalizeOptionalString(values.brandId),
     unitId: normalizeOptionalString(values.unitId),
     isActive: values.isActive,
+    ...metadata,
   };
 }
 
@@ -74,5 +115,19 @@ export function toProductFormValues(product: ProductResponse): UpdateProductForm
     brandId: product.brandId ?? "",
     unitId: product.unitId ?? "",
     isActive: product.isActive,
+    tagIds: product.tags,
+    images: product.images.map((image) => ({
+      url: image.url,
+      altText: image.altText ?? "",
+      isPrimary: image.isPrimary,
+    })),
+    specifications: product.specifications.map((specification) => ({
+      key: specification.key,
+      value: specification.value,
+    })),
+    attributeValues: product.attributeValues.map((attributeValue) => ({
+      attributeId: attributeValue.attributeId,
+      value: attributeValue.value,
+    })),
   };
 }

@@ -29,11 +29,10 @@ export function useProcurementListParams() {
       status: (statusParam as PurchaseOrderStatus | null) ?? undefined,
       supplierId: searchParams.get("supplierId") ?? undefined,
       warehouseId: searchParams.get("warehouseId") ?? undefined,
+      orderDateFrom: searchParams.get("orderDateFrom") ?? undefined,
+      orderDateTo: searchParams.get("orderDateTo") ?? undefined,
     };
   }, [searchParams]);
-
-  const orderDateFrom = searchParams.get("orderDateFrom") ?? undefined;
-  const orderDateTo = searchParams.get("orderDateTo") ?? undefined;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 
@@ -55,8 +54,6 @@ export function useProcurementListParams() {
 
   return {
     params,
-    orderDateFrom,
-    orderDateTo,
     localSearch,
     setLocalSearch,
     setPage: (page: number) => updateParams({ page }),

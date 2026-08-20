@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
+import { useUser } from "@/features/users/hooks";
 import {
   canCancelDispatch,
   canCompleteDispatch,
@@ -40,11 +41,17 @@ import {
   useDispatch,
   useDispatchFilterOptions,
   useDispatchPermissions,
+  useDispatchRelatedData,
 } from "../hooks";
 import { DispatchStatusBadge } from "../components/dispatch-status-badge";
 import { DispatchStatusTimeline } from "../components/dispatch-status-timeline";
 import { DispatchWorkflowProgressBar } from "../components/dispatch-workflow-progress-bar";
 import { DispatchLineItemsTable } from "../components/dispatch-line-items-table";
+import { DispatchInventoryImpactSection } from "../components/dispatch-inventory-impact-section";
+import {
+  DispatchAccountingSection,
+  DispatchAuditSection,
+} from "../components/dispatch-detail-sections";
 import { CancelDispatchDialog } from "../dialogs/cancel-dispatch-dialog";
 import { CompleteDispatchDialog } from "../dialogs/complete-dispatch-dialog";
 import { MarkReadyDispatchDialog } from "../dialogs/mark-ready-dispatch-dialog";
@@ -157,6 +164,13 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
   const { data: rentalOrder } = useRentalOrder(dispatch?.rentalOrderId ?? "");
   const { data: customer } = useCustomer(rentalOrder?.customerId ?? "");
   const { data: warehouse } = useWarehouse(rentalOrder?.warehouseId ?? "");
+  const { data: createdByUser } = useUser(dispatch?.createdById ?? "");
+  const {
+    auditLogs,
+    auditTotal,
+    permissions: relatedPermissions,
+    isLoading: isAuditLoading,
+  } = useDispatchRelatedData(dispatch);
 
   const [markReadyOpen, setMarkReadyOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
@@ -203,6 +217,9 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
     rentalOrder?.orderNumber ?? rentalOrderLabelById.get(dispatch.rentalOrderId);
   const warehouseName =
     warehouse?.name ?? warehouseLabelById.get(rentalOrder?.warehouseId ?? "");
+  const createdByLabel =
+    createdByUser?.name ??
+    (dispatch.createdById ? `User ${dispatch.createdById.slice(0, 8)}…` : "—");
 
   return (
     <PageContainer className="space-y-6">
@@ -393,10 +410,20 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
             linkLabel="View warehouse"
           />
 
-          <EmptyCard
-            title="Returns & inventory"
-            description="Return processing and stock movement records will appear here when those modules are connected."
+          <DispatchInventoryImpactSection
+            dispatch={dispatch}
+            warehouseId={rentalOrder?.warehouseId}
           />
+
+          <DispatchAuditSection
+            dispatchId={dispatch.id}
+            auditLogs={auditLogs}
+            auditTotal={auditTotal}
+            canReadAudit={relatedPermissions.canReadAudit}
+            isLoading={isAuditLoading}
+          />
+
+          <DispatchAccountingSection />
         </div>
 
         <div className="space-y-6">
@@ -434,6 +461,7 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
                 <div>
                   <p className="font-medium">Created</p>
                   <p className="text-muted-foreground">{formatDateTime(dispatch.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground">By {createdByLabel}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 text-sm">

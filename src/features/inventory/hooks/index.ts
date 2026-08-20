@@ -12,3 +12,4 @@ export {
   useToggleInventoryStatus,
   useUpdateInventory,
 } from "./use-inventory";
+export { useInventoryRelatedData } from "./use-inventory-related-data";

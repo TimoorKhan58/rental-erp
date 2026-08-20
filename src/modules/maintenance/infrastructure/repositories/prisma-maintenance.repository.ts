@@ -54,6 +54,28 @@ function mapMaintenanceFilter(
     where.inventoryId = String(filter.inventoryId);
   }
 
+  if (filter.serviceType !== undefined) {
+    where.serviceType = filter.serviceType as Maintenance["serviceType"];
+  }
+
+  if (filter.scheduledDateFrom !== undefined || filter.scheduledDateTo !== undefined) {
+    where.scheduledDate = {
+      ...(filter.scheduledDateFrom !== undefined
+        ? { gte: filter.scheduledDateFrom as Date }
+        : {}),
+      ...(filter.scheduledDateTo !== undefined
+        ? { lte: filter.scheduledDateTo as Date }
+        : {}),
+    };
+  }
+
+  if (filter.technician !== undefined) {
+    const technician = String(filter.technician).trim();
+    if (technician.length > 0) {
+      where.technician = { contains: technician, mode: "insensitive" };
+    }
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -123,6 +145,22 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
 
     if (query.inventoryId !== undefined) {
       filter.inventoryId = query.inventoryId;
+    }
+
+    if (query.serviceType !== undefined) {
+      filter.serviceType = query.serviceType;
+    }
+
+    if (query.scheduledDateFrom !== undefined) {
+      filter.scheduledDateFrom = query.scheduledDateFrom;
+    }
+
+    if (query.scheduledDateTo !== undefined) {
+      filter.scheduledDateTo = query.scheduledDateTo;
+    }
+
+    if (query.technician !== undefined) {
+      filter.technician = query.technician;
     }
 
     return runRepositoryPagedQuery(

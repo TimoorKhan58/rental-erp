@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,11 +31,13 @@ import {
   useInventoryFilterOptions,
   useInventoryPermissions,
   useInventoryRecoveryMaps,
+  useInventoryRelatedData,
 } from "../hooks";
 import { InventoryStatusBadge } from "../components/inventory-status-badge";
 import { InventoryStockStatusBadge } from "../components/inventory-stock-status-badge";
 import { InventoryRecoveryIndicator } from "../components/inventory-recovery-indicator";
 import { InventoryStockLevelBar } from "../components/inventory-stock-level-bar";
+import { InventoryDetailSections } from "../components/inventory-detail-sections";
 import { AdjustInventoryDialog } from "../dialogs/adjust-inventory-dialog";
 import { DeleteInventoryDialog } from "../dialogs/delete-inventory-dialog";
 import { EditInventoryDialog } from "../dialogs/edit-inventory-dialog";
@@ -149,6 +151,7 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
   const { productRecoveryById } = useInventoryRecoveryMaps();
   const { data: product } = useProduct(inventory?.productId ?? "");
   const { data: warehouse } = useWarehouse(inventory?.warehouseId ?? "");
+  const relatedData = useInventoryRelatedData(inventory);
 
   const [editOpen, setEditOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
@@ -374,9 +377,15 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Activity history"
-            description="Stock movements, procurement, rentals, and dispatch records will appear here as modules are connected."
+          <InventoryDetailSections
+            inventory={inventory}
+            stockMovements={relatedData.stockMovements}
+            stockMovementTotal={relatedData.stockMovementTotal}
+            maintenances={relatedData.maintenances}
+            repairs={relatedData.repairs}
+            auditLogs={relatedData.auditLogs}
+            permissions={relatedData.permissions}
+            isLoading={relatedData.isLoading}
           />
         </div>
 

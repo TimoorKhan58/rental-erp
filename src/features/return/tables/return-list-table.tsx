@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesReturnDateRange } from "../mappers";
 import { ReturnStatusFilterChips } from "../components";
 import {
   useReturnFilterOptions,
@@ -75,13 +74,7 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-
-    return items.filter((item) =>
-      matchesReturnDateRange(item.returnDate, returnDateFrom, returnDateTo),
-    );
-  }, [data?.items, returnDateFrom, returnDateTo]);
+  const rows = data?.items ?? [];
 
   const statusFilterValue = params.status ?? "all";
 

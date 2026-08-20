@@ -5,3 +5,9 @@ export * from "./maintenance-status-filter-chips";
 export * from "./maintenance-status-timeline";
 export * from "./maintenance-summary-cards";
 export * from "./maintenance-workflow-progress-bar";
+export {
+  MaintenanceAccountingSection,
+  MaintenanceAuditSection,
+  MaintenanceHistorySection,
+  MaintenanceInventoryImpactSection,
+} from "./maintenance-detail-sections";

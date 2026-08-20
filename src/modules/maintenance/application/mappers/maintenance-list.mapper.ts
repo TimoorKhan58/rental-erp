@@ -20,5 +20,9 @@ export function toMaintenanceListQuery(
     productId: input.productId as ProductId | undefined,
     warehouseId: input.warehouseId as WarehouseId | undefined,
     inventoryId: input.inventoryId as InventoryId | undefined,
+    serviceType: input.serviceType,
+    scheduledDateFrom: input.scheduledDateFrom,
+    scheduledDateTo: input.scheduledDateTo,
+    technician: input.technician,
   };
 }

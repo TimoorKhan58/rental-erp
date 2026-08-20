@@ -18,5 +18,8 @@ export function toRepairListQuery(input: ListRepairsInput): RepairListQuery {
     returnId: input.returnId as ReturnInspectionId | undefined,
     productId: input.productId as ProductId | undefined,
     warehouseId: input.warehouseId as WarehouseId | undefined,
+    repairDateFrom: input.repairDateFrom,
+    repairDateTo: input.repairDateTo,
+    technician: input.technician,
   };
 }

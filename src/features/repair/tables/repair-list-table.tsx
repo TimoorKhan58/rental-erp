@@ -19,10 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import {
-  matchesRepairDateRange,
-  matchesTechnicianFilter,
-} from "../mappers";
 import { RepairStatusFilterChips } from "../components";
 import {
   useRepairFilterOptions,
@@ -94,15 +90,7 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     return () => window.clearTimeout(timer);
   }, [localTechnician, technician, setTechnicianFilter]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-
-    return items.filter(
-      (item) =>
-        matchesRepairDateRange(item.repairDate, repairDateFrom, repairDateTo) &&
-        matchesTechnicianFilter(item.technician, technician),
-    );
-  }, [data?.items, repairDateFrom, repairDateTo, technician]);
+  const rows = useMemo(() => data?.items ?? [], [data?.items]);
 
   const statusFilterValue = params.status ?? "all";
 
@@ -131,9 +119,9 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     Boolean(params.productId) ||
     Boolean(params.warehouseId) ||
     Boolean(params.status) ||
-    Boolean(technician) ||
-    Boolean(repairDateFrom) ||
-    Boolean(repairDateTo);
+    Boolean(params.technician) ||
+    Boolean(params.repairDateFrom) ||
+    Boolean(params.repairDateTo);
 
   if (isError) {
     return (

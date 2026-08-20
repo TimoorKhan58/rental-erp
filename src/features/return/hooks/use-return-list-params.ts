@@ -25,11 +25,13 @@ export function useReturnListParams() {
       status: (statusParam as ReturnStatus | null) ?? undefined,
       rentalOrderId: searchParams.get("rentalOrderId") ?? undefined,
       dispatchId: searchParams.get("dispatchId") ?? undefined,
+      returnDateFrom: searchParams.get("returnDateFrom") ?? undefined,
+      returnDateTo: searchParams.get("returnDateTo") ?? undefined,
     };
   }, [searchParams]);
 
-  const returnDateFrom = searchParams.get("returnDateFrom") ?? undefined;
-  const returnDateTo = searchParams.get("returnDateTo") ?? undefined;
+  const returnDateFrom = params.returnDateFrom;
+  const returnDateTo = params.returnDateTo;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 

@@ -1,4 +1,5 @@
 export { useDispatchListParams } from "./use-dispatch-list-params";
+export { useDispatchRelatedData } from "./use-dispatch-related-data";
 export {
   useCancelDispatch,
   useCompleteDispatch,
