@@ -23,6 +23,7 @@ import {
 import { buildRentalInvoiceLinesFromOrder, appendOptionalInvoiceCharges } from "./build-rental-invoice-lines";
 import type { CreateRentalInvoiceService } from "./create-rental-invoice.service";
 import { generateNextInvoiceNumber } from "./generate-invoice-number";
+import { loadReturnsForRentalOrder } from "./load-rental-order-returns";
 import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
 
 export class GenerateRentalInvoiceFromOrderService {
@@ -91,20 +92,11 @@ export class GenerateRentalInvoiceFromOrderService {
         });
       }
 
-      const dispatches = await dispatchRepository.findPaged({
-        page: 1,
-        pageSize: 100,
+      const returns = await loadReturnsForRentalOrder(
         rentalOrderId,
-        sortOrder: "desc",
-      });
-
-      const returns = (
-        await Promise.all(
-          dispatches.items.map((dispatch) =>
-            returnRepository.findByDispatchId(dispatch.id),
-          ),
-        )
-      ).flat();
+        dispatchRepository,
+        returnRepository,
+      );
 
       const uniqueProductIds = [
         ...new Set(rentalOrder.items.map((item) => item.productId)),
