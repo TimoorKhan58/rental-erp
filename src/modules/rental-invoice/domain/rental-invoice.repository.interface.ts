@@ -24,4 +24,13 @@ export interface IRentalInvoiceRepository {
     id: RentalInvoiceId,
     data: UpdateRentalInvoiceStatusData,
   ): Promise<RentalInvoice>;
+  /**
+   * Atomically applies a signed payment delta to invoice money fields.
+   * Positive delta records payment; negative delta reverses payment (void).
+   * Returns null when predicates fail (concurrency or invariant violation).
+   */
+  applyPaymentDelta(
+    id: RentalInvoiceId,
+    delta: number,
+  ): Promise<RentalInvoice | null>;
 }

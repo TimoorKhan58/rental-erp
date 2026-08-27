@@ -1,4 +1,5 @@
 import type { PaymentListQuery } from "@/modules/payment/domain/payment-list.query";
+import { Prisma } from "@/generated/prisma/client";
 import type { PaymentId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -174,5 +175,45 @@ export class PrismaPaymentRepository implements IPaymentRepository {
         }),
       { model: MODEL, operation: "updateStatus" },
     ).then(toPaymentDomain);
+  }
+
+  claimStatusTransition(
+    id: PaymentId,
+    expected: Payment["status"] | ReadonlyArray<Payment["status"]>,
+    data: UpdatePaymentStatusData,
+  ): Promise<Payment | null> {
+    return this.runner.run(
+      async (db) => {
+        const update: Prisma.PaymentUpdateManyMutationInput = {
+          status: data.status,
+        };
+
+        if (data.postedAt !== undefined) {
+          update.postedAt = data.postedAt;
+        }
+
+        if (data.voidedAt !== undefined) {
+          update.voidedAt = data.voidedAt;
+        }
+
+        const expectedList = Array.isArray(expected) ? [...expected] : [expected];
+
+        const claimed = await db.payment.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data: update,
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.payment.findUnique({ where: { id } });
+        return record === null ? null : toPaymentDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
   }
 }

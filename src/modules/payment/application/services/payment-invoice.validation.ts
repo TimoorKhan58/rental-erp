@@ -3,6 +3,9 @@ import type { IRentalInvoiceRepository } from "@/modules/rental-invoice/domain/r
 import {
   RentalInvoiceInvalidStatusError,
 } from "@/modules/rental-invoice/domain";
+import {
+  RENTAL_INVOICE_ENTITY_NAME,
+} from "@/modules/rental-invoice/application/services/rental-invoice-service.constants";
 import type { Payment } from "@/modules/payment/domain/payment.entity";
 import {
   assertCustomerMatchesInvoice,
@@ -10,7 +13,11 @@ import {
   assertPaymentAmountWithinBalance,
   PaymentEligibilityError,
 } from "@/modules/payment/domain";
-import { UnprocessableError } from "@/shared/infrastructure/errors";
+import type { RentalInvoiceId } from "@/shared/domain/ids";
+import {
+  ConcurrentUpdateError,
+  UnprocessableError,
+} from "@/shared/infrastructure/errors";
 
 export function validateInvoiceForPayment(
   invoice: RentalInvoice,
@@ -37,16 +44,31 @@ export function validateInvoiceForPayment(
 
 export async function applyPaymentToInvoice(
   rentalInvoiceRepository: IRentalInvoiceRepository,
-  invoice: RentalInvoice,
+  invoiceId: RentalInvoiceId,
   payment: Payment,
   direction: "apply" | "reverse",
 ): Promise<RentalInvoice> {
   const delta = direction === "apply" ? payment.amount : -payment.amount;
-  const updatedInvoice = invoice.withPaymentApplied(invoice.paidAmount + delta);
+  const afterDelta = await rentalInvoiceRepository.applyPaymentDelta(
+    invoiceId,
+    delta,
+  );
 
-  return rentalInvoiceRepository.updateStatus(invoice.id, {
-    status: updatedInvoice.status,
-    paidAmount: updatedInvoice.paidAmount,
-    balance: updatedInvoice.balance,
-  });
+  if (afterDelta === null) {
+    throw new ConcurrentUpdateError({
+      entity: RENTAL_INVOICE_ENTITY_NAME,
+      id: invoiceId,
+      action: direction === "apply" ? "apply payment" : "reverse payment",
+    });
+  }
+
+  const statusDerived = afterDelta.withPaymentApplied(afterDelta.paidAmount);
+
+  if (statusDerived.status !== afterDelta.status) {
+    return rentalInvoiceRepository.updateStatus(invoiceId, {
+      status: statusDerived.status,
+    });
+  }
+
+  return afterDelta;
 }

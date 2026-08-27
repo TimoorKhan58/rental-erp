@@ -19,4 +19,9 @@ export interface IPaymentRepository {
     id: PaymentId,
     data: UpdatePaymentStatusData,
   ): Promise<Payment>;
+  claimStatusTransition(
+    id: PaymentId,
+    expected: Payment["status"] | ReadonlyArray<Payment["status"]>,
+    data: UpdatePaymentStatusData,
+  ): Promise<Payment | null>;
 }

@@ -209,6 +209,55 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     return updated;
   }
 
+  async applyPaymentDelta(
+    id: RentalInvoiceId,
+    delta: number,
+  ): Promise<RentalInvoice | null> {
+    const existing = this.store.get(id);
+
+    if (!existing || delta === 0) {
+      return null;
+    }
+
+    const invoice = RentalInvoice.reconstitute(existing.record);
+
+    if (delta > 0) {
+      if (
+        invoice.status !== "ISSUED" &&
+        invoice.status !== "PARTIALLY_PAID" &&
+        invoice.status !== "PAID"
+      ) {
+        return null;
+      }
+
+      const nextPaid = roundMoney(invoice.paidAmount + delta);
+      if (nextPaid > invoice.grandTotal) {
+        return null;
+      }
+    } else {
+      if (invoice.status === "DRAFT" || invoice.status === "VOID") {
+        return null;
+      }
+
+      const absDelta = -delta;
+      if (absDelta <= 0 || invoice.paidAmount < absDelta) {
+        return null;
+      }
+    }
+
+    const nextPaid = roundMoney(invoice.paidAmount + delta);
+    const nextBalance = roundMoney(invoice.grandTotal - nextPaid);
+    const updated = RentalInvoice.reconstitute({
+      ...existing.record,
+      paidAmount: nextPaid,
+      balance: nextBalance,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
   count(): number {
     return this.store.size;
   }
@@ -220,4 +269,8 @@ export function createSeededRentalInvoiceRepository(
   const repository = new InMemoryRentalInvoiceRepository();
   repository.seed(invoices);
   return repository;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }

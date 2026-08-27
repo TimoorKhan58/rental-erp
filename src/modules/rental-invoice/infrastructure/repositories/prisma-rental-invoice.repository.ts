@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
 import type { RentalInvoiceId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -193,5 +194,66 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
         }),
       { model: MODEL, operation: "updateStatus" },
     ).then(toRentalInvoiceDomain);
+  }
+
+  applyPaymentDelta(
+    id: RentalInvoiceId,
+    delta: number,
+  ): Promise<RentalInvoice | null> {
+    return this.runner.run(
+      async (db) => {
+        if (delta === 0) {
+          return null;
+        }
+
+        const decimalDelta = new Prisma.Decimal(delta);
+
+        if (delta > 0) {
+          const rows = await db.$queryRaw<Array<{ id: string }>>`
+            UPDATE "rental_invoices"
+            SET
+              "paidAmount" = "paidAmount" + ${decimalDelta},
+              "balance" = "balance" - ${decimalDelta},
+              "updatedAt" = CURRENT_TIMESTAMP
+            WHERE "id" = ${id}::uuid
+              AND "status" IN ('ISSUED', 'PARTIALLY_PAID', 'PAID')
+              AND "paidAmount" + ${decimalDelta} <= "grandTotal"
+              AND ${decimalDelta} > 0
+            RETURNING "id"
+          `;
+
+          if (rows.length === 0) {
+            return null;
+          }
+        } else {
+          const absDelta = new Prisma.Decimal(-delta);
+
+          const rows = await db.$queryRaw<Array<{ id: string }>>`
+            UPDATE "rental_invoices"
+            SET
+              "paidAmount" = "paidAmount" + ${decimalDelta},
+              "balance" = "balance" - ${decimalDelta},
+              "updatedAt" = CURRENT_TIMESTAMP
+            WHERE "id" = ${id}::uuid
+              AND "status" NOT IN ('DRAFT', 'VOID')
+              AND "paidAmount" + ${decimalDelta} >= 0
+              AND ${absDelta} > 0
+            RETURNING "id"
+          `;
+
+          if (rows.length === 0) {
+            return null;
+          }
+        }
+
+        const record = await db.rentalInvoice.findUnique({
+          where: { id },
+          include: RENTAL_INVOICE_INCLUDE,
+        });
+
+        return record === null ? null : toRentalInvoiceDomain(record);
+      },
+      { model: MODEL, operation: "applyPaymentDelta" },
+    );
   }
 }
