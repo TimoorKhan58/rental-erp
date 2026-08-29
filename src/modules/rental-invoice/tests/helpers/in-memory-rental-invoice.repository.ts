@@ -6,7 +6,7 @@ import type {
   UpdateRentalInvoiceData,
   UpdateRentalInvoiceStatusData,
 } from "@/modules/rental-invoice/domain/rental-invoice.types";
-import type { RentalInvoiceId } from "@/shared/domain/ids";
+import type { RentalInvoiceId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { buildRentalInvoiceEntity } from "./rental-invoice.fixtures";
@@ -57,6 +57,20 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     }
 
     return Promise.resolve(null);
+  }
+
+  findActiveByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<RentalInvoice | null> {
+    const active = Array.from(this.store.values())
+      .map((stored) => RentalInvoice.reconstitute(stored.record))
+      .filter(
+        (invoice) =>
+          invoice.rentalOrderId === rentalOrderId && invoice.status !== "VOID",
+      )
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+
+    return Promise.resolve(active[0] ?? null);
   }
 
   async findPaged(

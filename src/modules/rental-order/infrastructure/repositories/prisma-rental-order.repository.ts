@@ -483,4 +483,19 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
       { model: MODEL, operation: "lockForReserveCommand" },
     );
   }
+
+  lockForInvoiceCommand(id: RentalOrderId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "rental_orders" WHERE id = ${id} FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Rental order not found");
+        }
+      },
+      { model: MODEL, operation: "lockForInvoiceCommand" },
+    );
+  }
 }

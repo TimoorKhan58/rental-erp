@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
-import type { RentalInvoiceId } from "@/shared/domain/ids";
+import type { RentalInvoiceId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
@@ -89,6 +89,24 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
           include: RENTAL_INVOICE_INCLUDE,
         }),
       { model: MODEL, operation: "findByInvoiceNumber" },
+    ).then((record) => (record ? toRentalInvoiceDomain(record) : null));
+  }
+
+  findActiveByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<RentalInvoice | null> {
+    return repositoryFindFirst(
+      this.runner,
+      (db) =>
+        db.rentalInvoice.findFirst({
+          where: {
+            rentalOrderId,
+            status: { not: "VOID" },
+          },
+          orderBy: { createdAt: "desc" },
+          include: RENTAL_INVOICE_INCLUDE,
+        }),
+      { model: MODEL, operation: "findActiveByRentalOrderId" },
     ).then((record) => (record ? toRentalInvoiceDomain(record) : null));
   }
 

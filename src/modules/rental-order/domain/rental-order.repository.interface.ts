@@ -71,4 +71,9 @@ export interface IRentalOrderRepository {
    * rental order row. Must run after inventory availability locks.
    */
   lockForReserveCommand(id: RentalOrderId): Promise<void>;
+  /**
+   * Phase 37 (F-36-02 / F-35-05): serializes invoice create/generate commands
+   * on the parent rental order row.
+   */
+  lockForInvoiceCommand(id: RentalOrderId): Promise<void>;
 }

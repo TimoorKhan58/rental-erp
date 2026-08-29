@@ -46,6 +46,8 @@ import {
   createPassThroughTransactionRunner,
   createRollbackTransactionRunner,
 } from "../tests/helpers/transaction-test-runner";
+import { buildRentalOrderEntity } from "@/modules/rental-order/tests/helpers/rental-order.fixtures";
+import { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 class ThrowingAuditLogger extends MockAuditLogger {
@@ -54,8 +56,17 @@ class ThrowingAuditLogger extends MockAuditLogger {
   }
 }
 
+function createLockedRentalOrderRepository(): InMemoryRentalOrderRepository {
+  const rentalOrderRepository = new InMemoryRentalOrderRepository();
+  rentalOrderRepository.seed([
+    buildRentalOrderEntity({ status: "COMPLETED" }),
+  ]);
+  return rentalOrderRepository;
+}
+
 function createWriteScope(
   rentalInvoiceRepository: InMemoryRentalInvoiceRepository,
+  rentalOrderRepository: InMemoryRentalOrderRepository,
   rentalOrderInvoiceLookup: InMemoryRentalOrderInvoiceLookup,
   customerRepository: InMemoryCustomerRepository,
   auditLogger: MockAuditLogger,
@@ -63,6 +74,7 @@ function createWriteScope(
 ) {
   return createPassThroughTransactionRunner({
     rentalInvoiceRepository,
+    rentalOrderRepository,
     rentalOrderInvoiceLookup,
     customerRepository,
     auditLogger,
@@ -79,17 +91,20 @@ function createDefaultTestScope(
   userId: string | undefined = USER_ID,
 ) {
   const rentalInvoiceRepository = new InMemoryRentalInvoiceRepository();
+  const rentalOrderRepository = createLockedRentalOrderRepository();
   const rentalOrderInvoiceLookup = createCompletedRentalOrderLookup();
   const customerRepository = new InMemoryCustomerRepository();
   customerRepository.seed([buildCustomerEntity()]);
 
   return {
     rentalInvoiceRepository,
+    rentalOrderRepository,
     rentalOrderInvoiceLookup,
     customerRepository,
     auditLogger,
     transactionRunner: createWriteScope(
       rentalInvoiceRepository,
+      rentalOrderRepository,
       rentalOrderInvoiceLookup,
       customerRepository,
       auditLogger,
@@ -115,7 +130,7 @@ describe("CreateRentalInvoiceService", () => {
   it("rejects duplicate invoice number", async () => {
     const { transactionRunner, rentalInvoiceRepository } =
       createDefaultTestScope();
-    rentalInvoiceRepository.seed([buildRentalInvoiceEntity()]);
+    rentalInvoiceRepository.seed([buildVoidRentalInvoiceEntity()]);
     const service = new CreateRentalInvoiceService(transactionRunner);
 
     await expect(
@@ -220,12 +235,14 @@ describe("CreateRentalInvoiceService", () => {
   it("rejects without user context", async () => {
     const auditLogger = new MockAuditLogger();
     const rentalInvoiceRepository = new InMemoryRentalInvoiceRepository();
+    const rentalOrderRepository = createLockedRentalOrderRepository();
     const rentalOrderInvoiceLookup = createCompletedRentalOrderLookup();
     const customerRepository = new InMemoryCustomerRepository();
     customerRepository.seed([buildCustomerEntity()]);
     const service = new CreateRentalInvoiceService(
       createWriteScope(
         rentalInvoiceRepository,
+        rentalOrderRepository,
         rentalOrderInvoiceLookup,
         customerRepository,
         auditLogger,
@@ -241,12 +258,14 @@ describe("CreateRentalInvoiceService", () => {
   it("rolls back create changes on audit failure", async () => {
     const auditLogger = new ThrowingAuditLogger();
     const rentalInvoiceRepository = new InMemoryRentalInvoiceRepository();
+    const rentalOrderRepository = createLockedRentalOrderRepository();
     const rentalOrderInvoiceLookup = createCompletedRentalOrderLookup();
     const customerRepository = new InMemoryCustomerRepository();
     customerRepository.seed([buildCustomerEntity()]);
     const service = new CreateRentalInvoiceService(
       createRollbackTransactionRunner(
         rentalInvoiceRepository,
+        rentalOrderRepository,
         rentalOrderInvoiceLookup,
         customerRepository,
         auditLogger,
@@ -343,6 +362,7 @@ describe("UpdateRentalInvoiceService", () => {
     const service = new UpdateRentalInvoiceService(
       createRollbackTransactionRunner(
         rentalInvoiceRepository,
+        createLockedRentalOrderRepository(),
         createCompletedRentalOrderLookup(),
         customerRepository,
         auditLogger,
@@ -415,6 +435,7 @@ describe("IssueRentalInvoiceService", () => {
     const service = new IssueRentalInvoiceService(
       createRollbackTransactionRunner(
         rentalInvoiceRepository,
+        createLockedRentalOrderRepository(),
         createCompletedRentalOrderLookup(),
         customerRepository,
         auditLogger,
@@ -498,6 +519,7 @@ describe("VoidRentalInvoiceService", () => {
     const service = new VoidRentalInvoiceService(
       createRollbackTransactionRunner(
         rentalInvoiceRepository,
+        createLockedRentalOrderRepository(),
         createCompletedRentalOrderLookup(),
         customerRepository,
         auditLogger,

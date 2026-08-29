@@ -1,4 +1,5 @@
 import type { InMemoryCustomerRepository } from "@/modules/customer/tests/helpers/in-memory-customer.repository";
+import type { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
 import type {
   IRentalInvoiceTransactionRunner,
   RentalInvoiceWriteScope,
@@ -19,6 +20,7 @@ export function createPassThroughTransactionRunner(
 
 export function createRollbackTransactionRunner(
   rentalInvoiceRepository: InMemoryRentalInvoiceRepository,
+  rentalOrderRepository: InMemoryRentalOrderRepository,
   rentalOrderInvoiceLookup: InMemoryRentalOrderInvoiceLookup,
   customerRepository: InMemoryCustomerRepository,
   auditLogger: MockAuditLogger,
@@ -32,6 +34,7 @@ export function createRollbackTransactionRunner(
       try {
         return await operation({
           rentalInvoiceRepository,
+          rentalOrderRepository,
           rentalOrderInvoiceLookup,
           customerRepository,
           auditLogger,

@@ -1,4 +1,4 @@
-import type { RentalInvoiceId } from "@/shared/domain/ids";
+import type { RentalInvoiceId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { RentalInvoice } from "./rental-invoice.entity";
@@ -12,6 +12,10 @@ import type {
 export interface IRentalInvoiceRepository {
   findById(id: RentalInvoiceId): Promise<RentalInvoice | null>;
   findByInvoiceNumber(invoiceNumber: string): Promise<RentalInvoice | null>;
+  /** First non-VOID invoice for the order, if any. */
+  findActiveByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<RentalInvoice | null>;
   findPaged(
     query: RentalInvoiceListQuery,
   ): Promise<PaginatedResult<RentalInvoice>>;

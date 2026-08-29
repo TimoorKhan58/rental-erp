@@ -37,7 +37,7 @@ export function createRentalInvoiceApplicationServices(
   const createRentalInvoice = new CreateRentalInvoiceService(transactionRunner);
   const generateRentalInvoiceFromOrder = new GenerateRentalInvoiceFromOrderService(
     deps,
-    createRentalInvoice,
+    userId,
   );
   const updateRentalInvoice = new UpdateRentalInvoiceService(transactionRunner);
   const issueRentalInvoice = new IssueRentalInvoiceService(transactionRunner);

@@ -1,5 +1,6 @@
 import type { IRentalInvoiceTransactionRunner } from "@/modules/rental-invoice/application/services/rental-invoice-transaction.runner";
 import { createCustomerRepositoryFromUnitOfWork } from "@/modules/customer/infrastructure/factories/create-customer.repository";
+import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
 
@@ -19,6 +20,9 @@ export function createRentalInvoiceTransactionRunner(
       runWithRepositoryUnitOfWork(deps, (context) =>
         operation({
           rentalInvoiceRepository: createRentalInvoiceRepositoryFromUnitOfWork(
+            context,
+          ),
+          rentalOrderRepository: createRentalOrderRepositoryFromUnitOfWork(
             context,
           ),
           rentalOrderInvoiceLookup: createRentalOrderInvoiceLookupFromUnitOfWork(

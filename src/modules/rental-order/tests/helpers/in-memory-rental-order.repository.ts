@@ -15,6 +15,7 @@ import type { RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { acquireDispatchClaimLock } from "@/modules/dispatch/infrastructure/dispatch-claim-lock";
+import { acquireInvoiceCommandLock } from "@/modules/rental-order/infrastructure/invoice-command-lock";
 import { acquireReserveCommandLock } from "@/modules/rental-order/infrastructure/reserve-command-lock";
 
 import { buildRentalOrderEntity } from "./rental-order.fixtures";
@@ -395,6 +396,14 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     }
 
     await acquireReserveCommandLock(id);
+  }
+
+  async lockForInvoiceCommand(id: RentalOrderId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Rental order not found");
+    }
+
+    await acquireInvoiceCommandLock(id);
   }
 
   count(): number {
