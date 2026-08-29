@@ -71,7 +71,6 @@ export class CancelMaintenanceService {
           throw error;
         }
 
-        const wasInProgress = existing.status === "IN_PROGRESS";
         const previousValues = toMaintenanceAuditValues(existing);
 
         const claimed = await maintenanceRepository.claimStatusTransition(
@@ -91,13 +90,15 @@ export class CancelMaintenanceService {
           });
         }
 
-        if (wasInProgress) {
-          const inventory = await inventoryRepository.findById(existing.inventoryId);
+        const shouldReverseStock = claimed.startedAt !== null;
+
+        if (shouldReverseStock) {
+          const inventory = await inventoryRepository.findById(claimed.inventoryId);
 
           if (inventory === null) {
             throw new NotFoundError({
               message: "Inventory not found",
-              details: { inventoryId: existing.inventoryId },
+              details: { inventoryId: claimed.inventoryId },
             });
           }
 
@@ -111,10 +112,10 @@ export class CancelMaintenanceService {
             {
               inventoryId: inventory.id,
               movementType: "IN",
-              quantity: existing.quantity,
+              quantity: claimed.quantity,
               referenceType: MAINTENANCE_REFERENCE_TYPE,
-              referenceId: existing.id,
-              remarks: `Maintenance cancelled for ${existing.maintenanceNumber}`,
+              referenceId: claimed.id,
+              remarks: `Maintenance cancelled for ${claimed.maintenanceNumber}`,
             },
           );
         }
