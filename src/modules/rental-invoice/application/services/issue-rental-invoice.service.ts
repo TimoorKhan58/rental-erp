@@ -1,6 +1,7 @@
 import { RentalInvoiceInvalidStatusError } from "@/modules/rental-invoice/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -65,34 +66,44 @@ export class IssueRentalInvoiceService {
         }
 
         const previousValues = toRentalInvoiceAuditValues(existing);
-        const updated = await rentalInvoiceRepository.updateStatus(
+        const claimed = await rentalInvoiceRepository.claimStatusTransition(
           existing.id,
+          "DRAFT",
           {
             status: issued.status,
             issuedAt: issued.issuedAt,
           },
         );
 
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: RENTAL_INVOICE_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "DRAFT",
+            action: "issue",
+          });
+        }
+
         await auditLogger.log({
           module: RENTAL_INVOICE_MODULE,
           entityName: RENTAL_INVOICE_ENTITY_NAME,
-          recordId: updated.id,
+          recordId: claimed.id,
           action: "APPROVE",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toRentalInvoiceAuditValues(updated),
+          newValues: toRentalInvoiceAuditValues(claimed),
         });
 
         await enqueueWorkflowNotification(notificationService, db, {
           eventKey: NOTIFICATION_EVENT_KEYS.RENTAL_INVOICE_ISSUED,
           module: RENTAL_INVOICE_MODULE,
           entityName: RENTAL_INVOICE_ENTITY_NAME,
-          recordId: updated.id,
-          recipientUserIds: [updated.createdById],
-          data: { invoiceNumber: updated.invoiceNumber },
+          recordId: claimed.id,
+          recipientUserIds: [claimed.createdById],
+          data: { invoiceNumber: claimed.invoiceNumber },
         });
 
-        return toRentalInvoiceDto(updated);
+        return toRentalInvoiceDto(claimed);
       },
     );
   }

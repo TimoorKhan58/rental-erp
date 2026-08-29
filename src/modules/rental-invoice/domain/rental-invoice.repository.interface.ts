@@ -28,6 +28,11 @@ export interface IRentalInvoiceRepository {
     id: RentalInvoiceId,
     data: UpdateRentalInvoiceStatusData,
   ): Promise<RentalInvoice>;
+  claimStatusTransition(
+    id: RentalInvoiceId,
+    expected: RentalInvoice["status"] | ReadonlyArray<RentalInvoice["status"]>,
+    data: UpdateRentalInvoiceStatusData,
+  ): Promise<RentalInvoice | null>;
   /**
    * Atomically applies a signed payment delta to invoice money fields.
    * Positive delta records payment; negative delta reverses payment (void).

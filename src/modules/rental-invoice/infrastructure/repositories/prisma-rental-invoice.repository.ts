@@ -1,5 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
+import type { RentalInvoicePaymentStatusFilter } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
 import type { RentalInvoiceId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -34,6 +35,46 @@ const DEFAULT_ORDER_BY = {
   createdAt: "desc" as const,
 };
 
+function mapPaymentStatusFilter(
+  filter: RentalInvoicePaymentStatusFilter,
+): import("@/generated/prisma/client").Prisma.RentalInvoiceWhereInput {
+  switch (filter) {
+    case "void":
+      return { status: "VOID" };
+    case "paid":
+      return {
+        OR: [
+          { status: "PAID" },
+          {
+            AND: [{ status: { not: "VOID" } }, { balance: { lte: 0 } }],
+          },
+        ],
+      };
+    case "partial":
+      return {
+        OR: [
+          { status: "PARTIALLY_PAID" },
+          {
+            AND: [
+              { paidAmount: { gt: 0 } },
+              { balance: { gt: 0 } },
+              { status: { not: "VOID" } },
+            ],
+          },
+        ],
+      };
+    case "unpaid":
+      return {
+        OR: [
+          { status: "ISSUED" },
+          {
+            AND: [{ status: "DRAFT" }, { paidAmount: 0 }],
+          },
+        ],
+      };
+  }
+}
+
 function mapRentalInvoiceFilter(
   filter: Record<string, unknown>,
 ): import("@/generated/prisma/client").Prisma.RentalInvoiceWhereInput | undefined {
@@ -44,12 +85,33 @@ function mapRentalInvoiceFilter(
     where.status = filter.status as RentalInvoice["status"];
   }
 
+  if (filter.paymentStatus !== undefined) {
+    Object.assign(
+      where,
+      mapPaymentStatusFilter(filter.paymentStatus as RentalInvoicePaymentStatusFilter),
+    );
+  }
+
   if (filter.customerId !== undefined) {
     where.customerId = String(filter.customerId);
   }
 
   if (filter.rentalOrderId !== undefined) {
     where.rentalOrderId = String(filter.rentalOrderId);
+  }
+
+  if (filter.invoiceDateFrom !== undefined || filter.invoiceDateTo !== undefined) {
+    where.invoiceDate = {};
+
+    if (filter.invoiceDateFrom !== undefined) {
+      where.invoiceDate.gte = filter.invoiceDateFrom as Date;
+    }
+
+    if (filter.invoiceDateTo !== undefined) {
+      const end = new Date(filter.invoiceDateTo as Date);
+      end.setHours(23, 59, 59, 999);
+      where.invoiceDate.lte = end;
+    }
   }
 
   return Object.keys(where).length > 0 ? where : undefined;
@@ -125,6 +187,18 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
 
     if (query.rentalOrderId !== undefined) {
       filter.rentalOrderId = query.rentalOrderId;
+    }
+
+    if (query.paymentStatus !== undefined) {
+      filter.paymentStatus = query.paymentStatus;
+    }
+
+    if (query.invoiceDateFrom !== undefined) {
+      filter.invoiceDateFrom = query.invoiceDateFrom;
+    }
+
+    if (query.invoiceDateTo !== undefined) {
+      filter.invoiceDateTo = query.invoiceDateTo;
     }
 
     return runRepositoryPagedQuery(
@@ -212,6 +286,39 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
         }),
       { model: MODEL, operation: "updateStatus" },
     ).then(toRentalInvoiceDomain);
+  }
+
+  claimStatusTransition(
+    id: RentalInvoiceId,
+    expected: RentalInvoice["status"] | ReadonlyArray<RentalInvoice["status"]>,
+    data: UpdateRentalInvoiceStatusData,
+  ): Promise<RentalInvoice | null> {
+    return this.runner.run(
+      async (db) => {
+        const update = toRentalInvoiceStatusUpdateInput(data);
+        const expectedList = Array.isArray(expected) ? [...expected] : [expected];
+
+        const claimed = await db.rentalInvoice.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data: update,
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.rentalInvoice.findUnique({
+          where: { id },
+          include: RENTAL_INVOICE_INCLUDE,
+        });
+
+        return record === null ? null : toRentalInvoiceDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
   }
 
   applyPaymentDelta(

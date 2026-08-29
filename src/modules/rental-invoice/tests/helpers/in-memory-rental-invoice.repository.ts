@@ -92,6 +92,23 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
       items = items.filter((item) => item.rentalOrderId === query.rentalOrderId);
     }
 
+    if (query.paymentStatus !== undefined) {
+      items = items.filter((item) =>
+        matchesPaymentStatus(item, query.paymentStatus!),
+      );
+    }
+
+    if (query.invoiceDateFrom !== undefined) {
+      const from = query.invoiceDateFrom.getTime();
+      items = items.filter((item) => item.invoiceDate.getTime() >= from);
+    }
+
+    if (query.invoiceDateTo !== undefined) {
+      const end = new Date(query.invoiceDateTo);
+      end.setHours(23, 59, 59, 999);
+      items = items.filter((item) => item.invoiceDate.getTime() <= end.getTime());
+    }
+
     if (query.search) {
       const term = query.search.toLowerCase();
       items = items.filter(
@@ -223,6 +240,25 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     return updated;
   }
 
+  async claimStatusTransition(
+    id: RentalInvoiceId,
+    expected: RentalInvoice["status"] | ReadonlyArray<RentalInvoice["status"]>,
+    data: UpdateRentalInvoiceStatusData,
+  ): Promise<RentalInvoice | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, data);
+  }
+
   async applyPaymentDelta(
     id: RentalInvoiceId,
     delta: number,
@@ -275,6 +311,28 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
   count(): number {
     return this.store.size;
   }
+}
+
+function matchesPaymentStatus(
+  invoice: RentalInvoice,
+  filter: NonNullable<RentalInvoiceListQuery["paymentStatus"]>,
+): boolean {
+  if (filter === "void") {
+    return invoice.status === "VOID";
+  }
+
+  if (filter === "paid") {
+    return invoice.status === "PAID" || (invoice.status !== "VOID" && invoice.balance <= 0);
+  }
+
+  if (filter === "partial") {
+    return (
+      invoice.status === "PARTIALLY_PAID" ||
+      (invoice.paidAmount > 0 && invoice.balance > 0 && invoice.status !== "VOID")
+    );
+  }
+
+  return invoice.status === "ISSUED" || (invoice.status === "DRAFT" && invoice.paidAmount === 0);
 }
 
 export function createSeededRentalInvoiceRepository(
