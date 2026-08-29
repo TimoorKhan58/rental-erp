@@ -1,6 +1,6 @@
 # Rental ERP
 
-Enterprise rental management system for **Manyar Tent Service** (Pakistan).
+Enterprise rental management system for ** Tent Service** (Pakistan).
 
 Built to manage tent and event rental operations, with a long-term path toward a scalable, multi-tenant SaaS platform.
 
