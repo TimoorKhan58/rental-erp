@@ -1,6 +1,7 @@
 import { DispatchInvalidStatusError } from "@/modules/dispatch/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -55,22 +56,33 @@ export class CancelDispatchService {
       }
 
       const previousValues = toDispatchAuditValues(existing);
-      const updated = await dispatchRepository.updateStatus(
+
+      const claimed = await dispatchRepository.claimStatusTransition(
         existing.id,
+        ["DRAFT", "READY"],
         cancelled.status,
       );
+
+      if (claimed === null) {
+        throw new ConcurrentUpdateError({
+          entity: DISPATCH_ENTITY_NAME,
+          id: existing.id,
+          expectedStatus: "DRAFT|READY",
+          action: "cancel",
+        });
+      }
 
       await auditLogger.log({
         module: DISPATCH_MODULE,
         entityName: DISPATCH_ENTITY_NAME,
-        recordId: updated.id,
+        recordId: claimed.id,
         action: "CANCEL",
         status: "SUCCESS",
         oldValues: previousValues,
-        newValues: toDispatchAuditValues(updated),
+        newValues: toDispatchAuditValues(claimed),
       });
 
-      return toDispatchDto(updated);
+      return toDispatchDto(claimed);
     });
   }
 }
