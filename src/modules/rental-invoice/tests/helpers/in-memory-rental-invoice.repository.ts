@@ -1,5 +1,6 @@
 import { RentalInvoice } from "@/modules/rental-invoice/domain/rental-invoice.entity";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
+import { acquirePaymentCommitmentLock } from "@/modules/payment/infrastructure/payment-commitment-lock";
 import type { IRentalInvoiceRepository } from "@/modules/rental-invoice/domain/rental-invoice.repository.interface";
 import type {
   CreateRentalInvoiceData,
@@ -306,6 +307,14 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
 
     this.store.set(id, { record: updated.toProps() });
     return updated;
+  }
+
+  async lockForPaymentCommitment(id: RentalInvoiceId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Rental invoice not found");
+    }
+
+    await acquirePaymentCommitmentLock(id);
   }
 
   count(): number {

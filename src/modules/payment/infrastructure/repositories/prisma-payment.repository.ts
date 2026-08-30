@@ -1,6 +1,6 @@
 import type { PaymentListQuery } from "@/modules/payment/domain/payment-list.query";
 import { Prisma } from "@/generated/prisma/client";
-import type { PaymentId } from "@/shared/domain/ids";
+import type { PaymentId, RentalInvoiceId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
@@ -50,6 +50,24 @@ function mapPaymentFilter(
     where.rentalInvoiceId = String(filter.rentalInvoiceId);
   }
 
+  if (filter.paymentMethod !== undefined) {
+    where.paymentMethod = filter.paymentMethod as Payment["paymentMethod"];
+  }
+
+  if (filter.paymentDateFrom !== undefined || filter.paymentDateTo !== undefined) {
+    where.paymentDate = {};
+
+    if (filter.paymentDateFrom !== undefined) {
+      where.paymentDate.gte = filter.paymentDateFrom as Date;
+    }
+
+    if (filter.paymentDateTo !== undefined) {
+      const end = new Date(filter.paymentDateTo as Date);
+      end.setHours(23, 59, 59, 999);
+      where.paymentDate.lte = end;
+    }
+  }
+
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
@@ -97,6 +115,18 @@ export class PrismaPaymentRepository implements IPaymentRepository {
       filter.rentalInvoiceId = query.rentalInvoiceId;
     }
 
+    if (query.paymentMethod !== undefined) {
+      filter.paymentMethod = query.paymentMethod;
+    }
+
+    if (query.paymentDateFrom !== undefined) {
+      filter.paymentDateFrom = query.paymentDateFrom;
+    }
+
+    if (query.paymentDateTo !== undefined) {
+      filter.paymentDateTo = query.paymentDateTo;
+    }
+
     return runRepositoryPagedQuery(
       this.runner,
       {
@@ -131,6 +161,29 @@ export class PrismaPaymentRepository implements IPaymentRepository {
       items: result.items.map(toPaymentDomain),
       meta: result.meta,
     }));
+  }
+
+  sumPendingAmountByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+    excludePaymentId?: PaymentId,
+  ): Promise<number> {
+    return this.runner.run(
+      async (db) => {
+        const result = await db.payment.aggregate({
+          where: {
+            rentalInvoiceId,
+            status: "PENDING",
+            ...(excludePaymentId !== undefined
+              ? { id: { not: excludePaymentId } }
+              : {}),
+          },
+          _sum: { amount: true },
+        });
+
+        return Number(result._sum.amount ?? 0);
+      },
+      { model: MODEL, operation: "sumPendingAmountByRentalInvoiceId" },
+    );
   }
 
   create(data: CreatePaymentData): Promise<Payment> {

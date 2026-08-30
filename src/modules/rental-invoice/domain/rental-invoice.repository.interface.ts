@@ -42,4 +42,9 @@ export interface IRentalInvoiceRepository {
     id: RentalInvoiceId,
     delta: number,
   ): Promise<RentalInvoice | null>;
+  /**
+   * Serializes pending-payment create/update commands for one invoice.
+   * Production: row-level lock; tests: in-memory mutex keyed by invoice id.
+   */
+  lockForPaymentCommitment(id: RentalInvoiceId): Promise<void>;
 }

@@ -6,7 +6,7 @@ import type {
   UpdatePaymentData,
   UpdatePaymentStatusData,
 } from "@/modules/payment/domain/payment.types";
-import type { PaymentId } from "@/shared/domain/ids";
+import type { PaymentId, RentalInvoiceId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { buildPaymentEntity } from "./payment.fixtures";
@@ -78,6 +78,22 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       );
     }
 
+    if (query.paymentMethod !== undefined) {
+      items = items.filter((item) => item.paymentMethod === query.paymentMethod);
+    }
+
+    if (query.paymentDateFrom !== undefined) {
+      items = items.filter(
+        (item) => item.paymentDate.getTime() >= query.paymentDateFrom!.getTime(),
+      );
+    }
+
+    if (query.paymentDateTo !== undefined) {
+      const end = new Date(query.paymentDateTo);
+      end.setHours(23, 59, 59, 999);
+      items = items.filter((item) => item.paymentDate.getTime() <= end.getTime());
+    }
+
     if (query.search) {
       const term = query.search.toLowerCase();
       items = items.filter(
@@ -129,6 +145,23 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  sumPendingAmountByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+    excludePaymentId?: PaymentId,
+  ): Promise<number> {
+    const total = Array.from(this.store.values())
+      .map((stored) => Payment.reconstitute(stored.record))
+      .filter(
+        (payment) =>
+          payment.rentalInvoiceId === rentalInvoiceId &&
+          payment.status === "PENDING" &&
+          payment.id !== excludePaymentId,
+      )
+      .reduce((sum, payment) => sum + payment.amount, 0);
+
+    return Promise.resolve(total);
   }
 
   async create(data: CreatePaymentData): Promise<Payment> {

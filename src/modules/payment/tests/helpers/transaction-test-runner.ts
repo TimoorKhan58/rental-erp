@@ -3,6 +3,7 @@ import type {
   IPaymentTransactionRunner,
   PaymentWriteScope,
 } from "@/modules/payment/application/services/payment-transaction.runner";
+import { runWithPaymentCommitmentLockScope } from "@/modules/payment/infrastructure/payment-commitment-lock";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 import type { InMemoryPaymentRepository } from "./in-memory-payment.repository";
@@ -12,7 +13,8 @@ export function createPassThroughTransactionRunner(
   scope: PaymentWriteScope,
 ): IPaymentTransactionRunner {
   return {
-    run: (operation) => operation(scope),
+    run: (operation) =>
+      runWithPaymentCommitmentLockScope(() => operation(scope)),
   };
 }
 
@@ -29,13 +31,15 @@ export function createRollbackTransactionRunner(
       const auditSnapshot = auditLogger.snapshot();
 
       try {
-        return await operation({
-          paymentRepository,
-          rentalInvoiceRepository,
-          auditLogger,
-          ...mockNotificationWriteScopeDeps,
-          userId,
-        });
+        return await runWithPaymentCommitmentLockScope(() =>
+          operation({
+            paymentRepository,
+            rentalInvoiceRepository,
+            auditLogger,
+            ...mockNotificationWriteScopeDeps,
+            userId,
+          }),
+        );
       } catch (error) {
         paymentRepository.restore(paymentSnapshot);
         rentalInvoiceRepository.restore(invoiceSnapshot);

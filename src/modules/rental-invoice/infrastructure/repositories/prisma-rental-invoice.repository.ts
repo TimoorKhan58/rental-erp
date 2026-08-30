@@ -381,4 +381,19 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
       { model: MODEL, operation: "applyPaymentDelta" },
     );
   }
+
+  lockForPaymentCommitment(id: RentalInvoiceId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "rental_invoices" WHERE id = ${id}::uuid FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Rental invoice not found");
+        }
+      },
+      { model: MODEL, operation: "lockForPaymentCommitment" },
+    );
+  }
 }

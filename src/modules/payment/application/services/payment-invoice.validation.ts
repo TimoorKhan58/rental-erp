@@ -23,11 +23,14 @@ export function validateInvoiceForPayment(
   invoice: RentalInvoice,
   customerId: string,
   amount: number,
+  options?: { pendingAmount?: number },
 ): void {
   try {
     assertInvoiceEligibleForPayment(invoice.status);
     assertCustomerMatchesInvoice(customerId, invoice.customerId);
-    assertPaymentAmountWithinBalance(amount, invoice.balance);
+    const pendingAmount = options?.pendingAmount ?? 0;
+    const availableBalance = Math.max(0, invoice.balance - pendingAmount);
+    assertPaymentAmountWithinBalance(amount, availableBalance);
   } catch (error) {
     if (
       error instanceof PaymentEligibilityError ||

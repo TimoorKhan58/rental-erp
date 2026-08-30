@@ -77,9 +77,8 @@ export class UpdatePaymentService {
           throw error;
         }
 
-        const invoice = await rentalInvoiceRepository.findById(
-          toRentalInvoiceId(existing.rentalInvoiceId),
-        );
+        const invoiceId = toRentalInvoiceId(existing.rentalInvoiceId);
+        const invoice = await rentalInvoiceRepository.findById(invoiceId);
 
         if (invoice === null) {
           throw new NotFoundError({
@@ -88,8 +87,31 @@ export class UpdatePaymentService {
           });
         }
 
+        await rentalInvoiceRepository.lockForPaymentCommitment(invoiceId);
+
+        const authoritativeInvoice =
+          await rentalInvoiceRepository.findById(invoiceId);
+
+        if (authoritativeInvoice === null) {
+          throw new NotFoundError({
+            message: "Rental invoice not found",
+            details: { rentalInvoiceId: existing.rentalInvoiceId },
+          });
+        }
+
         const nextAmount = updateData.amount ?? existing.amount;
-        validateInvoiceForPayment(invoice, existing.customerId, nextAmount);
+        validateInvoiceForPayment(
+          authoritativeInvoice,
+          existing.customerId,
+          nextAmount,
+          {
+            pendingAmount:
+              await paymentRepository.sumPendingAmountByRentalInvoiceId(
+                existing.rentalInvoiceId,
+                existing.id,
+              ),
+          },
+        );
 
         const previousValues = toPaymentAuditValues(existing);
         const updated = await paymentRepository.update(existing.id, updateData);
