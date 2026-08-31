@@ -37,7 +37,7 @@ export function EditInventoryDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Edit inventory record"
-      description="Update stock levels and thresholds for this product-warehouse assignment."
+      description="Update reorder thresholds and active status. Use Adjust Stock to correct on-hand quantity."
       size="xl"
     >
       <InventoryForm

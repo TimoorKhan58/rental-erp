@@ -159,22 +159,8 @@ function EditInventoryForm({
 
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
-      <SectionCard title="Stock levels">
+      <SectionCard title="Thresholds & status">
         <div className="grid gap-4 md:grid-cols-2">
-          <NumberField
-            control={form.control}
-            name="quantityOnHand"
-            label="Quantity on hand"
-            min={0}
-            step={1}
-          />
-          <NumberField
-            control={form.control}
-            name="reservedQuantity"
-            label="Reserved quantity"
-            min={0}
-            step={1}
-          />
           <NumberField
             control={form.control}
             name="minimumStock"

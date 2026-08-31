@@ -56,8 +56,6 @@ export type CreateInventoryPayload = {
 };
 
 export type UpdateInventoryPayload = {
-  quantityOnHand?: number;
-  reservedQuantity?: number;
   minimumStock?: number;
   maximumStock?: number | null;
   isActive?: boolean;

@@ -61,15 +61,9 @@ export const createInventoryFormSchema = z
 
 export const updateInventoryFormSchema = z
   .object({
-    quantityOnHand: nonNegativeInt,
-    reservedQuantity: nonNegativeInt,
     minimumStock: nonNegativeInt,
     maximumStock: optionalMaximumStockSchema,
     isActive: z.boolean(),
-  })
-  .refine(stockLevelRefinement.reservedWithinOnHand, {
-    message: "Reserved quantity cannot exceed quantity on hand",
-    path: ["reservedQuantity"],
   })
   .refine(stockLevelRefinement.maximumAboveMinimum, {
     message: "Maximum stock must be greater than or equal to minimum stock",

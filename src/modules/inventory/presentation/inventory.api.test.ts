@@ -183,22 +183,45 @@ describe("Inventory API handlers", () => {
     expect(services.createInventory.execute).toHaveBeenCalledOnce();
   });
 
-  it("PATCH /api/inventory/{id} updates inventory", async () => {
+  it("PATCH /api/inventory/{id} updates inventory metadata", async () => {
     const services = createMockServices();
     services.updateInventory.execute.mockResolvedValue({
       ...mockInventoryDto,
-      quantityOnHand: 200,
-      availableQuantity: 190,
+      minimumStock: 25,
     });
 
     const response = await handleUpdateInventory(
-      createMockNextRequest({ json: { quantityOnHand: 200 } }),
+      createMockNextRequest({ json: { minimumStock: 25 } }),
       INVENTORY_ID,
       () => services,
     );
 
     expect(response.status).toBe(200);
     expect(services.updateInventory.execute).toHaveBeenCalledOnce();
+  });
+
+  it("PATCH /api/inventory/{id} rejects quantityOnHand (Phase 43)", async () => {
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { quantityOnHand: 200 } }),
+      INVENTORY_ID,
+      () => createMockServices(),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
+  });
+
+  it("PATCH /api/inventory/{id} rejects reservedQuantity (Phase 43)", async () => {
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { reservedQuantity: 20 } }),
+      INVENTORY_ID,
+      () => createMockServices(),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("DELETE /api/inventory/{id} deletes inventory", async () => {
@@ -344,6 +367,38 @@ describe("Inventory permission matrix", () => {
 
     const response = await handleCreateInventory(
       createMockNextRequest({ json: VALID_CREATE_INPUT }),
+      () => createMockServices(),
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe(ERROR_CODES.FORBIDDEN);
+  });
+
+  it("allows worker metadata PATCH when inventory.update is granted (T43.11)", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+    services.updateInventory.execute.mockResolvedValue({
+      ...mockInventoryDto,
+      minimumStock: 20,
+    });
+
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { minimumStock: 20 } }),
+      INVENTORY_ID,
+      () => services,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.updateInventory.execute).toHaveBeenCalledOnce();
+  });
+
+  it("denies viewer metadata PATCH without inventory.update", async () => {
+    mockSession(USER_ROLES.VIEWER);
+
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { minimumStock: 20 } }),
+      INVENTORY_ID,
       () => createMockServices(),
     );
     const body = await readJsonResponse<{ error: { code: string } }>(response);

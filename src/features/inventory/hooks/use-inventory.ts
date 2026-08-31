@@ -212,19 +212,9 @@ export function useUpdateInventory() {
       const previous = queryClient.getQueryData(queryKeys.inventory.detail(id));
 
       if (previous) {
-        const current = previous as {
-          quantityOnHand: number;
-          reservedQuantity: number;
-          availableQuantity: number;
-        };
-
-        const quantityOnHand = payload.quantityOnHand ?? current.quantityOnHand;
-        const reservedQuantity = payload.reservedQuantity ?? current.reservedQuantity;
-
         queryClient.setQueryData(queryKeys.inventory.detail(id), {
           ...previous,
           ...payload,
-          availableQuantity: quantityOnHand - reservedQuantity,
           updatedAt: new Date().toISOString(),
         });
       }

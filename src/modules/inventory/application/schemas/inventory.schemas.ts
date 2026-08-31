@@ -27,10 +27,13 @@ export const CreateInventorySchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+/**
+ * Phase 43 (F-31-08): metadata-only PATCH. Authoritative counters
+ * (`quantityOnHand`, `reservedQuantity`) must not be mutated here — use
+ * ADJUSTMENT stock movements or reservation/workflow commands instead.
+ */
 export const UpdateInventorySchema = z
   .object({
-    quantityOnHand: NonNegativeIntSchema.optional(),
-    reservedQuantity: NonNegativeIntSchema.optional(),
     minimumStock: NonNegativeIntSchema.optional(),
     maximumStock: OptionalMaximumStockSchema,
     isActive: z.boolean().optional(),
@@ -38,8 +41,6 @@ export const UpdateInventorySchema = z
   .strict()
   .refine(
     (value) =>
-      value.quantityOnHand !== undefined ||
-      value.reservedQuantity !== undefined ||
       value.minimumStock !== undefined ||
       value.maximumStock !== undefined ||
       value.isActive !== undefined,

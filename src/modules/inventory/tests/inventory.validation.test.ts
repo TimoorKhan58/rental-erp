@@ -87,9 +87,30 @@ describe("Inventory validation schemas", () => {
     expect(() => parseRequest(InventoryIdParamSchema, { id: "bad-id" })).toThrow();
   });
 
-  it("accepts valid update payload", () => {
-    const result = parseRequest(UpdateInventorySchema, { quantityOnHand: 200 });
-    expect(result.quantityOnHand).toBe(200);
+  it("accepts valid metadata update payload", () => {
+    const result = parseRequest(UpdateInventorySchema, { minimumStock: 25 });
+    expect(result.minimumStock).toBe(25);
+  });
+
+  it("rejects quantityOnHand in update payload (Phase 43)", () => {
+    expect(() =>
+      parseRequest(UpdateInventorySchema, { quantityOnHand: 200 }),
+    ).toThrow();
+  });
+
+  it("rejects reservedQuantity in update payload (Phase 43)", () => {
+    expect(() =>
+      parseRequest(UpdateInventorySchema, { reservedQuantity: 20 }),
+    ).toThrow();
+  });
+
+  it("rejects both counter fields in update payload (Phase 43)", () => {
+    expect(() =>
+      parseRequest(UpdateInventorySchema, {
+        quantityOnHand: 200,
+        reservedQuantity: 20,
+      }),
+    ).toThrow();
   });
 
   it("rejects empty update payload", () => {
@@ -100,7 +121,7 @@ describe("Inventory validation schemas", () => {
     expect(() =>
       parseRequest(UpdateInventorySchema, {
         productId: PRODUCT_ID,
-        quantityOnHand: 200,
+        minimumStock: 25,
       }),
     ).toThrow();
   });
@@ -109,7 +130,7 @@ describe("Inventory validation schemas", () => {
     expect(() =>
       parseRequest(UpdateInventorySchema, {
         warehouseId: WAREHOUSE_ID,
-        quantityOnHand: 200,
+        minimumStock: 25,
       }),
     ).toThrow();
   });
