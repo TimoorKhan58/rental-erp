@@ -18,6 +18,8 @@ import type {
 } from "@/modules/supplier-payment/domain/supplier-payment.types";
 import { SUPPLIER_PAYMENT_SEARCH_FIELDS } from "@/modules/supplier-payment/domain/supplier-payment.constants";
 
+import { Prisma } from "@/generated/prisma/client";
+
 import {
   toSupplierPaymentCreateInput,
   toSupplierPaymentDomain,
@@ -158,5 +160,45 @@ export class PrismaSupplierPaymentRepository
         }),
       { model: MODEL, operation: "updateStatus" },
     ).then(toSupplierPaymentDomain);
+  }
+
+  claimStatusTransition(
+    id: SupplierPaymentId,
+    expected: SupplierPayment["status"] | ReadonlyArray<SupplierPayment["status"]>,
+    data: UpdateSupplierPaymentStatusData,
+  ): Promise<SupplierPayment | null> {
+    return this.runner.run(
+      async (db) => {
+        const update: Prisma.SupplierPaymentUpdateManyMutationInput = {
+          status: data.status,
+        };
+
+        if (data.postedAt !== undefined) {
+          update.postedAt = data.postedAt;
+        }
+
+        if (data.voidedAt !== undefined) {
+          update.voidedAt = data.voidedAt;
+        }
+
+        const expectedList = Array.isArray(expected) ? [...expected] : [expected];
+
+        const claimed = await db.supplierPayment.updateMany({
+          where: {
+            id,
+            status: { in: expectedList },
+          },
+          data: update,
+        });
+
+        if (claimed.count !== 1) {
+          return null;
+        }
+
+        const record = await db.supplierPayment.findUnique({ where: { id } });
+        return record === null ? null : toSupplierPaymentDomain(record);
+      },
+      { model: MODEL, operation: "claimStatusTransition" },
+    );
   }
 }

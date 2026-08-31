@@ -19,4 +19,9 @@ export interface ISupplierPaymentRepository {
     id: SupplierPaymentId,
     data: UpdateSupplierPaymentStatusData,
   ): Promise<SupplierPayment>;
+  claimStatusTransition(
+    id: SupplierPaymentId,
+    expected: SupplierPayment["status"] | ReadonlyArray<SupplierPayment["status"]>,
+    data: UpdateSupplierPaymentStatusData,
+  ): Promise<SupplierPayment | null>;
 }

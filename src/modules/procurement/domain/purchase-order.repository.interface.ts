@@ -32,4 +32,12 @@ export interface IPurchaseOrderRepository {
     id: PurchaseOrderId,
     paidAmount: number,
   ): Promise<PurchaseOrder>;
+  /**
+   * Phase 44 (N-44-04): atomically applies a signed payment delta to
+   * paidAmount with SQL/domain predicates (non-negative, not above order total).
+   */
+  applyPaymentDelta(
+    id: PurchaseOrderId,
+    delta: number,
+  ): Promise<PurchaseOrder | null>;
 }

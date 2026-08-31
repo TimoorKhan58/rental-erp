@@ -1,3 +1,4 @@
+import { PURCHASE_ORDER_ENTITY_NAME } from "@/modules/procurement/domain/purchase-order.constants";
 import type { PurchaseOrder } from "@/modules/procurement/domain/purchase-order.entity";
 import type { IPurchaseOrderRepository } from "@/modules/procurement/domain/purchase-order.repository.interface";
 import {
@@ -10,7 +11,11 @@ import {
   assertSupplierMatchesPurchaseOrder,
   SupplierPaymentEligibilityError,
 } from "@/modules/supplier-payment/domain";
-import { UnprocessableError } from "@/shared/infrastructure/errors";
+import type { PurchaseOrderId } from "@/shared/domain/ids";
+import {
+  ConcurrentUpdateError,
+  UnprocessableError,
+} from "@/shared/infrastructure/errors";
 
 export function validatePurchaseOrderForSupplierPayment(
   purchaseOrder: PurchaseOrder,
@@ -37,17 +42,26 @@ export function validatePurchaseOrderForSupplierPayment(
 
 export async function applyPaymentToPurchaseOrder(
   purchaseOrderRepository: IPurchaseOrderRepository,
-  purchaseOrder: PurchaseOrder,
+  purchaseOrderId: PurchaseOrderId,
   payment: SupplierPayment,
   direction: "apply" | "reverse",
 ): Promise<PurchaseOrder> {
   const delta = direction === "apply" ? payment.amount : -payment.amount;
-  const updated = purchaseOrder.withPaymentApplied(
-    purchaseOrder.paidAmount + delta,
+  const afterDelta = await purchaseOrderRepository.applyPaymentDelta(
+    purchaseOrderId,
+    delta,
   );
 
-  return purchaseOrderRepository.updatePaidAmount(
-    purchaseOrder.id,
-    updated.paidAmount,
-  );
+  if (afterDelta === null) {
+    throw new ConcurrentUpdateError({
+      entity: PURCHASE_ORDER_ENTITY_NAME,
+      id: purchaseOrderId,
+      action:
+        direction === "apply"
+          ? "apply supplier payment"
+          : "reverse supplier payment",
+    });
+  }
+
+  return afterDelta;
 }

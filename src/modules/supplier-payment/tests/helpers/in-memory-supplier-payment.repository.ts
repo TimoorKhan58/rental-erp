@@ -148,6 +148,25 @@ export class InMemorySupplierPaymentRepository
     return updated;
   }
 
+  async claimStatusTransition(
+    id: SupplierPaymentId,
+    expected: SupplierPayment["status"] | ReadonlyArray<SupplierPayment["status"]>,
+    data: UpdateSupplierPaymentStatusData,
+  ): Promise<SupplierPayment | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, data);
+  }
+
   count(): number {
     return this.store.size;
   }
