@@ -42,6 +42,11 @@ export interface IDispatchRepository {
   findCompletedDispatchesByRentalOrderId(
     rentalOrderId: RentalOrderId,
   ): Promise<Dispatch[]>;
+  /**
+   * Phase 45 (N-44-01): serializes return capacity validation for one dispatch.
+   * Must remain held through read → validate → return mutation in the same UoW.
+   */
+  lockForReturnCapacity(id: DispatchId): Promise<void>;
   create(data: CreateDispatchData): Promise<Dispatch>;
   update(id: DispatchId, data: UpdateDispatchData): Promise<Dispatch>;
   updateStatus(

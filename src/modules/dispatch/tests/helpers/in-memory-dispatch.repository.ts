@@ -14,6 +14,8 @@ import { validateDispatchItems } from "@/modules/dispatch/domain/dispatch.rules"
 import type { DispatchId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
+import { acquireReturnCapacityLock } from "@/modules/dispatch/infrastructure/return-capacity-lock";
+
 import { buildDispatchEntity } from "./dispatch.fixtures";
 
 interface StoredDispatch {
@@ -346,6 +348,14 @@ export class InMemoryDispatchRepository implements IDispatchRepository {
     }
 
     return this.updateStatus(id, next, timestamps);
+  }
+
+  async lockForReturnCapacity(id: DispatchId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Dispatch not found");
+    }
+
+    await acquireReturnCapacityLock(id);
   }
 
   count(): number {

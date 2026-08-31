@@ -364,4 +364,19 @@ export class PrismaDispatchRepository implements IDispatchRepository {
       { model: MODEL, operation: "claimStatusTransition" },
     );
   }
+
+  lockForReturnCapacity(id: DispatchId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "dispatches" WHERE id = ${id} FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Dispatch not found");
+        }
+      },
+      { model: MODEL, operation: "lockForReturnCapacity" },
+    );
+  }
 }

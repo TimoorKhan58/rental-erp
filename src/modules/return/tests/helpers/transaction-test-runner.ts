@@ -9,6 +9,7 @@ import type {
   IReturnTransactionRunner,
   ReturnWriteScope,
 } from "@/modules/return/application/services/return-transaction.runner";
+import { runWithReturnCapacityLockScope } from "@/modules/dispatch/infrastructure/return-capacity-lock";
 
 import type { InMemoryReturnRepository } from "./in-memory-return.repository";
 import type { MockAuditLogger } from "./mock-audit-logger";
@@ -17,7 +18,8 @@ export function createPassThroughTransactionRunner(
   scope: ReturnWriteScope,
 ): IReturnTransactionRunner {
   return {
-    run: (operation) => operation(scope),
+    run: (operation) =>
+      runWithReturnCapacityLockScope(() => operation(scope)),
   };
 }
 
@@ -42,17 +44,19 @@ export function createRollbackTransactionRunner(
       const auditSnapshot = auditLogger.snapshot();
 
       try {
-        return await operation({
-          returnRepository,
-          dispatchRepository,
-          rentalOrderRepository,
-          inventoryRepository,
-          stockMovementRepository,
-          externalRentalRepository,
-          auditLogger,
-          ...mockNotificationWriteScopeDeps,
-          userId,
-        });
+        return await runWithReturnCapacityLockScope(() =>
+          operation({
+            returnRepository,
+            dispatchRepository,
+            rentalOrderRepository,
+            inventoryRepository,
+            stockMovementRepository,
+            externalRentalRepository,
+            auditLogger,
+            ...mockNotificationWriteScopeDeps,
+            userId,
+          }),
+        );
       } catch (error) {
         returnRepository.restore(returnSnapshot);
         dispatchRepository.restore(dispatchSnapshot);
