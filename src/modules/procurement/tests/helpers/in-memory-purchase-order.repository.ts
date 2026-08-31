@@ -10,6 +10,7 @@ import type {
 } from "@/modules/procurement/domain/purchase-order.types";
 import type { PurchaseOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { acquireSupplierPaymentCommitmentLock } from "@/modules/supplier-payment/infrastructure/supplier-payment-commitment-lock";
 
 import { buildPurchaseOrderEntity } from "./purchase-order.fixtures";
 
@@ -300,6 +301,14 @@ export class InMemoryPurchaseOrderRepository implements IPurchaseOrderRepository
 
     this.store.set(id, { record: updated.toProps() });
     return updated;
+  }
+
+  async lockForSupplierPaymentCommitment(id: PurchaseOrderId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Purchase order not found");
+    }
+
+    await acquireSupplierPaymentCommitmentLock(id);
   }
 
   count(): number {

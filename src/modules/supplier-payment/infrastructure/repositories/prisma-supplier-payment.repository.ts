@@ -1,5 +1,5 @@
 import type { SupplierPaymentListQuery } from "@/modules/supplier-payment/domain/supplier-payment-list.query";
-import type { SupplierPaymentId } from "@/shared/domain/ids";
+import type { PurchaseOrderId, SupplierPaymentId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
 import {
@@ -199,6 +199,29 @@ export class PrismaSupplierPaymentRepository
         return record === null ? null : toSupplierPaymentDomain(record);
       },
       { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
+
+  sumPendingAmountByPurchaseOrderId(
+    purchaseOrderId: PurchaseOrderId,
+    excludePaymentId?: SupplierPaymentId,
+  ): Promise<number> {
+    return this.runner.run(
+      async (db) => {
+        const result = await db.supplierPayment.aggregate({
+          where: {
+            purchaseOrderId,
+            status: "PENDING",
+            ...(excludePaymentId !== undefined
+              ? { id: { not: excludePaymentId } }
+              : {}),
+          },
+          _sum: { amount: true },
+        });
+
+        return Number(result._sum.amount ?? 0);
+      },
+      { model: MODEL, operation: "sumPendingAmountByPurchaseOrderId" },
     );
   }
 }

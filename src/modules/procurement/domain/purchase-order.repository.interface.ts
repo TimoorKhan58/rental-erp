@@ -40,4 +40,10 @@ export interface IPurchaseOrderRepository {
     id: PurchaseOrderId,
     delta: number,
   ): Promise<PurchaseOrder | null>;
+  /**
+   * Phase 46 (N-44-06): serializes pending supplier-payment commitment for one
+   * purchase order. Must remain held through read → validate → create in the
+   * same UoW.
+   */
+  lockForSupplierPaymentCommitment(id: PurchaseOrderId): Promise<void>;
 }

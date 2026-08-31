@@ -293,4 +293,19 @@ export class PrismaPurchaseOrderRepository implements IPurchaseOrderRepository {
       { model: MODEL, operation: "applyPaymentDelta" },
     );
   }
+
+  lockForSupplierPaymentCommitment(id: PurchaseOrderId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "purchase_orders" WHERE id = ${id}::uuid FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Purchase order not found");
+        }
+      },
+      { model: MODEL, operation: "lockForSupplierPaymentCommitment" },
+    );
+  }
 }

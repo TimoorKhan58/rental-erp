@@ -5,7 +5,7 @@ import type {
   CreateSupplierPaymentData,
   UpdateSupplierPaymentStatusData,
 } from "@/modules/supplier-payment/domain/supplier-payment.types";
-import type { SupplierPaymentId } from "@/shared/domain/ids";
+import type { SupplierPaymentId, PurchaseOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { buildSupplierPaymentEntity } from "./supplier-payment.fixtures";
@@ -165,6 +165,23 @@ export class InMemorySupplierPaymentRepository
     }
 
     return this.updateStatus(id, data);
+  }
+
+  sumPendingAmountByPurchaseOrderId(
+    purchaseOrderId: PurchaseOrderId,
+    excludePaymentId?: SupplierPaymentId,
+  ): Promise<number> {
+    const total = Array.from(this.store.values())
+      .map((stored) => SupplierPayment.reconstitute(stored.record))
+      .filter(
+        (payment) =>
+          payment.purchaseOrderId === purchaseOrderId &&
+          payment.status === "PENDING" &&
+          payment.id !== excludePaymentId,
+      )
+      .reduce((sum, payment) => sum + payment.amount, 0);
+
+    return Promise.resolve(total);
   }
 
   count(): number {

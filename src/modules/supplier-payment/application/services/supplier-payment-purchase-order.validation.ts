@@ -21,11 +21,17 @@ export function validatePurchaseOrderForSupplierPayment(
   purchaseOrder: PurchaseOrder,
   supplierId: string,
   amount: number,
+  options?: { pendingAmount?: number },
 ): void {
   try {
     assertPurchaseOrderEligibleForPayment(purchaseOrder.status);
     assertSupplierMatchesPurchaseOrder(supplierId, purchaseOrder.supplierId);
-    assertPaymentAmountWithinBalance(amount, purchaseOrder.getBalance());
+    const pendingAmount = options?.pendingAmount ?? 0;
+    const availableBalance = Math.max(
+      0,
+      purchaseOrder.getBalance() - pendingAmount,
+    );
+    assertPaymentAmountWithinBalance(amount, availableBalance);
   } catch (error) {
     if (
       error instanceof SupplierPaymentEligibilityError ||
