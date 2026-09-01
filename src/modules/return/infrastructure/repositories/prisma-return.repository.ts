@@ -293,4 +293,19 @@ export class PrismaReturnRepository implements IReturnRepository {
       { model: MODEL, operation: "claimStatusTransition" },
     );
   }
+
+  lockForRepairCapacity(id: ReturnInspectionId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "return_inspections" WHERE id = ${id}::uuid FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Return inspection not found");
+        }
+      },
+      { model: MODEL, operation: "lockForRepairCapacity" },
+    );
+  }
 }

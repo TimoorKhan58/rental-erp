@@ -33,4 +33,10 @@ export interface IReturnRepository {
     expected: Return["status"] | ReadonlyArray<Return["status"]>,
     data: UpdateReturnStatusData,
   ): Promise<Return | null>;
+  /**
+   * Phase 47 (N-46-01): serializes repair capacity commitment for one return
+   * inspection. Must remain held through read → validate → create/update in the
+   * same UoW.
+   */
+  lockForRepairCapacity(id: ReturnInspectionId): Promise<void>;
 }

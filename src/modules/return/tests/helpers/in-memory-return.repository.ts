@@ -9,6 +9,7 @@ import type {
 } from "@/modules/return/domain/return.types";
 import type { DispatchId, ReturnInspectionId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { acquireRepairCapacityLock } from "@/modules/repair/infrastructure/repair-capacity-lock";
 
 import { buildReturnEntity } from "./return.fixtures";
 
@@ -249,6 +250,14 @@ export class InMemoryReturnRepository implements IReturnRepository {
     }
 
     return this.updateStatus(id, data);
+  }
+
+  async lockForRepairCapacity(id: ReturnInspectionId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Return inspection not found");
+    }
+
+    await acquireRepairCapacityLock(id);
   }
 
   count(): number {
