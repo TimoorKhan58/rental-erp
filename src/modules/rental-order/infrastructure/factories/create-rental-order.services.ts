@@ -11,9 +11,7 @@ import { ListRentalOrdersService } from "@/modules/rental-order/application/serv
 import { ReserveRentalOrderService } from "@/modules/rental-order/application/services/reserve-rental-order.service";
 import { SourceRentalOrderExternallyService } from "@/modules/rental-order/application/services/source-rental-order-externally.service";
 import { UpdateRentalOrderService } from "@/modules/rental-order/application/services/update-rental-order.service";
-import { CreateExternalRentalService } from "@/modules/external-rental/application/services/create-external-rental.service";
 import { createExternalRentalRepositoryFromSharedDeps } from "@/modules/external-rental/infrastructure/factories/create-external-rental.repository";
-import { createExternalRentalTransactionRunner } from "@/modules/external-rental/infrastructure/factories/create-external-rental-transaction.runner";
 import { createInventoryRepositoryFromSharedDeps } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
 import { createSupplierRepositoryFromSharedDeps } from "@/modules/supplier/infrastructure/factories/create-supplier.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -42,15 +40,6 @@ export function createRentalOrderApplicationServices(
     userId,
   });
   const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
-  const externalRentalTransactionRunner = createExternalRentalTransactionRunner(
-    deps,
-    { userId },
-  );
-  const createExternalRental = new CreateExternalRentalService(
-    externalRentalTransactionRunner,
-    numberSequences,
-    userId,
-  );
 
   const getRentalOrderById = new GetRentalOrderByIdService(repository);
   const listRentalOrders = new ListRentalOrdersService(repository);
@@ -72,11 +61,10 @@ export function createRentalOrderApplicationServices(
     externalRentalRepository,
   );
   const sourceRentalOrderExternally = new SourceRentalOrderExternallyService(
-    repository,
-    inventoryRepository,
-    externalRentalRepository,
+    transactionRunner,
     supplierRepository,
-    createExternalRental,
+    numberSequences,
+    userId,
   );
 
   return {

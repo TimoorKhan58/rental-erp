@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CreateExternalRentalService } from "@/modules/external-rental/application/services/create-external-rental.service";
+import { createSeededExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 import {
   AGREEMENT_ITEM_ID,
   buildExternalRentalAgreementEntity,
 } from "@/modules/external-rental/tests/helpers/external-rental.fixtures";
-import { createSeededExternalRentalRepository } from "@/modules/external-rental/tests/helpers/in-memory-external-rental.repository";
 import { MockAuditLogger } from "@/modules/external-rental/tests/helpers/mock-audit-logger";
-import { createPassThroughExternalRentalTransactionRunner } from "@/modules/external-rental/tests/helpers/transaction-test-runner";
+import { InMemoryDispatchRepository } from "@/modules/dispatch/tests/helpers/in-memory-dispatch.repository";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
+import { InMemoryStockMovementRepository } from "@/modules/stock-movement/tests/helpers/in-memory-stock-movement.repository";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { buildSupplierEntity } from "@/modules/supplier/tests/helpers/supplier.fixtures";
 import { InMemorySupplierRepository } from "@/modules/supplier/tests/helpers/in-memory-supplier.repository";
@@ -19,9 +19,11 @@ import {
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 import type { ProductId, SupplierId } from "@/shared/domain/ids";
+import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 import { GetRentalOrderShortfallService } from "./services/get-rental-order-shortfall.service";
 import { SourceRentalOrderExternallyService } from "./services/source-rental-order-externally.service";
+import { createPassThroughTransactionRunner } from "../tests/helpers/transaction-test-runner";
 import {
   ITEM_ID,
   PRODUCT_ID,
@@ -130,15 +132,16 @@ function createHarness(options?: {
   ]);
 
   const auditLogger = new MockAuditLogger();
-  const createExternalRental = new CreateExternalRentalService(
-    createPassThroughExternalRentalTransactionRunner({
-      externalRentalRepository: externalRentals,
-      auditLogger,
-      userId: USER_ID,
-    }),
-    createNumberSequences(),
-    USER_ID,
-  );
+  const transactionRunner = createPassThroughTransactionRunner({
+    rentalOrderRepository: rentalOrders,
+    inventoryRepository: inventory,
+    stockMovementRepository: new InMemoryStockMovementRepository(),
+    dispatchRepository: new InMemoryDispatchRepository(),
+    externalRentalRepository: externalRentals,
+    auditLogger,
+    ...mockNotificationWriteScopeDeps,
+    userId: USER_ID,
+  });
 
   const shortfallService = new GetRentalOrderShortfallService(
     rentalOrders,
@@ -147,11 +150,10 @@ function createHarness(options?: {
   );
 
   const sourceService = new SourceRentalOrderExternallyService(
-    rentalOrders,
-    inventory,
-    externalRentals,
+    transactionRunner,
     suppliers,
-    createExternalRental,
+    createNumberSequences(),
+    USER_ID,
   );
 
   return {
