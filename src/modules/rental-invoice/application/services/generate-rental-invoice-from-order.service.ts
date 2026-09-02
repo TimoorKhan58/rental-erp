@@ -12,7 +12,6 @@ import {
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
-  ConflictError,
 } from "@/shared/infrastructure/errors";
 import type { ProductId } from "@/shared/domain/ids";
 
@@ -28,15 +27,9 @@ import { generateNextInvoiceNumber } from "./generate-invoice-number";
 import { loadReturnsForRentalOrder } from "./load-rental-order-returns";
 import { validateCustomerForInvoice } from "./rental-invoice-rental-order.validation";
 import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
+import { isInvoiceNumberConflict } from "./is-invoice-number-conflict";
 
 const INVOICE_NUMBER_ALLOCATION_MAX_ATTEMPTS = 5;
-
-function isInvoiceNumberConflict(error: unknown): boolean {
-  return (
-    error instanceof ConflictError &&
-    error.message === "Invoice number already exists"
-  );
-}
 
 export class GenerateRentalInvoiceFromOrderService {
   constructor(
