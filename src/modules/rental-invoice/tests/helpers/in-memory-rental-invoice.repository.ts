@@ -1,4 +1,5 @@
 import { RentalInvoice } from "@/modules/rental-invoice/domain/rental-invoice.entity";
+import { parseInvoiceNumberSequence } from "@/modules/rental-invoice/domain/rental-invoice-number.rules";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
 import { acquirePaymentCommitmentLock } from "@/modules/payment/infrastructure/payment-commitment-lock";
 import type { IRentalInvoiceRepository } from "@/modules/rental-invoice/domain/rental-invoice.repository.interface";
@@ -9,6 +10,7 @@ import type {
 } from "@/modules/rental-invoice/domain/rental-invoice.types";
 import type { RentalInvoiceId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { ConflictError } from "@/shared/infrastructure/errors";
 
 import { buildRentalInvoiceEntity } from "./rental-invoice.fixtures";
 
@@ -18,6 +20,15 @@ interface StoredRentalInvoice {
 
 export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository {
   private readonly store = new Map<string, StoredRentalInvoice>();
+  private readonly invoiceNumbers = new Set<string>();
+
+  private rebuildInvoiceNumberIndex(): void {
+    this.invoiceNumbers.clear();
+
+    for (const stored of this.store.values()) {
+      this.invoiceNumbers.add(stored.record.invoiceNumber);
+    }
+  }
 
   snapshot(): Map<string, StoredRentalInvoice> {
     return new Map(
@@ -33,6 +44,7 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     for (const [id, value] of snapshot.entries()) {
       this.store.set(id, { record: structuredClone(value.record) });
     }
+    this.rebuildInvoiceNumberIndex();
   }
 
   seed(invoices: RentalInvoice[]): void {
@@ -41,6 +53,7 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
       const props = invoice.toProps();
       this.store.set(props.id, { record: props });
     }
+    this.rebuildInvoiceNumberIndex();
   }
 
   findById(id: RentalInvoiceId): Promise<RentalInvoice | null> {
@@ -72,6 +85,23 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
       .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
 
     return Promise.resolve(active[0] ?? null);
+  }
+
+  async findMaxSequenceForInvoicePrefix(prefix: string): Promise<number> {
+    let max = 0;
+
+    for (const stored of this.store.values()) {
+      const sequence = parseInvoiceNumberSequence(
+        stored.record.invoiceNumber,
+        prefix,
+      );
+
+      if (sequence !== null) {
+        max = Math.max(max, sequence);
+      }
+    }
+
+    return max;
   }
 
   async findPaged(
@@ -167,6 +197,16 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
 
   async create(data: CreateRentalInvoiceData): Promise<RentalInvoice> {
     const normalized = RentalInvoice.create(data);
+
+    if (this.invoiceNumbers.has(normalized.invoiceNumber)) {
+      throw new ConflictError({
+        message: "Invoice number already exists",
+        details: { invoiceNumber: normalized.invoiceNumber },
+      });
+    }
+
+    this.invoiceNumbers.add(normalized.invoiceNumber);
+
     const now = new Date();
     const id = crypto.randomUUID() as RentalInvoiceId;
     const items = normalized.items.map((item) => ({

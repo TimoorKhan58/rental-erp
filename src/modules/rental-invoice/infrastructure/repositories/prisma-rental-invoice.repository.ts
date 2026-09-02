@@ -172,6 +172,29 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
     ).then((record) => (record ? toRentalInvoiceDomain(record) : null));
   }
 
+  findMaxSequenceForInvoicePrefix(prefix: string): Promise<number> {
+    return this.runner.run(
+      async (db) => {
+        const prefixLength = prefix.length;
+        const rows = await db.$queryRaw<Array<{ max: number | null }>>`
+          SELECT COALESCE(
+            MAX(
+              CAST(SUBSTRING("invoiceNumber" FROM ${prefixLength + 1}) AS INTEGER)
+            ),
+            0
+          ) AS max
+          FROM "rental_invoices"
+          WHERE "invoiceNumber" LIKE ${`${prefix}%`}
+            AND SUBSTRING("invoiceNumber" FROM ${prefixLength + 1}) ~ '^[0-9]+$'
+        `;
+
+        const value = rows[0]?.max;
+        return value === null || value === undefined ? 0 : Number(value);
+      },
+      { model: MODEL, operation: "findMaxSequenceForInvoicePrefix" },
+    );
+  }
+
   findPaged(
     query: RentalInvoiceListQuery,
   ): Promise<PaginatedResult<RentalInvoice>> {

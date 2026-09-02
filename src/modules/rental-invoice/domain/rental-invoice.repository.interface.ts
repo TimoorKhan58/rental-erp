@@ -19,6 +19,11 @@ export interface IRentalInvoiceRepository {
   findPaged(
     query: RentalInvoiceListQuery,
   ): Promise<PaginatedResult<RentalInvoice>>;
+  /**
+   * Returns the highest numeric sequence already committed for the given
+   * invoice-number prefix (e.g. `INV-2026-`), or 0 when none exist.
+   */
+  findMaxSequenceForInvoicePrefix(prefix: string): Promise<number>;
   create(data: CreateRentalInvoiceData): Promise<RentalInvoice>;
   update(
     id: RentalInvoiceId,
