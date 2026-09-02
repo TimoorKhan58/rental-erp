@@ -78,7 +78,7 @@ export function toRepairCreateInput(
   return {
     repairNumber: normalized.repairNumber,
     returnInspection: { connect: { id: normalized.returnId } },
-    returnInspectionItemId: normalized.returnItemId,
+    returnInspectionItem: { connect: { id: normalized.returnItemId } },
     product: { connect: { id: normalized.productId } },
     warehouse: { connect: { id: normalized.warehouseId } },
     quantity: normalized.quantity,
