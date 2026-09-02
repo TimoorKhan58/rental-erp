@@ -1,3 +1,4 @@
+import { assertExternalSourcingF02Gate } from "@/modules/rental-order/application/services/assert-external-sourcing-f02-gate";
 import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import {
@@ -59,11 +60,33 @@ export class CreateExternalRentalService {
       throw error;
     }
 
-    return this.transactionRunner.run(({ externalRentalRepository, auditLogger }) =>
-      executeCreateExternalRentalInScope(
-        { externalRentalRepository, auditLogger },
-        createData,
-      ),
+    return this.transactionRunner.run(
+      async ({
+        externalRentalRepository,
+        rentalOrderRepository,
+        inventoryRepository,
+        auditLogger,
+      }) => {
+        await assertExternalSourcingF02Gate(
+          {
+            rentalOrderRepository,
+            inventoryRepository,
+            externalRentalRepository,
+          },
+          createData.rentalOrderId,
+          createData.items.map((item) => ({
+            rentalOrderItemId: item.rentalOrderItemId,
+            quantityRequested: item.quantityRequested,
+            productId: item.productId,
+          })),
+          { expectedWarehouseId: createData.warehouseId },
+        );
+
+        return executeCreateExternalRentalInScope(
+          { externalRentalRepository, auditLogger },
+          createData,
+        );
+      },
     );
   }
 }

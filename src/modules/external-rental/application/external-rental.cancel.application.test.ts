@@ -18,6 +18,7 @@ import {
 } from "../tests/helpers/external-rental.fixtures";
 import { createSeededExternalRentalRepository } from "../tests/helpers/in-memory-external-rental.repository";
 import { MockAuditLogger } from "../tests/helpers/mock-audit-logger";
+import { createShortfallBackedExternalRentalHarness } from "../tests/helpers/external-rental-write-scope.factory";
 import { createPassThroughExternalRentalTransactionRunner } from "../tests/helpers/transaction-test-runner";
 
 function toCreateInput(
@@ -139,12 +140,7 @@ describe("CancelExternalRentalService (Phase 25.10 / BD-C4)", () => {
       status: "CANCELLED",
     });
     const repository = createSeededExternalRentalRepository([cancelled]);
-    const auditLogger = new MockAuditLogger();
-    const runner = createPassThroughExternalRentalTransactionRunner({
-      externalRentalRepository: repository,
-      auditLogger,
-      userId: USER_ID,
-    });
+    const { runner } = createShortfallBackedExternalRentalHarness(repository);
     const createService = new CreateExternalRentalService(
       runner,
       createNumberSequences(),
@@ -155,6 +151,12 @@ describe("CancelExternalRentalService (Phase 25.10 / BD-C4)", () => {
       toCreateInput({
         agreementNumber: undefined,
         rentalOrderId: RENTAL_ORDER_ID,
+        items: [
+          {
+            ...VALID_CREATE_INPUT.items[0],
+            quantityRequested: 150,
+          },
+        ],
       }),
     );
 
@@ -167,11 +169,7 @@ describe("CancelExternalRentalService (Phase 25.10 / BD-C4)", () => {
     const repository = createSeededExternalRentalRepository([
       buildExternalRentalAgreementEntity({ status: "CONFIRMED" }),
     ]);
-    const runner = createPassThroughExternalRentalTransactionRunner({
-      externalRentalRepository: repository,
-      auditLogger: new MockAuditLogger(),
-      userId: USER_ID,
-    });
+    const { runner } = createShortfallBackedExternalRentalHarness(repository);
     const createService = new CreateExternalRentalService(
       runner,
       createNumberSequences(),
