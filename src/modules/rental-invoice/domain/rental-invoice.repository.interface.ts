@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { RentalInvoice } from "./rental-invoice.entity";
 import type { RentalInvoiceListQuery } from "./rental-invoice-list.query";
+import type { RentalInvoiceSummaryQuery } from "./rental-invoice-summary.query";
+import type { RentalInvoiceSummaryResult } from "./rental-invoice-summary.types";
 import type {
   CreateRentalInvoiceData,
   UpdateRentalInvoiceData,
@@ -19,6 +21,9 @@ export interface IRentalInvoiceRepository {
   findPaged(
     query: RentalInvoiceListQuery,
   ): Promise<PaginatedResult<RentalInvoice>>;
+  findSummaryStats(
+    query: RentalInvoiceSummaryQuery,
+  ): Promise<RentalInvoiceSummaryResult>;
   /**
    * Returns the highest numeric sequence already committed for the given
    * invoice-number prefix (e.g. `INV-2026-`), or 0 when none exist.

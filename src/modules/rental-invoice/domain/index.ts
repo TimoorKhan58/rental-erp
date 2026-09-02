@@ -19,6 +19,19 @@ export {
   createInvoiceNumber,
 } from "./rental-invoice.errors";
 export type { RentalInvoiceListQuery } from "./rental-invoice-list.query";
+export type { RentalInvoiceSummaryQuery } from "./rental-invoice-summary.query";
+export type {
+  RentalInvoiceSummaryPaymentStatusCounts,
+  RentalInvoiceSummaryResult,
+  RentalInvoiceSummaryStats,
+  RentalInvoiceSummaryStatusCounts,
+} from "./rental-invoice-summary.types";
+export {
+  computeRentalInvoiceSummaryResult,
+  filterRentalInvoicesForSummary,
+  matchesRentalInvoicePaymentStatus,
+  matchesRentalInvoiceSummaryQuery,
+} from "./rental-invoice-summary.rules";
 export type { IRentalInvoiceRepository } from "./rental-invoice.repository.interface";
 export type {
   IRentalOrderInvoiceLookup,

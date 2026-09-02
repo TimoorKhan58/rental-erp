@@ -37,6 +37,7 @@ function createMockServices() {
   return {
     getRentalInvoiceById: { execute: vi.fn() },
     listRentalInvoices: { execute: vi.fn() },
+    getRentalInvoiceSummary: { execute: vi.fn() },
     createRentalInvoice: { execute: vi.fn() },
     updateRentalInvoice: { execute: vi.fn() },
     issueRentalInvoice: { execute: vi.fn() },
@@ -136,6 +137,54 @@ describe("rental invoice route handlers", () => {
     expect(result.status).toBe(200);
     expect(result.body).toMatchObject({
       data: { items: [] },
+    });
+  });
+
+  it("summary handler returns summary envelope with read permission", async () => {
+    const services = createMockServices();
+    services.getRentalInvoiceSummary.execute.mockResolvedValue({
+      stats: {
+        totalInvoices: 101,
+        activeInvoices: 100,
+        outstandingCount: 50,
+        partiallyPaidCount: 10,
+        paidCount: 40,
+        draftCount: 1,
+        totalOutstanding: 5000,
+        totalCollected: 9000,
+      },
+      statusCounts: {
+        all: 101,
+        DRAFT: 1,
+        ISSUED: 50,
+        PARTIALLY_PAID: 10,
+        PAID: 40,
+        VOID: 1,
+      },
+      paymentStatusCounts: {
+        all: 101,
+        unpaid: 51,
+        partial: 10,
+        paid: 39,
+        void: 1,
+      },
+    });
+
+    const result = await runRentalInvoiceApiRoute({
+      request: createMockNextRequest(),
+      route: "/api/rental-invoices/summary",
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalInvoices.read,
+      resolveServices: () =>
+        services as unknown as RentalInvoiceApplicationServices,
+      handler: async (_ctx, svc) => svc.getRentalInvoiceSummary.execute({}),
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({
+      data: {
+        stats: { totalInvoices: 101 },
+      },
     });
   });
 

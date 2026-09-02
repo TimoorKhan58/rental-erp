@@ -87,6 +87,29 @@ export type ListRentalInvoicesParams = {
   sortOrder?: "asc" | "desc";
   search?: string;
   status?: RentalInvoiceStatus;
+  paymentStatus?: PaymentStatusFilter;
   customerId?: string;
   rentalOrderId?: string;
+  invoiceDateFrom?: string;
+  invoiceDateTo?: string;
+};
+
+export type GetRentalInvoiceSummaryParams = Omit<
+  ListRentalInvoicesParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type RentalInvoiceSummaryResponse = {
+  stats: {
+    totalInvoices: number;
+    activeInvoices: number;
+    outstandingCount: number;
+    partiallyPaidCount: number;
+    paidCount: number;
+    draftCount: number;
+    totalOutstanding: number;
+    totalCollected: number;
+  };
+  statusCounts: Partial<Record<"all" | RentalInvoiceStatus, number>>;
+  paymentStatusCounts: Partial<Record<"all" | PaymentStatusFilter, number>>;
 };

@@ -1,6 +1,11 @@
 import { RentalInvoice } from "@/modules/rental-invoice/domain/rental-invoice.entity";
 import { parseInvoiceNumberSequence } from "@/modules/rental-invoice/domain/rental-invoice-number.rules";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
+import type { RentalInvoiceSummaryQuery } from "@/modules/rental-invoice/domain/rental-invoice-summary.query";
+import {
+  computeRentalInvoiceSummaryResult,
+  filterRentalInvoicesForSummary,
+} from "@/modules/rental-invoice/domain/rental-invoice-summary.rules";
 import { acquirePaymentCommitmentLock } from "@/modules/payment/infrastructure/payment-commitment-lock";
 import type { IRentalInvoiceRepository } from "@/modules/rental-invoice/domain/rental-invoice.repository.interface";
 import type {
@@ -193,6 +198,17 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: RentalInvoiceSummaryQuery) {
+    const items = filterRentalInvoicesForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        RentalInvoice.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(computeRentalInvoiceSummaryResult(items));
   }
 
   async create(data: CreateRentalInvoiceData): Promise<RentalInvoice> {

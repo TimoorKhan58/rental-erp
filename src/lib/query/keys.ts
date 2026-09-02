@@ -178,6 +178,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.rentalInvoices.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.rentalInvoices.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.rentalInvoices.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.rentalInvoices.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.rentalInvoices.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.rentalInvoices.details(), id] as const,
   },
