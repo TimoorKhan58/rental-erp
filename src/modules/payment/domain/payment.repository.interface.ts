@@ -17,6 +17,10 @@ export interface IPaymentRepository {
     rentalInvoiceId: RentalInvoiceId,
     excludePaymentId?: PaymentId,
   ): Promise<number>;
+  /** Count of live POSTED payments referencing the invoice (Phase 52 / N-44-05). */
+  countPostedPaymentsByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+  ): Promise<number>;
   create(data: CreatePaymentData): Promise<Payment>;
   update(id: PaymentId, data: UpdatePaymentData): Promise<Payment>;
   updateStatus(

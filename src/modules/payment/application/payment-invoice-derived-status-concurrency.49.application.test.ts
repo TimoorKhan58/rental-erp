@@ -96,6 +96,7 @@ function buildPaymentRunner(
 
 function buildInvoiceVoidRunner(
   rentalInvoiceRepository: InMemoryRentalInvoiceRepository,
+  paymentRepository: InMemoryPaymentRepository,
   auditLogger: MockAuditLogger,
   useRollback: boolean,
 ) {
@@ -105,6 +106,7 @@ function buildInvoiceVoidRunner(
 
   const scope = {
     rentalInvoiceRepository,
+    paymentRepository,
     rentalOrderRepository,
     rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
     customerRepository,
@@ -121,6 +123,7 @@ function buildInvoiceVoidRunner(
         customerRepository,
         auditLogger,
         USER_ID,
+        paymentRepository,
       )
     : createInvoicePassThroughRunner(scope);
 }
@@ -259,7 +262,12 @@ describe("Phase 49 F-37-R1: derived invoice status atomicity", () => {
 
     const auditLogger = new MockAuditLogger();
     const voidService = new VoidRentalInvoiceService(
-      buildInvoiceVoidRunner(rentalInvoiceRepository, auditLogger, false),
+      buildInvoiceVoidRunner(
+        rentalInvoiceRepository,
+        paymentRepository,
+        auditLogger,
+        false,
+      ),
     );
     const postService = new PostPaymentService(
       buildPaymentRunner(
@@ -305,6 +313,12 @@ describe("Phase 49 F-37-R1: derived invoice status atomicity", () => {
     }
 
     assertInvoiceLifecycleCoherent(stored!);
+
+    const postedCount =
+      await paymentRepository.countPostedPaymentsByRentalInvoiceId(
+        RENTAL_INVOICE_ID,
+      );
+    expect(stored!.status !== "VOID" || postedCount === 0).toBe(true);
   });
 
   it("T49.6: concurrent POST ∥ POST — additive settlement, consistent derived status", async () => {
@@ -381,6 +395,7 @@ describe("Phase 49 F-37-R1: issue path unchanged", () => {
     const issueService = new IssueRentalInvoiceService(
       createInvoicePassThroughRunner({
         rentalInvoiceRepository,
+        paymentRepository: new InMemoryPaymentRepository(),
         rentalOrderRepository: new InMemoryRentalOrderRepository(),
         rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
         customerRepository,

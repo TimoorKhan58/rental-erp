@@ -186,6 +186,21 @@ export class PrismaPaymentRepository implements IPaymentRepository {
     );
   }
 
+  countPostedPaymentsByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+  ): Promise<number> {
+    return this.runner.run(
+      async (db) =>
+        db.payment.count({
+          where: {
+            rentalInvoiceId,
+            status: "POSTED",
+          },
+        }),
+      { model: MODEL, operation: "countPostedPaymentsByRentalInvoiceId" },
+    );
+  }
+
   create(data: CreatePaymentData): Promise<Payment> {
     return repositoryCreate(
       this.runner,

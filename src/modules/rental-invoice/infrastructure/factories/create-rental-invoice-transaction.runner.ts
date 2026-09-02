@@ -1,5 +1,8 @@
+import { createAccountRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-account.repository";
+import { createJournalEntryRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-journal-entry.repository";
 import type { IRentalInvoiceTransactionRunner } from "@/modules/rental-invoice/application/services/rental-invoice-transaction.runner";
 import { createCustomerRepositoryFromUnitOfWork } from "@/modules/customer/infrastructure/factories/create-customer.repository";
+import { createPaymentRepositoryFromUnitOfWork } from "@/modules/payment/infrastructure/factories/create-payment.repository";
 import { createRentalOrderRepositoryFromUnitOfWork } from "@/modules/rental-order/infrastructure/factories/create-rental-order.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
@@ -22,6 +25,7 @@ export function createRentalInvoiceTransactionRunner(
           rentalInvoiceRepository: createRentalInvoiceRepositoryFromUnitOfWork(
             context,
           ),
+          paymentRepository: createPaymentRepositoryFromUnitOfWork(context),
           rentalOrderRepository: createRentalOrderRepositoryFromUnitOfWork(
             context,
           ),
@@ -29,6 +33,8 @@ export function createRentalInvoiceTransactionRunner(
             context,
           ),
           customerRepository: createCustomerRepositoryFromUnitOfWork(context),
+          accountRepository: createAccountRepositoryFromUnitOfWork(context),
+          journalEntryRepository: createJournalEntryRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           notificationService: context.deps.notificationService,
           db: context.tx,

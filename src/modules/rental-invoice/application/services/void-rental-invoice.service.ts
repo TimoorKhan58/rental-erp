@@ -20,6 +20,7 @@ import {
   RENTAL_INVOICE_ENTITY_NAME,
   RENTAL_INVOICE_MODULE,
 } from "./rental-invoice-service.constants";
+import { assertInvoiceVoidWithoutPostedPayments } from "./assert-invoice-void-without-posted-payments";
 import type { IRentalInvoiceTransactionRunner } from "./rental-invoice-transaction.runner";
 
 export class VoidRentalInvoiceService {
@@ -31,10 +32,9 @@ export class VoidRentalInvoiceService {
     const { id } = parseRequest(RentalInvoiceIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ rentalInvoiceRepository, auditLogger }) => {
-        const existing = await rentalInvoiceRepository.findById(
-          toRentalInvoiceId(id),
-        );
+      async ({ rentalInvoiceRepository, paymentRepository, auditLogger }) => {
+        const invoiceId = toRentalInvoiceId(id);
+        const existing = await rentalInvoiceRepository.findById(invoiceId);
 
         if (existing === null) {
           throw new NotFoundError({
@@ -42,6 +42,12 @@ export class VoidRentalInvoiceService {
             details: { id },
           });
         }
+
+        await rentalInvoiceRepository.lockForPaymentCommitment(invoiceId);
+        await assertInvoiceVoidWithoutPostedPayments(
+          paymentRepository,
+          invoiceId,
+        );
 
         let voided;
 

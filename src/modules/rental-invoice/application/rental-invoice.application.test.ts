@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { InMemoryAccountRepository } from "@/modules/accounting/tests/helpers/in-memory-account.repository";
+import { InMemoryJournalEntryRepository } from "@/modules/accounting/tests/helpers/in-memory-journal-entry.repository";
 import { InMemoryCustomerRepository } from "@/modules/customer/tests/helpers/in-memory-customer.repository";
 import { buildCustomerEntity } from "@/modules/customer/tests/helpers/customer.fixtures";
 import { CreateRentalInvoiceService } from "@/modules/rental-invoice/application/services/create-rental-invoice.service";
@@ -48,6 +50,7 @@ import {
 } from "../tests/helpers/transaction-test-runner";
 import { buildRentalOrderEntity } from "@/modules/rental-order/tests/helpers/rental-order.fixtures";
 import { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
+import { InMemoryPaymentRepository } from "@/modules/payment/tests/helpers/in-memory-payment.repository";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 
 class ThrowingAuditLogger extends MockAuditLogger {
@@ -74,9 +77,12 @@ function createWriteScope(
 ) {
   return createPassThroughTransactionRunner({
     rentalInvoiceRepository,
+    paymentRepository: new InMemoryPaymentRepository(),
     rentalOrderRepository,
     rentalOrderInvoiceLookup,
     customerRepository,
+    accountRepository: new InMemoryAccountRepository(),
+    journalEntryRepository: new InMemoryJournalEntryRepository(),
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId,

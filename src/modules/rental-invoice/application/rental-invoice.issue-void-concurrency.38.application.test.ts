@@ -78,6 +78,7 @@ function buildInvoiceRunner(
 
   return createPassThroughTransactionRunner({
     rentalInvoiceRepository,
+    paymentRepository: new InMemoryPaymentRepository(),
     rentalOrderRepository: new InMemoryRentalOrderRepository(),
     rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
     customerRepository,

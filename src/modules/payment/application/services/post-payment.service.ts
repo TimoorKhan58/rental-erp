@@ -1,3 +1,4 @@
+import { postPaymentReceivedJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toRentalInvoiceAuditValues } from "@/modules/rental-invoice/application/services/rental-invoice-audit.mapper";
 import {
   RENTAL_INVOICE_ENTITY_NAME,
@@ -20,6 +21,7 @@ import {
   toPaymentDto,
   toPaymentId,
   toRentalInvoiceId,
+  toUserId,
 } from "../mappers/payment.mapper";
 import {
   PaymentIdParamSchema,
@@ -48,9 +50,12 @@ export class PostPaymentService {
       async ({
         paymentRepository,
         rentalInvoiceRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
         notificationService,
         db,
+        userId,
       }) => {
         const existing = await paymentRepository.findById(toPaymentId(id));
 
@@ -90,14 +95,35 @@ export class PostPaymentService {
           });
         }
 
+        await rentalInvoiceRepository.lockForPaymentCommitment(invoice.id);
+
+        const authoritativeInvoice = await rentalInvoiceRepository.findById(
+          invoice.id,
+        );
+
+        if (authoritativeInvoice === null) {
+          throw new NotFoundError({
+            message: "Rental invoice not found",
+            details: { rentalInvoiceId: existing.rentalInvoiceId },
+          });
+        }
+
         validateInvoiceForPayment(
-          invoice,
+          authoritativeInvoice,
           existing.customerId,
           existing.amount,
+          {
+            pendingAmount: await paymentRepository.sumPendingAmountByRentalInvoiceId(
+              existing.rentalInvoiceId,
+              existing.id,
+            ),
+          },
         );
 
         const previousPaymentValues = toPaymentAuditValues(existing);
-        const previousInvoiceValues = toRentalInvoiceAuditValues(invoice);
+        const previousInvoiceValues = toRentalInvoiceAuditValues(
+          authoritativeInvoice,
+        );
 
         const claimed = await paymentRepository.claimStatusTransition(
           existing.id,
@@ -119,7 +145,7 @@ export class PostPaymentService {
 
         const updatedInvoice = await applyPaymentToInvoice(
           rentalInvoiceRepository,
-          invoice.id,
+          authoritativeInvoice.id,
           existing,
           "apply",
         );
@@ -158,6 +184,22 @@ export class PostPaymentService {
             amount: updated.amount,
           },
         });
+
+        if (userId !== undefined) {
+          await postPaymentReceivedJournal(
+            {
+              accountRepository,
+              journalEntryRepository,
+              userId: toUserId(userId),
+            },
+            {
+              paymentId: updated.id,
+              paymentNumber: updated.paymentNumber,
+              paymentDate: updated.paymentDate,
+              amount: updated.amount,
+            },
+          );
+        }
 
         return toPaymentDto(updated);
       },

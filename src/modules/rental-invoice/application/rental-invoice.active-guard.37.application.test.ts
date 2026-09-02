@@ -96,6 +96,7 @@ import { ConflictError } from "@/shared/infrastructure/errors";
 import { mockNotificationWriteScopeDeps } from "@/shared/infrastructure/notifications/test-helpers/mock-notification-deps";
 import { InMemoryAccountRepository } from "@/modules/accounting/tests/helpers/in-memory-account.repository";
 import { InMemoryJournalEntryRepository } from "@/modules/accounting/tests/helpers/in-memory-journal-entry.repository";
+import { InMemoryPaymentRepository } from "@/modules/payment/tests/helpers/in-memory-payment.repository";
 
 const VALID_CREATE_SERVICE_INPUT =
   VALID_CREATE_INPUT as unknown as CreateRentalInvoiceInput;
@@ -125,6 +126,7 @@ function createDirectCreateHarness(
 
   const transactionRunner = createPassThroughTransactionRunner({
     rentalInvoiceRepository,
+    paymentRepository: new InMemoryPaymentRepository(),
     rentalOrderRepository,
     rentalOrderInvoiceLookup,
     customerRepository,
@@ -389,6 +391,7 @@ describe("Phase 37 rental invoice active-guard integrity", () => {
 
       const transactionRunner = createPassThroughTransactionRunner({
         rentalInvoiceRepository,
+        paymentRepository: new InMemoryPaymentRepository(),
         rentalOrderRepository,
         rentalOrderInvoiceLookup,
         customerRepository,
@@ -477,6 +480,7 @@ describe("Phase 37 rental invoice active-guard integrity", () => {
 
       const transactionRunner = createPassThroughTransactionRunner({
         rentalInvoiceRepository,
+        paymentRepository: new InMemoryPaymentRepository(),
         rentalOrderRepository,
         rentalOrderInvoiceLookup,
         customerRepository,

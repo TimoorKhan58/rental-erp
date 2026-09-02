@@ -164,6 +164,20 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     return Promise.resolve(total);
   }
 
+  countPostedPaymentsByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+  ): Promise<number> {
+    const count = Array.from(this.store.values())
+      .map((stored) => Payment.reconstitute(stored.record))
+      .filter(
+        (payment) =>
+          payment.rentalInvoiceId === rentalInvoiceId &&
+          payment.status === "POSTED",
+      ).length;
+
+    return Promise.resolve(count);
+  }
+
   async create(data: CreatePaymentData): Promise<Payment> {
     const normalized = Payment.create(data);
     const now = new Date();
