@@ -20,6 +20,7 @@ import {
   toJsonResponse,
 } from "../http/stock-movement-api.route-runner";
 import { STOCK_MOVEMENT_ROUTES } from "../routes/stock-movement.routes";
+import { assertPublicStockMovementCreateAllowed } from "@/modules/stock-movement/application/services/public-stock-movement-create.policy";
 import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
 export async function handleListStockMovements(
@@ -69,8 +70,10 @@ export async function handleCreateStockMovement(
       httpMethod: "POST",
       permission: PERMISSIONS.stockMovements.create,
       resolveServices,
-      handler: async (_ctx, services) =>
-        services.createStockMovement.execute(createInput),
+      handler: async (ctx, services) => {
+        assertPublicStockMovementCreateAllowed(ctx.request, createInput);
+        return services.createStockMovement.execute(createInput);
+      },
     });
 
     if (result.status === 200 && "data" in result.body) {
