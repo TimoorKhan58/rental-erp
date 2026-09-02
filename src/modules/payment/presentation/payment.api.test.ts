@@ -421,4 +421,49 @@ describe("payment route handlers", () => {
 
     expect(result.status).toBe(200);
   });
+
+  it("denies worker role from creating payments", async () => {
+    mockSession(USER_ROLES.WORKER);
+
+    const result = await runPaymentApiRoute({
+      request: createMockNextRequest({
+        method: "POST",
+        json: VALID_CREATE_INPUT,
+      }),
+      route: "/api/payments",
+      httpMethod: "POST",
+      permission: PERMISSIONS.payments.create,
+      resolveServices: () =>
+        createMockServices() as unknown as PaymentApplicationServices,
+      handler: async () => ({ ok: true }),
+    });
+
+    expect(result.status).toBe(403);
+  });
+
+  it("allows worker role to read payments", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+    services.listPayments.execute.mockResolvedValue({
+      items: [],
+      meta: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+    });
+
+    const result = await runPaymentApiRoute({
+      request: createMockNextRequest(),
+      route: "/api/payments",
+      httpMethod: "GET",
+      permission: PERMISSIONS.payments.read,
+      resolveServices: () =>
+        services as unknown as PaymentApplicationServices,
+      handler: async (_ctx, svc) =>
+        svc.listPayments.execute({
+          page: 1,
+          pageSize: 20,
+          sortOrder: "desc",
+        }),
+    });
+
+    expect(result.status).toBe(200);
+  });
 });

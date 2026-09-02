@@ -351,8 +351,24 @@ describe("runRentalInvoiceApiRoute rental invoice permissions", () => {
     vi.clearAllMocks();
   });
 
-  it("allows worker role to create rental invoice", async () => {
+  it("denies worker role from creating rental invoice", async () => {
     mockSession(USER_ROLES.WORKER);
+
+    const result = await runRentalInvoiceApiRoute({
+      request: createMockNextRequest({ method: "POST" }),
+      route: "/api/rental-invoices",
+      httpMethod: "POST",
+      permission: PERMISSIONS.rentalInvoices.create,
+      resolveServices: () =>
+        createMockServices() as unknown as RentalInvoiceApplicationServices,
+      handler: async () => ({ ok: true }),
+    });
+
+    expect(result.status).toBe(403);
+  });
+
+  it("allows manager role to create rental invoice", async () => {
+    mockSession(USER_ROLES.MANAGER);
 
     const result = await runRentalInvoiceApiRoute({
       request: createMockNextRequest({ method: "POST" }),
