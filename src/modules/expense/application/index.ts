@@ -91,7 +91,10 @@ export type {
 export type {
   IExpenseAccountingHook,
 } from "./services/expense-accounting.hook";
-export { NoOpExpenseAccountingHook } from "./services/expense-accounting.hook";
+export {
+  ExpenseAccountingHook,
+  NoOpExpenseAccountingHook,
+} from "./services/expense-accounting.hook";
 export { validateSupplierForExpense } from "./services/expense-supplier.validation";
 export { CreateExpenseService } from "./services/create-expense.service";
 export { UpdateExpenseService } from "./services/update-expense.service";

@@ -67,26 +67,35 @@ export class PayExpenseService {
           throw error;
         }
 
-        await accountingHook.onExpensePaid(paid);
-
         const previousValues = toExpenseAuditValues(existing);
+
         const updated = await expenseRepository.updateStatus(existing.id, {
           status: paid.status,
           paidAt: paid.paidAt,
           paidById: paid.paidById,
         });
 
+        const journalEntryId = await accountingHook.onExpensePaid(updated);
+
+        const finalUpdated =
+          journalEntryId !== null
+            ? await expenseRepository.updateStatus(existing.id, {
+                status: updated.status,
+                journalEntryId,
+              })
+            : updated;
+
         await auditLogger.log({
           module: EXPENSE_MODULE,
           entityName: EXPENSE_ENTITY_NAME,
-          recordId: updated.id,
+          recordId: finalUpdated.id,
           action: "EXPENSE_RECORDED",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toExpenseAuditValues(updated),
+          newValues: toExpenseAuditValues(finalUpdated),
         });
 
-        return toExpenseDto(updated);
+        return toExpenseDto(finalUpdated);
       },
     );
   }

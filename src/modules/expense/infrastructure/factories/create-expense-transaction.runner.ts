@@ -1,5 +1,7 @@
+import { createAccountRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-account.repository";
+import { createJournalEntryRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-journal-entry.repository";
 import type { IExpenseTransactionRunner } from "@/modules/expense/application/services/expense-transaction.runner";
-import { NoOpExpenseAccountingHook } from "@/modules/expense/application/services/expense-accounting.hook";
+import { ExpenseAccountingHook } from "@/modules/expense/application/services/expense-accounting.hook";
 import { createSupplierRepositoryFromUnitOfWork } from "@/modules/supplier/infrastructure/factories/create-supplier.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
@@ -15,12 +17,16 @@ export function createExpenseTransactionRunner(
   deps: SharedDeps,
   options: CreateExpenseTransactionRunnerOptions = {},
 ): IExpenseTransactionRunner {
-  const accountingHook = new NoOpExpenseAccountingHook();
-
   return {
     run: (operation) =>
-      runWithRepositoryUnitOfWork(deps, (context) =>
-        operation({
+      runWithRepositoryUnitOfWork(deps, (context) => {
+        const accountingHook = new ExpenseAccountingHook({
+          accountRepository: createAccountRepositoryFromUnitOfWork(context),
+          journalEntryRepository: createJournalEntryRepositoryFromUnitOfWork(context),
+          userId: options.userId,
+        });
+
+        return operation({
           expenseRepository: createExpenseRepositoryFromUnitOfWork(context),
           expenseCategoryRepository:
             createExpenseCategoryRepositoryFromUnitOfWork(context),
@@ -30,7 +36,7 @@ export function createExpenseTransactionRunner(
           notificationService: context.deps.notificationService,
           db: context.tx,
           userId: options.userId,
-        }),
-      ),
+        });
+      }),
   };
 }
