@@ -14,6 +14,7 @@ import type { AddMaintenanceHistoryService } from "./add-maintenance-history.ser
 import type { CreateAssetService } from "./create-asset.service";
 import type { DisposeAssetService } from "./dispose-asset.service";
 import type { GetAssetByIdService } from "./get-asset-by-id.service";
+import type { GetAssetSummaryService } from "./get-asset-summary.service";
 import type { ListAssetsService } from "./list-assets.service";
 import type { TransferAssetService } from "./transfer-asset.service";
 import type { UpdateAssetService } from "./update-asset.service";
@@ -21,6 +22,7 @@ import type { UpdateAssetService } from "./update-asset.service";
 export interface AssetApplicationServices {
   getAssetById: GetAssetByIdService;
   listAssets: ListAssetsService;
+  getAssetSummary: GetAssetSummaryService;
   createAsset: CreateAssetService;
   updateAsset: UpdateAssetService;
   transferAsset: TransferAssetService;

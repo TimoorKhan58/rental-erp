@@ -69,3 +69,15 @@ export type InventorySummaryStats = {
   outOfStockCount: number;
   overstockCount: number;
 };
+
+export type GetInventorySummaryParams = Omit<
+  ListInventoryParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type InventorySummaryResponse = {
+  stats: InventorySummaryStats;
+  stockStatusCounts: Partial<
+    Record<"all" | StockStatusFilter, number>
+  >;
+};

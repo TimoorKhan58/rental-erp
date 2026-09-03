@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,14 +7,14 @@ import { getCurrentUserPermissions } from "@/features/customer/services";
 import { getProductReport } from "@/features/financial-report/services";
 import { getProducts } from "@/features/product/services";
 import { getWarehouses } from "@/features/warehouse/services";
-import type { ListInventoryParams, InventorySummaryStats } from "../types";
+import type { ListInventoryParams } from "../types";
 import type { ProductPricing, ProductRecoveryStats } from "../mappers";
-import { computeInventorySummary, computeStockStatusCounts } from "../mappers/inventory-summary.mapper";
 import {
   createInventory,
   deleteInventory,
   getInventory,
   getInventoryList,
+  getInventorySummary,
   updateInventory,
   adjustInventoryStock,
 } from "../services";
@@ -143,32 +142,16 @@ export function useInventoryList(params: ListInventoryParams) {
 }
 
 export function useInventorySummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.inventory.list({ pageSize: 100 }),
-    queryFn: () => getInventoryList({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.inventory.summary({}),
+    queryFn: () => getInventorySummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo<InventorySummaryStats | undefined>(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeInventorySummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const stockStatusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeStockStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
   return {
-    stats,
-    stockStatusCounts,
-    isLoading: listQuery.isLoading,
+    stats: summaryQuery.data?.stats,
+    stockStatusCounts: summaryQuery.data?.stockStatusCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 
@@ -189,6 +172,7 @@ export function useCreateInventory() {
     successMessage: "Inventory record created successfully.",
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.summaries() });
     },
   });
 }
@@ -229,6 +213,7 @@ export function useUpdateInventory() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.detail(data.id) }),
       ]);
     },
@@ -244,6 +229,7 @@ export function useDeleteInventory() {
     successMessage: "Inventory record deleted successfully.",
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.summaries() });
     },
   });
 }
@@ -259,6 +245,7 @@ export function useToggleInventoryStatus() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.detail(data.id) }),
       ]);
     },
@@ -275,6 +262,7 @@ export function useAdjustInventory() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.summaries() }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.inventory.detail(data.inventoryId),
         }),

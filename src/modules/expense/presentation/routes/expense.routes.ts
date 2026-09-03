@@ -1,5 +1,6 @@
 export const EXPENSE_ROUTES = {
   base: "/api/expenses",
+  summary: "/api/expenses/summary",
   byId: (id: string) => `/api/expenses/${id}`,
   submit: (id: string) => `/api/expenses/${id}/submit`,
   approve: (id: string) => `/api/expenses/${id}/approve`,

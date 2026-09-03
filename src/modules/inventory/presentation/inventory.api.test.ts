@@ -24,6 +24,7 @@ import {
   handleCreateInventory,
   handleDeleteInventory,
   handleGetInventoryById,
+  handleGetInventorySummary,
   handleListInventory,
   handleUpdateInventory,
 } from "@/modules/inventory/presentation/routes/inventory-api.routes";
@@ -43,6 +44,7 @@ function createMockServices() {
   return {
     getInventoryById: { execute: vi.fn() },
     listInventory: { execute: vi.fn() },
+    getInventorySummary: { execute: vi.fn() },
     createInventory: { execute: vi.fn() },
     updateInventory: { execute: vi.fn() },
     deleteInventory: { execute: vi.fn() },
@@ -405,5 +407,51 @@ describe("Inventory permission matrix", () => {
 
     expect(response.status).toBe(403);
     expect(body.error.code).toBe(ERROR_CODES.FORBIDDEN);
+  });
+
+  it("handleGetInventorySummary returns summary envelope with read permission", async () => {
+    mockSession(USER_ROLES.ACCOUNTANT);
+    const services = createMockServices();
+    services.getInventorySummary.execute.mockResolvedValue({
+      stats: {
+        totalRecords: 101,
+        totalOnHand: 1010,
+        totalAvailable: 808,
+        lowStockCount: 0,
+        outOfStockCount: 0,
+        overstockCount: 0,
+      },
+      stockStatusCounts: {
+        all: 101,
+        "in-stock": 101,
+        "low-stock": 0,
+        "out-of-stock": 0,
+        overstock: 0,
+      },
+    });
+
+    const response = await handleGetInventorySummary(
+      createMockNextRequest(),
+      () => services,
+    );
+    const body = await readJsonResponse<{
+      data: { stats: { totalRecords: number } };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data.stats.totalRecords).toBe(101);
+  });
+
+  it("denies inventory summary when unauthenticated", async () => {
+    mockUnauthenticatedUser();
+
+    const response = await handleGetInventorySummary(
+      createMockNextRequest({ url: "http://localhost/api/inventory/summary" }),
+      () => createMockServices(),
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe(ERROR_CODES.UNAUTHORIZED);
   });
 });

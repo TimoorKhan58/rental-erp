@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -7,16 +6,13 @@ import { getCurrentUserPermissions } from "@/features/customer/services";
 import { getSuppliers } from "@/features/supplier/services";
 import type { ListExpensesParams } from "../types";
 import {
-  computeExpenseStatusCounts,
-  computeExpenseSummary,
-} from "../mappers/expense-summary.mapper";
-import {
   approveExpense,
   createExpense,
   createExpenseCategory,
   deleteExpenseCategory,
   getExpense,
   getExpenseCategories,
+  getExpenseSummary,
   getExpenses,
   payExpense,
   rejectExpense,
@@ -94,32 +90,16 @@ export function useExpenseFilterOptions() {
 }
 
 export function useExpenseSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.expenses.list({ pageSize: 100 }),
-    queryFn: () => getExpenses({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.expenses.summary({}),
+    queryFn: () => getExpenseSummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeExpenseSummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const statusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeExpenseStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
   return {
-    stats,
-    statusCounts,
-    isLoading: listQuery.isLoading,
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 
@@ -151,6 +131,7 @@ function invalidateExpenseQueries(
 ) {
   const tasks = [
     queryClient.invalidateQueries({ queryKey: queryKeys.expenses.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.expenses.summaries() }),
   ];
 
   if (id) {

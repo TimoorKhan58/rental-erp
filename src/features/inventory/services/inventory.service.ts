@@ -2,6 +2,8 @@ import type {
   CreateInventoryPayload,
   InventoryListResponse,
   InventoryResponse,
+  InventorySummaryResponse,
+  GetInventorySummaryParams,
   ListInventoryParams,
   UpdateInventoryPayload,
 } from "../types";
@@ -13,6 +15,12 @@ export async function getInventoryList(
   params: ListInventoryParams = {},
 ): Promise<InventoryListResponse> {
   return apiGet<InventoryListResponse>(BASE, { params });
+}
+
+export async function getInventorySummary(
+  params: GetInventorySummaryParams = {},
+): Promise<InventorySummaryResponse> {
+  return apiGet<InventorySummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getInventory(id: string): Promise<InventoryResponse> {

@@ -5,6 +5,8 @@ import type {
   ExpenseCategoryResponse,
   ExpenseListResponse,
   ExpenseResponse,
+  ExpenseSummaryResponse,
+  GetExpenseSummaryParams,
   ListExpenseCategoriesParams,
   ListExpensesParams,
   RejectExpensePayload,
@@ -20,6 +22,12 @@ export async function getExpenses(
   params: ListExpensesParams = {},
 ): Promise<ExpenseListResponse> {
   return apiGet<ExpenseListResponse>(BASE, { params });
+}
+
+export async function getExpenseSummary(
+  params: GetExpenseSummaryParams = {},
+): Promise<ExpenseSummaryResponse> {
+  return apiGet<ExpenseSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getExpense(id: string): Promise<ExpenseResponse> {

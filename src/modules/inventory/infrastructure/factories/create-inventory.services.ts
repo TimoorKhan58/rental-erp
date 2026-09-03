@@ -6,6 +6,7 @@ import {
 } from "@/modules/inventory/application/services/inventory.service";
 import { DeleteInventoryService } from "@/modules/inventory/application/services/delete-inventory.service";
 import { GetInventoryByIdService } from "@/modules/inventory/application/services/get-inventory-by-id.service";
+import { GetInventorySummaryService } from "@/modules/inventory/application/services/get-inventory-summary.service";
 import { ListInventoryService } from "@/modules/inventory/application/services/list-inventory.service";
 import { UpdateInventoryService } from "@/modules/inventory/application/services/update-inventory.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -28,6 +29,7 @@ export function createInventoryApplicationServices(
 
   const getInventoryById = new GetInventoryByIdService(repository);
   const listInventory = new ListInventoryService(repository);
+  const getInventorySummary = new GetInventorySummaryService(repository);
   const createInventory = new CreateInventoryService(transactionRunner);
   const updateInventory = new UpdateInventoryService(transactionRunner);
   const deleteInventory = new DeleteInventoryService(transactionRunner);
@@ -35,6 +37,7 @@ export function createInventoryApplicationServices(
   return {
     getInventoryById,
     listInventory,
+    getInventorySummary,
     createInventory,
     updateInventory,
     deleteInventory,

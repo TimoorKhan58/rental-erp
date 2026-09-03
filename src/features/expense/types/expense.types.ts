@@ -74,6 +74,27 @@ export type ListExpensesParams = {
   supplierId?: string;
 };
 
+export type GetExpenseSummaryParams = Omit<
+  ListExpensesParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type ExpenseSummaryStats = {
+  totalExpenses: number;
+  draftCount: number;
+  submittedCount: number;
+  approvedCount: number;
+  paidCount: number;
+  rejectedCount: number;
+  totalPaidAmount: number;
+  totalPendingAmount: number;
+};
+
+export type ExpenseSummaryResponse = {
+  stats: ExpenseSummaryStats;
+  statusCounts: Partial<Record<"all" | ExpenseStatus, number>>;
+};
+
 export type CreateExpensePayload = {
   expenseNumber: string;
   expenseDate: string;

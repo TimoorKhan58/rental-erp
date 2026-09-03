@@ -1,5 +1,8 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { AssetListQuery } from "@/modules/asset/domain";
+import type { AssetSummaryQuery } from "@/modules/asset/domain/asset-summary.query";
+import type { AssetSummaryResult } from "@/modules/asset/domain/asset-summary.types";
+import { ASSET_STATUSES } from "@/modules/asset/domain";
 import type { AssetId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -35,6 +38,10 @@ import {
   toAssetTransferUpdateInput,
   toAssetUpdateInput,
 } from "../mappers/asset.persistence.mapper";
+import {
+  buildAssetSummaryWhere,
+  mergeAssetWhere,
+} from "./asset-query.filters";
 
 const MODEL = "Asset";
 
@@ -145,6 +152,61 @@ export class PrismaAssetRepository implements IAssetRepository {
       items: result.items.map(toAssetDomain),
       meta: result.meta,
     };
+  }
+
+  findSummaryStats(query: AssetSummaryQuery): Promise<AssetSummaryResult> {
+    const where = buildAssetSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalAssets, statusGroups, bookValueSum, activeCount, underMaintenanceCount, disposedCount] =
+          await Promise.all([
+            db.asset.count({ where }),
+            db.asset.groupBy({
+              by: ["status"],
+              where,
+              _count: { _all: true },
+            }),
+            db.asset.aggregate({
+              where,
+              _sum: { currentBookValue: true },
+            }),
+            db.asset.count({
+              where: mergeAssetWhere(where, {
+                status: { in: ["ACTIVE", "TRANSFERRED"] },
+              }),
+            }),
+            db.asset.count({
+              where: mergeAssetWhere(where, { status: "UNDER_MAINTENANCE" }),
+            }),
+            db.asset.count({
+              where: mergeAssetWhere(where, { status: "DISPOSED" }),
+            }),
+          ]);
+
+        const statusCounts = Object.fromEntries(
+          ASSET_STATUSES.map((status) => [status, 0]),
+        ) as AssetSummaryResult["statusCounts"];
+
+        statusCounts.all = totalAssets;
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        return {
+          stats: {
+            totalAssets,
+            activeCount,
+            underMaintenanceCount,
+            disposedCount,
+            totalBookValue: Number(bookValueSum._sum.currentBookValue?.toString() ?? 0),
+          },
+          statusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
   }
 
   async create(data: CreateAssetData): Promise<Asset> {

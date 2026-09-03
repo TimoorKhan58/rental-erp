@@ -9,6 +9,7 @@ import {
   UpdateExpenseSchema,
 } from "@/modules/expense/application";
 import { ListExpensesSchema } from "@/modules/expense/application/schemas/list-expenses.schema";
+import { GetExpenseSummarySchema } from "@/modules/expense/application/schemas/get-expense-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -16,6 +17,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toExpenseListResponse,
   toExpenseResponse,
+  toExpenseSummaryResponse,
 } from "../mappers/expense-response.mapper";
 import {
   runExpenseApiRoute,
@@ -48,6 +50,38 @@ export async function handleListExpenses(
         body: {
           ...result.body,
           data: toExpenseListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetExpenseSummary(
+  request: NextRequest,
+  resolveServices: ExpenseServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetExpenseSummarySchema, query);
+
+    const result = await runExpenseApiRoute({
+      request,
+      route: EXPENSE_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.expenses.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getExpenseSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toExpenseSummaryResponse(result.body.data),
         },
       });
     }

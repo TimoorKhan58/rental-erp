@@ -1,5 +1,10 @@
 import { Inventory } from "@/modules/inventory/domain/inventory.entity";
 import type { InventoryListQuery } from "@/modules/inventory/domain/inventory-list.query";
+import type { InventorySummaryQuery } from "@/modules/inventory/domain/inventory-summary.query";
+import {
+  computeInventorySummaryResult,
+  filterInventoryForSummary,
+} from "@/modules/inventory/domain/inventory-summary.rules";
 import type { IInventoryRepository } from "@/modules/inventory/domain/inventory.repository.interface";
 import type {
   CreateInventoryData,
@@ -129,6 +134,26 @@ export class InMemoryInventoryRepository implements IInventoryRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: InventorySummaryQuery) {
+    const items = filterInventoryForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Inventory.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeInventorySummaryResult(
+        items.map((item) => ({
+          quantityOnHand: item.quantityOnHand,
+          reservedQuantity: item.reservedQuantity,
+          minimumStock: item.minimumStock,
+          maximumStock: item.maximumStock,
+        })),
+      ),
+    );
   }
 
   async exists(id: InventoryId): Promise<boolean> {

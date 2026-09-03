@@ -26,6 +26,7 @@ import {
   handleCreateAsset,
   handleDisposeAsset,
   handleGetAssetById,
+  handleGetAssetSummary,
   handleListAssets,
   handleTransferAsset,
   handleUpdateAsset,
@@ -47,6 +48,7 @@ function createMockServices() {
   return {
     getAssetById: { execute: vi.fn() },
     listAssets: { execute: vi.fn() },
+    getAssetSummary: { execute: vi.fn() },
     createAsset: { execute: vi.fn() },
     updateAsset: { execute: vi.fn() },
     transferAsset: { execute: vi.fn() },
@@ -451,5 +453,50 @@ describe("Asset permission matrix", () => {
 
     expect(response.status).toBe(403);
     expect(body.error.code).toBe(ERROR_CODES.FORBIDDEN);
+  });
+
+  it("handleGetAssetSummary returns summary envelope with read permission", async () => {
+    mockSession(USER_ROLES.ACCOUNTANT);
+    const services = createMockServices();
+    services.getAssetSummary.execute.mockResolvedValue({
+      stats: {
+        totalAssets: 101,
+        activeCount: 101,
+        underMaintenanceCount: 0,
+        disposedCount: 0,
+        totalBookValue: 101_000,
+      },
+      statusCounts: {
+        all: 101,
+        ACTIVE: 101,
+        UNDER_MAINTENANCE: 0,
+        TRANSFERRED: 0,
+        DISPOSED: 0,
+      },
+    });
+
+    const response = await handleGetAssetSummary(
+      createMockNextRequest({ url: "http://localhost/api/assets/summary" }),
+      () => services as unknown as AssetApplicationServices,
+    );
+    const body = await readJsonResponse<{
+      data: { stats: { totalAssets: number } };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data.stats.totalAssets).toBe(101);
+  });
+
+  it("denies asset summary when unauthenticated", async () => {
+    mockUnauthenticatedUser();
+
+    const response = await handleGetAssetSummary(
+      createMockNextRequest({ url: "http://localhost/api/assets/summary" }),
+      () => createMockServices() as unknown as AssetApplicationServices,
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe(ERROR_CODES.UNAUTHORIZED);
   });
 });

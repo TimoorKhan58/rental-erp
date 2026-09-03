@@ -44,3 +44,9 @@ export function toInventoryListResponse(
     meta: result.meta,
   };
 }
+
+export function toInventorySummaryResponse(
+  summary: import("@/modules/inventory/application/dtos/inventory-summary.dto").InventorySummaryDto,
+) {
+  return summary;
+}

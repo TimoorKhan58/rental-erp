@@ -1,5 +1,8 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { ExpenseListQuery } from "@/modules/expense/domain/expense-list.query";
+import type { ExpenseSummaryQuery } from "@/modules/expense/domain/expense-summary.query";
+import type { ExpenseSummaryResult } from "@/modules/expense/domain/expense-summary.types";
+import { EXPENSE_STATUSES } from "@/modules/expense/domain/expense.constants";
 import type { ExpenseId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -26,36 +29,17 @@ import {
   toExpenseStatusUpdateInput,
   toExpenseUpdateInput,
 } from "../mappers/expense.persistence.mapper";
+import {
+  buildExpenseSummaryWhere,
+  mapExpenseFilter,
+  mergeExpenseWhere,
+} from "./expense-query.filters";
 
 const MODEL = "Expense";
 
 const DEFAULT_ORDER_BY: Prisma.ExpenseOrderByWithRelationInput = {
   createdAt: "desc",
 };
-
-function mapExpenseFilter(
-  filter: Record<string, unknown>,
-): Prisma.ExpenseWhereInput | undefined {
-  const where: Prisma.ExpenseWhereInput = {};
-
-  if (filter.status !== undefined) {
-    where.status = filter.status as Expense["status"];
-  }
-
-  if (filter.expenseType !== undefined) {
-    where.expenseType = filter.expenseType as Expense["expenseType"];
-  }
-
-  if (filter.categoryId !== undefined) {
-    where.categoryId = String(filter.categoryId);
-  }
-
-  if (filter.supplierId !== undefined) {
-    where.supplierId = String(filter.supplierId);
-  }
-
-  return Object.keys(where).length > 0 ? where : undefined;
-}
 
 function mapExpenseSort(
   sort: Record<string, "asc" | "desc"> | undefined,
@@ -136,6 +120,61 @@ export class PrismaExpenseRepository implements IExpenseRepository {
       items: result.items.map(toExpenseDomain),
       meta: result.meta,
     }));
+  }
+
+  findSummaryStats(
+    query: ExpenseSummaryQuery,
+  ): Promise<ExpenseSummaryResult> {
+    const where = buildExpenseSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalExpenses, statusGroups, paidSum, pendingSum] =
+          await Promise.all([
+            db.expense.count({ where }),
+            db.expense.groupBy({
+              by: ["status"],
+              where,
+              _count: { _all: true },
+            }),
+            db.expense.aggregate({
+              where: mergeExpenseWhere(where, { status: "PAID" }),
+              _sum: { amount: true },
+            }),
+            db.expense.aggregate({
+              where: mergeExpenseWhere(where, {
+                status: { in: ["DRAFT", "SUBMITTED", "APPROVED"] },
+              }),
+              _sum: { amount: true },
+            }),
+          ]);
+
+        const statusCounts = Object.fromEntries(
+          EXPENSE_STATUSES.map((status) => [status, 0]),
+        ) as ExpenseSummaryResult["statusCounts"];
+
+        statusCounts.all = totalExpenses;
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        return {
+          stats: {
+            totalExpenses,
+            draftCount: statusCounts.DRAFT,
+            submittedCount: statusCounts.SUBMITTED,
+            approvedCount: statusCounts.APPROVED,
+            paidCount: statusCounts.PAID,
+            rejectedCount: statusCounts.REJECTED,
+            totalPaidAmount: Number(paidSum._sum.amount?.toString() ?? 0),
+            totalPendingAmount: Number(pendingSum._sum.amount?.toString() ?? 0),
+          },
+          statusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
   }
 
   create(data: CreateExpenseData): Promise<Expense> {

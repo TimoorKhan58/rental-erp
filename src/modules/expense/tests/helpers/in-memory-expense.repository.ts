@@ -1,5 +1,10 @@
 import { Expense } from "@/modules/expense/domain/expense.entity";
 import type { ExpenseListQuery } from "@/modules/expense/domain/expense-list.query";
+import type { ExpenseSummaryQuery } from "@/modules/expense/domain/expense-summary.query";
+import {
+  computeExpenseSummaryResult,
+  filterExpensesForSummary,
+} from "@/modules/expense/domain/expense-summary.rules";
 import type { IExpenseRepository } from "@/modules/expense/domain/expense.repository.interface";
 import type {
   CreateExpenseData,
@@ -80,6 +85,24 @@ export class InMemoryExpenseRepository implements IExpenseRepository {
         totalPages: Math.max(1, Math.ceil(items.length / pageSize)),
       },
     };
+  }
+
+  findSummaryStats(query: ExpenseSummaryQuery) {
+    const items = filterExpensesForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Expense.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeExpenseSummaryResult(
+        items.map((expense) => ({
+          status: expense.status,
+          amount: expense.amount,
+        })),
+      ),
+    );
   }
 
   async create(data: CreateExpenseData): Promise<Expense> {
