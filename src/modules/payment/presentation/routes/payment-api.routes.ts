@@ -8,6 +8,7 @@ import {
   UpdatePaymentSchema,
 } from "@/modules/payment/application";
 import { ListPaymentsSchema } from "@/modules/payment/application/schemas/list-payments.schema";
+import { GetPaymentSummarySchema } from "@/modules/payment/application/schemas/get-payment-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -15,6 +16,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toPaymentListResponse,
   toPaymentResponse,
+  toPaymentSummaryResponse,
 } from "../mappers/payment-response.mapper";
 import {
   runPaymentApiRoute,
@@ -47,6 +49,38 @@ export async function handleListPayments(
         body: {
           ...result.body,
           data: toPaymentListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetPaymentSummary(
+  request: NextRequest,
+  resolveServices: PaymentServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetPaymentSummarySchema, query);
+
+    const result = await runPaymentApiRoute({
+      request,
+      route: PAYMENT_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.payments.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getPaymentSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toPaymentSummaryResponse(result.body.data),
         },
       });
     }

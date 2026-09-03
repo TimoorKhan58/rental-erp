@@ -2,10 +2,12 @@ import type {
   CreateRentalOrderPayload,
   DateAwareAvailabilityResponse,
   GetDateAwareAvailabilityParams,
+  GetRentalOrderSummaryParams,
   ListRentalOrdersParams,
   RentalOrderListResponse,
   RentalOrderResponse,
   RentalOrderShortfallResponse,
+  RentalOrderSummaryResponse,
   ReserveRentalOrderPayload,
   SourceRentalOrderExternallyPayload,
   UpdateRentalOrderPayload,
@@ -19,6 +21,12 @@ export async function getRentalOrders(
   params: ListRentalOrdersParams = {},
 ): Promise<RentalOrderListResponse> {
   return apiGet<RentalOrderListResponse>(BASE, { params });
+}
+
+export async function getRentalOrderSummary(
+  params: GetRentalOrderSummaryParams = {},
+): Promise<RentalOrderSummaryResponse> {
+  return apiGet<RentalOrderSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getRentalOrder(id: string): Promise<RentalOrderResponse> {

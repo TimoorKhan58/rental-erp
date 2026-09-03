@@ -1,5 +1,10 @@
 import { Dispatch } from "@/modules/dispatch/domain/dispatch.entity";
 import type { DispatchListQuery } from "@/modules/dispatch/domain/dispatch-list.query";
+import type { DispatchSummaryQuery } from "@/modules/dispatch/domain/dispatch-summary.query";
+import {
+  computeDispatchSummaryResult,
+  filterDispatchesForSummary,
+} from "@/modules/dispatch/domain/dispatch-summary.rules";
 import type {
   DispatchClaimedSourceQuantities,
   IDispatchRepository,
@@ -120,6 +125,17 @@ export class InMemoryDispatchRepository implements IDispatchRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: DispatchSummaryQuery) {
+    const items = filterDispatchesForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Dispatch.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(computeDispatchSummaryResult(items));
   }
 
   async sumClaimedSourceQuantitiesByRentalOrderId(

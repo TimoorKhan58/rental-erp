@@ -17,6 +17,20 @@ export {
   createOrderNumber,
 } from "./rental-order.errors";
 export type { RentalOrderListQuery } from "./rental-order-list.query";
+export type { RentalOrderSummaryQuery } from "./rental-order-summary.query";
+export type {
+  RentalOrderSummaryProjection,
+  RentalOrderSummaryReservationStatusCounts,
+  RentalOrderSummaryResult,
+  RentalOrderSummaryStats,
+  RentalOrderSummaryStatusCounts,
+} from "./rental-order-summary.types";
+export {
+  computeRentalOrderSummaryResult,
+  deriveReservationStatus,
+  filterRentalOrdersForSummary,
+  matchesRentalOrderSummaryQuery,
+} from "./rental-order-summary.rules";
 export type { IRentalOrderRepository } from "./rental-order.repository.interface";
 export {
   AVAILABILITY_COMMITMENT_STATUSES,

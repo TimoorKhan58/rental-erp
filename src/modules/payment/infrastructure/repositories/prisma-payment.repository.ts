@@ -1,4 +1,6 @@
 import type { PaymentListQuery } from "@/modules/payment/domain/payment-list.query";
+import type { PaymentSummaryQuery } from "@/modules/payment/domain/payment-summary.query";
+import type { PaymentSummaryResult } from "@/modules/payment/domain/payment-summary.types";
 import { Prisma } from "@/generated/prisma/client";
 import type { PaymentId, RentalInvoiceId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -18,7 +20,7 @@ import type {
   UpdatePaymentData,
   UpdatePaymentStatusData,
 } from "@/modules/payment/domain/payment.types";
-import { PAYMENT_SEARCH_FIELDS } from "@/modules/payment/domain/payment.constants";
+import { PAYMENT_METHODS, PAYMENT_SEARCH_FIELDS, PAYMENT_STATUSES } from "@/modules/payment/domain/payment.constants";
 
 import {
   toPaymentCreateInput,
@@ -26,50 +28,17 @@ import {
   toPaymentStatusUpdateInput,
   toPaymentUpdateInput,
 } from "../mappers/payment.persistence.mapper";
+import {
+  buildPaymentSummaryWhere,
+  mapPaymentFilter,
+  mergePaymentWhere,
+} from "./payment-query.filters";
 
 const MODEL = "Payment";
 
 const DEFAULT_ORDER_BY = {
   createdAt: "desc" as const,
 };
-
-function mapPaymentFilter(
-  filter: Record<string, unknown>,
-): import("@/generated/prisma/client").Prisma.PaymentWhereInput | undefined {
-  const where: import("@/generated/prisma/client").Prisma.PaymentWhereInput = {};
-
-  if (filter.status !== undefined) {
-    where.status = filter.status as Payment["status"];
-  }
-
-  if (filter.customerId !== undefined) {
-    where.customerId = String(filter.customerId);
-  }
-
-  if (filter.rentalInvoiceId !== undefined) {
-    where.rentalInvoiceId = String(filter.rentalInvoiceId);
-  }
-
-  if (filter.paymentMethod !== undefined) {
-    where.paymentMethod = filter.paymentMethod as Payment["paymentMethod"];
-  }
-
-  if (filter.paymentDateFrom !== undefined || filter.paymentDateTo !== undefined) {
-    where.paymentDate = {};
-
-    if (filter.paymentDateFrom !== undefined) {
-      where.paymentDate.gte = filter.paymentDateFrom as Date;
-    }
-
-    if (filter.paymentDateTo !== undefined) {
-      const end = new Date(filter.paymentDateTo as Date);
-      end.setHours(23, 59, 59, 999);
-      where.paymentDate.lte = end;
-    }
-  }
-
-  return Object.keys(where).length > 0 ? where : undefined;
-}
 
 function mapPaymentSort(
   sort: Record<string, "asc" | "desc"> | undefined,
@@ -282,6 +251,79 @@ export class PrismaPaymentRepository implements IPaymentRepository {
         return record === null ? null : toPaymentDomain(record);
       },
       { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
+
+  findSummaryStats(query: PaymentSummaryQuery): Promise<PaymentSummaryResult> {
+    const where = buildPaymentSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [
+          totalPayments,
+          statusGroups,
+          methodGroups,
+          postedSum,
+          pendingSum,
+          voidCount,
+        ] = await Promise.all([
+          db.payment.count({ where }),
+          db.payment.groupBy({
+            by: ["status"],
+            where,
+            _count: { _all: true },
+          }),
+          db.payment.groupBy({
+            by: ["paymentMethod"],
+            where,
+            _count: { _all: true },
+          }),
+          db.payment.aggregate({
+            where: mergePaymentWhere(where, { status: "POSTED" }),
+            _sum: { amount: true },
+          }),
+          db.payment.aggregate({
+            where: mergePaymentWhere(where, { status: "PENDING" }),
+            _sum: { amount: true },
+          }),
+          db.payment.count({
+            where: mergePaymentWhere(where, { status: "VOID" }),
+          }),
+        ]);
+
+        const statusCounts: PaymentSummaryResult["statusCounts"] = {
+          all: totalPayments,
+          ...Object.fromEntries(PAYMENT_STATUSES.map((status) => [status, 0])),
+        } as PaymentSummaryResult["statusCounts"];
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        const methodCounts: PaymentSummaryResult["methodCounts"] = {
+          all: totalPayments,
+          ...Object.fromEntries(PAYMENT_METHODS.map((method) => [method, 0])),
+        } as PaymentSummaryResult["methodCounts"];
+
+        for (const group of methodGroups) {
+          methodCounts[group.paymentMethod] = group._count._all;
+        }
+
+        return {
+          stats: {
+            totalPayments,
+            activePayments: totalPayments - voidCount,
+            pendingCount: statusCounts.PENDING,
+            postedCount: statusCounts.POSTED,
+            voidCount: statusCounts.VOID,
+            totalCollected: Number(postedSum._sum.amount?.toString() ?? 0),
+            totalPendingAmount: Number(pendingSum._sum.amount?.toString() ?? 0),
+          },
+          statusCounts,
+          methodCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
     );
   }
 }

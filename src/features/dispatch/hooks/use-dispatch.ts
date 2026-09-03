@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -10,14 +9,11 @@ import { getRentalOrders } from "@/features/rental-order/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListDispatchesParams } from "../types";
 import {
-  computeDispatchStatusCounts,
-  computeDispatchSummary,
-} from "../mappers/dispatch-summary.mapper";
-import {
   cancelDispatch,
   completeDispatch,
   createDispatch,
   getDispatch,
+  getDispatchSummary,
   getDispatches,
   updateDispatch,
 } from "../services";
@@ -138,32 +134,16 @@ export function useDispatches(params: ListDispatchesParams) {
 }
 
 export function useDispatchSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.dispatches.list({ pageSize: 100 }),
-    queryFn: () => getDispatches({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.dispatches.summary({}),
+    queryFn: () => getDispatchSummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeDispatchSummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const statusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeDispatchStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
   return {
-    stats,
-    statusCounts,
-    isLoading: listQuery.isLoading,
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 

@@ -1,8 +1,10 @@
 import type {
   CreatePaymentPayload,
+  GetPaymentSummaryParams,
   ListPaymentsParams,
   PaymentListResponse,
   PaymentResponse,
+  PaymentSummaryResponse,
   UpdatePaymentPayload,
 } from "../types";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
@@ -13,6 +15,12 @@ export async function getPayments(
   params: ListPaymentsParams = {},
 ): Promise<PaymentListResponse> {
   return apiGet<PaymentListResponse>(BASE, { params });
+}
+
+export async function getPaymentSummary(
+  params: GetPaymentSummaryParams = {},
+): Promise<PaymentSummaryResponse> {
+  return apiGet<PaymentSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getPayment(id: string): Promise<PaymentResponse> {

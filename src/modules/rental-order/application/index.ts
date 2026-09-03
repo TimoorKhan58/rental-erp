@@ -32,6 +32,16 @@ export {
   type ListRentalOrdersInput,
 } from "./schemas/list-rental-orders.schema";
 export {
+  GetRentalOrderSummarySchema,
+  type GetRentalOrderSummaryInput,
+} from "./schemas/get-rental-order-summary.schema";
+export type {
+  RentalOrderSummaryDto,
+  RentalOrderSummaryReservationStatusCountsDto,
+  RentalOrderSummaryStatsDto,
+  RentalOrderSummaryStatusCountsDto,
+} from "./dtos/rental-order-summary.dto";
+export {
   RENTAL_ORDER_ENTITY_NAME,
   RENTAL_ORDER_MODULE,
   RENTAL_ORDER_REFERENCE_TYPE,
@@ -56,6 +66,7 @@ export { CreateRentalOrderService } from "./services/create-rental-order.service
 export { GetDateAwareAvailabilityService } from "./services/get-date-aware-availability.service";
 export { GetRentalOrderByIdService } from "./services/get-rental-order-by-id.service";
 export { GetRentalOrderShortfallService } from "./services/get-rental-order-shortfall.service";
+export { GetRentalOrderSummaryService } from "./services/get-rental-order-summary.service";
 export { ListRentalOrdersService } from "./services/list-rental-orders.service";
 export { ReserveRentalOrderService } from "./services/reserve-rental-order.service";
 export { SourceRentalOrderExternallyService } from "./services/source-rental-order-externally.service";

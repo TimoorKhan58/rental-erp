@@ -1,5 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { DispatchListQuery } from "@/modules/dispatch/domain/dispatch-list.query";
+import type { DispatchSummaryQuery } from "@/modules/dispatch/domain/dispatch-summary.query";
+import type { DispatchSummaryResult } from "@/modules/dispatch/domain/dispatch-summary.types";
 import type {
   DispatchClaimedSourceQuantities,
   SumClaimedSourceQuantitiesOptions,
@@ -31,41 +33,17 @@ import {
   toDispatchStatusUpdateInput,
   toDispatchUpdateInput,
 } from "../mappers/dispatch.persistence.mapper";
+import {
+  buildDispatchSummaryWhere,
+  mapDispatchFilter,
+  mergeDispatchWhere,
+} from "./dispatch-query.filters";
 
 const MODEL = "Dispatch";
 
 const DEFAULT_ORDER_BY: Prisma.DispatchOrderByWithRelationInput = {
   createdAt: "desc",
 };
-
-function mapDispatchFilter(
-  filter: Record<string, unknown>,
-): Prisma.DispatchWhereInput | undefined {
-  const where: Prisma.DispatchWhereInput = {};
-
-  if (filter.status !== undefined) {
-    where.status = filter.status as Dispatch["status"];
-  }
-
-  if (filter.rentalOrderId !== undefined) {
-    where.rentalOrderId = String(filter.rentalOrderId);
-  }
-
-  if (filter.warehouseId !== undefined) {
-    where.rentalOrder = { warehouseId: String(filter.warehouseId) };
-  }
-
-  if (filter.dispatchDateFrom !== undefined || filter.dispatchDateTo !== undefined) {
-    where.dispatchDate = {
-      ...(filter.dispatchDateFrom !== undefined
-        ? { gte: filter.dispatchDateFrom as Date }
-        : {}),
-      ...(filter.dispatchDateTo !== undefined ? { lte: filter.dispatchDateTo as Date } : {}),
-    };
-  }
-
-  return Object.keys(where).length > 0 ? where : undefined;
-}
 
 function mapDispatchSort(
   sort: Record<string, "asc" | "desc"> | undefined,
@@ -377,6 +355,77 @@ export class PrismaDispatchRepository implements IDispatchRepository {
         }
       },
       { model: MODEL, operation: "lockForReturnCapacity" },
+    );
+  }
+
+  findSummaryStats(
+    query: DispatchSummaryQuery,
+  ): Promise<DispatchSummaryResult> {
+    const where = buildDispatchSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [
+          totalDispatches,
+          statusGroups,
+          pendingActionCount,
+          inTransitCount,
+          completedCount,
+          cancelledCount,
+          totalUnitsAgg,
+        ] = await Promise.all([
+          db.dispatch.count({ where }),
+          db.dispatch.groupBy({
+            by: ["status"],
+            where,
+            _count: { _all: true },
+          }),
+          db.dispatch.count({
+            where: mergeDispatchWhere(where, {
+              status: { in: ["DRAFT", "READY"] },
+            }),
+          }),
+          db.dispatch.count({
+            where: mergeDispatchWhere(where, { status: "DISPATCHED" }),
+          }),
+          db.dispatch.count({
+            where: mergeDispatchWhere(where, { status: "COMPLETED" }),
+          }),
+          db.dispatch.count({
+            where: mergeDispatchWhere(where, { status: "CANCELLED" }),
+          }),
+          db.dispatchItem.aggregate({
+            where: { dispatch: where },
+            _sum: { quantity: true },
+          }),
+        ]);
+
+        const statusCounts: DispatchSummaryResult["statusCounts"] = {
+          all: totalDispatches,
+          DRAFT: 0,
+          READY: 0,
+          DISPATCHED: 0,
+          COMPLETED: 0,
+          CANCELLED: 0,
+        };
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        return {
+          stats: {
+            totalDispatches,
+            activeDispatches: totalDispatches - cancelledCount,
+            pendingActionCount,
+            inTransitCount,
+            completedCount,
+            totalUnits: totalUnitsAgg._sum.quantity ?? 0,
+          },
+          statusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
     );
   }
 }

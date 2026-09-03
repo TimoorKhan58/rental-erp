@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Payment } from "./payment.entity";
 import type { PaymentListQuery } from "./payment-list.query";
+import type { PaymentSummaryQuery } from "./payment-summary.query";
+import type { PaymentSummaryResult } from "./payment-summary.types";
 import type {
   CreatePaymentData,
   UpdatePaymentData,
@@ -13,6 +15,7 @@ export interface IPaymentRepository {
   findById(id: PaymentId): Promise<Payment | null>;
   findByPaymentNumber(paymentNumber: string): Promise<Payment | null>;
   findPaged(query: PaymentListQuery): Promise<PaginatedResult<Payment>>;
+  findSummaryStats(query: PaymentSummaryQuery): Promise<PaymentSummaryResult>;
   sumPendingAmountByRentalInvoiceId(
     rentalInvoiceId: RentalInvoiceId,
     excludePaymentId?: PaymentId,

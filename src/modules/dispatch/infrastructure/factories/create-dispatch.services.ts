@@ -5,6 +5,7 @@ import { CreateDispatchService } from "@/modules/dispatch/application/services/c
 import type { IDispatchService } from "@/modules/dispatch/application/services/dispatch-application-services.interface";
 import { DispatchService } from "@/modules/dispatch/application/services/dispatch.service";
 import { GetDispatchByIdService } from "@/modules/dispatch/application/services/get-dispatch-by-id.service";
+import { GetDispatchSummaryService } from "@/modules/dispatch/application/services/get-dispatch-summary.service";
 import { ListDispatchesService } from "@/modules/dispatch/application/services/list-dispatches.service";
 import { UpdateDispatchService } from "@/modules/dispatch/application/services/update-dispatch.service";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -30,6 +31,7 @@ export function createDispatchApplicationServices(
 
   const getDispatchById = new GetDispatchByIdService(repository);
   const listDispatches = new ListDispatchesService(repository);
+  const getDispatchSummary = new GetDispatchSummaryService(repository);
   const createDispatch = new CreateDispatchService(
     transactionRunner,
     numberSequences,
@@ -41,6 +43,7 @@ export function createDispatchApplicationServices(
   return {
     getDispatchById,
     listDispatches,
+    getDispatchSummary,
     createDispatch,
     updateDispatch,
     completeDispatch,

@@ -69,6 +69,25 @@ export type ListDispatchesParams = {
   dispatchDateTo?: string;
 };
 
+export type GetDispatchSummaryParams = Omit<
+  ListDispatchesParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type DispatchSummaryStats = {
+  totalDispatches: number;
+  activeDispatches: number;
+  pendingActionCount: number;
+  inTransitCount: number;
+  completedCount: number;
+  totalUnits: number;
+};
+
+export type DispatchSummaryResponse = {
+  stats: DispatchSummaryStats;
+  statusCounts: Partial<Record<"all" | DispatchStatus, number>>;
+};
+
 export type DispatchLineItemPayload = {
   productId: string;
   rentalOrderItemId?: string | null;

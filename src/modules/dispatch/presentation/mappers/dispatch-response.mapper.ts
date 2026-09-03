@@ -76,3 +76,9 @@ export function toDispatchListResponse(
     meta: result.meta,
   };
 }
+
+export function toDispatchSummaryResponse(
+  summary: import("@/modules/dispatch/application/dtos/dispatch-summary.dto").DispatchSummaryDto,
+) {
+  return summary;
+}

@@ -11,12 +11,14 @@ import type { CancelDispatchService } from "./cancel-dispatch.service";
 import type { CompleteDispatchService } from "./complete-dispatch.service";
 import type { CreateDispatchService } from "./create-dispatch.service";
 import type { GetDispatchByIdService } from "./get-dispatch-by-id.service";
+import type { GetDispatchSummaryService } from "./get-dispatch-summary.service";
 import type { ListDispatchesService } from "./list-dispatches.service";
 import type { UpdateDispatchService } from "./update-dispatch.service";
 
 export interface DispatchApplicationServices {
   getDispatchById: GetDispatchByIdService;
   listDispatches: ListDispatchesService;
+  getDispatchSummary: GetDispatchSummaryService;
   createDispatch: CreateDispatchService;
   updateDispatch: UpdateDispatchService;
   completeDispatch: CompleteDispatchService;

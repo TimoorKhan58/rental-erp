@@ -1,5 +1,10 @@
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import type { RentalOrderListQuery } from "@/modules/rental-order/domain/rental-order-list.query";
+import type { RentalOrderSummaryQuery } from "@/modules/rental-order/domain/rental-order-summary.query";
+import {
+  computeRentalOrderSummaryResult,
+  filterRentalOrdersForSummary,
+} from "@/modules/rental-order/domain/rental-order-summary.rules";
 import type {
   AvailabilityCommitmentLineProjection,
   FindAvailabilityCommitmentLinesParams,
@@ -201,6 +206,17 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: RentalOrderSummaryQuery) {
+    const items = filterRentalOrdersForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        RentalOrder.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(computeRentalOrderSummaryResult(items));
   }
 
   async create(data: CreateRentalOrderData): Promise<RentalOrder> {

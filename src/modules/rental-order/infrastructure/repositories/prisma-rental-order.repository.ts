@@ -1,5 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { RentalOrderListQuery } from "@/modules/rental-order/domain/rental-order-list.query";
+import type { RentalOrderSummaryQuery } from "@/modules/rental-order/domain/rental-order-summary.query";
+import type { RentalOrderSummaryResult } from "@/modules/rental-order/domain/rental-order-summary.types";
+import { computeRentalOrderSummaryResult } from "@/modules/rental-order/domain/rental-order-summary.rules";
+import { RENTAL_ORDER_STATUSES } from "@/modules/rental-order/domain/rental-order.constants";
 import type {
   ProductId,
   RentalOrderId,
@@ -28,10 +32,7 @@ import type {
   UpdateRentalOrderData,
   UpdateRentalOrderReserveData,
 } from "@/modules/rental-order/domain/rental-order.types";
-import {
-  RENTAL_ORDER_SEARCH_FIELDS,
-  type RentalOrderStatus,
-} from "@/modules/rental-order/domain/rental-order.constants";
+import { RENTAL_ORDER_SEARCH_FIELDS, type RentalOrderStatus } from "@/modules/rental-order/domain/rental-order.constants";
 
 import {
   RENTAL_ORDER_INCLUDE,
@@ -40,50 +41,16 @@ import {
   toRentalOrderReserveUpdateInput,
   toRentalOrderUpdateInput,
 } from "../mappers/rental-order.persistence.mapper";
+import {
+  buildRentalOrderSummaryWhere,
+  mapRentalOrderFilter,
+} from "./rental-order-query.filters";
 
 const MODEL = "RentalOrder";
 
 const DEFAULT_ORDER_BY: Prisma.RentalOrderOrderByWithRelationInput = {
   createdAt: "desc",
 };
-
-function mapRentalOrderFilter(
-  filter: Record<string, unknown>,
-): Prisma.RentalOrderWhereInput | undefined {
-  const where: Prisma.RentalOrderWhereInput = {};
-
-  if (filter.status !== undefined) {
-    where.status = filter.status as RentalOrder["status"];
-  }
-
-  if (filter.customerId !== undefined) {
-    where.customerId = String(filter.customerId);
-  }
-
-  if (filter.warehouseId !== undefined) {
-    where.warehouseId = String(filter.warehouseId);
-  }
-
-  if (filter.eventFrom !== undefined) {
-    where.eventEndDate = {
-      ...(typeof where.eventEndDate === "object" && where.eventEndDate !== null
-        ? where.eventEndDate
-        : {}),
-      gte: filter.eventFrom as Date,
-    };
-  }
-
-  if (filter.eventTo !== undefined) {
-    where.eventStartDate = {
-      ...(typeof where.eventStartDate === "object" && where.eventStartDate !== null
-        ? where.eventStartDate
-        : {}),
-      lte: filter.eventTo as Date,
-    };
-  }
-
-  return Object.keys(where).length > 0 ? where : undefined;
-}
 
 function mapRentalOrderSort(
   sort: Record<string, "asc" | "desc"> | undefined,
@@ -496,6 +463,69 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
         }
       },
       { model: MODEL, operation: "lockForInvoiceCommand" },
+    );
+  }
+
+  findSummaryStats(
+    query: RentalOrderSummaryQuery,
+  ): Promise<RentalOrderSummaryResult> {
+    const where = buildRentalOrderSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalOrders, statusGroups, ordersForCompute] = await Promise.all([
+          db.rentalOrder.count({ where }),
+          db.rentalOrder.groupBy({
+            by: ["status"],
+            where,
+            _count: { _all: true },
+          }),
+          db.rentalOrder.findMany({
+            where,
+            select: {
+              status: true,
+              items: {
+                select: {
+                  quantity: true,
+                  rentalPricePerDay: true,
+                  numberOfDays: true,
+                  reservedQuantity: true,
+                },
+              },
+            },
+          }),
+        ]);
+
+        const computed = computeRentalOrderSummaryResult(
+          ordersForCompute.map((order) => ({
+            status: order.status,
+            items: order.items.map((item) => ({
+              quantity: item.quantity,
+              dailyRate: Number(item.rentalPricePerDay.toString()),
+              numberOfDays: item.numberOfDays,
+              reservedQuantity: item.reservedQuantity,
+            })),
+          })),
+        );
+
+        const statusCounts: RentalOrderSummaryResult["statusCounts"] = {
+          all: totalOrders,
+          ...Object.fromEntries(
+            RENTAL_ORDER_STATUSES.map((status) => [status, 0]),
+          ),
+        } as RentalOrderSummaryResult["statusCounts"];
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        return {
+          stats: computed.stats,
+          statusCounts,
+          reservationStatusCounts: computed.reservationStatusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
     );
   }
 }

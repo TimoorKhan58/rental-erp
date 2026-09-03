@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -9,13 +8,9 @@ import { getCustomers } from "@/features/customer/services";
 import { getRentalInvoices } from "@/features/rental-invoice/services";
 import type { ListPaymentsParams } from "../types";
 import {
-  computePaymentMethodCounts,
-  computePaymentStatusCounts,
-  computePaymentSummary,
-} from "../mappers/payment-summary.mapper";
-import {
   createPayment,
   getPayment,
+  getPaymentSummary,
   getPayments,
   postPayment,
   updatePayment,
@@ -88,41 +83,17 @@ export function usePaymentFilterOptions() {
 }
 
 export function usePaymentSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.payments.list({ pageSize: 100 }),
-    queryFn: () => getPayments({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.payments.summary({}),
+    queryFn: () => getPaymentSummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computePaymentSummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const statusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computePaymentStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const methodCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computePaymentMethodCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
   return {
-    stats,
-    statusCounts,
-    methodCounts,
-    isLoading: listQuery.isLoading,
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    methodCounts: summaryQuery.data?.methodCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 

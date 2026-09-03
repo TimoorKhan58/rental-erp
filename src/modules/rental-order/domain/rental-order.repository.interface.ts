@@ -7,6 +7,8 @@ import type {
 } from "./rental-order.availability.projection";
 import type { RentalOrder } from "./rental-order.entity";
 import type { RentalOrderListQuery } from "./rental-order-list.query";
+import type { RentalOrderSummaryQuery } from "./rental-order-summary.query";
+import type { RentalOrderSummaryResult } from "./rental-order-summary.types";
 import type {
   CreateRentalOrderData,
   UpdateRentalOrderData,
@@ -17,6 +19,9 @@ export interface IRentalOrderRepository {
   findById(id: RentalOrderId): Promise<RentalOrder | null>;
   findByOrderNumber(orderNumber: string): Promise<RentalOrder | null>;
   findPaged(query: RentalOrderListQuery): Promise<PaginatedResult<RentalOrder>>;
+  findSummaryStats(
+    query: RentalOrderSummaryQuery,
+  ): Promise<RentalOrderSummaryResult>;
   /**
    * F-02 read projection: all availability-commitment rental lines for
    * product × warehouse (RESERVED | ON_RENT | PARTIALLY_RETURNED).

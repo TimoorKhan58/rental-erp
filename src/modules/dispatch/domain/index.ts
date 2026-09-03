@@ -19,6 +19,17 @@ export {
   createDispatchNumber,
 } from "./dispatch.errors";
 export type { DispatchListQuery } from "./dispatch-list.query";
+export type { DispatchSummaryQuery } from "./dispatch-summary.query";
+export type {
+  DispatchSummaryResult,
+  DispatchSummaryStats,
+  DispatchSummaryStatusCounts,
+} from "./dispatch-summary.types";
+export {
+  computeDispatchSummaryResult,
+  filterDispatchesForSummary,
+  matchesDispatchSummaryQuery,
+} from "./dispatch-summary.rules";
 export type {
   DispatchClaimedSourceQuantities,
   IDispatchRepository,

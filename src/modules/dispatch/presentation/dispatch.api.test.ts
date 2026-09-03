@@ -25,6 +25,7 @@ import {
   handleCompleteDispatch,
   handleCreateDispatch,
   handleGetDispatchById,
+  handleGetDispatchSummary,
   handleListDispatches,
   handleUpdateDispatch,
 } from "@/modules/dispatch/presentation/routes/dispatch-api.routes";
@@ -42,6 +43,7 @@ function createMockServices() {
   return {
     getDispatchById: { execute: vi.fn() },
     listDispatches: { execute: vi.fn() },
+    getDispatchSummary: { execute: vi.fn() },
     createDispatch: { execute: vi.fn() },
     updateDispatch: { execute: vi.fn() },
     completeDispatch: { execute: vi.fn() },
@@ -127,6 +129,39 @@ describe("dispatch route handlers", () => {
 
     expect(response.status).toBe(200);
     expect(body.data.items).toEqual([]);
+  });
+
+  it("handleGetDispatchSummary returns summary envelope with read permission", async () => {
+    const services = createMockServices();
+    services.getDispatchSummary.execute.mockResolvedValue({
+      stats: {
+        totalDispatches: 101,
+        activeDispatches: 101,
+        pendingActionCount: 101,
+        inTransitCount: 0,
+        completedCount: 0,
+        totalUnits: 505,
+      },
+      statusCounts: {
+        all: 101,
+        DRAFT: 101,
+        READY: 0,
+        DISPATCHED: 0,
+        COMPLETED: 0,
+        CANCELLED: 0,
+      },
+    });
+
+    const response = await handleGetDispatchSummary(
+      createMockNextRequest(),
+      () => services as unknown as DispatchApplicationServices,
+    );
+    const body = await readJsonResponse<{
+      data: { stats: { totalDispatches: number } };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data.stats.totalDispatches).toBe(101);
   });
 
   it("handleCreateDispatch returns created dispatch", async () => {

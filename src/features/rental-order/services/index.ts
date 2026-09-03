@@ -5,6 +5,7 @@ export {
   getDateAwareAvailability,
   getRentalOrder,
   getRentalOrderShortfall,
+  getRentalOrderSummary,
   getRentalOrders,
   reserveRentalOrder,
   sourceRentalOrderExternally,

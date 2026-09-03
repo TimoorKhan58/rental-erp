@@ -7,6 +7,7 @@ import { RentalOrderService } from "@/modules/rental-order/application/services/
 import { GetDateAwareAvailabilityService } from "@/modules/rental-order/application/services/get-date-aware-availability.service";
 import { GetRentalOrderByIdService } from "@/modules/rental-order/application/services/get-rental-order-by-id.service";
 import { GetRentalOrderShortfallService } from "@/modules/rental-order/application/services/get-rental-order-shortfall.service";
+import { GetRentalOrderSummaryService } from "@/modules/rental-order/application/services/get-rental-order-summary.service";
 import { ListRentalOrdersService } from "@/modules/rental-order/application/services/list-rental-orders.service";
 import { ReserveRentalOrderService } from "@/modules/rental-order/application/services/reserve-rental-order.service";
 import { SourceRentalOrderExternallyService } from "@/modules/rental-order/application/services/source-rental-order-externally.service";
@@ -60,6 +61,7 @@ export function createRentalOrderApplicationServices(
     inventoryRepository,
     externalRentalRepository,
   );
+  const getRentalOrderSummary = new GetRentalOrderSummaryService(repository);
   const sourceRentalOrderExternally = new SourceRentalOrderExternallyService(
     transactionRunner,
     supplierRepository,
@@ -77,6 +79,7 @@ export function createRentalOrderApplicationServices(
     cancelRentalOrder,
     getDateAwareAvailability,
     getRentalOrderShortfall,
+    getRentalOrderSummary,
     sourceRentalOrderExternally,
     rentalOrderService: new RentalOrderService(
       getRentalOrderById,

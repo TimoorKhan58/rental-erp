@@ -14,6 +14,7 @@ import type { CreateRentalOrderService } from "./create-rental-order.service";
 import type { GetDateAwareAvailabilityService } from "./get-date-aware-availability.service";
 import type { GetRentalOrderByIdService } from "./get-rental-order-by-id.service";
 import type { GetRentalOrderShortfallService } from "./get-rental-order-shortfall.service";
+import type { GetRentalOrderSummaryService } from "./get-rental-order-summary.service";
 import type { ListRentalOrdersService } from "./list-rental-orders.service";
 import type { ReserveRentalOrderService } from "./reserve-rental-order.service";
 import type { SourceRentalOrderExternallyService } from "./source-rental-order-externally.service";
@@ -29,6 +30,7 @@ export interface RentalOrderApplicationServices {
   cancelRentalOrder: CancelRentalOrderService;
   getDateAwareAvailability: GetDateAwareAvailabilityService;
   getRentalOrderShortfall: GetRentalOrderShortfallService;
+  getRentalOrderSummary: GetRentalOrderSummaryService;
   sourceRentalOrderExternally: SourceRentalOrderExternallyService;
 }
 

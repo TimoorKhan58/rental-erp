@@ -1,5 +1,10 @@
 import { Payment } from "@/modules/payment/domain/payment.entity";
 import type { PaymentListQuery } from "@/modules/payment/domain/payment-list.query";
+import type { PaymentSummaryQuery } from "@/modules/payment/domain/payment-summary.query";
+import {
+  computePaymentSummaryResult,
+  filterPaymentsForSummary,
+} from "@/modules/payment/domain/payment-summary.rules";
 import type { IPaymentRepository } from "@/modules/payment/domain/payment.repository.interface";
 import type {
   CreatePaymentData,
@@ -145,6 +150,25 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: PaymentSummaryQuery) {
+    const items = filterPaymentsForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Payment.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computePaymentSummaryResult(
+        items.map((payment) => ({
+          status: payment.status,
+          paymentMethod: payment.paymentMethod,
+          amount: payment.amount,
+        })),
+      ),
+    );
   }
 
   sumPendingAmountByRentalInvoiceId(
