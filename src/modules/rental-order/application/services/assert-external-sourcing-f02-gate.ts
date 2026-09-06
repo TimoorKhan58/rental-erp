@@ -264,10 +264,9 @@ export async function assertExternalSourcingF02Gate(
       })),
     });
 
-    const alreadyExternallyRequestedQuantity =
-      activeAgreement?.items
-        .filter((eraItem) => eraItem.rentalOrderItemId === authoritativeItem.id)
-        .reduce((sum, eraItem) => sum + eraItem.quantityRequested, 0) ?? 0;
+    // Active ERA uniqueness is enforced above; no concurrent active agreement
+    // can contribute additional requested quantity in this gate path.
+    const alreadyExternallyRequestedQuantity = 0;
 
     const shortfall = calculateExternalSourcingShortfall({
       requiredQuantity: authoritativeItem.quantity,

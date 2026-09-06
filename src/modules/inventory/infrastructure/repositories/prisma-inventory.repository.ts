@@ -3,7 +3,6 @@ import type { InventoryListQuery } from "@/modules/inventory/domain/inventory-li
 import type { InventorySummaryQuery } from "@/modules/inventory/domain/inventory-summary.query";
 import {
   computeInventorySummaryResult,
-  filterInventoryForSummary,
 } from "@/modules/inventory/domain/inventory-summary.rules";
 import { buildInventorySummaryWhere } from "@/modules/inventory/infrastructure/repositories/inventory-query.filters";
 import type { InventoryId, ProductId, WarehouseId } from "@/shared/domain/ids";

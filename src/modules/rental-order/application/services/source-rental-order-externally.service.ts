@@ -44,8 +44,9 @@ export class SourceRentalOrderExternallyService {
     const { id } = parseRequest(RentalOrderIdParamSchema, params);
     const data = parseRequest(SourceRentalOrderExternallySchema, input);
     const rentalOrderId = toRentalOrderId(id);
+    const actingUserId = this.userId;
 
-    if (this.userId === undefined || this.userId.trim() === "") {
+    if (actingUserId === undefined || actingUserId.trim() === "") {
       throw new UnprocessableError({
         message: "User context is required to source rental order externally",
       });
@@ -68,7 +69,6 @@ export class SourceRentalOrderExternallyService {
         inventoryRepository,
         externalRentalRepository,
         auditLogger,
-        userId,
       }) => {
         const { authoritativeOrder } = await assertExternalSourcingF02Gate(
           {
@@ -125,7 +125,7 @@ export class SourceRentalOrderExternallyService {
             ],
             agreementNumber,
           },
-          toUserId(userId ?? this.userId),
+          toUserId(actingUserId),
         );
 
         return executeCreateExternalRentalInScope(

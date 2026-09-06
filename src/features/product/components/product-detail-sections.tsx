@@ -147,7 +147,6 @@ export function ProductDetailSections({
         productId={product.id}
         inventoryRows={inventoryRows}
         inventorySummary={inventorySummary}
-        warehouseNameById={warehouseNameById}
         canRead={permissions.canReadInventory}
         isLoading={isLoading}
       />

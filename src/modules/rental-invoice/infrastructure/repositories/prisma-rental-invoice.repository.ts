@@ -256,8 +256,8 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
             partiallyPaidCount: statusCounts.PARTIALLY_PAID,
             paidCount: statusCounts.PAID,
             draftCount: statusCounts.DRAFT,
-            totalOutstanding: outstandingAgg._sum.balance ?? 0,
-            totalCollected: totalCollectedAgg._sum.paidAmount ?? 0,
+            totalOutstanding: Number(outstandingAgg._sum.balance ?? 0),
+            totalCollected: Number(totalCollectedAgg._sum.paidAmount ?? 0),
           },
           statusCounts,
           paymentStatusCounts: {

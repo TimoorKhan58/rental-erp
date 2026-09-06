@@ -1,6 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
 
-import type { Asset } from "@/modules/asset/domain/asset.entity";
 import type { AssetSummaryQuery } from "@/modules/asset/domain/asset-summary.query";
 import { ASSET_SEARCH_FIELDS } from "@/modules/asset/domain/asset.constants";
 import { buildSearchWhereFromInput } from "@/shared/infrastructure/database/repository/query/build-search";

@@ -50,7 +50,6 @@ export function MaintenanceListTable({
     scheduledDateFrom,
     scheduledDateTo,
     technician,
-    serviceType,
     localSearch,
     setLocalSearch,
     setSearch,

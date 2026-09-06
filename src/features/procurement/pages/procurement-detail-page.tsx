@@ -26,7 +26,6 @@ import { useSupplier } from "@/features/supplier/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
 import {
   calculateLineSubtotal,
-  calculateOrderTotal,
   canApproveProcurement,
   canCancelProcurement,
   canEditProcurement,

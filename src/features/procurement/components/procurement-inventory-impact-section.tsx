@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { AppButton } from "@/components/design-system/button";
 import { SectionCard, EmptyCard } from "@/components/design-system/card";
-import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useInventoryFilterOptions } from "@/features/inventory/hooks";
 import {

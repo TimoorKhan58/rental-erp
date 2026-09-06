@@ -173,7 +173,9 @@ export function ProductListTable({ onCreateClick }: ProductListTableProps) {
             <Select
               value={params.categoryId ?? "all"}
               onValueChange={(value) =>
-                setCategoryFilter(value === "all" ? undefined : value)
+                setCategoryFilter(
+                  value == null || value === "all" ? undefined : value,
+                )
               }
             >
               <SelectTrigger className="w-full sm:w-44" aria-label="Filter by category">
@@ -190,7 +192,11 @@ export function ProductListTable({ onCreateClick }: ProductListTableProps) {
             </Select>
             <Select
               value={params.brandId ?? "all"}
-              onValueChange={(value) => setBrandFilter(value === "all" ? undefined : value)}
+              onValueChange={(value) =>
+                setBrandFilter(
+                  value == null || value === "all" ? undefined : value,
+                )
+              }
             >
               <SelectTrigger className="w-full sm:w-40" aria-label="Filter by brand">
                 <SelectValue placeholder="Brand" />
@@ -206,7 +212,11 @@ export function ProductListTable({ onCreateClick }: ProductListTableProps) {
             </Select>
             <Select
               value={params.tagId ?? "all"}
-              onValueChange={(value) => setTagFilter(value === "all" ? undefined : value)}
+              onValueChange={(value) =>
+                setTagFilter(
+                  value == null || value === "all" ? undefined : value,
+                )
+              }
             >
               <SelectTrigger className="w-full sm:w-36" aria-label="Filter by tag">
                 <SelectValue placeholder="Tag" />
