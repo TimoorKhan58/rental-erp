@@ -6,6 +6,7 @@ export {
   getExpense,
   getExpenseCategories,
   getExpenseCategory,
+  getExpenseSummary,
   getExpenses,
   payExpense,
   rejectExpense,

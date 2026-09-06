@@ -6,6 +6,7 @@ export {
   disposeAsset,
   getAsset,
   getAssetCategories,
+  getAssetSummary,
   getAssets,
   transferAsset,
   updateAsset,
