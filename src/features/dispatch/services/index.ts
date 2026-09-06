@@ -3,6 +3,7 @@ export {
   completeDispatch,
   createDispatch,
   getDispatch,
+  getDispatchSummary,
   getDispatches,
   updateDispatch,
 } from "./dispatch.service";

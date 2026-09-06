@@ -7,6 +7,9 @@ export type {
   DispatchResponse,
   DispatchSortField,
   DispatchStatus,
+  DispatchSummaryResponse,
+  DispatchSummaryStats,
+  GetDispatchSummaryParams,
   ListDispatchesParams,
   UpdateDispatchPayload,
 } from "./dispatch.types";
