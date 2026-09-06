@@ -100,17 +100,20 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
   findMaxSequenceForInvoicePrefix(prefix: string): Promise<number> {
     return this.runner.run(
       async (db) => {
-        const prefixLength = prefix.length;
+        // Use REPLACE(prefix) rather than SUBSTRING(... FROM $n).
+        // Parameterized SUBSTRING FROM positions are treated as regex patterns by
+        // PostgreSQL prepared statements, which made MAX always return 0 and
+        // caused invoice-number allocation to retry INV-YYYY-001 forever.
         const rows = await db.$queryRaw<Array<{ max: number | null }>>`
           SELECT COALESCE(
             MAX(
-              CAST(SUBSTRING("invoiceNumber" FROM ${prefixLength + 1}) AS INTEGER)
+              CAST(REPLACE("invoiceNumber", ${prefix}, '') AS INTEGER)
             ),
             0
           ) AS max
           FROM "rental_invoices"
           WHERE "invoiceNumber" LIKE ${`${prefix}%`}
-            AND SUBSTRING("invoiceNumber" FROM ${prefixLength + 1}) ~ '^[0-9]+$'
+            AND REPLACE("invoiceNumber", ${prefix}, '') ~ '^[0-9]+$'
         `;
 
         const value = rows[0]?.max;
