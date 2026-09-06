@@ -163,6 +163,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.returns.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.returns.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.returns.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.returns.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.returns.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.returns.details(), id] as const,
   },
@@ -171,6 +174,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.repairs.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.repairs.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.repairs.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.repairs.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.repairs.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.repairs.details(), id] as const,
   },
@@ -179,6 +185,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.maintenances.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.maintenances.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.maintenances.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.maintenances.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.maintenances.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.maintenances.details(), id] as const,
   },

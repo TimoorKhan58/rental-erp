@@ -1,5 +1,6 @@
 export const MAINTENANCE_ROUTES = {
   base: "/api/maintenances",
+  summary: "/api/maintenances/summary",
   byId: (id: string) => `/api/maintenances/${id}`,
   start: (id: string) => `/api/maintenances/${id}/start`,
   complete: (id: string) => `/api/maintenances/${id}/complete`,

@@ -1,5 +1,6 @@
 export const RETURN_ROUTES = {
   base: "/api/returns",
+  summary: "/api/returns/summary",
   byId: (id: string) => `/api/returns/${id}`,
   receive: (id: string) => `/api/returns/${id}/receive`,
   inspect: (id: string) => `/api/returns/${id}/inspect`,

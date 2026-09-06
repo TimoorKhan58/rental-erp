@@ -3,6 +3,7 @@ export {
   handleCompleteRepair,
   handleCreateRepair,
   handleGetRepairById,
+  handleGetRepairSummary,
   handleListRepairs,
   handleStartRepair,
   handleUpdateRepair,
@@ -14,5 +15,6 @@ export {
 export {
   toRepairListResponse,
   toRepairResponse,
+  toRepairSummaryResponse,
 } from "./mappers/repair-response.mapper";
 export { REPAIR_ROUTES } from "./routes/repair.routes";

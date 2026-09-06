@@ -75,6 +75,8 @@ export function buildRepairEntity(
   override: {
     id?: RepairId;
     status?: Repair["status"];
+    productId?: Repair["productId"];
+    warehouseId?: Repair["warehouseId"];
     quantity?: number;
     repairCost?: number;
     repairNotes?: string | null;
@@ -93,8 +95,8 @@ export function buildRepairEntity(
     repairNumber: created.repairNumber,
     returnId: created.returnId,
     returnItemId: created.returnItemId,
-    productId: created.productId,
-    warehouseId: created.warehouseId,
+    productId: override.productId ?? created.productId,
+    warehouseId: override.warehouseId ?? created.warehouseId,
     quantity: override.quantity ?? created.quantity,
     repairCost: override.repairCost ?? created.repairCost,
     repairNotes:

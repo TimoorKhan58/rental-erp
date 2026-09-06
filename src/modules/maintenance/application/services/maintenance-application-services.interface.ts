@@ -12,12 +12,14 @@ import type { CompleteMaintenanceService } from "./complete-maintenance.service"
 import type { CreateMaintenanceService } from "./create-maintenance.service";
 import type { GetMaintenanceByIdService } from "./get-maintenance-by-id.service";
 import type { ListMaintenancesService } from "./list-maintenances.service";
+import type { GetMaintenanceSummaryService } from "./get-maintenance-summary.service";
 import type { StartMaintenanceService } from "./start-maintenance.service";
 import type { UpdateMaintenanceService } from "./update-maintenance.service";
 
 export interface MaintenanceApplicationServices {
   getMaintenanceById: GetMaintenanceByIdService;
   listMaintenances: ListMaintenancesService;
+  getMaintenanceSummary: GetMaintenanceSummaryService;
   createMaintenance: CreateMaintenanceService;
   updateMaintenance: UpdateMaintenanceService;
   startMaintenance: StartMaintenanceService;

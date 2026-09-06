@@ -4,6 +4,7 @@ import { CompleteMaintenanceService } from "@/modules/maintenance/application/se
 import { CreateMaintenanceService } from "@/modules/maintenance/application/services/create-maintenance.service";
 import type { IMaintenanceService } from "@/modules/maintenance/application/services/maintenance-application-services.interface";
 import { GetMaintenanceByIdService } from "@/modules/maintenance/application/services/get-maintenance-by-id.service";
+import { GetMaintenanceSummaryService } from "@/modules/maintenance/application/services/get-maintenance-summary.service";
 import { ListMaintenancesService } from "@/modules/maintenance/application/services/list-maintenances.service";
 import { MaintenanceService } from "@/modules/maintenance/application/services/maintenance.service";
 import { StartMaintenanceService } from "@/modules/maintenance/application/services/start-maintenance.service";
@@ -31,6 +32,7 @@ export function createMaintenanceApplicationServices(
 
   const getMaintenanceById = new GetMaintenanceByIdService(repository);
   const listMaintenances = new ListMaintenancesService(repository);
+  const getMaintenanceSummary = new GetMaintenanceSummaryService(repository);
   const createMaintenance = new CreateMaintenanceService(
     transactionRunner,
     numberSequences,
@@ -43,6 +45,7 @@ export function createMaintenanceApplicationServices(
   return {
     getMaintenanceById,
     listMaintenances,
+    getMaintenanceSummary,
     createMaintenance,
     updateMaintenance,
     startMaintenance,

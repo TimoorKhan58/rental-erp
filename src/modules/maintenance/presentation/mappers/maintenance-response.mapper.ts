@@ -60,3 +60,9 @@ export function toMaintenanceListResponse(
     meta: result.meta,
   };
 }
+
+export function toMaintenanceSummaryResponse(
+  summary: import("@/modules/maintenance/application/dtos/maintenance-summary.dto").MaintenanceSummaryDto,
+) {
+  return summary;
+}

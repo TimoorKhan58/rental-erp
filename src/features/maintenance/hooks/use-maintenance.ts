@@ -1,5 +1,4 @@
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -9,13 +8,12 @@ import { getInventoryList } from "@/features/inventory/services";
 import { getProducts } from "@/features/product/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListMaintenancesParams } from "../types";
-import { MAINTENANCE_SERVICE_TYPES, MAINTENANCE_STATUSES } from "../types";
-import { computeMaintenanceSummary } from "../mappers/maintenance-summary.mapper";
 import {
   cancelMaintenance,
   completeMaintenance,
   createMaintenance,
   getMaintenance,
+  getMaintenanceSummary,
   getMaintenances,
   startMaintenance,
   updateMaintenance,
@@ -109,90 +107,17 @@ export function useMaintenanceFilterOptions() {
 }
 
 export function useMaintenanceSummaryStats() {
-  const totalQuery = useQuery({
-    queryKey: queryKeys.maintenances.list({ pageSize: 1 }),
-    queryFn: () => getMaintenances({ pageSize: 1 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.maintenances.summary({}),
+    queryFn: () => getMaintenanceSummary({}),
     staleTime: 60_000,
   });
-
-  const costSampleQuery = useQuery({
-    queryKey: queryKeys.maintenances.list({ pageSize: 100, sortBy: "createdAt", sortOrder: "desc" }),
-    queryFn: () => getMaintenances({ pageSize: 100, sortBy: "createdAt", sortOrder: "desc" }),
-    staleTime: 60_000,
-  });
-
-  const statusQueries = useQueries({
-    queries: MAINTENANCE_STATUSES.map((status) => ({
-      queryKey: queryKeys.maintenances.list({ status, pageSize: 1 }),
-      queryFn: () => getMaintenances({ status, pageSize: 1 }),
-      staleTime: 60_000,
-    })),
-  });
-
-  const serviceTypeQueries = useQueries({
-    queries: MAINTENANCE_SERVICE_TYPES.map((serviceType) => ({
-      queryKey: queryKeys.maintenances.list({ serviceType, pageSize: 1 }),
-      queryFn: () => getMaintenances({ serviceType, pageSize: 1 }),
-      staleTime: 60_000,
-    })),
-  });
-
-  const statusCounts = useMemo(() => {
-    const counts: Partial<Record<"all" | (typeof MAINTENANCE_STATUSES)[number], number>> = {
-      all: totalQuery.data?.meta.total ?? 0,
-    };
-
-    MAINTENANCE_STATUSES.forEach((status, index) => {
-      counts[status] = statusQueries[index]?.data?.meta.total ?? 0;
-    });
-
-    return counts;
-  }, [totalQuery.data, statusQueries]);
-
-  const serviceTypeCounts = useMemo(() => {
-    const counts: Partial<Record<"all" | (typeof MAINTENANCE_SERVICE_TYPES)[number], number>> = {
-      all: totalQuery.data?.meta.total ?? 0,
-    };
-
-    MAINTENANCE_SERVICE_TYPES.forEach((serviceType, index) => {
-      counts[serviceType] = serviceTypeQueries[index]?.data?.meta.total ?? 0;
-    });
-
-    return counts;
-  }, [totalQuery.data, serviceTypeQueries]);
-
-  const stats = useMemo(() => {
-    if (!totalQuery.data) {
-      return undefined;
-    }
-
-    const total = totalQuery.data.meta.total;
-    const scheduledCount = statusCounts.SCHEDULED ?? 0;
-    const inProgressCount = statusCounts.IN_PROGRESS ?? 0;
-    const completedCount = statusCounts.COMPLETED ?? 0;
-    const cancelledCount = statusCounts.CANCELLED ?? 0;
-    const costSample = computeMaintenanceSummary(costSampleQuery.data?.items ?? []);
-
-    return {
-      totalRecords: total,
-      activeRecords: total - cancelledCount,
-      pendingActionCount: scheduledCount + inProgressCount,
-      scheduledCount,
-      inProgressCount,
-      completedCount,
-      totalEstimatedCost: costSample.totalEstimatedCost,
-    };
-  }, [totalQuery.data, costSampleQuery.data, statusCounts]);
 
   return {
-    stats,
-    statusCounts,
-    serviceTypeCounts,
-    isLoading:
-      totalQuery.isLoading ||
-      costSampleQuery.isLoading ||
-      statusQueries.some((query) => query.isLoading) ||
-      serviceTypeQueries.some((query) => query.isLoading),
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    serviceTypeCounts: summaryQuery.data?.serviceTypeCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 
@@ -220,6 +145,7 @@ export function useCreateMaintenance() {
     successMessage: "Maintenance created successfully.",
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.summaries() });
     },
   });
 }
@@ -260,6 +186,7 @@ export function useUpdateMaintenance() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.detail(data.id) }),
       ]);
     },
@@ -276,6 +203,7 @@ export function useStartMaintenance() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
         queryClient.invalidateQueries({
@@ -297,6 +225,7 @@ export function useCompleteMaintenance() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
         queryClient.invalidateQueries({
@@ -318,6 +247,7 @@ export function useCancelMaintenance() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
         queryClient.invalidateQueries({

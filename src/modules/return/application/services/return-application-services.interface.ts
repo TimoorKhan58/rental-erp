@@ -14,12 +14,14 @@ import type { CreateReturnService } from "./create-return.service";
 import type { GetReturnByIdService } from "./get-return-by-id.service";
 import type { InspectReturnService } from "./inspect-return.service";
 import type { ListReturnsService } from "./list-returns.service";
+import type { GetReturnSummaryService } from "./get-return-summary.service";
 import type { ReceiveReturnService } from "./receive-return.service";
 import type { UpdateReturnService } from "./update-return.service";
 
 export interface ReturnApplicationServices {
   getReturnById: GetReturnByIdService;
   listReturns: ListReturnsService;
+  getReturnSummary: GetReturnSummaryService;
   createReturn: CreateReturnService;
   updateReturn: UpdateReturnService;
   receiveReturn: ReceiveReturnService;

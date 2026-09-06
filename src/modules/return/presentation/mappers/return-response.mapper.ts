@@ -88,3 +88,9 @@ export function toReturnListResponse(
     meta: result.meta,
   };
 }
+
+export function toReturnSummaryResponse(
+  summary: import("@/modules/return/application/dtos/return-summary.dto").ReturnSummaryDto,
+) {
+  return summary;
+}

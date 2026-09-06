@@ -19,6 +19,9 @@ import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
 import { NotFoundError } from "@/shared/infrastructure/errors";
 import type { RepairApplicationServices } from "@/modules/repair/application/services/repair-application-services.interface";
 
+import {
+  handleGetRepairSummary,
+} from "@/modules/repair/presentation/routes/repair-api.routes";
 import { runRepairApiRoute } from "@/modules/repair/presentation/http/repair-api.route-runner";
 import {
   createMockNextRequest,
@@ -28,10 +31,15 @@ import {
   VALID_CREATE_INPUT,
 } from "@/modules/repair/tests/helpers/repair.fixtures";
 
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  return (await response.json()) as T;
+}
+
 function createMockServices() {
   return {
     getRepairById: { execute: vi.fn() },
     listRepairs: { execute: vi.fn() },
+    getRepairSummary: { execute: vi.fn() },
     createRepair: { execute: vi.fn() },
     updateRepair: { execute: vi.fn() },
     startRepair: { execute: vi.fn() },
@@ -371,5 +379,57 @@ describe("runRepairApiRoute repair permissions", () => {
     });
 
     expect(result.status).toBe(403);
+  });
+});
+
+describe("repair summary API authorization", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("handleGetRepairSummary returns summary envelope with read permission", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+    services.getRepairSummary.execute.mockResolvedValue({
+      stats: {
+        totalRepairs: 101,
+        activeRepairs: 101,
+        pendingActionCount: 101,
+        pendingCount: 101,
+        inProgressCount: 0,
+        completedCount: 0,
+        totalRepairCost: 1010,
+      },
+      statusCounts: {
+        all: 101,
+        PENDING: 101,
+        IN_PROGRESS: 0,
+        COMPLETED: 0,
+        CANCELLED: 0,
+      },
+    });
+
+    const response = await handleGetRepairSummary(
+      createMockNextRequest({ url: "http://localhost/api/repairs/summary" }),
+      () => services as unknown as RepairApplicationServices,
+    );
+    const body = await readJsonResponse<{
+      data: { stats: { totalRepairs: number; totalRepairCost: number } };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data.stats.totalRepairs).toBe(101);
+    expect(body.data.stats.totalRepairCost).toBe(1010);
+  });
+
+  it("denies repair summary when unauthenticated", async () => {
+    mockUnauthenticatedUser();
+
+    const response = await handleGetRepairSummary(
+      createMockNextRequest({ url: "http://localhost/api/repairs/summary" }),
+      () => createMockServices() as unknown as RepairApplicationServices,
+    );
+
+    expect(response.status).toBe(401);
   });
 });

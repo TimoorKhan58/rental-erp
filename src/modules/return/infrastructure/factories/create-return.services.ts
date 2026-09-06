@@ -4,6 +4,7 @@ import { CompleteReturnService } from "@/modules/return/application/services/com
 import { CreateReturnService } from "@/modules/return/application/services/create-return.service";
 import type { IReturnService } from "@/modules/return/application/services/return-application-services.interface";
 import { GetReturnByIdService } from "@/modules/return/application/services/get-return-by-id.service";
+import { GetReturnSummaryService } from "@/modules/return/application/services/get-return-summary.service";
 import { InspectReturnService } from "@/modules/return/application/services/inspect-return.service";
 import { ListReturnsService } from "@/modules/return/application/services/list-returns.service";
 import { ReceiveReturnService } from "@/modules/return/application/services/receive-return.service";
@@ -32,6 +33,7 @@ export function createReturnApplicationServices(
 
   const getReturnById = new GetReturnByIdService(repository);
   const listReturns = new ListReturnsService(repository);
+  const getReturnSummary = new GetReturnSummaryService(repository);
   const createReturn = new CreateReturnService(
     transactionRunner,
     numberSequences,
@@ -45,6 +47,7 @@ export function createReturnApplicationServices(
   return {
     getReturnById,
     listReturns,
+    getReturnSummary,
     createReturn,
     updateReturn,
     receiveReturn,

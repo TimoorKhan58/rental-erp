@@ -1,5 +1,10 @@
 import { Return } from "@/modules/return/domain/return.entity";
 import type { ReturnListQuery } from "@/modules/return/domain/return-list.query";
+import type { ReturnSummaryQuery } from "@/modules/return/domain/return-summary.query";
+import {
+  computeReturnSummaryResult,
+  filterReturnsForSummary,
+} from "@/modules/return/domain/return-summary.rules";
 import type { IReturnRepository } from "@/modules/return/domain/return.repository.interface";
 import { validateReturnItems } from "@/modules/return/domain/return.rules";
 import type {
@@ -140,6 +145,27 @@ export class InMemoryReturnRepository implements IReturnRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: ReturnSummaryQuery) {
+    const items = filterReturnsForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Return.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeReturnSummaryResult(
+        items.map((item) => ({
+          status: item.status,
+          totalReturnedUnits: item.items.reduce(
+            (sum, line) => sum + line.returnedQuantity,
+            0,
+          ),
+        })),
+      ),
+    );
   }
 
   async create(data: CreateReturnData): Promise<Return> {

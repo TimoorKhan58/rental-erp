@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Return } from "./return.entity";
 import type { ReturnListQuery } from "./return-list.query";
+import type { ReturnSummaryQuery } from "./return-summary.query";
+import type { ReturnSummaryResult } from "./return-summary.types";
 import type {
   CreateReturnData,
   UpdateReturnData,
@@ -14,6 +16,7 @@ export interface IReturnRepository {
   findByReturnNumber(returnNumber: string): Promise<Return | null>;
   findByDispatchId(dispatchId: DispatchId): Promise<Return[]>;
   findPaged(query: ReturnListQuery): Promise<PaginatedResult<Return>>;
+  findSummaryStats(query: ReturnSummaryQuery): Promise<ReturnSummaryResult>;
   create(data: CreateReturnData): Promise<Return>;
   update(id: ReturnInspectionId, data: UpdateReturnData): Promise<Return>;
   updateStatus(

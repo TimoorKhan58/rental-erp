@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Maintenance } from "./maintenance.entity";
 import type { MaintenanceListQuery } from "./maintenance-list.query";
+import type { MaintenanceSummaryQuery } from "./maintenance-summary.query";
+import type { MaintenanceSummaryResult } from "./maintenance-summary.types";
 import type {
   CreateMaintenanceData,
   UpdateMaintenanceData,
@@ -15,6 +17,9 @@ export interface IMaintenanceRepository {
     maintenanceNumber: string,
   ): Promise<Maintenance | null>;
   findPaged(query: MaintenanceListQuery): Promise<PaginatedResult<Maintenance>>;
+  findSummaryStats(
+    query: MaintenanceSummaryQuery,
+  ): Promise<MaintenanceSummaryResult>;
   create(data: CreateMaintenanceData): Promise<Maintenance>;
   update(id: MaintenanceId, data: UpdateMaintenanceData): Promise<Maintenance>;
   updateStatus(

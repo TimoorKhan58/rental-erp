@@ -69,6 +69,27 @@ export type ListMaintenancesParams = {
   technician?: string;
 };
 
+export type GetMaintenanceSummaryParams = Omit<
+  ListMaintenancesParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type MaintenanceSummaryStats = {
+  totalRecords: number;
+  activeRecords: number;
+  pendingActionCount: number;
+  scheduledCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  totalEstimatedCost: number;
+};
+
+export type MaintenanceSummaryResponse = {
+  stats: MaintenanceSummaryStats;
+  statusCounts: Partial<Record<"all" | MaintenanceStatus, number>>;
+  serviceTypeCounts: Partial<Record<"all" | MaintenanceServiceType, number>>;
+};
+
 export type CreateMaintenancePayload = {
   maintenanceNumber?: string;
   productId: string;

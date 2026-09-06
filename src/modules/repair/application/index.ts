@@ -48,6 +48,7 @@ export { CancelRepairService } from "./services/cancel-repair.service";
 export { CompleteRepairService } from "./services/complete-repair.service";
 export { CreateRepairService } from "./services/create-repair.service";
 export { GetRepairByIdService } from "./services/get-repair-by-id.service";
+export { GetRepairSummaryService } from "./services/get-repair-summary.service";
 export { ListRepairsService } from "./services/list-repairs.service";
 export { RepairService } from "./services/repair.service";
 export { StartRepairService } from "./services/start-repair.service";

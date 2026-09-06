@@ -1,5 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { ReturnListQuery } from "@/modules/return/domain/return-list.query";
+import type { ReturnSummaryQuery } from "@/modules/return/domain/return-summary.query";
+import type { ReturnSummaryResult } from "@/modules/return/domain/return-summary.types";
+import { RETURN_STATUSES } from "@/modules/return/domain/return.constants";
+import { buildReturnSummaryWhere } from "@/modules/return/infrastructure/repositories/return-query.filters";
 import type { ReturnInspectionId } from "@/shared/domain/ids";
 import type { DispatchId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -191,6 +195,57 @@ export class PrismaReturnRepository implements IReturnRepository {
       items: result.items.map(toReturnDomain),
       meta: result.meta,
     }));
+  }
+
+
+  findSummaryStats(query: ReturnSummaryQuery): Promise<ReturnSummaryResult> {
+    const where = buildReturnSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalReturns, statusGroups, unitsSum] = await Promise.all([
+          db.returnInspection.count({ where }),
+          db.returnInspection.groupBy({
+            by: ["status"],
+            where,
+            _count: { _all: true },
+          }),
+          db.returnInspectionItem.aggregate({
+            where: { returnInspection: where },
+            _sum: { returnedQuantity: true },
+          }),
+        ]);
+
+        const statusCounts = Object.fromEntries(
+          RETURN_STATUSES.map((status) => [status, 0]),
+        ) as ReturnSummaryResult["statusCounts"];
+
+        statusCounts.all = totalReturns;
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        const draftCount = statusCounts.DRAFT;
+        const receivedCount = statusCounts.RECEIVED;
+        const inspectedCount = statusCounts.INSPECTED;
+        const completedCount = statusCounts.COMPLETED;
+        const cancelledCount = statusCounts.CANCELLED;
+
+        return {
+          stats: {
+            totalReturns,
+            activeReturns: totalReturns - cancelledCount,
+            pendingActionCount: draftCount + receivedCount + inspectedCount,
+            awaitingInspectionCount: receivedCount,
+            completedCount,
+            totalReturnedUnits: unitsSum._sum.returnedQuantity ?? 0,
+          },
+          statusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
   }
 
   create(data: CreateReturnData): Promise<Return> {

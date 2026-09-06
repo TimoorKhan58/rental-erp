@@ -12,12 +12,14 @@ import type { CompleteRepairService } from "./complete-repair.service";
 import type { CreateRepairService } from "./create-repair.service";
 import type { GetRepairByIdService } from "./get-repair-by-id.service";
 import type { ListRepairsService } from "./list-repairs.service";
+import type { GetRepairSummaryService } from "./get-repair-summary.service";
 import type { StartRepairService } from "./start-repair.service";
 import type { UpdateRepairService } from "./update-repair.service";
 
 export interface RepairApplicationServices {
   getRepairById: GetRepairByIdService;
   listRepairs: ListRepairsService;
+  getRepairSummary: GetRepairSummaryService;
   createRepair: CreateRepairService;
   updateRepair: UpdateRepairService;
   startRepair: StartRepairService;

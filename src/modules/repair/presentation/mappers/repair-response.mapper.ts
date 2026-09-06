@@ -56,3 +56,9 @@ export function toRepairListResponse(
     meta: result.meta,
   };
 }
+
+export function toRepairSummaryResponse(
+  summary: import("@/modules/repair/application/dtos/repair-summary.dto").RepairSummaryDto,
+) {
+  return summary;
+}

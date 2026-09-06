@@ -1,5 +1,10 @@
 import { Maintenance } from "@/modules/maintenance/domain/maintenance.entity";
 import type { MaintenanceListQuery } from "@/modules/maintenance/domain/maintenance-list.query";
+import type { MaintenanceSummaryQuery } from "@/modules/maintenance/domain/maintenance-summary.query";
+import {
+  computeMaintenanceSummaryResult,
+  filterMaintenancesForSummary,
+} from "@/modules/maintenance/domain/maintenance-summary.rules";
 import type { IMaintenanceRepository } from "@/modules/maintenance/domain/maintenance.repository.interface";
 import type {
   CreateMaintenanceData,
@@ -133,6 +138,25 @@ export class InMemoryMaintenanceRepository implements IMaintenanceRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: MaintenanceSummaryQuery) {
+    const items = filterMaintenancesForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Maintenance.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeMaintenanceSummaryResult(
+        items.map((item) => ({
+          status: item.status,
+          serviceType: item.serviceType,
+          estimatedCost: item.estimatedCost,
+        })),
+      ),
+    );
   }
 
   async create(data: CreateMaintenanceData): Promise<Maintenance> {
