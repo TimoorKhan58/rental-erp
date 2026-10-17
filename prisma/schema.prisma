@@ -561,6 +561,7 @@ model RentalOrder {
   dispatches               Dispatch[]
   returnInspections        ReturnInspection[]
   rentalInvoices           RentalInvoice[]
+  advancePayments          AdvancePayment[]
   // Active-only uniqueness: at most one non-CANCELLED hire-in agreement per rental order
   // (PostgreSQL partial unique index; see migration external_rental_active_only_uniqueness).
   externalRentalAgreements ExternalRentalAgreement[]
@@ -995,6 +996,7 @@ model RentalInvoice {
   updatedAt     DateTime            @updatedAt
   items         RentalInvoiceItem[]
   payments      Payment[]
+  appliedAdvances AdvancePayment[]
 
   @@index([invoiceNumber])
   @@index([rentalOrderId])
@@ -1072,6 +1074,44 @@ model Payment {
   @@index([customerId])
   @@index([rentalInvoiceId, paymentDate])
   @@map("payments")
+}
+
+// Booking deposits are recorded before the final rental invoice exists.
+// Applied/refunded amounts are cumulative and must be updated transactionally.
+enum AdvancePaymentStatus {
+  PENDING
+  POSTED
+  VOID
+}
+
+model AdvancePayment {
+  id             String               @id @default(uuid()) @db.Uuid
+  advanceNumber  String               @unique
+  rentalOrderId  String               @db.Uuid
+  rentalOrder    RentalOrder          @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  customerId     String               @db.Uuid
+  customer       Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  rentalInvoiceId String?             @db.Uuid
+  rentalInvoice  RentalInvoice?       @relation(fields: [rentalInvoiceId], references: [id], onDelete: Restrict)
+  paymentDate    DateTime
+  paymentMethod  PaymentMethod
+  amount         Decimal              @db.Decimal(12, 2)
+  appliedAmount  Decimal              @default(0) @db.Decimal(12, 2)
+  refundedAmount Decimal              @default(0) @db.Decimal(12, 2)
+  referenceNumber String?
+  notes          String?
+  status         AdvancePaymentStatus @default(PENDING)
+  postedAt       DateTime?
+  voidedAt       DateTime?
+  createdById    String               @db.Uuid
+  createdBy      User                 @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([rentalOrderId, status])
+  @@index([customerId])
+  @@index([rentalInvoiceId])
+  @@map("advance_payments")
 }
 
 model SupplierPayment {
