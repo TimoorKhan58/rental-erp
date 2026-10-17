@@ -117,6 +117,7 @@ model User {
   maintenances           Maintenance[]
   rentalInvoices         RentalInvoice[]
   createdPayments         Payment[]
+  createdAdvancePayments  AdvancePayment[]
   createdSupplierPayments SupplierPayment[]
   createdJournalEntries  JournalEntry[] @relation("JournalEntryCreatedBy")
   postedJournalEntries   JournalEntry[] @relation("JournalEntryPostedBy")
@@ -157,6 +158,7 @@ model Customer {
   rentalOrders   RentalOrder[]
   rentalInvoices RentalInvoice[]
   payments       Payment[]
+  advancePayments AdvancePayment[]
 
   @@index([name])
   @@index([isActive])
