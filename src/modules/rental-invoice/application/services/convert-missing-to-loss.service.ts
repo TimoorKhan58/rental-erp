@@ -76,12 +76,22 @@ export class ConvertMissingToLossService {
         });
       }
 
-      const dispatches = await dispatchRepository.findPaged({
-        page: 1,
-        pageSize: 100,
-        rentalOrderId: invoice.rentalOrderId,
-        sortOrder: "desc",
-      });
+      // Read every dispatch page; loss conversion must not silently omit
+      // returns when an order has more than one page of dispatch records.
+      const dispatches: { items: Awaited<ReturnType<typeof dispatchRepository.findPaged>>["items"] } = { items: [] };
+      let dispatchPage = 1;
+      let dispatchTotalPages = 1;
+      do {
+        const page = await dispatchRepository.findPaged({
+          page: dispatchPage,
+          pageSize: 100,
+          rentalOrderId: invoice.rentalOrderId,
+          sortOrder: "desc",
+        });
+        dispatches.items.push(...page.items);
+        dispatchTotalPages = page.meta.totalPages;
+        dispatchPage += 1;
+      } while (dispatchPage <= dispatchTotalPages);
 
       const returns = (
         await Promise.all(
