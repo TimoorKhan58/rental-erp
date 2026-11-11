@@ -62,6 +62,10 @@ export type DateAwareAvailabilityResponse = {
   baseCapacity: number;
   dateAwareCommittedQuantity: number;
   dateAwareAvailableQuantity: number;
+  /** What can actually be reserved for these dates (QA-009). */
+  bookableQuantity: number;
+  /** Free on these dates but held by bookings on other dates. */
+  heldForOtherDatesQuantity: number;
 };
 
 export type GetDateAwareAvailabilityParams = {

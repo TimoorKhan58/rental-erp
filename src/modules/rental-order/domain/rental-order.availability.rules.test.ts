@@ -741,3 +741,69 @@ describe("calculateDateAwareAvailabilitySnapshot (A–T matrix)", () => {
     expect(result.dateAwareAvailableQuantity).toBe(60);
   });
 });
+
+describe("bookableQuantity (QA-009)", () => {
+  const december = {
+    status: "RESERVED" as const,
+    eventStartDate: new Date("2026-12-01T00:00:00.000Z"),
+    eventEndDate: new Date("2026-12-03T00:00:00.000Z"),
+    reservedQuantity: 10,
+    dispatches: [],
+    returns: [],
+  };
+  const january = {
+    startDate: new Date("2027-01-10T00:00:00.000Z"),
+    endDate: new Date("2027-01-11T00:00:00.000Z"),
+  };
+
+  it("matches what the reserve step allows when other dates hold stock", () => {
+    const result = calculateDateAwareAvailabilitySnapshot({
+      quantityOnHand: 200,
+      reservedQuantity: 10,
+      requestedPeriod: january,
+      lines: [december],
+    });
+
+    // Date-aware view: December does not overlap January.
+    expect(result.dateAwareAvailableQuantity).toBe(200);
+    // What can actually be reserved today: the shared pool minus all holds.
+    expect(result.bookableQuantity).toBe(190);
+    expect(result.heldForOtherDatesQuantity).toBe(10);
+  });
+
+  it("uses the date-aware figure when it is the tighter limit", () => {
+    const result = calculateDateAwareAvailabilitySnapshot({
+      quantityOnHand: 200,
+      reservedQuantity: 10,
+      requestedPeriod: { startDate: december.eventStartDate, endDate: december.eventEndDate },
+      lines: [december],
+    });
+
+    expect(result.dateAwareAvailableQuantity).toBe(190);
+    expect(result.bookableQuantity).toBe(190);
+    expect(result.heldForOtherDatesQuantity).toBe(0);
+  });
+
+  it("adds back the asking order's own hold", () => {
+    const result = calculateDateAwareAvailabilitySnapshot({
+      quantityOnHand: 200,
+      reservedQuantity: 30,
+      ownReservedQuantity: 20,
+      requestedPeriod: january,
+      lines: [december],
+    });
+
+    expect(result.bookableQuantity).toBe(190);
+  });
+
+  it("never goes below zero", () => {
+    const result = calculateDateAwareAvailabilitySnapshot({
+      quantityOnHand: 5,
+      reservedQuantity: 5,
+      requestedPeriod: january,
+      lines: [],
+    });
+
+    expect(result.bookableQuantity).toBe(0);
+  });
+});

@@ -12,6 +12,9 @@ export type DateAwareAvailabilityDto = {
   baseCapacity: number;
   dateAwareCommittedQuantity: number;
   dateAwareAvailableQuantity: number;
+  /** Reservable now for these dates; see bookableQuantity in availability rules (QA-009). */
+  bookableQuantity: number;
+  heldForOtherDatesQuantity: number;
 };
 
 export type GetDateAwareAvailabilityParams = {

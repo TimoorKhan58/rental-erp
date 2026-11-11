@@ -192,14 +192,25 @@ export class ReserveRentalOrderService {
             excludeRentalOrderId: fresh.id,
           });
 
-          if (deltaQuantity > availability.dateAwareAvailableQuantity) {
+          // bookableQuantity is the same limit the RESERVE stock movement
+          // enforces, so this check and the availability shown on screen
+          // always agree (QA-009). The order's own hold is already in the
+          // pool, and deltaQuantity is extra, so no own hold is added back.
+          if (deltaQuantity > availability.bookableQuantity) {
+            const heldElsewhere =
+              deltaQuantity <= availability.dateAwareAvailableQuantity;
+
             throw new UnprocessableError({
-              message:
-                "Insufficient date-aware availability for the requested rental period",
+              message: heldElsewhere
+                ? "Not enough stock to reserve: some units are held by bookings on other dates"
+                : "Insufficient date-aware availability for the requested rental period",
               details: {
                 productId,
                 warehouseId: fresh.warehouseId,
                 requestedQuantity: deltaQuantity,
+                bookableQuantity: availability.bookableQuantity,
+                heldForOtherDatesQuantity:
+                  availability.heldForOtherDatesQuantity,
                 dateAwareAvailableQuantity:
                   availability.dateAwareAvailableQuantity,
                 dateAwareCommittedQuantity:

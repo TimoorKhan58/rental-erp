@@ -223,6 +223,11 @@ export type DateAwareAvailabilitySnapshotInput = {
   requestedPeriod: AvailabilityPeriod;
   /** Consuming-status lines for the same product × warehouse (unbounded; not paged). */
   lines: AvailabilityCommitmentLine[];
+  /**
+   * Reservation already held by the order asking the question. It is part of
+   * reservedQuantity but is still usable by that same order.
+   */
+  ownReservedQuantity?: number;
 };
 
 /**
@@ -243,6 +248,15 @@ export type DateAwareAvailabilitySnapshot = {
   baseCapacity: number;
   dateAwareCommittedQuantity: number;
   dateAwareAvailableQuantity: number;
+  /**
+   * What can actually be reserved for the requested dates (QA-009).
+   * Reservations are held in one pool per product × warehouse
+   * (Inventory.reservedQuantity ≤ quantityOnHand), so holds for other dates
+   * still limit new reservations. Always ≤ dateAwareAvailableQuantity.
+   */
+  bookableQuantity: number;
+  /** Units the date-aware view calls free but that are held for other dates. */
+  heldForOtherDatesQuantity: number;
 };
 
 export function calculateDateAwareAvailabilitySnapshot(
@@ -294,6 +308,17 @@ export function calculateDateAwareAvailabilitySnapshot(
     baseCapacity - dateAwareCommittedQuantity,
   );
 
+  const poolAvailableQuantity = Math.max(
+    0,
+    input.quantityOnHand -
+      input.reservedQuantity +
+      Math.max(0, input.ownReservedQuantity ?? 0),
+  );
+  const bookableQuantity = Math.min(
+    dateAwareAvailableQuantity,
+    poolAvailableQuantity,
+  );
+
   return {
     quantityOnHand: input.quantityOnHand,
     reservedQuantity: input.reservedQuantity,
@@ -302,5 +327,7 @@ export function calculateDateAwareAvailabilitySnapshot(
     baseCapacity,
     dateAwareCommittedQuantity,
     dateAwareAvailableQuantity,
+    bookableQuantity,
+    heldForOtherDatesQuantity: dateAwareAvailableQuantity - bookableQuantity,
   };
 }

@@ -64,7 +64,10 @@ export function DateAwareAvailabilityHint({
     return null;
   }
 
-  const available = query.data.dateAwareAvailableQuantity;
+  // Show the same limit the reserve step enforces (QA-009).
+  const available =
+    query.data.bookableQuantity ?? query.data.dateAwareAvailableQuantity;
+  const heldForOtherDates = query.data.heldForOtherDatesQuantity ?? 0;
   const onHand = query.data.quantityOnHand;
   const committed = query.data.dateAwareCommittedQuantity;
   const outstandingOut = query.data.outstandingOutQuantity;
@@ -118,6 +121,12 @@ export function DateAwareAvailabilityHint({
           For selected rental dates (authoritative)
         </span>
       )}
+      {heldForOtherDates > 0 ? (
+        <span className="w-full text-[length:var(--text-caption)] text-muted-foreground">
+          {heldForOtherDates} more are free on these dates but held by bookings
+          on other dates.
+        </span>
+      ) : null}
     </div>
   );
 }

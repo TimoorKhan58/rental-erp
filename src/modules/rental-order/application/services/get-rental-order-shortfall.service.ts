@@ -81,6 +81,7 @@ export class GetRentalOrderShortfallService {
             dispatches: line.dispatches,
             returns: line.returns,
           })),
+          ownReservedQuantity: item.reservedQuantity,
         });
 
         const alreadyExternallyRequestedQuantity =
@@ -90,7 +91,7 @@ export class GetRentalOrderShortfallService {
 
         const shortfall = calculateExternalSourcingShortfall({
           requiredQuantity: item.quantity,
-          dateAwareAvailableQuantity: snapshot.dateAwareAvailableQuantity,
+          dateAwareAvailableQuantity: snapshot.bookableQuantity,
           alreadyExternallyRequestedQuantity,
         });
 
