@@ -1,10 +1,24 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+/**
+ * Placeholder config so `npm test` runs on any machine without a `.env`
+ * (Vitest does not load `.env` like Next.js does — QA-002). The database URL
+ * points at a closed port, so unit tests can never reach a real database.
+ */
+export const TEST_ENV = {
+  APP_ENV: "local",
+  APP_URL: "http://localhost:3000",
+  BETTER_AUTH_URL: "http://localhost:3000",
+  DATABASE_URL: "postgresql://test:test@127.0.0.1:1/rentcore_test",
+  BETTER_AUTH_SECRET: "test-only-secret-not-used-anywhere-0123456789",
+} as const;
+
 export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    env: { ...TEST_ENV },
     coverage: {
       provider: "v8",
       include: [
