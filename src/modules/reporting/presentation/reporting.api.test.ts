@@ -32,6 +32,7 @@ import {
   handleGetMaintenanceReport,
   handleGetProcurementReport,
   handleGetProductReport,
+  handleGetRentalInsights,
   handleGetRentalReport,
   handleGetRepairReport,
   handleGetReturnReport,
@@ -290,5 +291,54 @@ describe("reporting API handlers", () => {
     );
     expect(response.status).toBe(200);
     expect(services.getProductReport.execute).toHaveBeenCalled();
+  });
+});
+
+describe("dashboard access for workers (QA-014)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function servicesWithInsights() {
+    return {
+      ...createMockServices(),
+      getRentalInsights: { execute: vi.fn().mockResolvedValue({ topProducts: [] }) },
+    };
+  }
+
+  it("lets a worker load the dashboard summary", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = servicesWithInsights();
+
+    const response = await handleGetDashboard(
+      createMockNextRequest({ url: "http://localhost/api/reports/dashboard" }),
+      () => services as unknown as ReportingApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("lets a worker load the dashboard rental insights", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = servicesWithInsights();
+
+    const response = await handleGetRentalInsights(
+      createMockNextRequest({ url: "http://localhost/api/reports/rental-insights" }),
+      () => services as unknown as ReportingApplicationServices,
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("still keeps full reports from workers", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = servicesWithInsights();
+
+    const response = await handleGetRentalReport(
+      createMockNextRequest({ url: "http://localhost/api/reports/rentals" }),
+      () => services as unknown as ReportingApplicationServices,
+    );
+
+    expect(response.status).toBe(403);
   });
 });

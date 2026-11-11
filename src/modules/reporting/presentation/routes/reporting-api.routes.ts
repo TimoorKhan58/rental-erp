@@ -58,7 +58,9 @@ export async function handleGetDashboard(
       request,
       route: REPORTING_ROUTES.dashboard,
       httpMethod: "GET",
-      permission: PERMISSIONS.reports.read,
+      // Home-dashboard data: every role with dashboard access (including
+      // workers) needs it; full reports stay behind reports:read (QA-014).
+      permission: PERMISSIONS.dashboard.read,
       resolveServices,
       handler: async (_ctx, services) => services.getDashboard.execute(input),
     });
@@ -432,7 +434,8 @@ export async function handleGetRentalInsights(
       request,
       route: REPORTING_ROUTES.rentalInsights,
       httpMethod: "GET",
-      permission: PERMISSIONS.reports.read,
+      // Shown on the home dashboard (QA-014).
+      permission: PERMISSIONS.dashboard.read,
       resolveServices,
       handler: async (_ctx, services) =>
         services.getRentalInsights.execute(input),
