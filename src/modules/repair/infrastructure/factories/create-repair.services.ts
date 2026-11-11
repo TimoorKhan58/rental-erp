@@ -4,6 +4,7 @@ import { CompleteRepairService } from "@/modules/repair/application/services/com
 import { CreateRepairService } from "@/modules/repair/application/services/create-repair.service";
 import type { IRepairService } from "@/modules/repair/application/services/repair-application-services.interface";
 import { GetRepairByIdService } from "@/modules/repair/application/services/get-repair-by-id.service";
+import { GetRepairSummaryService } from "@/modules/repair/application/services/get-repair-summary.service";
 import { ListRepairsService } from "@/modules/repair/application/services/list-repairs.service";
 import { RepairService } from "@/modules/repair/application/services/repair.service";
 import { StartRepairService } from "@/modules/repair/application/services/start-repair.service";
@@ -31,6 +32,7 @@ export function createRepairApplicationServices(
 
   const getRepairById = new GetRepairByIdService(repository);
   const listRepairs = new ListRepairsService(repository);
+  const getRepairSummary = new GetRepairSummaryService(repository);
   const createRepair = new CreateRepairService(
     transactionRunner,
     numberSequences,
@@ -43,6 +45,7 @@ export function createRepairApplicationServices(
   return {
     getRepairById,
     listRepairs,
+    getRepairSummary,
     createRepair,
     updateRepair,
     startRepair,

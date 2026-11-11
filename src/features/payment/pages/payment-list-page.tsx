@@ -14,10 +14,10 @@ export function PaymentListPage() {
   const { stats, statusCounts, methodCounts, isLoading } = usePaymentSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Payments"
-        description="Record and manage customer payments against rental invoices."
+        description="Record, post, and review payments against rental invoices — amounts and statuses stay server-authoritative."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Payments" },
@@ -25,6 +25,7 @@ export function PaymentListPage() {
         actions={
           canCreate ? (
             <AppButton
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
               leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.paymentsNew} />}
             >

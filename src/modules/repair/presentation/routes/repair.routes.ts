@@ -1,5 +1,6 @@
 export const REPAIR_ROUTES = {
   base: "/api/repairs",
+  summary: "/api/repairs/summary",
   byId: (id: string) => `/api/repairs/${id}`,
   start: (id: string) => `/api/repairs/${id}/start`,
   complete: (id: string) => `/api/repairs/${id}/complete`,

@@ -6,6 +6,7 @@ import {
 import type { ExternalRentalAgreement } from "@/modules/external-rental/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -164,8 +165,10 @@ export class UpdateDispatchService {
         }
 
         if (markReady === true) {
+          let ready;
+
           try {
-            updated = updated.withReady();
+            ready = updated.withReady();
           } catch (error) {
             if (error instanceof DispatchInvalidStatusError) {
               throw new UnprocessableError({
@@ -180,9 +183,23 @@ export class UpdateDispatchService {
             throw error;
           }
 
-          updated = await dispatchRepository.updateStatus(updated.id, updated.status, {
-            readyAt: updated.readyAt,
-          });
+          const claimed = await dispatchRepository.claimStatusTransition(
+            updated.id,
+            "DRAFT",
+            ready.status,
+            { readyAt: ready.readyAt },
+          );
+
+          if (claimed === null) {
+            throw new ConcurrentUpdateError({
+              entity: DISPATCH_ENTITY_NAME,
+              id: updated.id,
+              expectedStatus: "DRAFT",
+              action: "mark ready",
+            });
+          }
+
+          updated = claimed;
         }
 
         await auditLogger.log({

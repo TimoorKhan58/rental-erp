@@ -50,8 +50,30 @@ export type ListPaymentsParams = {
   sortOrder?: "asc" | "desc";
   search?: string;
   status?: PaymentStatus;
+  paymentMethod?: PaymentMethod;
   customerId?: string;
   rentalInvoiceId?: string;
+  paymentDateFrom?: string;
+  paymentDateTo?: string;
+};
+
+export type GetPaymentSummaryParams = Omit<
+  ListPaymentsParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type PaymentSummaryResponse = {
+  stats: {
+    totalPayments: number;
+    activePayments: number;
+    pendingCount: number;
+    postedCount: number;
+    voidCount: number;
+    totalCollected: number;
+    totalPendingAmount: number;
+  };
+  statusCounts: Partial<Record<"all" | PaymentStatus, number>>;
+  methodCounts: Partial<Record<"all" | PaymentMethod, number>>;
 };
 
 export type CreatePaymentPayload = {

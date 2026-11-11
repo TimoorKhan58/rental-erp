@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import Link from "next/link";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
-import { EmptyState, LoadingState } from "@/components/feedback";
+import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
+import { LoadingState } from "@/components/feedback";
 import {
   Select,
   SelectContent,
@@ -14,9 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { TYPE_LABELS } from "../mappers";
-import { ExpenseStatusFilterChips } from "../components";
+import { STATUS_LABELS, TYPE_LABELS } from "../mappers";
+import { ExpenseMobileList, ExpenseStatusFilterChips } from "../components";
 import {
   useExpenseFilterOptions,
   useExpenseListParams,
@@ -49,8 +52,9 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
     setCategoryFilter,
     setSupplierFilter,
     setSorting,
+    clearAllFilters,
   } = useExpenseListParams();
-  const { canUpdate, canApprove, canReject, canPay } = useExpensePermissions();
+  const { canCreate, canUpdate, canApprove, canReject, canPay } = useExpensePermissions();
   const { categoryOptions, supplierOptions, categoryLabelById, supplierLabelById } =
     useExpenseFilterOptions();
   const { data, isLoading, isError, error, refetch, isFetching } = useExpenses(params);
@@ -71,7 +75,7 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
   }, [localSearch, params.search, setSearch]);
 
   const statusFilterValue = params.status ?? "all";
-  const rows = data?.items ?? [];
+  const rows = useMemo(() => data?.items ?? [], [data?.items]);
 
   const columns = getExpenseTableColumns({
     params,
@@ -100,6 +104,47 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
     Boolean(params.categoryId) ||
     Boolean(params.supplierId);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    params.expenseType
+      ? {
+          id: "type",
+          label: `Type: ${TYPE_LABELS[params.expenseType]}`,
+          onClear: () => setTypeFilter(undefined),
+        }
+      : null,
+    params.categoryId
+      ? {
+          id: "category",
+          label: `Category: ${categoryLabelById.get(params.categoryId) ?? params.categoryId}`,
+          onClear: () => setCategoryFilter(undefined),
+        }
+      : null,
+    params.supplierId
+      ? {
+          id: "supplier",
+          label: `Supplier: ${supplierLabelById.get(params.supplierId) ?? params.supplierId}`,
+          onClear: () => setSupplierFilter(undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
@@ -115,31 +160,48 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No expenses found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Expenses will appear here once recorded."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={clearAllFilters}>
+            Clear filters
+          </AppButton>
+        ) : canCreate ? (
+          <Link href={ROUTES.expensesNew}>
+            <EmptyStateActionButton>Record expense</EmptyStateActionButton>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        toolbar={
-          <ExpenseStatusFilterChips
-            value={statusFilterValue}
-            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
-            counts={statusCounts}
-          />
-        }
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search expenses..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search expenses"
-          />
-        }
-        filters={
-          <>
+      <div className="space-y-3">
+        <ExpenseStatusFilterChips
+          value={statusFilterValue}
+          onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+          counts={statusCounts}
+        />
+        <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search number, description, vendor, reference, or notes..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search expenses by number, description, vendor name, reference, or notes"
+            />
+
             <Select
               value={params.expenseType ?? "all"}
               onValueChange={(value) => {
@@ -208,9 +270,7 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
                 ))}
               </SelectContent>
             </Select>
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -221,22 +281,56 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No expenses found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Expenses will appear here once recorded."
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading expenses..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading expenses..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading expenses..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <ExpenseMobileList
+              rows={rows}
+              resolveCategoryLabel={(categoryId) =>
+                categoryLabelById.get(categoryId) ?? categoryId
+              }
+              resolveVendorLabel={(expense) =>
+                expense.expenseType === "VENDOR"
+                  ? (supplierLabelById.get(expense.supplierId ?? "") ??
+                    expense.supplierId ??
+                    "—")
+                  : (expense.vendorName ?? "—")
+              }
+              canUpdate={canUpdate}
+              canApprove={canApprove}
+              canReject={canReject}
+              canPay={canPay}
+              onSubmit={setSubmitTarget}
+              onApprove={setApproveTarget}
+              onReject={setRejectTarget}
+              onPay={setPayTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <SubmitExpenseDialog
         expense={submitTarget}

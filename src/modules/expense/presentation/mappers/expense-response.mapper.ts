@@ -72,3 +72,9 @@ export function toExpenseListResponse(
     meta: result.meta,
   };
 }
+
+export function toExpenseSummaryResponse(
+  summary: import("@/modules/expense/application/dtos/expense-summary.dto").ExpenseSummaryDto,
+) {
+  return summary;
+}

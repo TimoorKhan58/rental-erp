@@ -11,15 +11,21 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import { useWarehouse, useWarehousePermissions } from "../hooks";
-import { WarehouseStatusBadge } from "../components/warehouse-status-badge";
+import {
+  WarehouseAuditSummarySection,
+  WarehouseInventorySummarySection,
+  WarehouseProcurementSummarySection,
+  WarehouseRecentStockMovementSection,
+  WarehouseStatusBadge,
+} from "../components";
 import { DeleteWarehouseDialog } from "../dialogs/delete-warehouse-dialog";
 import { ToggleWarehouseStatusDialog } from "../dialogs/toggle-warehouse-status-dialog";
+import { useWarehouse, useWarehousePermissions } from "../hooks";
 
 type WarehouseDetailPageProps = {
   warehouseId: string;
@@ -157,15 +163,11 @@ export function WarehouseDetailPage({ warehouseId }: WarehouseDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Inventory summary"
-            description="Stock levels and capacity details will appear here when the inventory module is connected."
-          />
+          <WarehouseInventorySummarySection warehouseId={warehouse.id} />
 
-          <EmptyCard
-            title="Recent stock movement"
-            description="Stock movement history is not yet available."
-          />
+          <WarehouseProcurementSummarySection warehouseId={warehouse.id} />
+
+          <WarehouseRecentStockMovementSection warehouseId={warehouse.id} />
         </div>
 
         <div className="space-y-6">
@@ -177,10 +179,7 @@ export function WarehouseDetailPage({ warehouseId }: WarehouseDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Audit summary"
-            description="Audit trail details will be shown when available from the API."
-          />
+          <WarehouseAuditSummarySection warehouseId={warehouse.id} />
         </div>
       </div>
 

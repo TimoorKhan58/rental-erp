@@ -1,12 +1,17 @@
 import { Payment } from "@/modules/payment/domain/payment.entity";
 import type { PaymentListQuery } from "@/modules/payment/domain/payment-list.query";
+import type { PaymentSummaryQuery } from "@/modules/payment/domain/payment-summary.query";
+import {
+  computePaymentSummaryResult,
+  filterPaymentsForSummary,
+} from "@/modules/payment/domain/payment-summary.rules";
 import type { IPaymentRepository } from "@/modules/payment/domain/payment.repository.interface";
 import type {
   CreatePaymentData,
   UpdatePaymentData,
   UpdatePaymentStatusData,
 } from "@/modules/payment/domain/payment.types";
-import type { PaymentId } from "@/shared/domain/ids";
+import type { PaymentId, RentalInvoiceId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { buildPaymentEntity } from "./payment.fixtures";
@@ -78,6 +83,22 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       );
     }
 
+    if (query.paymentMethod !== undefined) {
+      items = items.filter((item) => item.paymentMethod === query.paymentMethod);
+    }
+
+    if (query.paymentDateFrom !== undefined) {
+      items = items.filter(
+        (item) => item.paymentDate.getTime() >= query.paymentDateFrom!.getTime(),
+      );
+    }
+
+    if (query.paymentDateTo !== undefined) {
+      const end = new Date(query.paymentDateTo);
+      end.setHours(23, 59, 59, 999);
+      items = items.filter((item) => item.paymentDate.getTime() <= end.getTime());
+    }
+
     if (query.search) {
       const term = query.search.toLowerCase();
       items = items.filter(
@@ -131,6 +152,56 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     };
   }
 
+  findSummaryStats(query: PaymentSummaryQuery) {
+    const items = filterPaymentsForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Payment.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computePaymentSummaryResult(
+        items.map((payment) => ({
+          status: payment.status,
+          paymentMethod: payment.paymentMethod,
+          amount: payment.amount,
+        })),
+      ),
+    );
+  }
+
+  sumPendingAmountByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+    excludePaymentId?: PaymentId,
+  ): Promise<number> {
+    const total = Array.from(this.store.values())
+      .map((stored) => Payment.reconstitute(stored.record))
+      .filter(
+        (payment) =>
+          payment.rentalInvoiceId === rentalInvoiceId &&
+          payment.status === "PENDING" &&
+          payment.id !== excludePaymentId,
+      )
+      .reduce((sum, payment) => sum + payment.amount, 0);
+
+    return Promise.resolve(total);
+  }
+
+  countPostedPaymentsByRentalInvoiceId(
+    rentalInvoiceId: RentalInvoiceId,
+  ): Promise<number> {
+    const count = Array.from(this.store.values())
+      .map((stored) => Payment.reconstitute(stored.record))
+      .filter(
+        (payment) =>
+          payment.rentalInvoiceId === rentalInvoiceId &&
+          payment.status === "POSTED",
+      ).length;
+
+    return Promise.resolve(count);
+  }
+
   async create(data: CreatePaymentData): Promise<Payment> {
     const normalized = Payment.create(data);
     const now = new Date();
@@ -182,6 +253,25 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
 
     this.store.set(id, { record: updated.toProps() });
     return updated;
+  }
+
+  async claimStatusTransition(
+    id: PaymentId,
+    expected: Payment["status"] | ReadonlyArray<Payment["status"]>,
+    data: UpdatePaymentStatusData,
+  ): Promise<Payment | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, data);
   }
 
   count(): number {

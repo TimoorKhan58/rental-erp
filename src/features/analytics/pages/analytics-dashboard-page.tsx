@@ -82,6 +82,7 @@ function AnalyticsDashboardContent() {
               dateFrom={dateFrom}
               dateTo={dateTo}
               onChange={handleDateRangeChange}
+              fieldHint="Money metrics use this range; ops counts are snapshots"
             />
             <AppButton
               variant="outline"

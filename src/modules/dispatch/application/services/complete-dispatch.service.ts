@@ -2,6 +2,10 @@ import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/renta
 import { RentalOrderInvalidStatusError } from "@/modules/rental-order/domain/rental-order.errors";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
+  releaseReferenceReservationInScope,
+  sumReservedForProduct,
+} from "@/modules/stock-movement/application/services/release-reference-reservation-in-scope";
+import {
   DispatchInvalidStatusError,
   effectiveExternalDispatchQuantity,
   effectiveOwnedDispatchQuantity,
@@ -175,22 +179,20 @@ export class CompleteDispatchService {
             userId,
           };
 
-          // Consume reservation when owned stock leaves the warehouse.
-          const releaseQuantity = Math.min(
-            ownedQuantity,
-            inventory.reservedQuantity,
-          );
-
-          if (releaseQuantity > 0) {
-            await executeCreateStockMovementInScope(movementScope, {
-              inventoryId: inventory.id,
-              movementType: "RELEASE",
-              quantity: releaseQuantity,
-              referenceType: RENTAL_ORDER_REFERENCE_TYPE,
-              referenceId: rentalOrder.id,
-              remarks: `Released reservation for dispatch of rental order ${rentalOrder.orderNumber}`,
-            });
-          }
+          // Consume this order's own reservation as owned stock leaves.
+          // Never more than the order holds, so an unreserved dispatch
+          // cannot eat another order's hold (QA-012).
+          await releaseReferenceReservationInScope(movementScope, {
+            inventoryId: inventory.id,
+            referenceType: RENTAL_ORDER_REFERENCE_TYPE,
+            referenceId: rentalOrder.id,
+            reservedByReference: sumReservedForProduct(
+              rentalOrder.items,
+              item.productId,
+            ),
+            maxQuantity: ownedQuantity,
+            remarks: `Released reservation for dispatch of rental order ${rentalOrder.orderNumber}`,
+          });
 
           await executeCreateStockMovementInScope(movementScope, {
             inventoryId: inventory.id,

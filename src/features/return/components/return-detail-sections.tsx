@@ -113,7 +113,7 @@ export function ReturnAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="General ledger integration for returns."
+      description="Returns do not post journal entries automatically."
       actions={
         <AppButton
           variant="outline"
@@ -125,9 +125,9 @@ export function ReturnAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Completing a return updates inventory, rental order status, and may generate damage
-        charges on invoices, but automatic journal posting is not configured for returns yet.
-        Record manual journal entries from accounting when needed.
+        Completing a return restocks owned GOOD units and can change the rental order status.
+        Damage, loss, and missing quantities can be billed later when a rental invoice is
+        generated from the order. Completing a return does not post accounting journals.
       </p>
     </SectionCard>
   );
@@ -166,7 +166,7 @@ export function ReturnInventoryImpactSection({
       {canReadInventory ? (
         <SectionCard
           title="Inventory records"
-          description="Stock positions for products on this return."
+          description="Current warehouse positions. Owned GOOD restocks only after Complete."
         >
           {isLoading ? (
             <LoadingState label="Loading inventory..." />
@@ -200,7 +200,7 @@ export function ReturnInventoryImpactSection({
       {canReadMovements ? (
         <SectionCard
           title="Stock movements"
-          description="Restock and release movements linked to this return's rental order."
+          description="RELEASE and IN movements post only after Complete, referenced to the rental order."
           actions={
             stockMovements.length > 0 ? (
               <AppButton

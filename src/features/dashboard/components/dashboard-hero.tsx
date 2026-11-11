@@ -2,10 +2,12 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { ActivityIcon, FileBarChartIcon } from "lucide-react";
+import { FileBarChartIcon, PlusIcon } from "lucide-react";
 import { useSession } from "@/lib/auth/client";
 import { formatDate } from "@/lib/utils";
 import { ROUTES } from "@/config/routes";
+import { AppButton } from "@/components/design-system/button";
+import { Badge } from "@/components/ui/badge";
 
 type DashboardHeroProps = {
   organizationName: string;
@@ -14,12 +16,14 @@ type DashboardHeroProps = {
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
 }
 
+/**
+ * Command area — compact title, date/context, attention state, primary CTAs.
+ */
 export const DashboardHero = memo(function DashboardHero({
   organizationName,
   attentionCount = 0,
@@ -34,46 +38,63 @@ export const DashboardHero = memo(function DashboardHero({
   });
 
   return (
-    <header className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft-md">
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-brand/[0.06]"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -top-16 -right-16 size-48 rounded-full bg-brand/8 blur-3xl"
-        aria-hidden="true"
-      />
-
-      <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div className="min-w-0 space-y-2">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {today}
-          </p>
-          <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
-            {getGreeting()}, {userName}
+    <header className="border-b border-border pb-3">
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between lg:gap-4">
+        <div className="min-w-0 space-y-1">
+          <h1 className="font-heading text-[length:var(--text-h1)] font-semibold leading-[var(--leading-tight)] tracking-tight text-foreground">
+            Operations Control Center
           </h1>
-          <p className="max-w-xl text-sm text-muted-foreground">
-            {organizationName} — understand cash, rentals, and blockers in about 20
-            seconds. Live numbers refresh automatically.
+          <p className="text-[length:var(--text-caption)] text-muted-foreground">
+            <span className="font-medium text-foreground/80">{today}</span>
+            <span className="mx-1.5 text-border" aria-hidden="true">
+              ·
+            </span>
+            {getGreeting()}, {userName}
+            <span className="mx-1.5 text-border" aria-hidden="true">
+              ·
+            </span>
+            {organizationName}
           </p>
+          <p className="max-w-2xl text-[length:var(--text-body)] leading-snug text-muted-foreground">
+            What needs action today, what is in the field, and how the business is
+            performing.
+          </p>
+          <div className="pt-0.5">
+            {attentionCount > 0 ? (
+              <Badge variant="warning" aria-label={`${attentionCount} items need attention`}>
+                {attentionCount} need attention
+              </Badge>
+            ) : (
+              <Badge variant="success">All clear</Badge>
+            )}
+          </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center">
-          <div className="flex items-center gap-2 rounded-xl border border-brand/20 bg-brand-muted/50 px-3 py-2">
-            <ActivityIcon className="size-4 text-brand" aria-hidden="true" />
-            <span className="text-xs font-medium text-foreground">
-              {attentionCount > 0
-                ? `${attentionCount} need attention`
-                : "Live · all clear"}
-            </span>
-          </div>
-          <Link
-            href={ROUTES.reports}
-            className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent/50"
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <AppButton
+            variant="default"
+            size="default"
+            className="bg-brand text-brand-foreground hover:bg-brand/90"
+            leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+            render={<Link href={ROUTES.rentalOrdersNew} />}
           >
-            <FileBarChartIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-            Full reports
-          </Link>
+            New rental order
+          </AppButton>
+          <AppButton
+            variant="outline"
+            size="default"
+            leftIcon={<FileBarChartIcon className="size-4" aria-hidden="true" />}
+            render={<Link href={ROUTES.reports} />}
+          >
+            Reports
+          </AppButton>
+          <AppButton
+            variant="outline"
+            size="default"
+            render={<Link href={ROUTES.rentalOrdersCalendar} />}
+          >
+            Calendar
+          </AppButton>
         </div>
       </div>
     </header>

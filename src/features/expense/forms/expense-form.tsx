@@ -99,6 +99,7 @@ function ExpenseFormFields({
     <>
       <SectionCard title="Expense details">
         {expenseNumber ? (
+          <>
           <dl className="mb-4 grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -107,9 +108,17 @@ function ExpenseFormFields({
               <dd className="text-sm">{expenseNumber}</dd>
             </div>
           </dl>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Draft only. Saving does not post a journal or mark this expense paid.
+          </p>
+          </>
         ) : (
           <p className="mb-4 text-sm text-muted-foreground">
             Expense number is assigned automatically on save (or enter your own).
+            The record stays Draft until submitted. Amount must be greater than
+            zero. A journal is posted only when the expense is later marked paid,
+            and only if expense and cash accounts exist. This form does not create
+            a supplier payment or change inventory.
           </p>
         )}
 

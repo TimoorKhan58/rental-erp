@@ -22,16 +22,10 @@ const iconMap = {
   inventory: PackageIcon,
 } as const;
 
-const iconColorMap: Record<string, string> = {
-  orders: "bg-primary/8 text-primary ring-1 ring-primary/10",
-  payments: "bg-success-muted text-success ring-1 ring-success/15",
-  inventory: "bg-brand-muted text-brand ring-1 ring-brand/15",
-};
-
 const trendConfig = {
-  up: { icon: ArrowUpIcon, className: "text-success bg-success-muted/60" },
-  down: { icon: ArrowDownIcon, className: "text-destructive bg-destructive/10" },
-  neutral: { icon: MinusIcon, className: "text-muted-foreground bg-muted" },
+  up: { icon: ArrowUpIcon, className: "text-success" },
+  down: { icon: ArrowDownIcon, className: "text-destructive" },
+  neutral: { icon: MinusIcon, className: "text-muted-foreground" },
 } as const;
 
 type BusinessPulseRowProps = {
@@ -41,42 +35,26 @@ type BusinessPulseRowProps = {
 
 function PulseCard({ metric }: { metric: DashboardMetric }) {
   const Icon = iconMap[metric.icon as keyof typeof iconMap] ?? PackageIcon;
-  const iconColor =
-    iconColorMap[metric.icon] ?? "bg-brand-muted text-brand ring-1 ring-brand/15";
   const trend = trendConfig[metric.trend];
   const TrendIcon = trend.icon;
 
   const content = (
-    <Card className="group relative h-full overflow-hidden border-border/60 bg-card shadow-soft transition-all duration-200 hover:border-border hover:shadow-soft-md">
-      <div
-        className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand/0 via-brand/60 to-brand/0 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-        aria-hidden="true"
-      />
-      <CardContent className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div
-            className={cn(
-              "flex size-10 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105",
-              iconColor,
-            )}
-          >
-            <Icon className="size-[18px]" aria-hidden="true" />
+    <Card
+      size="sm"
+      className="group h-full gap-0 border-border bg-card py-0 transition-colors hover:bg-muted/30"
+    >
+      <CardContent className="space-y-1.5 p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex size-7 items-center justify-center rounded-md bg-primary/8 text-primary">
+            <Icon className="size-3.5" aria-hidden="true" />
           </div>
-          <div
-            className={cn(
-              "flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-              trend.className,
-            )}
-          >
-            <TrendIcon className="size-3" aria-hidden="true" />
-            <span className="line-clamp-1">{metric.changeLabel}</span>
-          </div>
+          <TrendIcon className={cn("size-3.5 shrink-0", trend.className)} aria-hidden="true" />
         </div>
         <div className="space-y-0.5">
-          <p className="font-heading text-[1.75rem] font-semibold tracking-tight tabular-nums">
+          <p className="font-heading text-2xl font-semibold leading-none tracking-tight tabular-nums">
             {metric.value}
           </p>
-          <p className="flex items-center gap-1 text-sm font-medium text-foreground">
+          <p className="flex items-center gap-1 text-sm font-medium leading-snug text-foreground">
             {metric.label}
             {metric.href ? (
               <ArrowRightIcon
@@ -85,7 +63,12 @@ function PulseCard({ metric }: { metric: DashboardMetric }) {
               />
             ) : null}
           </p>
-          <p className="text-xs text-muted-foreground">{metric.subtitle}</p>
+          <p className="text-[length:var(--text-caption)] leading-snug text-muted-foreground">
+            {metric.subtitle}
+          </p>
+          <p className="line-clamp-1 text-[length:var(--text-caption)] leading-snug text-muted-foreground">
+            {metric.changeLabel}
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -93,7 +76,10 @@ function PulseCard({ metric }: { metric: DashboardMetric }) {
 
   if (metric.href) {
     return (
-      <Link href={metric.href} className="block h-full focus-visible:outline-none">
+      <Link
+        href={metric.href}
+        className="block h-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         {content}
       </Link>
     );
@@ -109,16 +95,16 @@ export const BusinessPulseRow = memo(function BusinessPulseRow({
   if (isLoading) {
     return (
       <div
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="app-grid [&>*]:sm:col-span-3 [&>*]:lg:col-span-3"
         aria-busy="true"
-        aria-label="Loading business pulse"
+        aria-label="Loading business health"
       >
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="border-border/60">
-            <CardContent className="space-y-4 p-5">
-              <Skeleton className="size-10 rounded-xl" />
-              <Skeleton className="h-9 w-24" />
-              <Skeleton className="h-4 w-32" />
+          <Card key={index} size="sm" className="gap-0 border-border py-0">
+            <CardContent className="space-y-1.5 p-3">
+              <Skeleton className="size-7 rounded-md" />
+              <Skeleton className="h-7 w-24" />
+              <Skeleton className="h-4 w-28" />
             </CardContent>
           </Card>
         ))}
@@ -127,18 +113,16 @@ export const BusinessPulseRow = memo(function BusinessPulseRow({
   }
 
   return (
-    <section aria-label="Business pulse">
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div>
-          <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
-            Business pulse
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Money and bookings — scan in under 10 seconds
-          </p>
-        </div>
+    <section aria-label="Business health">
+      <div className="mb-2">
+        <h2 className="font-heading text-[length:var(--text-small)] font-semibold tracking-[0.06em] text-foreground uppercase">
+          Business health
+        </h2>
+        <p className="text-[length:var(--text-caption)] text-muted-foreground">
+          Revenue, cash, rentals, and collections
+        </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="app-grid [&>*]:sm:col-span-3 [&>*]:lg:col-span-3">
         {metrics.slice(0, 4).map((metric) => (
           <PulseCard key={metric.id} metric={metric} />
         ))}

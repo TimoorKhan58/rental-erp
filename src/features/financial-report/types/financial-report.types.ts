@@ -153,6 +153,7 @@ export type InventoryReportParams = {
   dateFrom?: string;
   dateTo?: string;
   warehouseId?: string;
+  inventoryId?: string;
   lowStockOnly?: boolean;
   overstockOnly?: boolean;
 };

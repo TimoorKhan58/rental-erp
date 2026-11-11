@@ -1,5 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { MaintenanceListQuery } from "@/modules/maintenance/domain/maintenance-list.query";
+import type { MaintenanceSummaryQuery } from "@/modules/maintenance/domain/maintenance-summary.query";
+import type { MaintenanceSummaryResult } from "@/modules/maintenance/domain/maintenance-summary.types";
+import {
+  MAINTENANCE_SERVICE_TYPES,
+  MAINTENANCE_STATUSES,
+} from "@/modules/maintenance/domain/maintenance.constants";
+import { buildMaintenanceSummaryWhere } from "@/modules/maintenance/infrastructure/repositories/maintenance-query.filters";
 import type { MaintenanceId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -197,6 +204,77 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
       items: result.items.map(toMaintenanceDomain),
       meta: result.meta,
     }));
+  }
+
+
+  findSummaryStats(
+    query: MaintenanceSummaryQuery,
+  ): Promise<MaintenanceSummaryResult> {
+    const where = buildMaintenanceSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalRecords, statusGroups, serviceTypeGroups, costSum] =
+          await Promise.all([
+            db.maintenance.count({ where }),
+            db.maintenance.groupBy({
+              by: ["status"],
+              where,
+              _count: { _all: true },
+            }),
+            db.maintenance.groupBy({
+              by: ["serviceType"],
+              where,
+              _count: { _all: true },
+            }),
+            db.maintenance.aggregate({
+              where,
+              _sum: { estimatedCost: true },
+            }),
+          ]);
+
+        const statusCounts = Object.fromEntries(
+          MAINTENANCE_STATUSES.map((status) => [status, 0]),
+        ) as MaintenanceSummaryResult["statusCounts"];
+
+        const serviceTypeCounts = Object.fromEntries(
+          MAINTENANCE_SERVICE_TYPES.map((serviceType) => [serviceType, 0]),
+        ) as MaintenanceSummaryResult["serviceTypeCounts"];
+
+        statusCounts.all = totalRecords;
+        serviceTypeCounts.all = totalRecords;
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        for (const group of serviceTypeGroups) {
+          serviceTypeCounts[group.serviceType] = group._count._all;
+        }
+
+        const scheduledCount = statusCounts.SCHEDULED;
+        const inProgressCount = statusCounts.IN_PROGRESS;
+        const completedCount = statusCounts.COMPLETED;
+        const cancelledCount = statusCounts.CANCELLED;
+
+        return {
+          stats: {
+            totalRecords,
+            activeRecords: totalRecords - cancelledCount,
+            pendingActionCount: scheduledCount + inProgressCount,
+            scheduledCount,
+            inProgressCount,
+            completedCount,
+            totalEstimatedCost: Number(
+              costSum._sum.estimatedCost?.toString() ?? 0,
+            ),
+          },
+          statusCounts,
+          serviceTypeCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
   }
 
   create(data: CreateMaintenanceData): Promise<Maintenance> {

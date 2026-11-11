@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { AppButton } from "@/components/design-system/button";
 import { SectionCard, EmptyCard } from "@/components/design-system/card";
-import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useInventoryFilterOptions } from "@/features/inventory/hooks";
 import {
@@ -51,14 +50,14 @@ export function ProcurementInventoryImpactSection({
   return (
     <SectionCard
       title="Inventory impact"
-      description="Stock-in movements recorded when this purchase order was received."
+      description="Stock IN movements posted when goods were received against this purchase order. Receiving increases on-hand quantity; it does not reserve stock or post journals."
       actions={
         movements.length > 0 ? (
           <AppButton
             variant="outline"
             size="sm"
             render={
-              <Link href={`${ROUTES.inventory}?search=${encodeURIComponent(procurement.poNumber)}`} />
+              <Link href={`${ROUTES.inventory}?warehouseId=${encodeURIComponent(procurement.warehouseId)}`} />
             }
           >
             View inventory

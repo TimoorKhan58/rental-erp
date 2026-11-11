@@ -389,11 +389,11 @@ describe("Phase 27 WriteOffExternalRentalService", () => {
     const agreement = buildReceivedAgreement();
     const repository = createSeededExternalRentalRepository([agreement]);
     const auditLogger = new MockAuditLogger();
-    const runner = createRollbackExternalRentalTransactionRunner(
-      repository,
+    const runner = createRollbackExternalRentalTransactionRunner({
+      externalRentalRepository: repository,
       auditLogger,
-      "user-1",
-    );
+      userId: "user-1",
+    });
     const service = new WriteOffExternalRentalService(runner);
 
     vi.spyOn(auditLogger, "log").mockRejectedValueOnce(

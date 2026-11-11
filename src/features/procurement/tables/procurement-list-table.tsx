@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
@@ -21,6 +21,7 @@ import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
 import { PURCHASE_ORDER_STATUSES } from "../types";
 import { STATUS_LABELS } from "../mappers";
+import { ProcurementMobileList } from "../components";
 import {
   useProcurementFilterOptions,
   useProcurementListParams,
@@ -46,6 +47,7 @@ export function ProcurementListTable() {
     setStatusFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useProcurementListParams();
   const { canCreate, canUpdate, canApprove, canReceive, canCancel } =
     useProcurementPermissions();
@@ -96,6 +98,47 @@ export function ProcurementListTable() {
     Boolean(params.orderDateFrom) ||
     Boolean(params.orderDateTo);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.supplierId
+      ? {
+          id: "supplier",
+          label: `Supplier: ${supplierLabelById.get(params.supplierId) ?? params.supplierId}`,
+          onClear: () => setSupplierFilter(undefined),
+        }
+      : null,
+    params.warehouseId
+      ? {
+          id: "warehouse",
+          label: `Warehouse: ${warehouseLabelById.get(params.warehouseId) ?? params.warehouseId}`,
+          onClear: () => setWarehouseFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    params.orderDateFrom || params.orderDateTo
+      ? {
+          id: "dates",
+          label: `Order dates: ${params.orderDateFrom ?? "…"} → ${params.orderDateTo ?? "…"}`,
+          onClear: () => setDateRange(undefined, undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
@@ -111,24 +154,43 @@ export function ProcurementListTable() {
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No purchase orders found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Get started by creating your first purchase order."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={clearAllFilters}>
+            Clear filters
+          </AppButton>
+        ) : canCreate ? (
+          <Link href={ROUTES.procurementsNew}>
+            <EmptyStateActionButton>Create purchase order</EmptyStateActionButton>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search by PO number or remarks..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search purchase orders"
-          />
-        }
-        filters={
-          <>
+      <div className="space-y-3">
+        <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search by PO number or remarks..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search purchase orders by PO number or remarks"
+            />
+
             <Select
               value={params.supplierId ?? "all"}
               onValueChange={(value) => {
@@ -219,9 +281,7 @@ export function ProcurementListTable() {
               className="w-full sm:w-40"
               aria-label="Order date to"
             />
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -232,29 +292,51 @@ export function ProcurementListTable() {
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No purchase orders found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Get started by creating your first purchase order."
-            }
-            action={
-              canCreate ? (
-                <Link href={ROUTES.procurementsNew}>
-                  <EmptyStateActionButton>Create purchase order</EmptyStateActionButton>
-                </Link>
-              ) : undefined
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading purchase orders..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading purchase orders..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading purchase orders..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <ProcurementMobileList
+              rows={rows}
+              resolveSupplierLabel={(supplierId) =>
+                supplierLabelById.get(supplierId) ?? supplierId
+              }
+              resolveWarehouseLabel={(warehouseId) =>
+                warehouseLabelById.get(warehouseId) ?? warehouseId
+              }
+              canUpdate={canUpdate}
+              canApprove={canApprove}
+              canReceive={canReceive}
+              canCancel={canCancel}
+              onApprove={setApproveTarget}
+              onReceive={setReceiveTarget}
+              onCancel={setCancelTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <ApproveProcurementDialog
         procurement={approveTarget}

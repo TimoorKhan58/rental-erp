@@ -1,0 +1,55 @@
+# MT-ERP — Render Blueprint (native Node)
+#
+# Purpose: declare Web Service + PostgreSQL shape for Render.
+# Secrets and real public URLs must be set in the Render Dashboard
+# (envVar entries use sync: false — never put secret values in this file).
+#
+# Production application cutover must target release candidate:
+#   32a41d4
+#
+# First production cutover: leave Pre-Deploy migrate OFF until backup +
+# F-09 orphan preflight + explicit operator approval complete.
+# See docs/production/RENDER_PRODUCTION_SETUP.md
+
+databases:
+  - name: rental-erp-db
+    plan: basic-256mb
+    databaseName: rental_erp
+    user: rental_erp
+
+services:
+  - type: web
+    name: rental-erp
+    runtime: node
+    plan: starter
+    # Adjust region to your account preference when applying the Blueprint.
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    # Intentionally empty for first cutover safety.
+    # After schema is aligned and F-09 is applied, operators may set:
+    #   preDeployCommand: npm run db:migrate:deploy
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: SECURE_COOKIES
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+      - key: LOG_FORMAT
+        value: json
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rental-erp-db
+          property: connectionString
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false

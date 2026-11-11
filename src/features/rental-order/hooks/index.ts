@@ -1,4 +1,5 @@
 export { useRentalOrderListParams } from "./use-rental-order-list-params";
+export { useReservationCalendarParams } from "./use-reservation-calendar-params";
 export {
   useCancelRentalOrder,
   useCanSourceExternallyPermission,

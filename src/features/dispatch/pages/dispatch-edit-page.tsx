@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useDispatch, useUpdateDispatch } from "../hooks";
@@ -16,7 +18,7 @@ type DispatchEditPageProps = {
 
 export function DispatchEditPage({ dispatchId }: DispatchEditPageProps) {
   const router = useRouter();
-  const { data: dispatch, isLoading, isError } = useDispatch(dispatchId);
+  const { data: dispatch, isLoading, isError, error, refetch } = useDispatch(dispatchId);
   const updateMutation = useUpdateDispatch();
 
   const isEditable = dispatch ? canEditDispatch(dispatch.status) : false;
@@ -43,6 +45,17 @@ export function DispatchEditPage({ dispatchId }: DispatchEditPageProps) {
           role="alert"
         >
           <p className="text-sm font-medium">Dispatch not found</p>
+          <p className="text-sm text-muted-foreground">
+            {error?.message ?? "The requested dispatch could not be loaded."}
+          </p>
+          <div className="flex gap-2">
+            <AppButton variant="outline" onClick={() => void refetch()}>
+              Try again
+            </AppButton>
+            <AppButton variant="outline" render={<Link href={ROUTES.dispatches} />}>
+              Back to list
+            </AppButton>
+          </div>
         </div>
       </PageContainer>
     );
@@ -71,7 +84,7 @@ export function DispatchEditPage({ dispatchId }: DispatchEditPageProps) {
         description="Update draft dispatch details and line items."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Deliveries", href: ROUTES.dispatches },
+          { label: "Dispatches", href: ROUTES.dispatches },
           { label: dispatch.dispatchNumber, href: ROUTES.dispatchDetail(dispatchId) },
           { label: "Edit" },
         ]}

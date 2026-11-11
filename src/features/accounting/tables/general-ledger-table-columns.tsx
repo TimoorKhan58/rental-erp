@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import type { DataTableColumn } from "@/components/shared";
+import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { REFERENCE_TYPE_LABELS } from "../mappers";
 import type { LedgerEntryLine } from "../types";
@@ -15,7 +17,14 @@ export function getGeneralLedgerColumns(): Array<DataTableColumn<LedgerEntryLine
     {
       id: "journalNumber",
       header: "Journal",
-      cell: (row) => row.journalNumber,
+      cell: (row) => (
+        <Link
+          href={ROUTES.accountingJournalEntryDetail(row.journalEntryId)}
+          className="text-primary hover:underline"
+        >
+          {row.journalNumber}
+        </Link>
+      ),
     },
     {
       id: "description",

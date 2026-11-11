@@ -50,6 +50,12 @@ vi.mock("@/features/financial-report/hooks", () => ({
     dateTo: defaultRange.dateTo,
     setDateRange: mockSetDateRange,
   }),
+  useFinancialReportPermissions: () => ({
+    isLoading: false,
+    canReadFinancial: true,
+    canReadOperational: true,
+    canRead: true,
+  }),
 }));
 
 import {
@@ -198,10 +204,10 @@ describe("AnalyticsDashboardPage", () => {
     expect(
       screen.getByText(ANALYTICS_SCOPE_HINTS.completedRentals),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Date from")).toHaveValue(
+    expect(screen.getByLabelText(/^Date from/)).toHaveValue(
       defaultRange.dateFrom,
     );
-    expect(screen.getByLabelText("Date to")).toHaveValue(defaultRange.dateTo);
+    expect(screen.getByLabelText(/^Date to/)).toHaveValue(defaultRange.dateTo);
   });
 
   it("prevents inverted date ranges from being applied", () => {
@@ -216,7 +222,7 @@ describe("AnalyticsDashboardPage", () => {
 
     renderWithProviders(<AnalyticsDashboardPage />);
 
-    fireEvent.change(screen.getByLabelText("Date from"), {
+    fireEvent.change(screen.getByLabelText(/^Date from/), {
       target: { value: "2026-08-01" },
     });
 

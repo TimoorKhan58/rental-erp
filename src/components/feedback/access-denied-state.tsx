@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ROUTES } from "@/config/routes";
+
 type AccessDeniedStateProps = {
   title?: string;
   description?: string;
@@ -17,6 +20,12 @@ export function AccessDeniedState({
     >
       <p className="text-sm font-medium">{title}</p>
       <p className="max-w-md text-sm text-muted-foreground">{description}</p>
+      <Link
+        href={ROUTES.dashboard}
+        className="text-sm font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Back to Dashboard
+      </Link>
     </div>
   );
 }

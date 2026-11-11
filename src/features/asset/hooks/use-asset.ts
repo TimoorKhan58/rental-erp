@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -9,10 +8,6 @@ import { getWarehouses } from "@/features/warehouse/services";
 import { getUsers } from "@/features/users/services";
 import type { ListAssetsParams } from "../types";
 import {
-  computeAssetStatusCounts,
-  computeAssetSummary,
-} from "../mappers/asset-summary.mapper";
-import {
   addAssetMaintenance,
   createAsset,
   createAssetCategory,
@@ -20,6 +15,7 @@ import {
   getAsset,
   getAssetCategories,
   getAssets,
+  getAssetSummary,
   transferAsset,
   updateAsset,
 } from "../services";
@@ -115,23 +111,17 @@ export function useAssetFilterOptions() {
 }
 
 export function useAssetSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.assets.list({ pageSize: 100 }),
-    queryFn: () => getAssets({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.assets.summary({}),
+    queryFn: () => getAssetSummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) return undefined;
-    return computeAssetSummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const statusCounts = useMemo(() => {
-    if (!listQuery.data) return undefined;
-    return computeAssetStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
-  return { stats, statusCounts, isLoading: listQuery.isLoading };
+  return {
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    isLoading: summaryQuery.isLoading,
+  };
 }
 
 export function useAssets(params: ListAssetsParams) {
@@ -155,6 +145,7 @@ function invalidateAssetQueries(
 ) {
   const tasks = [
     queryClient.invalidateQueries({ queryKey: queryKeys.assets.lists() }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.assets.summaries() }),
   ];
   if (id) {
     tasks.push(

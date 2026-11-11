@@ -52,3 +52,9 @@ export function toPaymentListResponse(
     meta: result.meta,
   };
 }
+
+export function toPaymentSummaryResponse(
+  summary: import("@/modules/payment/application/dtos/payment-summary.dto").PaymentSummaryDto,
+) {
+  return summary;
+}

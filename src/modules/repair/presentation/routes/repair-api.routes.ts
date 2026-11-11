@@ -8,6 +8,7 @@ import {
   UpdateRepairSchema,
 } from "@/modules/repair/application/schemas/repair.schemas";
 import { ListRepairsSchema } from "@/modules/repair/application/schemas/repair.schemas";
+import { GetRepairSummarySchema } from "@/modules/repair/application/schemas/get-repair-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -15,6 +16,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toRepairListResponse,
   toRepairResponse,
+  toRepairSummaryResponse,
 } from "../mappers/repair-response.mapper";
 import {
   runRepairApiRoute,
@@ -47,6 +49,38 @@ export async function handleListRepairs(
         body: {
           ...result.body,
           data: toRepairListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetRepairSummary(
+  request: NextRequest,
+  resolveServices: RepairServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetRepairSummarySchema, query);
+
+    const result = await runRepairApiRoute({
+      request,
+      route: REPAIR_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.repairs.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getRepairSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRepairSummaryResponse(result.body.data),
         },
       });
     }

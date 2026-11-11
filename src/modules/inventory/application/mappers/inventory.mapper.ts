@@ -47,8 +47,6 @@ export function toUpdateInventoryData(
   input: UpdateInventoryInput,
 ): UpdateInventoryData {
   return {
-    quantityOnHand: input.quantityOnHand,
-    reservedQuantity: input.reservedQuantity,
     minimumStock: input.minimumStock,
     maximumStock: input.maximumStock,
     isActive: input.isActive,

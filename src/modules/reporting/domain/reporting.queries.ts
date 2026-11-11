@@ -30,6 +30,7 @@ export type AnalyticsOverviewQuery = DateRangeQuery;
 
 export interface InventoryReportQuery extends PaginatedReportQuery, DateRangeQuery {
   warehouseId?: string;
+  inventoryId?: string;
   lowStockOnly?: boolean;
   overstockOnly?: boolean;
   sortBy?: InventoryReportSortField;

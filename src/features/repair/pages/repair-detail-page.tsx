@@ -155,7 +155,8 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
   const router = useRouter();
   const { data: repair, isLoading, isError, error, refetch } = useRepair(repairId);
   const { canUpdate, canStart, canComplete, canCancel } = useRepairPermissions();
-  const { returnLabelById, productLabelById, warehouseLabelById } = useRepairFilterOptions();
+  const { returnLabelById, productLabelById, productNameById, warehouseLabelById } =
+    useRepairFilterOptions();
   const { data: returnRecord } = useReturn(repair?.returnId ?? "");
   const { data: createdByUser } = useUser(repair?.createdById ?? "");
   const {
@@ -181,10 +182,21 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
 
     return {
       returnLabel: returnRecord?.returnNumber ?? returnLabelById.get(repair.returnId),
+      productName:
+        productNameById.get(repair.productId) ??
+        productLabelById.get(repair.productId) ??
+        repair.productId,
       productLabel: productLabelById.get(repair.productId) ?? repair.productId,
       warehouseLabel: warehouseLabelById.get(repair.warehouseId) ?? repair.warehouseId,
     };
-  }, [repair, returnRecord, returnLabelById, productLabelById, warehouseLabelById]);
+  }, [
+    repair,
+    returnRecord,
+    returnLabelById,
+    productLabelById,
+    productNameById,
+    warehouseLabelById,
+  ]);
 
   if (isLoading) {
     return (
@@ -221,8 +233,8 @@ export function RepairDetailPage({ repairId }: RepairDetailPageProps) {
   return (
     <PageContainer className="space-y-6">
       <PageHeader
-        title={repair.repairNumber}
-        description={labels.returnLabel ?? repair.returnId}
+        title={labels?.productName ?? repair.repairNumber}
+        description={[repair.repairNumber, labels?.returnLabel].filter(Boolean).join(" · ")}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Repairs", href: ROUTES.repairs },

@@ -83,6 +83,24 @@ export type ListAssetsParams = {
   warehouseId?: string;
 };
 
+export type GetAssetSummaryParams = Omit<
+  ListAssetsParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type AssetSummaryStats = {
+  totalAssets: number;
+  activeCount: number;
+  underMaintenanceCount: number;
+  disposedCount: number;
+  totalBookValue: number;
+};
+
+export type AssetSummaryResponse = {
+  stats: AssetSummaryStats;
+  statusCounts: Partial<Record<"all" | AssetStatus, number>>;
+};
+
 export type CreateAssetPayload = {
   assetCode: string;
   name: string;

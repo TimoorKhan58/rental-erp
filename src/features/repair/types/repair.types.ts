@@ -55,6 +55,26 @@ export type ListRepairsParams = {
   technician?: string;
 };
 
+export type GetRepairSummaryParams = Omit<
+  ListRepairsParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type RepairSummaryStats = {
+  totalRepairs: number;
+  activeRepairs: number;
+  pendingActionCount: number;
+  pendingCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  totalRepairCost: number;
+};
+
+export type RepairSummaryResponse = {
+  stats: RepairSummaryStats;
+  statusCounts: Partial<Record<"all" | RepairStatus, number>>;
+};
+
 export type CreateRepairPayload = {
   repairNumber?: string;
   returnId: string;

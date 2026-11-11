@@ -72,6 +72,13 @@ export function ReceiveProcurementDialog({
       size="lg"
     >
       <AppForm form={form} onSubmit={handleSubmit} className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Receiving posts inventory IN at this purchase order&apos;s warehouse for the
+          quantities you enter. Set a line to 0 to skip it. You cannot receive more than
+          remaining ordered quantity. First-time items get an inventory record created.
+          Unit cost is stored on the order only — receiving does not post an expense,
+          payment, or journal. Server rules remain authoritative.
+        </p>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[520px] text-sm">
             <thead>

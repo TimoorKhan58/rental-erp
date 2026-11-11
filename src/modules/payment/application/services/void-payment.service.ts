@@ -6,6 +6,7 @@ import {
 import { PaymentInvalidStatusError } from "@/modules/payment/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -83,7 +84,7 @@ export class VoidPaymentService {
 
           const updatedInvoice = await applyPaymentToInvoice(
             rentalInvoiceRepository,
-            invoice,
+            invoice.id,
             existing,
             "reverse",
           );
@@ -99,10 +100,26 @@ export class VoidPaymentService {
           });
         }
 
-        const updated = await paymentRepository.updateStatus(existing.id, {
-          status: voided.status,
-          voidedAt: voided.voidedAt,
-        });
+        const expectedStatus = existing.isPosted() ? "POSTED" : "PENDING";
+        const claimed = await paymentRepository.claimStatusTransition(
+          existing.id,
+          expectedStatus,
+          {
+            status: voided.status,
+            voidedAt: voided.voidedAt,
+          },
+        );
+
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: PAYMENT_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus,
+            action: "void",
+          });
+        }
+
+        const updated = claimed;
 
         await auditLogger.log({
           module: PAYMENT_MODULE,

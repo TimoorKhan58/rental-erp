@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Dispatch } from "./dispatch.entity";
 import type { DispatchListQuery } from "./dispatch-list.query";
+import type { DispatchSummaryQuery } from "./dispatch-summary.query";
+import type { DispatchSummaryResult } from "./dispatch-summary.types";
 import type {
   CreateDispatchData,
   UpdateDispatchData,
@@ -22,6 +24,7 @@ export interface IDispatchRepository {
   findById(id: DispatchId): Promise<Dispatch | null>;
   findByDispatchNumber(dispatchNumber: string): Promise<Dispatch | null>;
   findPaged(query: DispatchListQuery): Promise<PaginatedResult<Dispatch>>;
+  findSummaryStats(query: DispatchSummaryQuery): Promise<DispatchSummaryResult>;
   /**
    * Phase 30 (F-05): exact SQL aggregate of Rollup A claimed quantities for a
    * rental order. Must not use list pagination caps.
@@ -42,6 +45,11 @@ export interface IDispatchRepository {
   findCompletedDispatchesByRentalOrderId(
     rentalOrderId: RentalOrderId,
   ): Promise<Dispatch[]>;
+  /**
+   * Phase 45 (N-44-01): serializes return capacity validation for one dispatch.
+   * Must remain held through read → validate → return mutation in the same UoW.
+   */
+  lockForReturnCapacity(id: DispatchId): Promise<void>;
   create(data: CreateDispatchData): Promise<Dispatch>;
   update(id: DispatchId, data: UpdateDispatchData): Promise<Dispatch>;
   updateStatus(

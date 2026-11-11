@@ -98,3 +98,34 @@ export const SEED_NOTIFICATION_TEMPLATES = [
     body: "An expense claim was rejected.",
   },
 ] as const;
+
+export const SEED_ACCOUNTS = [
+  {
+    id: "cc0e8400-e29b-41d4-a716-446655440001",
+    accountCode: "1000",
+    name: "Cash",
+    accountType: "ASSET" as const,
+    description: "Primary cash / bank account",
+  },
+  {
+    id: "cc0e8400-e29b-41d4-a716-446655440002",
+    accountCode: "1100",
+    name: "Accounts Receivable",
+    accountType: "ASSET" as const,
+    description: "Customer rental invoice balances",
+  },
+  {
+    id: "cc0e8400-e29b-41d4-a716-446655440003",
+    accountCode: "4000",
+    name: "Rental Revenue",
+    accountType: "INCOME" as const,
+    description: "Rental income from issued invoices",
+  },
+  {
+    id: "cc0e8400-e29b-41d4-a716-446655440004",
+    accountCode: "5000",
+    name: "General Expense",
+    accountType: "EXPENSE" as const,
+    description: "Operating expenses paid through the expense module",
+  },
+] as const;

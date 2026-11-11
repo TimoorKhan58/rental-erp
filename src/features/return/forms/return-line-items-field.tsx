@@ -9,11 +9,13 @@ import type { CreateReturnFormValues } from "../schemas";
 type ReturnLineItemsFieldProps = {
   itemLabelById: Map<string, string>;
   readOnly?: boolean;
+  allowAdd?: boolean;
 };
 
 export function ReturnLineItemsField({
   itemLabelById,
   readOnly = false,
+  allowAdd = true,
 }: ReturnLineItemsFieldProps) {
   const form = useFormContext<CreateReturnFormValues>();
   const { fields, append, remove } = useFieldArray({
@@ -23,8 +25,15 @@ export function ReturnLineItemsField({
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Lines come from the selected completed dispatch. Quantity cannot exceed remaining
+        dispatched units. Remove a line to exclude it from this return.
+      </p>
       {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No returned items added yet.</p>
+        <p className="text-sm text-muted-foreground">
+          No outstanding dispatched quantity remains for this dispatch, or a dispatch has not
+          been selected yet.
+        </p>
       ) : (
         <div className="space-y-3">
           {fields.map((field, index) => {
@@ -121,7 +130,7 @@ export function ReturnLineItemsField({
         </div>
       )}
 
-      {!readOnly ? (
+      {!readOnly && allowAdd ? (
         <AppButton
           type="button"
           variant="outline"

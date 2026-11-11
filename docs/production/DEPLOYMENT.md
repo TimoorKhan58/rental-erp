@@ -135,11 +135,14 @@ Render does **not** run migrations unless you configure them. For the existing w
 1. **Build Command:** `npm ci && npm run build`  
    (`npm run build` runs `prisma generate && next build`)
 2. **Pre-Deploy Command:** `npm run db:migrate:deploy`  
-   (applies pending migrations to `DATABASE_URL` before the new release receives traffic)
+   (applies pending migrations to `DATABASE_URL` before the new release receives traffic)  
+   **First production cutover:** keep Pre-Deploy migrate disabled until backup + F-09 orphan preflight + explicit approval — see [RENDER_PRODUCTION_SETUP.md](./RENDER_PRODUCTION_SETUP.md).
 3. **Start Command:** `npm run start`  
    (`next start` — standalone output is Docker-only via `DOCKER_BUILD=1`)
 
 Required env on Render: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `APP_URL`, `BETTER_AUTH_URL` (HTTPS), `APP_ENV=production`, `NODE_ENV=production`.
+
+Full Render checklist, Blueprint (`render.yaml`), domain/HTTPS, backup, and F-09 preflight: [RENDER_PRODUCTION_SETUP.md](./RENDER_PRODUCTION_SETUP.md).
 
 ---
 

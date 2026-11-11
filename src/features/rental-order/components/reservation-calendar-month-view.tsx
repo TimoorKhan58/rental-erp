@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { format, isSameMonth } from "date-fns";
 import { ROUTES } from "@/config/routes";
@@ -25,6 +26,8 @@ export function ReservationCalendarMonthView({
   anchor,
   events,
 }: ReservationCalendarMonthViewProps) {
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+
   return (
     <div className="overflow-x-auto rounded-lg border bg-background">
       <div className="min-w-[40rem]">
@@ -44,7 +47,9 @@ export function ReservationCalendarMonthView({
             const dayEvents = eventsOverlappingDay(events, day);
             const inMonth = isSameMonth(day, anchor);
             const today = isToday(day);
-            const visible = dayEvents.slice(0, 3);
+            const dayKey = day.toISOString();
+            const isExpanded = expandedDays.has(dayKey);
+            const visible = isExpanded ? dayEvents : dayEvents.slice(0, 3);
             const overflow = dayEvents.length - visible.length;
 
             return (
@@ -87,9 +92,34 @@ export function ReservationCalendarMonthView({
                     </Link>
                   ))}
                   {overflow > 0 ? (
-                    <p className="px-1 text-[10px] text-muted-foreground">
+                    <button
+                      type="button"
+                      className="px-1 text-left text-[10px] font-medium text-primary hover:underline"
+                      onClick={() =>
+                        setExpandedDays((current) => {
+                          const next = new Set(current);
+                          next.add(dayKey);
+                          return next;
+                        })
+                      }
+                    >
                       +{overflow} more
-                    </p>
+                    </button>
+                  ) : null}
+                  {isExpanded && dayEvents.length > 3 ? (
+                    <button
+                      type="button"
+                      className="px-1 text-left text-[10px] text-muted-foreground hover:underline"
+                      onClick={() =>
+                        setExpandedDays((current) => {
+                          const next = new Set(current);
+                          next.delete(dayKey);
+                          return next;
+                        })
+                      }
+                    >
+                      Show less
+                    </button>
                   ) : null}
                 </div>
               </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { BarChart3Icon, PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
@@ -9,6 +8,7 @@ import { ROUTES } from "@/config/routes";
 import { InventorySummaryCards } from "../components";
 import { useInventoryPermissions, useInventorySummaryStats } from "../hooks";
 import { InventoryListTable } from "../tables";
+import { useState } from "react";
 
 export function InventoryListPage() {
   const { canCreate } = useInventoryPermissions();
@@ -16,10 +16,10 @@ export function InventoryListPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Inventory"
-        description="Monitor stock levels, reservations, and reorder thresholds across warehouses."
+        description="Scan on-hand, committed, and available stock — act on shortage and adjustments."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Inventory" },
@@ -35,6 +35,7 @@ export function InventoryListPage() {
             </AppButton>
             {canCreate ? (
               <AppButton
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
                 leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
                 onClick={() => setCreateOpen(true)}
               >

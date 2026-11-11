@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AppForm } from "@/components/forms";
 import {
+  ComboboxField,
   DatePickerField,
   NumberField,
   SelectField,
@@ -84,11 +85,19 @@ function CreatePaymentForm({
   const customerId = form.watch("customerId");
   const rentalInvoiceId = form.watch("rentalInvoiceId");
   const { data: payableInvoices = [] } = usePayableInvoices(customerId);
+  const previousCustomerId = useRef<string | undefined>(undefined);
 
   const selectedInvoice = payableInvoices.find((invoice) => invoice.id === rentalInvoiceId);
 
   useEffect(() => {
-    form.setValue("rentalInvoiceId", "");
+    if (
+      previousCustomerId.current !== undefined &&
+      previousCustomerId.current !== customerId
+    ) {
+      form.setValue("rentalInvoiceId", "");
+    }
+
+    previousCustomerId.current = customerId;
   }, [customerId, form]);
 
   const invoiceOptions = payableInvoices.map((invoice) => ({
@@ -103,21 +112,26 @@ function CreatePaymentForm({
           Payment number is assigned automatically on save.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <SelectField
+          <ComboboxField
             control={form.control}
             name="customerId"
             label="Customer"
             placeholder="Select customer"
+            searchPlaceholder="Search by name, code, or phone..."
+            emptyMessage="No matching customers."
             options={customerOptions.map((option) => ({
               value: option.id,
               label: option.label,
+              keywords: option.keywords,
             }))}
           />
-          <SelectField
+          <ComboboxField
             control={form.control}
             name="rentalInvoiceId"
             label="Rental invoice"
             placeholder={customerId ? "Select invoice" : "Select a customer first"}
+            searchPlaceholder="Search invoice number..."
+            emptyMessage="No matching invoices."
             options={invoiceOptions}
             disabled={!customerId || invoiceOptions.length === 0}
             description={
@@ -170,7 +184,11 @@ function CreatePaymentForm({
         <AppButton type="button" variant="outline" onClick={onCancel}>
           Cancel
         </AppButton>
-        <AppButton type="submit" loading={isSubmitting}>
+        <AppButton
+          type="submit"
+          className="bg-brand text-brand-foreground hover:bg-brand/90"
+          loading={isSubmitting}
+        >
           Record payment
         </AppButton>
       </div>

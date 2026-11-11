@@ -360,9 +360,21 @@ export class InMemoryFinancialReportRepository
       };
     });
 
-    const total = mapped.length;
+    const filtered =
+      query.search !== undefined && query.search.length > 0
+        ? mapped.filter((entry) => {
+            const term = query.search!.toLowerCase();
+            return (
+              entry.journalNumber.toLowerCase().includes(term) ||
+              entry.description.toLowerCase().includes(term) ||
+              (entry.memo?.toLowerCase().includes(term) ?? false)
+            );
+          })
+        : mapped;
+
+    const total = filtered.length;
     const start = (query.page - 1) * query.pageSize;
-    const entries = mapped.slice(start, start + query.pageSize);
+    const entries = filtered.slice(start, start + query.pageSize);
 
     return {
       accountId: account.id,
@@ -373,8 +385,8 @@ export class InMemoryFinancialReportRepository
       dateTo: query.dateTo ?? null,
       openingBalance,
       closingBalance:
-        mapped.length > 0
-          ? mapped[mapped.length - 1]!.runningBalance
+        filtered.length > 0
+          ? filtered[filtered.length - 1]!.runningBalance
           : openingBalance,
       entries,
       page: query.page,

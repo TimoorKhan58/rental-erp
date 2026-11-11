@@ -5,3 +5,7 @@ export { InventoryStockLevelBar } from "./inventory-stock-level-bar";
 export { InventoryStockFilterChips } from "./inventory-stock-filter-chips";
 export { InventorySummaryCards } from "./inventory-summary-cards";
 export { InventoryDetailSections } from "./inventory-detail-sections";
+export { InventoryQuantityBreakdown } from "./inventory-quantity-breakdown";
+export { InventoryPresentationChipBadge } from "./inventory-presentation-chip";
+export { InventoryActiveFilters } from "./inventory-active-filters";
+export { InventoryMobileList } from "./inventory-mobile-list";

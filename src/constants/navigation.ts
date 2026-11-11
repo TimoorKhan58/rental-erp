@@ -30,7 +30,10 @@ import {
 
 export type { NavigationGroup, NavigationItem } from "./navigation.types";
 
-/** Grouped application navigation — organized by business domain. */
+/**
+ * Grouped application navigation — ops-first IA for daily rental work.
+ * Labels/routes unchanged; order only.
+ */
 export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: "Overview",
@@ -39,26 +42,8 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     ],
   },
   {
-    label: "Master Data",
-    items: [
-      { label: "Customers", href: ROUTES.customers, icon: Users },
-      { label: "Suppliers", href: ROUTES.suppliers, icon: Building2 },
-      { label: "Warehouses", href: ROUTES.warehouses, icon: Warehouse },
-      { label: "Products", href: ROUTES.products, icon: Box },
-      { label: "Catalog", href: ROUTES.catalog, icon: Tags },
-      { label: "Inventory", href: ROUTES.inventory, icon: Package },
-      { label: "Assets", href: ROUTES.assets, icon: Boxes },
-    ],
-  },
-  {
     label: "Operations",
     items: [
-      { label: "Procurement", href: ROUTES.procurements, icon: ShoppingCart },
-      {
-        label: "External Rentals",
-        href: ROUTES.externalRentals,
-        icon: PackageOpen,
-      },
       { label: "Rental Orders", href: ROUTES.rentalOrders, icon: ClipboardList },
       {
         label: "Reservation Calendar",
@@ -67,8 +52,26 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
       },
       { label: "Deliveries", href: ROUTES.dispatches, icon: Truck },
       { label: "Returns", href: ROUTES.returns, icon: Undo2 },
+      {
+        label: "External Rentals",
+        href: ROUTES.externalRentals,
+        icon: PackageOpen,
+      },
+      { label: "Procurement", href: ROUTES.procurements, icon: ShoppingCart },
       { label: "Repairs", href: ROUTES.repairs, icon: Wrench },
       { label: "Maintenance", href: ROUTES.maintenance, icon: Settings2 },
+    ],
+  },
+  {
+    label: "Master Data",
+    items: [
+      { label: "Customers", href: ROUTES.customers, icon: Users },
+      { label: "Inventory", href: ROUTES.inventory, icon: Package },
+      { label: "Products", href: ROUTES.products, icon: Box },
+      { label: "Catalog", href: ROUTES.catalog, icon: Tags },
+      { label: "Assets", href: ROUTES.assets, icon: Boxes },
+      { label: "Warehouses", href: ROUTES.warehouses, icon: Warehouse },
+      { label: "Suppliers", href: ROUTES.suppliers, icon: Building2 },
     ],
   },
   {

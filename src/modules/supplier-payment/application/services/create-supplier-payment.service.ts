@@ -78,8 +78,9 @@ export class CreateSupplierPaymentService {
           throw error;
         }
 
+        const purchaseOrderId = toPurchaseOrderId(data.purchaseOrderId);
         const purchaseOrder = await purchaseOrderRepository.findById(
-          toPurchaseOrderId(data.purchaseOrderId),
+          purchaseOrderId,
         );
 
         if (purchaseOrder === null) {
@@ -89,10 +90,30 @@ export class CreateSupplierPaymentService {
           });
         }
 
+        await purchaseOrderRepository.lockForSupplierPaymentCommitment(
+          purchaseOrderId,
+        );
+
+        const authoritativePurchaseOrder =
+          await purchaseOrderRepository.findById(purchaseOrderId);
+
+        if (authoritativePurchaseOrder === null) {
+          throw new NotFoundError({
+            message: "Purchase order not found",
+            details: { purchaseOrderId: data.purchaseOrderId },
+          });
+        }
+
         validatePurchaseOrderForSupplierPayment(
-          purchaseOrder,
+          authoritativePurchaseOrder,
           data.supplierId,
           data.amount,
+          {
+            pendingAmount:
+              await supplierPaymentRepository.sumPendingAmountByPurchaseOrderId(
+                purchaseOrderId,
+              ),
+          },
         );
 
         const existing = await supplierPaymentRepository.findByPaymentNumber(

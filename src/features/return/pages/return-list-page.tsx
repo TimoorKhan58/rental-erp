@@ -14,10 +14,10 @@ export function ReturnListPage() {
   const { stats, statusCounts, isLoading } = useReturnSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Returns"
-        description="Manage returned rental assets and inspection workflows."
+        description="Receive assets from a completed dispatch, inspect condition, then complete to restock owned good units and update the rental order. Server quantity rules remain authoritative."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Returns" },

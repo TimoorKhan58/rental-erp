@@ -68,7 +68,14 @@ export type BusinessPulse = {
   attentionCount: number;
   pulseMetrics: DashboardMetric[];
   attention: AttentionItem[];
+  /** @deprecated Prefer todayOps + inventoryHealth; kept for compatibility. */
   opsHealth: OpsHealthItem[];
+  /** Today's field work: dispatches, returns, asset jobs. */
+  todayOps: OpsHealthItem[];
+  /** Stock commitment and availability signals. */
+  inventoryHealth: OpsHealthItem[];
+  /** Forward-looking operational commitments from existing counters. */
+  upcoming: OpsHealthItem[];
   catalog: {
     customers: number;
     products: number;

@@ -77,6 +77,17 @@ export function useExpenseListParams() {
       sortBy: ExpenseSortField,
       sortOrder: ListExpensesParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        expenseType: undefined,
+        categoryId: undefined,
+        supplierId: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

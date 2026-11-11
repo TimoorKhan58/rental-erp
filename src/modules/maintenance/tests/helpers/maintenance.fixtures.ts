@@ -56,6 +56,7 @@ export function buildMaintenanceEntity(
   override: {
     id?: MaintenanceId;
     status?: Maintenance["status"];
+    productId?: Maintenance["productId"];
     quantity?: number;
     estimatedCost?: number;
     actualCost?: number;
@@ -75,7 +76,7 @@ export function buildMaintenanceEntity(
   return Maintenance.reconstitute({
     id: override.id ?? MAINTENANCE_ID,
     maintenanceNumber: created.maintenanceNumber,
-    productId: created.productId,
+    productId: override.productId ?? created.productId,
     warehouseId: created.warehouseId,
     inventoryId: created.inventoryId,
     quantity: override.quantity ?? created.quantity,

@@ -47,6 +47,10 @@ function mapJournalEntryFilter(
     where.referenceType = filter.referenceType as JournalEntry["referenceType"];
   }
 
+  if (filter.referenceId !== undefined) {
+    where.referenceId = String(filter.referenceId);
+  }
+
   if (filter.journalDateFrom !== undefined || filter.journalDateTo !== undefined) {
     where.journalDate = {};
 
@@ -110,6 +114,10 @@ export class PrismaJournalEntryRepository implements IJournalEntryRepository {
 
     if (query.referenceType !== undefined) {
       filter.referenceType = query.referenceType;
+    }
+
+    if (query.referenceId !== undefined) {
+      filter.referenceId = query.referenceId;
     }
 
     if (query.journalDateFrom !== undefined) {

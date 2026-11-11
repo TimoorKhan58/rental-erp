@@ -8,6 +8,7 @@ import {
   CalendarIcon,
   ClockIcon,
   CreditCardIcon,
+  ClipboardListIcon,
   FileCheckIcon,
   FileTextIcon,
   HashIcon,
@@ -17,13 +18,20 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
+import { useRentalInvoice, useRentalInvoiceFilterOptions } from "@/features/rental-invoice/hooks";
+import {
+  buildPaymentDetailBreadcrumbs,
+  rentalOrderBackHref,
+  rentalOrderBackLabel,
+  resolveRentalWorkflowParent,
+} from "@/features/rental-order/navigation/rental-workflow-breadcrumbs";
 import {
   canEditPayment,
   canPostPayment,
@@ -36,6 +44,7 @@ import {
   usePaymentPermissions,
 } from "../hooks";
 import { PaymentDetailsTable } from "../components/payment-details-table";
+import { PaymentJournalSection } from "../components/payment-journal-section";
 import { PaymentRecordStatusBadge } from "../components/payment-status-badge";
 import { PaymentStatusTimeline } from "../components/payment-status-timeline";
 import { PaymentWorkflowProgressBar } from "../components/payment-workflow-progress-bar";
@@ -80,7 +89,7 @@ function MetricTile({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+    <div className="rounded-md border border-border bg-muted/20 p-3.5">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
@@ -146,7 +155,9 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
   const { data: payment, isLoading, isError, error, refetch } = usePayment(paymentId);
   const { canUpdate, canPost, canVoid } = usePaymentPermissions();
   const { customerLabelById, invoiceLabelById } = usePaymentFilterOptions();
+  const { rentalOrderLabelById } = useRentalInvoiceFilterOptions();
   const { data: customer } = useCustomer(payment?.customerId ?? "");
+  const { data: linkedInvoice } = useRentalInvoice(payment?.rentalInvoiceId ?? "");
 
   const [postOpen, setPostOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
@@ -163,6 +174,28 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
     };
   }, [payment, customer, customerLabelById, invoiceLabelById]);
 
+  const workflowNav = useMemo(() => {
+    if (!payment) {
+      return null;
+    }
+
+    const rentalParent = resolveRentalWorkflowParent({
+      rentalOrderId: linkedInvoice?.rentalOrderId,
+      rentalOrderNumber: linkedInvoice
+        ? rentalOrderLabelById.get(linkedInvoice.rentalOrderId)
+        : undefined,
+    });
+
+    return {
+      rentalParent,
+      rentalBackHref: rentalOrderBackHref(rentalParent),
+      invoiceNav: {
+        id: payment.rentalInvoiceId,
+        invoiceNumber: labels?.invoiceLabel ?? payment.rentalInvoiceId,
+      },
+    };
+  }, [payment, linkedInvoice, rentalOrderLabelById, labels?.invoiceLabel]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -171,7 +204,7 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
     );
   }
 
-  if (isError || !payment || !labels) {
+  if (isError || !payment || !labels || !workflowNav) {
     return (
       <PageContainer>
         <div
@@ -200,19 +233,37 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
       <PageHeader
         title={payment.paymentNumber}
         description={`${METHOD_LABELS[payment.paymentMethod]} · ${labels.customerLabel}`}
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Payments", href: ROUTES.payments },
-          { label: payment.paymentNumber },
-        ]}
+        breadcrumbs={buildPaymentDetailBreadcrumbs({
+          rentalParent: workflowNav.rentalParent,
+          invoice: {
+            id: workflowNav.invoiceNav.id,
+            invoiceNumber: workflowNav.invoiceNav.invoiceNumber,
+          },
+          paymentNumber: payment.paymentNumber,
+        })}
         actions={
           <>
+            {workflowNav.rentalBackHref && workflowNav.rentalParent ? (
+              <AppButton
+                leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
+                render={<Link href={workflowNav.rentalBackHref} />}
+              >
+                {rentalOrderBackLabel(workflowNav.rentalParent)}
+              </AppButton>
+            ) : null}
+            <AppButton
+              variant="outline"
+              leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
+              render={<Link href={ROUTES.rentalInvoiceDetail(payment.rentalInvoiceId)} />}
+            >
+              Back to invoice
+            </AppButton>
             <AppButton
               variant="outline"
               leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.payments} />}
             >
-              Back
+              All payments
             </AppButton>
             {canUpdate && canEditPayment(payment.status) ? (
               <AppButton
@@ -224,10 +275,11 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
             ) : null}
             {canPost && canPostPayment(payment.status) ? (
               <AppButton
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
                 leftIcon={<FileCheckIcon className="size-4" aria-hidden="true" />}
                 onClick={() => setPostOpen(true)}
               >
-                Post
+                Post payment
               </AppButton>
             ) : null}
             {canVoid && canVoidPayment(payment.status) ? (
@@ -243,17 +295,27 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
         }
       />
 
-      <Card className="overflow-hidden border-border/60 shadow-soft">
-        <CardContent className="space-y-6 p-6">
+      <Card className="overflow-hidden border-border bg-card shadow-none">
+        <CardContent className="space-y-5 p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <PaymentRecordStatusBadge status={payment.status} />
+                {payment.status === "POSTED" ? (
+                  <span className="rounded-md border border-border bg-muted/30 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    Settled on invoice
+                  </span>
+                ) : null}
               </div>
               <p className="text-sm text-muted-foreground">
-                Paid {formatDate(payment.paymentDate)} · Last updated{" "}
+                Received {formatDate(payment.paymentDate)} · Last updated{" "}
                 {formatDateTime(payment.updatedAt)}
               </p>
+              {payment.status === "PENDING" ? (
+                <p className="text-xs text-muted-foreground">
+                  Pending payments do not settle the invoice until posted.
+                </p>
+              ) : null}
             </div>
             <div className="text-right">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -304,8 +366,8 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="app-grid">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-8">
           <SectionCard title="Payment details">
             <PaymentDetailsTable
               payment={payment}
@@ -341,9 +403,22 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
             href={ROUTES.rentalInvoiceDetail(payment.rentalInvoiceId)}
             linkLabel="View invoice"
           />
+
+          {workflowNav.rentalParent ? (
+            <RelatedEntityCard
+              title="Rental order"
+              icon={<ClipboardListIcon className="size-5" aria-hidden="true" />}
+              iconClass="bg-primary/12 text-primary"
+              fields={[
+                { label: "Order number", value: workflowNav.rentalParent.rentalOrderNumber },
+              ]}
+              href={ROUTES.rentalOrderDetail(workflowNav.rentalParent.rentalOrderId)}
+              linkLabel="View rental order"
+            />
+          ) : null}
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
             title="Payment workflow"
             actions={<PaymentRecordStatusBadge status={payment.status} />}
@@ -383,10 +458,7 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
             </div>
           </SectionCard>
 
-          <EmptyCard
-            title="Accounting journal"
-            description="Accounting entries will appear here when accounting integration is connected."
-          />
+          <PaymentJournalSection paymentId={payment.id} />
         </div>
       </div>
 

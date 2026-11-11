@@ -13,7 +13,12 @@ import {
 } from "../schemas";
 import { ReadOnlyField } from "../components/read-only-field";
 import { formatDateTime } from "@/lib/utils";
+import { USER_ROLE_LABELS, type UserRole } from "@/constants/roles";
 import type { UserProfileResponse } from "../types";
+
+function profileRoleLabel(role: string): string {
+  return USER_ROLE_LABELS[role as UserRole] ?? role;
+}
 
 type ProfileFormProps = {
   profile: UserProfileResponse;
@@ -49,7 +54,7 @@ export function ProfileForm({
         <dl className="grid gap-4 sm:grid-cols-2">
           <ReadOnlyField label="Name" value={profile.name} />
           <ReadOnlyField label="Email" value={profile.email} />
-          <ReadOnlyField label="Role" value={profile.role} />
+          <ReadOnlyField label="Role" value={profileRoleLabel(profile.role)} />
           <ReadOnlyField label="Active" value={profile.isActive} />
           <ReadOnlyField label="Created" value={formatDateTime(profile.createdAt)} />
           <ReadOnlyField label="Updated" value={formatDateTime(profile.updatedAt)} />
@@ -74,10 +79,16 @@ export function ProfileForm({
       >
         <div className="grid gap-4 md:grid-cols-2">
           <TextField control={form.control} name="name" label="Name" />
-          <TextField control={form.control} name="email" label="Email" type="email" />
+          <TextField
+            control={form.control}
+            name="email"
+            label="Email"
+            type="email"
+            description="This is also the sign-in email. Changing it updates the authentication account."
+          />
         </div>
         <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-          <ReadOnlyField label="Role" value={profile.role} />
+          <ReadOnlyField label="Role" value={profileRoleLabel(profile.role)} />
           <ReadOnlyField label="Active" value={profile.isActive} />
           <ReadOnlyField label="Created" value={formatDateTime(profile.createdAt)} />
           <ReadOnlyField label="Updated" value={formatDateTime(profile.updatedAt)} />

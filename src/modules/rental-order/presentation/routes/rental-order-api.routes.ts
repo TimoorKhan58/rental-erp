@@ -11,6 +11,7 @@ import {
   UpdateRentalOrderSchema,
 } from "@/modules/rental-order/application";
 import { ListRentalOrdersSchema } from "@/modules/rental-order/application/schemas/list-rental-orders.schema";
+import { GetRentalOrderSummarySchema } from "@/modules/rental-order/application/schemas/get-rental-order-summary.schema";
 import { SourceRentalOrderExternallySchema } from "@/modules/rental-order/application/schemas/source-rental-order-externally.schema";
 import { toExternalRentalResponse } from "@/modules/external-rental/presentation/mappers/external-rental-response.mapper";
 import { parseRequest } from "@/shared/application/validation";
@@ -19,6 +20,7 @@ import { PERMISSIONS } from "@/shared/application/authorization";
 import {
   toRentalOrderListResponse,
   toRentalOrderResponse,
+  toRentalOrderSummaryResponse,
 } from "../mappers/rental-order-response.mapper";
 import {
   runRentalOrderApiRoute,
@@ -46,6 +48,38 @@ export async function handleListRentalOrders(
         return toRentalOrderListResponse(paginated);
       },
     });
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetRentalOrderSummary(
+  request: NextRequest,
+  resolveServices: RentalOrderServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetRentalOrderSummarySchema, query);
+
+    const result = await runRentalOrderApiRoute({
+      request,
+      route: RENTAL_ORDER_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalOrders.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getRentalOrderSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalOrderSummaryResponse(result.body.data),
+        },
+      });
+    }
 
     return toJsonResponse(result);
   });

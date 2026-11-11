@@ -2,6 +2,8 @@ import type {
   CreateDispatchPayload,
   DispatchListResponse,
   DispatchResponse,
+  DispatchSummaryResponse,
+  GetDispatchSummaryParams,
   ListDispatchesParams,
   UpdateDispatchPayload,
 } from "../types";
@@ -13,6 +15,12 @@ export async function getDispatches(
   params: ListDispatchesParams = {},
 ): Promise<DispatchListResponse> {
   return apiGet<DispatchListResponse>(BASE, { params });
+}
+
+export async function getDispatchSummary(
+  params: GetDispatchSummaryParams = {},
+): Promise<DispatchSummaryResponse> {
+  return apiGet<DispatchSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getDispatch(id: string): Promise<DispatchResponse> {

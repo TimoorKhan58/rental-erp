@@ -31,7 +31,7 @@ export function ReceiveReturnDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Mark return as received"
-      description={`Mark "${returnRecord.returnNumber}" as received? Items will be ready for inspection.`}
+      description={`Mark "${returnRecord.returnNumber}" as received? This does not restock inventory or change the rental order. Items become ready for inspection.`}
       confirmLabel="Mark received"
       onConfirm={() => void handleConfirm()}
       isLoading={receiveMutation.isPending}

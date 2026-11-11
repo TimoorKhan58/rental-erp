@@ -1,5 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { ReturnListQuery } from "@/modules/return/domain/return-list.query";
+import type { ReturnSummaryQuery } from "@/modules/return/domain/return-summary.query";
+import type { ReturnSummaryResult } from "@/modules/return/domain/return-summary.types";
+import { RETURN_STATUSES } from "@/modules/return/domain/return.constants";
+import { buildReturnSummaryWhere } from "@/modules/return/infrastructure/repositories/return-query.filters";
 import type { ReturnInspectionId } from "@/shared/domain/ids";
 import type { DispatchId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -26,6 +30,7 @@ import {
   RETURN_INCLUDE,
   toReturnCreateInput,
   toReturnDomain,
+  toReturnItemConditionUpdateInput,
   toReturnStatusUpdateInput,
   toReturnUpdateInput,
 } from "../mappers/return.persistence.mapper";
@@ -193,6 +198,57 @@ export class PrismaReturnRepository implements IReturnRepository {
     }));
   }
 
+
+  findSummaryStats(query: ReturnSummaryQuery): Promise<ReturnSummaryResult> {
+    const where = buildReturnSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalReturns, statusGroups, unitsSum] = await Promise.all([
+          db.returnInspection.count({ where }),
+          db.returnInspection.groupBy({
+            by: ["status"],
+            where,
+            _count: { _all: true },
+          }),
+          db.returnInspectionItem.aggregate({
+            where: { returnInspection: where },
+            _sum: { returnedQuantity: true },
+          }),
+        ]);
+
+        const statusCounts = Object.fromEntries(
+          RETURN_STATUSES.map((status) => [status, 0]),
+        ) as ReturnSummaryResult["statusCounts"];
+
+        statusCounts.all = totalReturns;
+
+        for (const group of statusGroups) {
+          statusCounts[group.status] = group._count._all;
+        }
+
+        const draftCount = statusCounts.DRAFT;
+        const receivedCount = statusCounts.RECEIVED;
+        const inspectedCount = statusCounts.INSPECTED;
+        const completedCount = statusCounts.COMPLETED;
+        const cancelledCount = statusCounts.CANCELLED;
+
+        return {
+          stats: {
+            totalReturns,
+            activeReturns: totalReturns - cancelledCount,
+            pendingActionCount: draftCount + receivedCount + inspectedCount,
+            awaitingInspectionCount: receivedCount,
+            completedCount,
+            totalReturnedUnits: unitsSum._sum.returnedQuantity ?? 0,
+          },
+          statusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
+  }
+
   create(data: CreateReturnData): Promise<Return> {
     return repositoryCreate(
       this.runner,
@@ -283,6 +339,18 @@ export class PrismaReturnRepository implements IReturnRepository {
           return null;
         }
 
+        // updateMany cannot write nested relations, so inspection results
+        // are saved per item inside the same transaction as the status claim.
+        // Scoped to this return so a foreign item id can never be touched.
+        if (data.items !== undefined) {
+          for (const item of data.items) {
+            await db.returnInspectionItem.updateMany({
+              where: { id: item.id, returnInspectionId: id },
+              data: toReturnItemConditionUpdateInput(item),
+            });
+          }
+        }
+
         const record = await db.returnInspection.findUnique({
           where: { id },
           include: RETURN_INCLUDE,
@@ -291,6 +359,21 @@ export class PrismaReturnRepository implements IReturnRepository {
         return record === null ? null : toReturnDomain(record);
       },
       { model: MODEL, operation: "claimStatusTransition" },
+    );
+  }
+
+  lockForRepairCapacity(id: ReturnInspectionId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "return_inspections" WHERE id = ${id}::uuid FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Return inspection not found");
+        }
+      },
+      { model: MODEL, operation: "lockForRepairCapacity" },
     );
   }
 }

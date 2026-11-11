@@ -51,3 +51,5 @@ export type UpdatePaymentInput = z.infer<typeof UpdatePaymentSchema>;
 export type PaymentIdParamInput = z.infer<typeof PaymentIdParamSchema>;
 
 export const PaymentStatusFilterSchema = z.enum(PAYMENT_STATUSES);
+
+export const PaymentMethodFilterSchema = z.enum(PAYMENT_METHODS);

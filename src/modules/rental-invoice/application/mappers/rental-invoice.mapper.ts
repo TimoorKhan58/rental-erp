@@ -141,7 +141,10 @@ export function toRentalInvoiceListQuery(
     sortOrder: input.sortOrder,
     search: input.search,
     status: input.status,
+    paymentStatus: input.paymentStatus,
     customerId: input.customerId as CustomerId | undefined,
     rentalOrderId: input.rentalOrderId as RentalOrderId | undefined,
+    invoiceDateFrom: input.invoiceDateFrom,
+    invoiceDateTo: input.invoiceDateTo,
   };
 }

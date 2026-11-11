@@ -4,6 +4,8 @@ import type {
   AssetCategoryResponse,
   AssetListResponse,
   AssetResponse,
+  AssetSummaryResponse,
+  GetAssetSummaryParams,
   CreateAssetCategoryPayload,
   CreateAssetPayload,
   DisposeAssetPayload,
@@ -21,6 +23,12 @@ export async function getAssets(
   params: ListAssetsParams = {},
 ): Promise<AssetListResponse> {
   return apiGet<AssetListResponse>(BASE, { params });
+}
+
+export async function getAssetSummary(
+  params: GetAssetSummaryParams = {},
+): Promise<AssetSummaryResponse> {
+  return apiGet<AssetSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getAsset(id: string): Promise<AssetResponse> {

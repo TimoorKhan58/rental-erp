@@ -1,6 +1,7 @@
 import { ReturnInvalidStatusError } from "@/modules/return/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -55,21 +56,35 @@ export class CancelReturnService {
       }
 
       const previousValues = toReturnAuditValues(existing);
-      const updated = await returnRepository.updateStatus(existing.id, {
-        status: cancelled.status,
-      });
+
+      const claimed = await returnRepository.claimStatusTransition(
+        existing.id,
+        ["DRAFT", "RECEIVED", "INSPECTED"],
+        {
+          status: cancelled.status,
+        },
+      );
+
+      if (claimed === null) {
+        throw new ConcurrentUpdateError({
+          entity: RETURN_ENTITY_NAME,
+          id: existing.id,
+          expectedStatus: "DRAFT|RECEIVED|INSPECTED",
+          action: "cancel",
+        });
+      }
 
       await auditLogger.log({
         module: RETURN_MODULE,
         entityName: RETURN_ENTITY_NAME,
-        recordId: updated.id,
+        recordId: claimed.id,
         action: "CANCEL",
         status: "SUCCESS",
         oldValues: previousValues,
-        newValues: toReturnAuditValues(updated),
+        newValues: toReturnAuditValues(claimed),
       });
 
-      return toReturnDto(updated);
+      return toReturnDto(claimed);
     });
   }
 }

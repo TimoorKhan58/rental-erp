@@ -74,6 +74,10 @@ export class InMemoryJournalEntryRepository implements IJournalEntryRepository {
       items = items.filter((item) => item.referenceType === query.referenceType);
     }
 
+    if (query.referenceId !== undefined) {
+      items = items.filter((item) => item.referenceId === query.referenceId);
+    }
+
     if (query.journalDateFrom !== undefined) {
       items = items.filter(
         (item) => item.journalDate >= query.journalDateFrom!,

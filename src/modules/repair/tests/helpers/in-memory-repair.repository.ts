@@ -1,5 +1,10 @@
 import { Repair } from "@/modules/repair/domain/repair.entity";
 import type { RepairListQuery } from "@/modules/repair/domain/repair-list.query";
+import type { RepairSummaryQuery } from "@/modules/repair/domain/repair-summary.query";
+import {
+  computeRepairSummaryResult,
+  filterRepairsForSummary,
+} from "@/modules/repair/domain/repair-summary.rules";
 import type { IRepairRepository } from "@/modules/repair/domain/repair.repository.interface";
 import type {
   CreateRepairData,
@@ -133,6 +138,24 @@ export class InMemoryRepairRepository implements IRepairRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: RepairSummaryQuery) {
+    const items = filterRepairsForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Repair.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeRepairSummaryResult(
+        items.map((item) => ({
+          status: item.status,
+          repairCost: item.repairCost,
+        })),
+      ),
+    );
   }
 
   async create(data: CreateRepairData): Promise<Repair> {

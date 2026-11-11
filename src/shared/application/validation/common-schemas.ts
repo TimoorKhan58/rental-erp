@@ -18,7 +18,23 @@ export const NonNegativeIntSchema = z.coerce.number().int().nonnegative();
 
 export const PositiveNumberSchema = z.coerce.number().positive();
 
-export const NonEmptyStringSchema = z.string().min(1);
+/** Trimmed text that must not be empty — "   " is rejected as missing (QA-006). */
+export const NonEmptyStringSchema = z
+  .string()
+  .trim()
+  .min(1, "This field is required");
+
+/**
+ * Password input: kept exactly as typed (never trimmed, so sign-in matches
+ * what was stored) but must contain at least one non-space character.
+ */
+export const PasswordSchema = z
+  .string()
+  .min(8)
+  .max(128)
+  .refine((value) => value.trim().length > 0, {
+    message: "Password cannot be only spaces",
+  });
 
 export const TrimmedStringSchema = z.string().trim();
 

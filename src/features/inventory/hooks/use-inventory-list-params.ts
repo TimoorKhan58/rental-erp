@@ -52,6 +52,18 @@ export function useInventoryListParams() {
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
+  const clearAllFilters = () => {
+    setLocalSearch("");
+    updateParams({
+      search: undefined,
+      productId: undefined,
+      warehouseId: undefined,
+      isActive: undefined,
+      stockStatus: undefined,
+      page: DEFAULT_PAGE,
+    });
+  };
+
   return {
     params,
     stockStatus,
@@ -75,6 +87,7 @@ export function useInventoryListParams() {
       sortBy: InventorySortField,
       sortOrder: ListInventoryParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters,
     refreshKey: searchParams.toString(),
   };
 }

@@ -12,10 +12,10 @@ export function ProcurementListPage() {
   const { canCreate } = useProcurementPermissions();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Procurement"
-        description="Manage purchase orders, approvals, and goods receiving."
+        description="Draft, approve, then receive goods. Inventory increases only when goods are received. Order totals are stored on the purchase order; receiving does not post expenses or journals."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Procurement" },

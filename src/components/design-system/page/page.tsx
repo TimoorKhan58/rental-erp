@@ -4,6 +4,8 @@ import { Typography } from "@/components/design-system/typography";
 
 /**
  * PageContainer — primary page width and padding wrapper.
+ * Default `app` / `wide` / `fluid` = full workspace (no centered max-width).
+ * `content` / `narrow` = readability measures for text-heavy surfaces.
  */
 export function PageContainer({
   children,
@@ -12,17 +14,24 @@ export function PageContainer({
 }: {
   children: ReactNode;
   className?: string;
-  size?: "app" | "content" | "narrow" | "wide";
+  size?: "app" | "content" | "narrow" | "wide" | "fluid";
 }) {
   const sizeClass = {
-    app: "container-app max-w-[var(--container-app)]",
-    content: "container-content max-w-[var(--container-content)] px-4 md:px-6",
-    narrow: "container-narrow max-w-[var(--container-narrow)] px-4",
-    wide: "container-wide max-w-[var(--container-wide)] px-4 md:px-6",
+    app: "app-workspace",
+    fluid: "app-workspace",
+    wide: "app-workspace",
+    content: "mx-auto max-w-[var(--container-content)]",
+    narrow: "mx-auto max-w-[var(--container-narrow)]",
   }[size];
 
   return (
-    <div className={cn("mx-auto w-full flex-1 py-[var(--spacing-page-y)]", sizeClass, className)}>
+    <div
+      className={cn(
+        "w-full min-w-0 flex-1 px-4 py-[var(--spacing-page-y)] sm:px-5 md:px-6 xl:px-8",
+        sizeClass,
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -37,7 +46,7 @@ export function ContentContainer({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-w-0 flex-1 flex-col gap-[var(--spacing-section)]", className)}>
+    <div className={cn("flex min-w-0 w-full flex-1 flex-col gap-[var(--spacing-section)]", className)}>
       {children}
     </div>
   );

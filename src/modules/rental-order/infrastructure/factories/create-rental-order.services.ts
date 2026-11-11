@@ -7,13 +7,12 @@ import { RentalOrderService } from "@/modules/rental-order/application/services/
 import { GetDateAwareAvailabilityService } from "@/modules/rental-order/application/services/get-date-aware-availability.service";
 import { GetRentalOrderByIdService } from "@/modules/rental-order/application/services/get-rental-order-by-id.service";
 import { GetRentalOrderShortfallService } from "@/modules/rental-order/application/services/get-rental-order-shortfall.service";
+import { GetRentalOrderSummaryService } from "@/modules/rental-order/application/services/get-rental-order-summary.service";
 import { ListRentalOrdersService } from "@/modules/rental-order/application/services/list-rental-orders.service";
 import { ReserveRentalOrderService } from "@/modules/rental-order/application/services/reserve-rental-order.service";
 import { SourceRentalOrderExternallyService } from "@/modules/rental-order/application/services/source-rental-order-externally.service";
 import { UpdateRentalOrderService } from "@/modules/rental-order/application/services/update-rental-order.service";
-import { CreateExternalRentalService } from "@/modules/external-rental/application/services/create-external-rental.service";
 import { createExternalRentalRepositoryFromSharedDeps } from "@/modules/external-rental/infrastructure/factories/create-external-rental.repository";
-import { createExternalRentalTransactionRunner } from "@/modules/external-rental/infrastructure/factories/create-external-rental-transaction.runner";
 import { createInventoryRepositoryFromSharedDeps } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
 import { createSupplierRepositoryFromSharedDeps } from "@/modules/supplier/infrastructure/factories/create-supplier.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -42,15 +41,6 @@ export function createRentalOrderApplicationServices(
     userId,
   });
   const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
-  const externalRentalTransactionRunner = createExternalRentalTransactionRunner(
-    deps,
-    { userId },
-  );
-  const createExternalRental = new CreateExternalRentalService(
-    externalRentalTransactionRunner,
-    numberSequences,
-    userId,
-  );
 
   const getRentalOrderById = new GetRentalOrderByIdService(repository);
   const listRentalOrders = new ListRentalOrdersService(repository);
@@ -71,12 +61,12 @@ export function createRentalOrderApplicationServices(
     inventoryRepository,
     externalRentalRepository,
   );
+  const getRentalOrderSummary = new GetRentalOrderSummaryService(repository);
   const sourceRentalOrderExternally = new SourceRentalOrderExternallyService(
-    repository,
-    inventoryRepository,
-    externalRentalRepository,
+    transactionRunner,
     supplierRepository,
-    createExternalRental,
+    numberSequences,
+    userId,
   );
 
   return {
@@ -89,6 +79,7 @@ export function createRentalOrderApplicationServices(
     cancelRentalOrder,
     getDateAwareAvailability,
     getRentalOrderShortfall,
+    getRentalOrderSummary,
     sourceRentalOrderExternally,
     rentalOrderService: new RentalOrderService(
       getRentalOrderById,

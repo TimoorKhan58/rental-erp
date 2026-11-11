@@ -11,6 +11,7 @@ import type { ListExpensesInput } from "../schemas/list-expenses.schema";
 import type { ApproveExpenseService } from "./approve-expense.service";
 import type { CreateExpenseService } from "./create-expense.service";
 import type { GetExpenseByIdService } from "./get-expense-by-id.service";
+import type { GetExpenseSummaryService } from "./get-expense-summary.service";
 import type { ListExpensesService } from "./list-expenses.service";
 import type { PayExpenseService } from "./pay-expense.service";
 import type { RejectExpenseService } from "./reject-expense.service";
@@ -20,6 +21,7 @@ import type { UpdateExpenseService } from "./update-expense.service";
 export interface ExpenseApplicationServices {
   getExpenseById: GetExpenseByIdService;
   listExpenses: ListExpensesService;
+  getExpenseSummary: GetExpenseSummaryService;
   createExpense: CreateExpenseService;
   updateExpense: UpdateExpenseService;
   submitExpense: SubmitExpenseService;

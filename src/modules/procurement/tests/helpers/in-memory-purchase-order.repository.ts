@@ -1,6 +1,8 @@
 import { PurchaseOrder } from "@/modules/procurement/domain/purchase-order.entity";
 import type { PurchaseOrderListQuery } from "@/modules/procurement/domain/purchase-order-list.query";
 import type { IPurchaseOrderRepository } from "@/modules/procurement/domain/purchase-order.repository.interface";
+import { getOrderTotal } from "@/modules/procurement/domain/purchase-order.rules";
+import { ELIGIBLE_PURCHASE_ORDER_PAYMENT_STATUSES } from "@/modules/supplier-payment/domain/supplier-payment.constants";
 import type {
   CreatePurchaseOrderData,
   UpdatePurchaseOrderData,
@@ -8,6 +10,7 @@ import type {
 } from "@/modules/procurement/domain/purchase-order.types";
 import type { PurchaseOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { acquireSupplierPaymentCommitmentLock } from "@/modules/supplier-payment/infrastructure/supplier-payment-commitment-lock";
 
 import { buildPurchaseOrderEntity } from "./purchase-order.fixtures";
 
@@ -252,6 +255,62 @@ export class InMemoryPurchaseOrderRepository implements IPurchaseOrderRepository
     return updated;
   }
 
+  async applyPaymentDelta(
+    id: PurchaseOrderId,
+    delta: number,
+  ): Promise<PurchaseOrder | null> {
+    const existing = this.store.get(id);
+
+    if (!existing || delta === 0) {
+      return null;
+    }
+
+    const order = PurchaseOrder.reconstitute(existing.record);
+    const orderTotal = getOrderTotal(order.items);
+
+    if (delta > 0) {
+      if (
+        !(ELIGIBLE_PURCHASE_ORDER_PAYMENT_STATUSES as readonly string[]).includes(
+          order.status,
+        )
+      ) {
+        return null;
+      }
+
+      const nextPaid = roundMoney(order.paidAmount + delta);
+      if (nextPaid > orderTotal) {
+        return null;
+      }
+    } else {
+      if (order.status === "CANCELLED") {
+        return null;
+      }
+
+      const absDelta = -delta;
+      if (absDelta <= 0 || order.paidAmount < absDelta) {
+        return null;
+      }
+    }
+
+    const nextPaid = roundMoney(order.paidAmount + delta);
+    const updated = PurchaseOrder.reconstitute({
+      ...existing.record,
+      paidAmount: nextPaid,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  async lockForSupplierPaymentCommitment(id: PurchaseOrderId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Purchase order not found");
+    }
+
+    await acquireSupplierPaymentCommitmentLock(id);
+  }
+
   count(): number {
     return this.store.size;
   }
@@ -263,4 +322,8 @@ export function createSeededPurchaseOrderRepository(
   const repository = new InMemoryPurchaseOrderRepository();
   repository.seed(orders);
   return repository;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }

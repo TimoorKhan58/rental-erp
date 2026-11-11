@@ -29,6 +29,15 @@ export {
   type ListDispatchesInput,
 } from "./schemas/list-dispatches.schema";
 export {
+  GetDispatchSummarySchema,
+  type GetDispatchSummaryInput,
+} from "./schemas/get-dispatch-summary.schema";
+export type {
+  DispatchSummaryDto,
+  DispatchSummaryStatsDto,
+  DispatchSummaryStatusCountsDto,
+} from "./dtos/dispatch-summary.dto";
+export {
   DELIVERY_METHODS,
   DISPATCH_ENTITY_NAME,
   DISPATCH_MODULE,
@@ -53,5 +62,6 @@ export { CompleteDispatchService } from "./services/complete-dispatch.service";
 export { CreateDispatchService } from "./services/create-dispatch.service";
 export { GetDispatchByIdService } from "./services/get-dispatch-by-id.service";
 export { ListDispatchesService } from "./services/list-dispatches.service";
+export { GetDispatchSummaryService } from "./services/get-dispatch-summary.service";
 export { UpdateDispatchService } from "./services/update-dispatch.service";
 export { DispatchService } from "./services/dispatch.service";

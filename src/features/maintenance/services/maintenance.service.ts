@@ -1,8 +1,10 @@
 import type {
   CreateMaintenancePayload,
+  GetMaintenanceSummaryParams,
   ListMaintenancesParams,
   MaintenanceListResponse,
   MaintenanceResponse,
+  MaintenanceSummaryResponse,
   UpdateMaintenancePayload,
 } from "../types";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
@@ -13,6 +15,12 @@ export async function getMaintenances(
   params: ListMaintenancesParams = {},
 ): Promise<MaintenanceListResponse> {
   return apiGet<MaintenanceListResponse>(BASE, { params });
+}
+
+export async function getMaintenanceSummary(
+  params: GetMaintenanceSummaryParams = {},
+): Promise<MaintenanceSummaryResponse> {
+  return apiGet<MaintenanceSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getMaintenance(id: string): Promise<MaintenanceResponse> {

@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Repair } from "./repair.entity";
 import type { RepairListQuery } from "./repair-list.query";
+import type { RepairSummaryQuery } from "./repair-summary.query";
+import type { RepairSummaryResult } from "./repair-summary.types";
 import type {
   CreateRepairData,
   UpdateRepairData,
@@ -14,6 +16,7 @@ export interface IRepairRepository {
   findByRepairNumber(repairNumber: string): Promise<Repair | null>;
   findByReturnId(returnId: ReturnInspectionId): Promise<Repair[]>;
   findPaged(query: RepairListQuery): Promise<PaginatedResult<Repair>>;
+  findSummaryStats(query: RepairSummaryQuery): Promise<RepairSummaryResult>;
   create(data: CreateRepairData): Promise<Repair>;
   update(id: RepairId, data: UpdateRepairData): Promise<Repair>;
   updateStatus(id: RepairId, data: UpdateRepairStatusData): Promise<Repair>;

@@ -8,14 +8,12 @@ import { ROUTES } from "@/config/routes";
 import { formatDate } from "@/lib/utils";
 import { ReturnStatusBadge } from "./return-status-badge";
 import { useReturnPermissions, useReturns } from "../hooks";
-import { getReturnTotalQuantity } from "../mappers";
+import { getReturnTotalQuantity, isRentalOrderEligibleForReturnCreate } from "../mappers";
 
 type RentalOrderReturnsSectionProps = {
   rentalOrderId: string;
   orderStatus: string;
 };
-
-const RETURN_ELIGIBLE_STATUSES = new Set(["ON_RENT", "RETURN_PENDING", "PARTIALLY_RETURNED"]);
 
 export function RentalOrderReturnsSection({
   rentalOrderId,
@@ -47,12 +45,12 @@ export function RentalOrderReturnsSection({
     (sum, record) => sum + getReturnTotalQuantity(record),
     0,
   );
-  const canCreateReturn = canCreate && RETURN_ELIGIBLE_STATUSES.has(orderStatus);
+  const canCreateReturn = canCreate && isRentalOrderEligibleForReturnCreate(orderStatus);
 
   return (
     <SectionCard
       title="Returns"
-      description="Return inspections linked to this rental order."
+      description="Returns attach to a completed dispatch. Completing a return can move this order to Partially returned, Returned, or Completed."
       actions={
         <div className="flex flex-wrap gap-2">
           {canCreateReturn ? (

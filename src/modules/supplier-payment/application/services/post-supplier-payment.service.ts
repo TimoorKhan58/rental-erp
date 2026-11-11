@@ -6,6 +6,7 @@ import {
 import { SupplierPaymentInvalidStatusError } from "@/modules/supplier-payment/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -97,20 +98,32 @@ export class PostSupplierPaymentService {
         const previousPurchaseOrderValues =
           toPurchaseOrderAuditValues(purchaseOrder);
 
-        const updatedPurchaseOrder = await applyPaymentToPurchaseOrder(
-          purchaseOrderRepository,
-          purchaseOrder,
-          existing,
-          "apply",
-        );
-
-        const updated = await supplierPaymentRepository.updateStatus(
+        const claimed = await supplierPaymentRepository.claimStatusTransition(
           existing.id,
+          "PENDING",
           {
             status: posted.status,
             postedAt: posted.postedAt,
           },
         );
+
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: SUPPLIER_PAYMENT_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "PENDING",
+            action: "post",
+          });
+        }
+
+        const updatedPurchaseOrder = await applyPaymentToPurchaseOrder(
+          purchaseOrderRepository,
+          purchaseOrder.id,
+          existing,
+          "apply",
+        );
+
+        const updated = claimed;
 
         await auditLogger.log({
           module: SUPPLIER_PAYMENT_MODULE,

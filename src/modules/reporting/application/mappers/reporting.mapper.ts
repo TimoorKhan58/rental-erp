@@ -100,6 +100,7 @@ export function toInventoryReportQuery(
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
     warehouseId: input.warehouseId,
+    inventoryId: input.inventoryId,
     lowStockOnly: input.lowStockOnly,
     overstockOnly: input.overstockOnly,
   };

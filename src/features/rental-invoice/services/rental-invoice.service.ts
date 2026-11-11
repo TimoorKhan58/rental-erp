@@ -1,7 +1,9 @@
 import type {
+  GetRentalInvoiceSummaryParams,
   ListRentalInvoicesParams,
   RentalInvoiceListResponse,
   RentalInvoiceResponse,
+  RentalInvoiceSummaryResponse,
 } from "../types";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
 
@@ -11,6 +13,12 @@ export async function getRentalInvoices(
   params: ListRentalInvoicesParams = {},
 ): Promise<RentalInvoiceListResponse> {
   return apiGet<RentalInvoiceListResponse>(BASE, { params });
+}
+
+export async function getRentalInvoiceSummary(
+  params: GetRentalInvoiceSummaryParams = {},
+): Promise<RentalInvoiceSummaryResponse> {
+  return apiGet<RentalInvoiceSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getRentalInvoice(id: string): Promise<RentalInvoiceResponse> {

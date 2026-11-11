@@ -78,9 +78,8 @@ export class CreateRepairService {
           throw error;
         }
 
-        const returnRecord = await returnRepository.findById(
-          toReturnId(data.returnId),
-        );
+        const returnId = toReturnId(data.returnId);
+        const returnRecord = await returnRepository.findById(returnId);
 
         if (returnRecord === null) {
           throw new NotFoundError({
@@ -91,18 +90,31 @@ export class CreateRepairService {
 
         validateReturnForRepair(returnRecord);
 
+        await returnRepository.lockForRepairCapacity(returnId);
+
+        const authoritativeReturn = await returnRepository.findById(returnId);
+
+        if (authoritativeReturn === null) {
+          throw new NotFoundError({
+            message: "Return not found",
+            details: { returnId: data.returnId },
+          });
+        }
+
+        validateReturnForRepair(authoritativeReturn);
+
         const rentalOrder = await rentalOrderRepository.findById(
-          returnRecord.rentalOrderId,
+          authoritativeReturn.rentalOrderId,
         );
 
         if (rentalOrder === null) {
           throw new NotFoundError({
             message: "Rental order not found",
-            details: { rentalOrderId: returnRecord.rentalOrderId },
+            details: { rentalOrderId: authoritativeReturn.rentalOrderId },
           });
         }
 
-        const returnItem = returnRecord.items.find(
+        const returnItem = authoritativeReturn.items.find(
           (item) => item.id === data.returnItemId,
         );
 
@@ -140,11 +152,11 @@ export class CreateRepairService {
 
         const priorRepairs = await loadPriorRepairsForReturn(
           repairRepository,
-          returnRecord.id,
+          authoritativeReturn.id,
         );
 
         validateRepairAgainstReturnItem(
-          returnRecord,
+          authoritativeReturn,
           data.returnItemId,
           createData.productId,
           createData.warehouseId,

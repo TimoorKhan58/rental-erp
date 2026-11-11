@@ -92,3 +92,9 @@ export function toAssetListResponse(
     meta: result.meta,
   };
 }
+
+export function toAssetSummaryResponse(
+  summary: import("@/modules/asset/application/dtos/asset-summary.dto").AssetSummaryDto,
+) {
+  return summary;
+}

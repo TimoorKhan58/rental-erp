@@ -101,6 +101,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.inventory.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.inventory.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.inventory.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.inventory.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.inventory.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.inventory.details(), id] as const,
   },
@@ -134,6 +137,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.rentalOrders.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.rentalOrders.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.rentalOrders.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.rentalOrders.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.rentalOrders.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.rentalOrders.details(), id] as const,
     availability: (params?: Record<string, unknown>) =>
@@ -146,6 +152,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.dispatches.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.dispatches.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.dispatches.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.dispatches.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.dispatches.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.dispatches.details(), id] as const,
   },
@@ -154,6 +163,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.returns.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.returns.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.returns.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.returns.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.returns.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.returns.details(), id] as const,
   },
@@ -162,6 +174,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.repairs.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.repairs.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.repairs.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.repairs.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.repairs.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.repairs.details(), id] as const,
   },
@@ -170,6 +185,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.maintenances.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.maintenances.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.maintenances.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.maintenances.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.maintenances.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.maintenances.details(), id] as const,
   },
@@ -178,6 +196,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.rentalInvoices.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.rentalInvoices.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.rentalInvoices.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.rentalInvoices.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.rentalInvoices.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.rentalInvoices.details(), id] as const,
   },
@@ -186,6 +207,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.payments.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.payments.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.payments.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.payments.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.payments.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.payments.details(), id] as const,
   },
@@ -194,6 +218,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.expenses.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.expenses.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.expenses.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.expenses.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.expenses.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.expenses.details(), id] as const,
   },
@@ -211,6 +238,9 @@ export const queryKeys = {
     lists: () => [...queryKeys.assets.all, "list"] as const,
     list: (params?: Record<string, unknown>) =>
       [...queryKeys.assets.lists(), params ?? {}] as const,
+    summaries: () => [...queryKeys.assets.all, "summary"] as const,
+    summary: (params?: Record<string, unknown>) =>
+      [...queryKeys.assets.summaries(), params ?? {}] as const,
     details: () => [...queryKeys.assets.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.assets.details(), id] as const,
   },

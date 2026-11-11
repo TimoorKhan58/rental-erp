@@ -128,7 +128,7 @@ export function RepairAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="General ledger integration for repair jobs."
+      description="Repairs do not post journal entries or customer invoices automatically."
       actions={
         <AppButton
           variant="outline"
@@ -140,8 +140,9 @@ export function RepairAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Completing a repair updates inventory stock levels, but automatic journal posting is not
-        configured for repairs yet. Record manual journal entries from accounting when needed.
+        Completing a repair posts inventory IN for the repair quantity. Repair cost stays on this
+        job. It does not create an expense, customer invoice, or journal entry. Record a manual
+        journal from accounting if needed.
       </p>
     </SectionCard>
   );
@@ -180,7 +181,7 @@ export function RepairInventoryImpactSection({
       {canReadInventory ? (
         <SectionCard
           title="Inventory record"
-          description="Stock position for the repaired product at this warehouse."
+          description="Current warehouse position. Owned stock increases only after Complete posts IN."
           actions={
             inventoryRecord ? (
               <AppButton

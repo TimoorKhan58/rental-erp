@@ -1,6 +1,6 @@
 "use client";
 
-import { PageContainer } from "@/components/layout";
+import { PageContainer, AppGrid, AppGridItem } from "@/components/layout";
 import { DashboardSkeleton } from "@/components/design-system/loading";
 import {
   useBusinessPulse,
@@ -18,8 +18,8 @@ import { QuickActionsPanel } from "./quick-actions-panel";
 import { RentalInsightsSection } from "./rental-insights-section";
 
 /**
- * DashboardPage — 20–25 second business scan for tent rental operations.
- * First viewport: pulse KPIs + attention queue. Below: ops health + actions.
+ * Operations Control Center — fluid 12-column workspace:
+ * command → today → attention → business → inventory → upcoming → secondary.
  */
 export function DashboardPage() {
   const pulse = useBusinessPulse();
@@ -39,9 +39,11 @@ export function DashboardPage() {
 
   const data = pulse.data;
   const hasError = pulse.isError && !data;
+  const staleRefreshFailed = pulse.isError && Boolean(data);
+  const refreshing = pulse.isFetching && !data;
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-4">
       <DashboardHero
         organizationName={organizationName}
         attentionCount={data?.attentionCount ?? 0}
@@ -50,55 +52,89 @@ export function DashboardPage() {
       {hasError ? (
         <div
           role="alert"
-          className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
           Could not load live business numbers. Check your reports permission or try
           refreshing.
         </div>
       ) : null}
 
-      <BusinessPulseRow
-        metrics={data?.pulseMetrics ?? []}
-        isLoading={pulse.isFetching && !data}
+      {staleRefreshFailed ? (
+        <div
+          role="status"
+          className="rounded-md border border-warning/30 bg-warning-muted/40 px-3 py-2 text-xs text-warning-foreground"
+        >
+          Live refresh failed — showing the last successful snapshot.
+        </div>
+      ) : null}
+
+      <OpsHealthGrid
+        title="Today"
+        description="Dispatches, returns, and assets offline"
+        columns="today"
+        items={data?.todayOps ?? data?.opsHealth?.slice(0, 4) ?? []}
+        isLoading={refreshing}
+        emptyLabel="No dispatches, returns, or asset jobs today."
       />
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
+      <AppGrid>
+        <AppGridItem span={8} smSpan={6}>
           <AttentionNeeded
             items={data?.attention ?? []}
             headline={data?.headline ?? ""}
-            isLoading={pulse.isFetching && !data}
+            isLoading={refreshing}
           />
-
-          <OpsHealthGrid
-            items={data?.opsHealth ?? []}
-            isLoading={pulse.isFetching && !data}
-          />
-
-          <RentalInsightsSection />
-
-          <CatalogSnapshot
-            customers={data?.catalog.customers ?? 0}
-            products={data?.catalog.products ?? 0}
-            suppliers={data?.catalog.suppliers ?? 0}
-            warehouses={data?.catalog.warehouses ?? 0}
-            isLoading={pulse.isFetching && !data}
-          />
-        </div>
-
-        <aside className="space-y-6">
+        </AppGridItem>
+        <AppGridItem span={4} smSpan={6} as="aside">
           <QuickActionsPanel
             actions={quickActions.data ?? []}
             isLoading={quickActions.isLoading}
             compact
           />
+        </AppGridItem>
+      </AppGrid>
 
+      <BusinessPulseRow
+        metrics={data?.pulseMetrics ?? []}
+        isLoading={refreshing}
+      />
+
+      <OpsHealthGrid
+        title="Inventory health"
+        description="On hand, committed, and available to rent"
+        columns="inventory"
+        items={data?.inventoryHealth ?? []}
+        isLoading={refreshing}
+        emptyLabel="No inventory recorded yet."
+      />
+
+      <OpsHealthGrid
+        title="Upcoming"
+        description="Orders and supply already in the pipeline"
+        columns="upcoming"
+        items={data?.upcoming ?? []}
+        isLoading={refreshing}
+        emptyLabel="No upcoming orders or purchase orders."
+      />
+
+      <AppGrid className="border-t border-border pt-4">
+        <AppGridItem span={8} smSpan={6} className="space-y-4">
+          <RentalInsightsSection />
+          <CatalogSnapshot
+            customers={data?.catalog.customers ?? 0}
+            products={data?.catalog.products ?? 0}
+            suppliers={data?.catalog.suppliers ?? 0}
+            warehouses={data?.catalog.warehouses ?? 0}
+            isLoading={refreshing}
+          />
+        </AppGridItem>
+        <AppGridItem span={4} smSpan={6} as="aside">
           <NotificationsPanel
             notifications={notifications.data ?? []}
             isLoading={notifications.isLoading}
           />
-        </aside>
-      </div>
+        </AppGridItem>
+      </AppGrid>
     </PageContainer>
   );
 }

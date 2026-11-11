@@ -9,7 +9,6 @@ import {
   INVENTORY_ENTITY_NAME,
   INVENTORY_MODULE,
 } from "@/modules/inventory/application/services/inventory-service.constants";
-import { InventoryInvariantError } from "@/modules/inventory/domain/inventory.errors";
 import { ConflictError, NotFoundError } from "@/shared/infrastructure/errors";
 import { ValidationError } from "@/shared/infrastructure/errors";
 
@@ -104,7 +103,7 @@ describe("CreateInventoryService", () => {
 });
 
 describe("UpdateInventoryService", () => {
-  it("updates an existing inventory record", async () => {
+  it("updates metadata fields on an existing inventory record", async () => {
     const repository = new InMemoryInventoryRepository();
     repository.seed([buildInventoryEntity()]);
     const auditLogger = new MockAuditLogger();
@@ -114,11 +113,13 @@ describe("UpdateInventoryService", () => {
 
     const result = await service.execute(
       { id: INVENTORY_ID },
-      { quantityOnHand: 200 },
+      { minimumStock: 25, isActive: false },
     );
 
-    expect(result.quantityOnHand).toBe(200);
-    expect(result.availableQuantity).toBe(190);
+    expect(result.minimumStock).toBe(25);
+    expect(result.isActive).toBe(false);
+    expect(result.quantityOnHand).toBe(100);
+    expect(result.reservedQuantity).toBe(10);
   });
 
   it("throws when inventory does not exist", async () => {
@@ -129,38 +130,8 @@ describe("UpdateInventoryService", () => {
     );
 
     await expect(
-      service.execute({ id: INVENTORY_ID }, { quantityOnHand: 200 }),
+      service.execute({ id: INVENTORY_ID }, { minimumStock: 5 }),
     ).rejects.toBeInstanceOf(NotFoundError);
-  });
-
-  it("re-validates reserved quantity against updated on-hand", async () => {
-    const repository = new InMemoryInventoryRepository();
-    repository.seed([buildInventoryEntity()]);
-    const auditLogger = new MockAuditLogger();
-    const service = new UpdateInventoryService(
-      createPassThroughTransactionRunner({ repository, auditLogger }),
-    );
-
-    await expect(
-      service.execute({ id: INVENTORY_ID }, { quantityOnHand: 5 }),
-    ).rejects.toBeInstanceOf(InventoryInvariantError);
-  });
-
-  it("updates reserved quantity", async () => {
-    const repository = new InMemoryInventoryRepository();
-    repository.seed([buildInventoryEntity()]);
-    const auditLogger = new MockAuditLogger();
-    const service = new UpdateInventoryService(
-      createPassThroughTransactionRunner({ repository, auditLogger }),
-    );
-
-    const result = await service.execute(
-      { id: INVENTORY_ID },
-      { reservedQuantity: 20 },
-    );
-
-    expect(result.reservedQuantity).toBe(20);
-    expect(result.availableQuantity).toBe(80);
   });
 
   it("clears maximumStock when set to null", async () => {
@@ -177,6 +148,8 @@ describe("UpdateInventoryService", () => {
     );
 
     expect(result.maximumStock).toBeNull();
+    expect(result.quantityOnHand).toBe(100);
+    expect(result.reservedQuantity).toBe(10);
   });
 });
 
@@ -327,16 +300,18 @@ describe("Inventory application audit behavior", () => {
       createPassThroughTransactionRunner({ repository, auditLogger }),
     );
 
-    await service.execute({ id: INVENTORY_ID }, { quantityOnHand: 200 });
+    await service.execute({ id: INVENTORY_ID }, { minimumStock: 25 });
 
     expect(auditLogger.entries[0]?.action).toBe("UPDATE");
     expect(auditLogger.entries[0]?.oldValues).toMatchObject({
       quantityOnHand: 100,
       availableQuantity: 90,
+      minimumStock: 5,
     });
     expect(auditLogger.entries[0]?.newValues).toMatchObject({
-      quantityOnHand: 200,
-      availableQuantity: 190,
+      quantityOnHand: 100,
+      availableQuantity: 90,
+      minimumStock: 25,
     });
   });
 

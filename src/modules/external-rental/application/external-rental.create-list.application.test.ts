@@ -6,11 +6,20 @@ import { ListExternalRentalsService } from "@/modules/external-rental/applicatio
 import type { CreateExternalRentalInput } from "@/modules/external-rental/application/schemas/external-rental.schemas";
 import { ConflictError, UnprocessableError } from "@/shared/infrastructure/errors";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
+import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
+import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
+import {
+  ITEM_ID,
+  PRODUCT_ID,
+  RENTAL_ORDER_ID,
+  USER_ID,
+  WAREHOUSE_ID,
+  buildRentalOrderEntity,
+} from "@/modules/rental-order/tests/helpers/rental-order.fixtures";
+import { InMemoryRentalOrderRepository } from "@/modules/rental-order/tests/helpers/in-memory-rental-order.repository";
 
 import {
   AGREEMENT_ID,
-  RENTAL_ORDER_ID,
-  USER_ID,
   VALID_CREATE_INPUT,
   buildCreateExternalRentalAgreementData,
   buildExternalRentalAgreementEntity,
@@ -48,15 +57,56 @@ function createNumberSequences(
   } as unknown as INumberSequenceRepository;
 }
 
+function createShortfallBackedHarness(
+  externalRentals = createSeededExternalRentalRepository([]),
+) {
+  const rentalOrders = new InMemoryRentalOrderRepository();
+  rentalOrders.seed([
+    buildRentalOrderEntity({
+      id: RENTAL_ORDER_ID as never,
+      status: "CONFIRMED",
+      warehouseId: WAREHOUSE_ID,
+      items: [
+        {
+          id: ITEM_ID,
+          productId: PRODUCT_ID,
+          quantity: 500,
+          dailyRate: 10,
+          reservedQuantity: 0,
+          startDate: new Date("2026-02-01T00:00:00.000Z"),
+          endDate: new Date("2026-02-05T00:00:00.000Z"),
+          numberOfDays: 5,
+        },
+      ],
+    }),
+  ]);
+
+  const inventory = new InMemoryInventoryRepository();
+  inventory.seed([
+    buildInventoryEntity({
+      quantityOnHand: 300,
+      reservedQuantity: 0,
+      productId: PRODUCT_ID,
+      warehouseId: WAREHOUSE_ID,
+    }),
+  ]);
+
+  const auditLogger = new MockAuditLogger();
+  const runner = createPassThroughExternalRentalTransactionRunner({
+    externalRentalRepository: externalRentals,
+    rentalOrderRepository: rentalOrders,
+    inventoryRepository: inventory,
+    auditLogger,
+    userId: USER_ID,
+  });
+
+  return { externalRentals, auditLogger, runner };
+}
+
 describe("CreateExternalRentalService", () => {
   it("creates agreement via repository only (no inventory side effects)", async () => {
-    const repository = createSeededExternalRentalRepository([]);
-    const auditLogger = new MockAuditLogger();
-    const runner = createPassThroughExternalRentalTransactionRunner({
-      externalRentalRepository: repository,
-      auditLogger,
-      userId: USER_ID,
-    });
+    const { externalRentals: repository, auditLogger, runner } =
+      createShortfallBackedHarness();
     const createSpy = vi.spyOn(repository, "create");
     const service = new CreateExternalRentalService(
       runner,
@@ -67,7 +117,17 @@ describe("CreateExternalRentalService", () => {
     const result = await service.execute(
       toCreateInput({
         agreementNumber: undefined,
-        rentalOrderId: "bb0e8400-e29b-41d4-a716-446655440099",
+        rentalOrderId: RENTAL_ORDER_ID,
+        warehouseId: WAREHOUSE_ID,
+        items: [
+          {
+            productId: PRODUCT_ID,
+            rentalOrderItemId: ITEM_ID,
+            quantityRequested: 150,
+            unitCost: 25,
+            notes: null,
+          },
+        ],
       }),
     );
 
@@ -80,12 +140,7 @@ describe("CreateExternalRentalService", () => {
   });
 
   it("requires userId", async () => {
-    const repository = createSeededExternalRentalRepository([]);
-    const runner = createPassThroughExternalRentalTransactionRunner({
-      externalRentalRepository: repository,
-      auditLogger: new MockAuditLogger(),
-      userId: USER_ID,
-    });
+    const { runner } = createShortfallBackedHarness();
     const service = new CreateExternalRentalService(
       runner,
       createNumberSequences(),
@@ -99,13 +154,12 @@ describe("CreateExternalRentalService", () => {
 
   it("conflicts when rental order already has an active agreement", async () => {
     const repository = createSeededExternalRentalRepository([
-      buildExternalRentalAgreementEntity(),
+      buildExternalRentalAgreementEntity({
+        rentalOrderId: RENTAL_ORDER_ID as never,
+        warehouseId: WAREHOUSE_ID as never,
+      }),
     ]);
-    const runner = createPassThroughExternalRentalTransactionRunner({
-      externalRentalRepository: repository,
-      auditLogger: new MockAuditLogger(),
-      userId: USER_ID,
-    });
+    const { runner } = createShortfallBackedHarness(repository);
     const service = new CreateExternalRentalService(
       runner,
       createNumberSequences(),
@@ -117,6 +171,16 @@ describe("CreateExternalRentalService", () => {
         toCreateInput({
           agreementNumber: "ERA-2026-002",
           rentalOrderId: RENTAL_ORDER_ID,
+          warehouseId: WAREHOUSE_ID,
+          items: [
+            {
+              productId: PRODUCT_ID,
+              rentalOrderItemId: ITEM_ID,
+              quantityRequested: 50,
+              unitCost: 25,
+              notes: null,
+            },
+          ],
         }),
       ),
     ).rejects.toSatisfy(

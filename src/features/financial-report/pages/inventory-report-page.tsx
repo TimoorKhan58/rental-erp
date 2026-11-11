@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { MetricCard } from "@/components/design-system/card";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState, EmptyState } from "@/components/feedback";
@@ -21,12 +21,15 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query";
 import {
   ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
 import { getInventoryReportColumns } from "../tables";
-import { toPaginationMeta } from "../mappers";
+import { withReportSorting } from "../tables/report-sortable-columns";
+import { compactActiveFilters, toPaginationMeta } from "../mappers";
 import { useInventoryReport, useInventoryReportParams } from "../hooks";
+import type { InventoryReportSortField } from "../types";
 
 function InventoryReportContent() {
   const {
@@ -37,6 +40,9 @@ function InventoryReportContent() {
     setPage,
     setWarehouseFilter,
     setLowStockOnly,
+    setOverstockOnly,
+    setSorting,
+    clearAllFilters,
   } = useInventoryReportParams();
   const { data, isLoading, isError, error, refetch, isFetching } =
     useInventoryReport(params);
@@ -57,7 +63,18 @@ function InventoryReportContent() {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const columns = getInventoryReportColumns();
+  const columns = withReportSorting(
+    getInventoryReportColumns(),
+    {
+      productCode: "productCode",
+      warehouseCode: "warehouseCode",
+      quantityOnHand: "quantityOnHand",
+      availableQuantity: "availableQuantity",
+      inventoryValue: "inventoryValue",
+    },
+    params,
+    (field, order) => setSorting(field as InventoryReportSortField, order ?? "asc"),
+  );
 
   const chartData = useMemo(
     () =>
@@ -67,6 +84,41 @@ function InventoryReportContent() {
       })),
     [data],
   );
+
+  const activeFilters = compactActiveFilters([
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.warehouseId
+      ? {
+          id: "warehouse",
+          label: "Warehouse",
+          onClear: () => setWarehouseFilter(undefined),
+        }
+      : null,
+    params.lowStockOnly
+      ? {
+          id: "lowStock",
+          label: "Low stock only",
+          onClear: () => setLowStockOnly(undefined),
+        }
+      : null,
+    params.overstockOnly
+      ? {
+          id: "overstock",
+          label: "Overstock only",
+          onClear: () => setOverstockOnly(undefined),
+        }
+      : null,
+  ]);
+  const hasActiveFilters = activeFilters.length > 0;
 
   if (isError) {
     return (
@@ -84,12 +136,24 @@ function InventoryReportContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {data ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <MetricCard label="Total quantity" value={String(data.totalQuantity)} />
-          <MetricCard label="Available" value={String(data.totalAvailable)} />
-          <MetricCard label="Total value" value={formatCurrency(data.totalValue)} />
+          <MetricCard
+            label="On hand"
+            value={String(data.totalQuantity)}
+            hint="Filtered snapshot totals"
+          />
+          <MetricCard
+            label="Available"
+            value={String(data.totalAvailable)}
+            hint="On hand minus reserved"
+          />
+          <MetricCard
+            label="Inventory value"
+            value={formatCurrency(data.totalValue)}
+            hint="Filtered snapshot"
+          />
           <MetricCard label="Reserved" value={String(data.totalReserved)} />
           <MetricCard label="Low stock" value={String(data.lowStockCount)} />
           <MetricCard label="Overstock" value={String(data.overstockCount)} />
@@ -97,11 +161,13 @@ function InventoryReportContent() {
       ) : null}
 
       <AmountBarChart
-        title="Inventory value by product"
-        description="Backend inventory values for listed lines"
+        title="Inventory value (this page)"
+        description="Values for the current page only"
         data={chartData}
         isLoading={isLoading}
       />
+
+      <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
 
       <DataTableShell
         columns={columns}
@@ -112,7 +178,7 @@ function InventoryReportContent() {
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search inventory..."
+            placeholder="Search product code, name, or warehouse code..."
             className="w-full sm:max-w-xs"
             aria-label="Search inventory report"
           />
@@ -141,20 +207,32 @@ function InventoryReportContent() {
               value={
                 params.lowStockOnly === true
                   ? "low"
-                  : params.lowStockOnly === false
-                    ? "all"
+                  : params.overstockOnly === true
+                    ? "over"
                     : "all"
               }
-              onValueChange={(value) =>
-                setLowStockOnly(value === "low" ? true : undefined)
-              }
+              onValueChange={(value) => {
+                if (value === "low") {
+                  setLowStockOnly(true);
+                  return;
+                }
+
+                if (value === "over") {
+                  setOverstockOnly(true);
+                  return;
+                }
+
+                setLowStockOnly(undefined);
+                setOverstockOnly(undefined);
+              }}
             >
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter low stock">
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filter stock flags">
                 <SelectValue placeholder="Stock filter" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All stock</SelectItem>
                 <SelectItem value="low">Low stock only</SelectItem>
+                <SelectItem value="over">Overstock only</SelectItem>
               </SelectContent>
             </Select>
           </>
@@ -191,8 +269,19 @@ function InventoryReportContent() {
         }
         emptyState={
           <EmptyState
-            title="No inventory data"
-            description="Inventory report lines will appear when stock exists."
+            title={hasActiveFilters ? "No matching rows" : "No inventory data"}
+            description={
+              hasActiveFilters
+                ? "No inventory lines match the current search or filters."
+                : "Inventory report lines will appear when stock exists."
+            }
+            action={
+              hasActiveFilters ? (
+                <AppButton variant="outline" onClick={clearAllFilters}>
+                  Clear filters
+                </AppButton>
+              ) : undefined
+            }
           />
         }
         loadingState={<LoadingState label="Loading inventory report..." />}
@@ -211,7 +300,7 @@ export function InventoryReportPage() {
     <PageContainer>
       <PageHeader
         title="Inventory Report"
-        description="Backend inventory quantities, values, and stock flags."
+        description="Current stock snapshot using on-hand, reserved, and available quantities."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -219,9 +308,11 @@ export function InventoryReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading inventory report..." />}>
-        <InventoryReportContent />
-      </Suspense>
+      <ReportPermissionGate requireOperational>
+        <Suspense fallback={<LoadingState label="Loading inventory report..." />}>
+          <InventoryReportContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

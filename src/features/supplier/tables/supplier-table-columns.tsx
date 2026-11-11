@@ -66,6 +66,31 @@ export function getSupplierTableColumns({
       headerClassName: "w-10",
     },
     {
+      id: "name",
+      header: (
+        <SortableColumnHeader
+          label="Supplier"
+          field="name"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
+        />
+      ),
+      cell: (row) => (
+        <Link
+          href={ROUTES.supplierDetail(row.id)}
+          className="group block min-w-[8rem]"
+        >
+          <span className="block truncate font-medium text-primary group-hover:underline">
+            {row.name}
+          </span>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            {row.supplierCode}
+          </span>
+        </Link>
+      ),
+    },
+    {
       id: "supplierCode",
       header: (
         <SortableColumnHeader
@@ -77,26 +102,8 @@ export function getSupplierTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.supplierDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.supplierCode}
-        </Link>
+        <span className="text-sm text-muted-foreground">{row.supplierCode}</span>
       ),
-    },
-    {
-      id: "name",
-      header: (
-        <SortableColumnHeader
-          label="Name"
-          field="name"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => row.name,
     },
     {
       id: "phone",

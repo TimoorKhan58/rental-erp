@@ -24,6 +24,7 @@ type RentalOrderLineItemsFieldProps = {
   startDate?: string;
   endDate?: string;
   readOnly?: boolean;
+  excludeRentalOrderId?: string;
 };
 
 function createEmptyLineItem(startDate: string, endDate: string) {
@@ -42,6 +43,7 @@ export function RentalOrderLineItemsField({
   startDate,
   endDate,
   readOnly = false,
+  excludeRentalOrderId,
 }: RentalOrderLineItemsFieldProps) {
   const form = useFormContext<CreateRentalOrderFormValues>();
   const { fields, append, remove } = useFieldArray({
@@ -53,6 +55,11 @@ export function RentalOrderLineItemsField({
   const watchedEndDate = form.watch("endDate");
   const warehouseId = form.watch("warehouseId");
   const items = form.watch("items");
+  const itemsError = form.formState.errors.items;
+  const itemsRootError =
+    itemsError && typeof itemsError === "object" && "message" in itemsError
+      ? String(itemsError.message ?? "")
+      : itemsError?.root?.message;
 
   const orderStartDate = startDate ?? watchedStartDate;
   const orderEndDate = endDate ?? watchedEndDate;
@@ -60,7 +67,6 @@ export function RentalOrderLineItemsField({
     if (!orderStartDate || !orderEndDate) {
       return 1;
     }
-
     return calculateRentalDays(orderStartDate, orderEndDate);
   }, [orderStartDate, orderEndDate]);
 
@@ -94,10 +100,7 @@ export function RentalOrderLineItemsField({
     }
   }, [form, orderEndDate, orderStartDate, readOnly]);
 
-  const orderTotal = useMemo(
-    () => calculateOrderTotal(items ?? []),
-    [items],
-  );
+  const orderTotal = useMemo(() => calculateOrderTotal(items ?? []), [items]);
 
   const selectOptions = productOptions.map((option) => ({
     value: option.id,
@@ -106,17 +109,22 @@ export function RentalOrderLineItemsField({
   }));
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Default rental window: {defaultRentalDays} day
-        {defaultRentalDays === 1 ? "" : "s"}
+    <div className="space-y-3">
+      <p className="text-[length:var(--text-caption)] text-muted-foreground">
+        Default window: {defaultRentalDays} day{defaultRentalDays === 1 ? "" : "s"}
         {orderStartDate && orderEndDate
           ? ` (${formatDate(orderStartDate)} – ${formatDate(orderEndDate)})`
           : ""}
-        . Toggle custom dates per product when mehndi, barat, and walima need different periods.
+        . Enable custom dates per line when events need different periods.
       </p>
 
-      <div className="space-y-3">
+      {itemsRootError ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+          {itemsRootError}
+        </p>
+      ) : null}
+
+      <div className="space-y-2">
         {fields.map((field, index) => {
           const line = items?.[index];
           const lineDays =
@@ -128,10 +136,12 @@ export function RentalOrderLineItemsField({
           return (
             <div
               key={field.id}
-              className="rounded-lg border border-border bg-card p-4 shadow-soft"
+              className="rounded-md border border-border bg-card p-3"
             >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <p className="text-sm font-medium">Line {index + 1}</p>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-[length:var(--text-caption)] font-semibold tracking-wide text-muted-foreground uppercase">
+                  Line {index + 1}
+                </p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold tabular-nums">
                     {formatCurrency(subtotal)}
@@ -144,6 +154,11 @@ export function RentalOrderLineItemsField({
                       onClick={() => remove(index)}
                       disabled={fields.length <= 1}
                       aria-label={`Remove line item ${index + 1}`}
+                      title={
+                        fields.length <= 1
+                          ? "An order must have at least one line item"
+                          : `Remove line item ${index + 1}`
+                      }
                     >
                       <Trash2Icon className="size-4" />
                     </AppButton>
@@ -151,11 +166,10 @@ export function RentalOrderLineItemsField({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {readOnly ? (
-                  <p className="text-sm">
-                    {selectOptions.find((option) => option.value === line?.productId)
-                      ?.label ??
+                  <p className="text-sm font-medium">
+                    {selectOptions.find((option) => option.value === line?.productId)?.label ??
                       line?.productId ??
                       "—"}
                   </p>
@@ -164,7 +178,7 @@ export function RentalOrderLineItemsField({
                     control={form.control}
                     name={`items.${index}.productId`}
                     label="Product"
-                    placeholder="Select product"
+                    placeholder="Search and select product"
                     searchPlaceholder="Search products..."
                     options={selectOptions}
                   />
@@ -175,20 +189,26 @@ export function RentalOrderLineItemsField({
                   warehouseId={warehouseId}
                   startDate={line?.startDate}
                   endDate={line?.endDate}
+                  excludeRentalOrderId={excludeRentalOrderId}
+                  requestedQuantity={line?.quantity}
                 />
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-3">
                   {readOnly ? (
                     <>
                       <div>
-                        <p className="text-xs text-muted-foreground">Quantity</p>
-                        <p className="text-sm">{line?.quantity ?? "—"}</p>
+                        <p className="text-[length:var(--text-caption)] text-muted-foreground">Qty</p>
+                        <p className="text-sm tabular-nums">{line?.quantity ?? "—"}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Daily rate</p>
-                        <p className="text-sm">
+                        <p className="text-[length:var(--text-caption)] text-muted-foreground">Daily rate</p>
+                        <p className="text-sm tabular-nums">
                           {line ? formatCurrency(line.dailyRate) : "—"}
                         </p>
+                      </div>
+                      <div>
+                        <p className="text-[length:var(--text-caption)] text-muted-foreground">Days</p>
+                        <p className="text-sm tabular-nums">{lineDays}</p>
                       </div>
                     </>
                   ) : (
@@ -207,41 +227,35 @@ export function RentalOrderLineItemsField({
                         min={0.01}
                         step={0.01}
                       />
+                      <div className="flex flex-col justify-end pb-1">
+                        <p className="text-[length:var(--text-caption)] text-muted-foreground">Days</p>
+                        <p className="text-sm font-medium tabular-nums">{lineDays}</p>
+                      </div>
                     </>
                   )}
                 </div>
 
                 {readOnly ? (
-                  <div>
-                    <p className="text-xs text-muted-foreground">Dates</p>
-                    <p className="text-sm">
-                      {line?.useCustomDates ? "Custom" : "Order default"} · {lineDays}{" "}
-                      day{lineDays === 1 ? "" : "s"}
-                    </p>
-                    {line?.startDate && line?.endDate ? (
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(line.startDate)} – {formatDate(line.endDate)}
-                      </p>
-                    ) : null}
-                  </div>
+                  <p className="text-[length:var(--text-caption)] text-muted-foreground">
+                    {line?.useCustomDates ? "Custom dates" : "Order default"}
+                    {line?.startDate && line?.endDate
+                      ? ` · ${formatDate(line.startDate)} – ${formatDate(line.endDate)}`
+                      : ""}
+                  </p>
                 ) : (
                   <>
                     <CheckboxField
                       control={form.control}
                       name={`items.${index}.useCustomDates`}
-                      label="Custom dates"
+                      label="Custom dates for this line"
                     />
                     {!line?.useCustomDates ? (
-                      <div className="space-y-0.5 text-xs text-muted-foreground">
-                        <p>
-                          {lineDays} day{lineDays === 1 ? "" : "s"}
-                        </p>
-                        {line?.startDate && line?.endDate ? (
-                          <p>
-                            {formatDate(line.startDate)} – {formatDate(line.endDate)}
-                          </p>
-                        ) : null}
-                      </div>
+                      <p className="text-[length:var(--text-caption)] text-muted-foreground">
+                        Using order dates
+                        {line?.startDate && line?.endDate
+                          ? `: ${formatDate(line.startDate)} – ${formatDate(line.endDate)}`
+                          : ""}
+                      </p>
                     ) : (
                       <div className="grid gap-2 sm:grid-cols-2">
                         <DatePickerField
@@ -264,9 +278,11 @@ export function RentalOrderLineItemsField({
         })}
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-4 py-3">
-        <span className="font-medium">Order total</span>
-        <span className="font-semibold tabular-nums">{formatCurrency(orderTotal)}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/20 px-3 py-2.5">
+        <span className="text-sm font-medium">Line items total</span>
+        <span className="font-heading text-base font-semibold tabular-nums">
+          {formatCurrency(orderTotal)}
+        </span>
       </div>
 
       {!readOnly ? (

@@ -1,5 +1,6 @@
 export const RENTAL_INVOICE_ROUTES = {
   base: "/api/rental-invoices",
+  summary: "/api/rental-invoices/summary",
   generate: "/api/rental-invoices/generate",
   byId: (id: string) => `/api/rental-invoices/${id}`,
   issue: (id: string) => `/api/rental-invoices/${id}/issue`,

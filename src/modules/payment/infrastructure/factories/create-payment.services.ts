@@ -1,6 +1,7 @@
 import type { PaymentApplicationServices as PaymentApplicationServicesBase } from "@/modules/payment/application/services/payment-application-services.interface";
 import { CreatePaymentService } from "@/modules/payment/application/services/create-payment.service";
 import { GetPaymentByIdService } from "@/modules/payment/application/services/get-payment-by-id.service";
+import { GetPaymentSummaryService } from "@/modules/payment/application/services/get-payment-summary.service";
 import { ListPaymentsService } from "@/modules/payment/application/services/list-payments.service";
 import { PaymentService } from "@/modules/payment/application/services/payment.service";
 import type { IPaymentService } from "@/modules/payment/application/services/payment-application-services.interface";
@@ -29,6 +30,7 @@ export function createPaymentApplicationServices(
   const numberSequences = createNumberSequenceRepositoryFromSharedDeps(deps);
 
   const getPaymentById = new GetPaymentByIdService(repository);
+  const getPaymentSummary = new GetPaymentSummaryService(repository);
   const listPayments = new ListPaymentsService(repository);
   const createPayment = new CreatePaymentService(
     transactionRunner,
@@ -40,6 +42,7 @@ export function createPaymentApplicationServices(
 
   return {
     getPaymentById,
+    getPaymentSummary,
     listPayments,
     createPayment,
     updatePayment,

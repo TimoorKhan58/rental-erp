@@ -21,6 +21,7 @@ import {
   appendOptionalInvoiceCharges,
   buildRentalInvoiceLinesFromOrder,
 } from "./build-rental-invoice-lines";
+import { loadReturnsForRentalOrder } from "./load-rental-order-returns";
 import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
 
 /**
@@ -76,20 +77,11 @@ export class ConvertMissingToLossService {
         });
       }
 
-      const dispatches = await dispatchRepository.findPaged({
-        page: 1,
-        pageSize: 100,
-        rentalOrderId: invoice.rentalOrderId,
-        sortOrder: "desc",
-      });
-
-      const returns = (
-        await Promise.all(
-          dispatches.items.map((dispatch) =>
-            returnRepository.findByDispatchId(dispatch.id),
-          ),
-        )
-      ).flat();
+      const returns = await loadReturnsForRentalOrder(
+        invoice.rentalOrderId,
+        dispatchRepository,
+        returnRepository,
+      );
 
       let convertedQty = 0;
 
@@ -133,13 +125,11 @@ export class ConvertMissingToLossService {
         });
       }
 
-      const refreshedReturns = (
-        await Promise.all(
-          dispatches.items.map((dispatch) =>
-            returnRepository.findByDispatchId(dispatch.id),
-          ),
-        )
-      ).flat();
+      const refreshedReturns = await loadReturnsForRentalOrder(
+        invoice.rentalOrderId,
+        dispatchRepository,
+        returnRepository,
+      );
 
       const uniqueProductIds = [
         ...new Set(rentalOrder.items.map((item) => item.productId)),

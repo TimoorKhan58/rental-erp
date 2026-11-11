@@ -134,15 +134,17 @@ export function useProductRelatedData(product: ProductResponse | undefined) {
     );
   }, [inventoryRows]);
 
+  const productId = product?.id;
+
   const procurementRows = useMemo(() => {
-    if (!product?.id) {
+    if (!productId) {
       return [];
     }
 
     return (procurements.data?.items ?? [])
       .flatMap((order) =>
         order.items
-          .filter((item) => item.productId === product.id)
+          .filter((item) => item.productId === productId)
           .map((item) => ({
             orderId: order.id,
             poNumber: order.poNumber,
@@ -154,19 +156,19 @@ export function useProductRelatedData(product: ProductResponse | undefined) {
           })),
       )
       .slice(0, 5);
-  }, [procurements.data?.items, product?.id]);
+  }, [procurements.data?.items, productId]);
 
   const rentalStats = useMemo(() => {
-    if (!product?.id) {
+    if (!productId) {
       return null;
     }
 
     return (
-      productReport.data?.lines.find((line) => line.productId === product.id) ??
+      productReport.data?.lines.find((line) => line.productId === productId) ??
       productReport.data?.lines[0] ??
       null
     );
-  }, [product?.id, productReport.data?.lines]);
+  }, [productId, productReport.data?.lines]);
 
   return {
     permissions: {

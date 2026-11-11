@@ -34,6 +34,7 @@ export function SettingsSecurityPage() {
   if (!canReadSettings) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <AccessDeniedState description="You do not have permission to view security settings." />
       </PageContainer>
     );
@@ -42,6 +43,7 @@ export function SettingsSecurityPage() {
   if (isError || !security) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <QueryErrorState
           title="Failed to load security settings"
           description={error?.message ?? "An error occurred."}
@@ -72,7 +74,7 @@ export function SettingsSecurityPage() {
     <PageContainer>
       <PageHeader
         title="Security"
-        description="Password and session policy fields from system settings."
+        description="Stored security policy record. Live password, lockout, and session rules use Better Auth environment configuration."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

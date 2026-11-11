@@ -1,3 +1,4 @@
+import { postPaymentReceivedJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toRentalInvoiceAuditValues } from "@/modules/rental-invoice/application/services/rental-invoice-audit.mapper";
 import {
   RENTAL_INVOICE_ENTITY_NAME,
@@ -6,6 +7,7 @@ import {
 import { PaymentInvalidStatusError } from "@/modules/payment/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -19,6 +21,7 @@ import {
   toPaymentDto,
   toPaymentId,
   toRentalInvoiceId,
+  toUserId,
 } from "../mappers/payment.mapper";
 import {
   PaymentIdParamSchema,
@@ -47,9 +50,12 @@ export class PostPaymentService {
       async ({
         paymentRepository,
         rentalInvoiceRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
         notificationService,
         db,
+        userId,
       }) => {
         const existing = await paymentRepository.findById(toPaymentId(id));
 
@@ -89,26 +95,62 @@ export class PostPaymentService {
           });
         }
 
+        await rentalInvoiceRepository.lockForPaymentCommitment(invoice.id);
+
+        const authoritativeInvoice = await rentalInvoiceRepository.findById(
+          invoice.id,
+        );
+
+        if (authoritativeInvoice === null) {
+          throw new NotFoundError({
+            message: "Rental invoice not found",
+            details: { rentalInvoiceId: existing.rentalInvoiceId },
+          });
+        }
+
         validateInvoiceForPayment(
-          invoice,
+          authoritativeInvoice,
           existing.customerId,
           existing.amount,
+          {
+            pendingAmount: await paymentRepository.sumPendingAmountByRentalInvoiceId(
+              existing.rentalInvoiceId,
+              existing.id,
+            ),
+          },
         );
 
         const previousPaymentValues = toPaymentAuditValues(existing);
-        const previousInvoiceValues = toRentalInvoiceAuditValues(invoice);
+        const previousInvoiceValues = toRentalInvoiceAuditValues(
+          authoritativeInvoice,
+        );
+
+        const claimed = await paymentRepository.claimStatusTransition(
+          existing.id,
+          "PENDING",
+          {
+            status: posted.status,
+            postedAt: posted.postedAt,
+          },
+        );
+
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: PAYMENT_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "PENDING",
+            action: "post",
+          });
+        }
 
         const updatedInvoice = await applyPaymentToInvoice(
           rentalInvoiceRepository,
-          invoice,
+          authoritativeInvoice.id,
           existing,
           "apply",
         );
 
-        const updated = await paymentRepository.updateStatus(existing.id, {
-          status: posted.status,
-          postedAt: posted.postedAt,
-        });
+        const updated = claimed;
 
         await auditLogger.log({
           module: PAYMENT_MODULE,
@@ -142,6 +184,22 @@ export class PostPaymentService {
             amount: updated.amount,
           },
         });
+
+        if (userId !== undefined) {
+          await postPaymentReceivedJournal(
+            {
+              accountRepository,
+              journalEntryRepository,
+              userId: toUserId(userId),
+            },
+            {
+              paymentId: updated.id,
+              paymentNumber: updated.paymentNumber,
+              paymentDate: updated.paymentDate,
+              amount: updated.amount,
+            },
+          );
+        }
 
         return toPaymentDto(updated);
       },

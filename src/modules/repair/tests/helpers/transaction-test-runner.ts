@@ -6,6 +6,7 @@ import type {
   IRepairTransactionRunner,
   RepairWriteScope,
 } from "@/modules/repair/application/services/repair-transaction.runner";
+import { runWithRepairCapacityLockScope } from "@/modules/repair/infrastructure/repair-capacity-lock";
 
 import type { InMemoryRepairRepository } from "./in-memory-repair.repository";
 import type { MockAuditLogger } from "./mock-audit-logger";
@@ -14,7 +15,8 @@ export function createPassThroughTransactionRunner(
   scope: RepairWriteScope,
 ): IRepairTransactionRunner {
   return {
-    run: (operation) => operation(scope),
+    run: (operation) =>
+      runWithRepairCapacityLockScope(() => operation(scope)),
   };
 }
 
@@ -37,15 +39,17 @@ export function createRollbackTransactionRunner(
       const auditSnapshot = auditLogger.snapshot();
 
       try {
-        return await operation({
-          repairRepository,
-          returnRepository,
-          rentalOrderRepository,
-          inventoryRepository,
-          stockMovementRepository,
-          auditLogger,
-          userId,
-        });
+        return await runWithRepairCapacityLockScope(() =>
+          operation({
+            repairRepository,
+            returnRepository,
+            rentalOrderRepository,
+            inventoryRepository,
+            stockMovementRepository,
+            auditLogger,
+            userId,
+          }),
+        );
       } catch (error) {
         repairRepository.restore(repairSnapshot);
         returnRepository.restore(returnSnapshot);

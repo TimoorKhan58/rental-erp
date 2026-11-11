@@ -8,6 +8,7 @@ import {
   UpdateInventorySchema,
 } from "@/modules/inventory/application";
 import { ListInventorySchema } from "@/modules/inventory/application/schemas/list-inventory.schema";
+import { GetInventorySummarySchema } from "@/modules/inventory/application/schemas/get-inventory-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -15,6 +16,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toInventoryListResponse,
   toInventoryResponse,
+  toInventorySummaryResponse,
 } from "../mappers/inventory-response.mapper";
 import {
   runInventoryApiRoute,
@@ -47,6 +49,38 @@ export async function handleListInventory(
         body: {
           ...result.body,
           data: toInventoryListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetInventorySummary(
+  request: NextRequest,
+  resolveServices: InventoryServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetInventorySummarySchema, query);
+
+    const result = await runInventoryApiRoute({
+      request,
+      route: INVENTORY_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.inventory.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getInventorySummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toInventorySummaryResponse(result.body.data),
         },
       });
     }

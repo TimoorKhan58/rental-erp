@@ -60,6 +60,15 @@ export const ROUTES = {
   rentalInvoiceDetail: (id: string) => `/rental-invoices/${id}`,
   payments: "/payments",
   paymentsNew: "/payments/new",
+  paymentNewForInvoice: (invoiceId: string, customerId?: string) => {
+    const params = new URLSearchParams({ rentalInvoiceId: invoiceId });
+    if (customerId) {
+      params.set("customerId", customerId);
+    }
+    return `/payments/new?${params.toString()}`;
+  },
+  paymentsForCustomer: (customerId: string) => `/payments?customerId=${customerId}`,
+  paymentsForInvoice: (invoiceId: string) => `/payments?rentalInvoiceId=${invoiceId}`,
   paymentDetail: (id: string) => `/payments/${id}`,
   paymentEdit: (id: string) => `/payments/${id}/edit`,
   expenses: "/expenses",

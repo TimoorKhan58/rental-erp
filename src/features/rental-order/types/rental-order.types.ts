@@ -128,6 +128,28 @@ export type ListRentalOrdersParams = {
   eventTo?: string;
 };
 
+export type GetRentalOrderSummaryParams = Omit<
+  ListRentalOrdersParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type RentalOrderSummaryResponse = {
+  stats: {
+    totalOrders: number;
+    activeOrders: number;
+    totalRevenue: number;
+    draftCount: number;
+    confirmedCount: number;
+    reservedCount: number;
+    cancelledCount: number;
+    pendingActionCount: number;
+  };
+  statusCounts: Partial<Record<"all" | RentalOrderStatus, number>>;
+  reservationStatusCounts: Partial<
+    Record<"all" | "not-started" | "partial" | "complete", number>
+  >;
+};
+
 export type RentalOrderLineItemPayload = {
   productId: string;
   quantity: number;

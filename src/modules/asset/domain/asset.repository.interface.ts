@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Asset } from "./asset.entity";
 import type { AssetListQuery } from "./asset-list.query";
+import type { AssetSummaryQuery } from "./asset-summary.query";
+import type { AssetSummaryResult } from "./asset-summary.types";
 import type {
   AddMaintenanceHistoryData,
   AssetMaintenanceHistoryRecord,
@@ -18,6 +20,7 @@ export interface IAssetRepository {
   findById(id: AssetId): Promise<Asset | null>;
   findByAssetCode(assetCode: string): Promise<Asset | null>;
   findPaged(query: AssetListQuery): Promise<PaginatedResult<Asset>>;
+  findSummaryStats(query: AssetSummaryQuery): Promise<AssetSummaryResult>;
   create(data: CreateAssetData): Promise<Asset>;
   update(id: AssetId, data: UpdateAssetData): Promise<Asset>;
   updateAfterTransfer(

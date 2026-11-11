@@ -175,6 +175,10 @@ function createEraNumberSequences(): INumberSequenceRepository {
 
 function createEraHarness(
   agreements: ExternalRentalAgreement[] = [],
+  scopeRepos?: {
+    rentalOrderRepository: InMemoryRentalOrderRepository;
+    inventoryRepository: InMemoryInventoryRepository;
+  },
 ) {
   const repository =
     agreements.length > 0
@@ -183,6 +187,10 @@ function createEraHarness(
   const auditLogger = new EraMockAuditLogger();
   const runner = createPassThroughExternalRentalTransactionRunner({
     externalRentalRepository: repository,
+    rentalOrderRepository:
+      scopeRepos?.rentalOrderRepository ?? new InMemoryRentalOrderRepository(),
+    inventoryRepository:
+      scopeRepos?.inventoryRepository ?? new InMemoryInventoryRepository(),
     auditLogger,
     userId: USER_ID,
   });
@@ -439,12 +447,15 @@ describe("Phase 25.5.7 external rental scenario matrix", () => {
       const stockMovementRepository = new InMemoryStockMovementRepository();
       const rentalOrderRepository = new InMemoryRentalOrderRepository();
       rentalOrderRepository.seed([
-        buildOrder({ quantity: 100, reservedQuantity: 0 }),
+        buildOrder({ quantity: 400, reservedQuantity: 0 }),
       ]);
       const dispatchRepository = new InMemoryDispatchRepository();
       const returnRepository = new InMemoryReturnRepository();
 
-      const era = createEraHarness([]);
+      const era = createEraHarness([], {
+        rentalOrderRepository,
+        inventoryRepository,
+      });
       const baseline = snapshotOwned(
         await inventoryRepository.findById(INVENTORY_ID),
       );
@@ -1380,7 +1391,7 @@ describe("Phase 25.5.7 external rental scenario matrix", () => {
       const stockMovementRepository = new InMemoryStockMovementRepository();
       const rentalOrderRepository = new InMemoryRentalOrderRepository();
       rentalOrderRepository.seed([
-        buildOrder({ quantity: qty, reservedQuantity: 0 }),
+        buildOrder({ quantity: qty + 300, reservedQuantity: 0 }),
       ]);
       const dispatchRepository = new InMemoryDispatchRepository();
       const returnRepository = new InMemoryReturnRepository();
@@ -1414,7 +1425,10 @@ describe("Phase 25.5.7 external rental scenario matrix", () => {
         expect(stockMovementRepository.count(), step).toBe(0);
       }
 
-      const era = createEraHarness([]);
+      const era = createEraHarness([], {
+        rentalOrderRepository,
+        inventoryRepository,
+      });
       const created = await era.create.execute(toCreateInput(qty));
       await assertIsolation("after create");
 

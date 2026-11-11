@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
@@ -19,7 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { ReturnStatusFilterChips } from "../components";
+import { STATUS_LABELS } from "../mappers";
+import { ReturnMobileList, ReturnStatusFilterChips } from "../components";
 import {
   useReturnFilterOptions,
   useReturnListParams,
@@ -52,6 +53,7 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
     setStatusFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useReturnListParams();
   const { canCreate, canUpdate, canReceive, canInspect, canComplete, canCancel } =
     useReturnPermissions();
@@ -74,7 +76,7 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = data?.items ?? [];
+  const rows = useMemo(() => data?.items ?? [], [data?.items]);
 
   const statusFilterValue = params.status ?? "all";
 
@@ -107,6 +109,47 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
     Boolean(returnDateFrom) ||
     Boolean(returnDateTo);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.rentalOrderId
+      ? {
+          id: "order",
+          label: `Order: ${rentalOrderLabelById.get(params.rentalOrderId) ?? params.rentalOrderId}`,
+          onClear: () => setRentalOrderFilter(undefined),
+        }
+      : null,
+    params.dispatchId
+      ? {
+          id: "dispatch",
+          label: `Dispatch: ${dispatchLabelById.get(params.dispatchId) ?? params.dispatchId}`,
+          onClear: () => setDispatchFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    returnDateFrom || returnDateTo
+      ? {
+          id: "dates",
+          label: `Dates: ${returnDateFrom ?? "…"} → ${returnDateTo ?? "…"}`,
+          onClear: () => setDateRange(undefined, undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
@@ -122,31 +165,47 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No returns found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Returns will appear here once created from a completed dispatch."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={clearAllFilters}>
+            Clear filters
+          </AppButton>
+        ) : canCreate ? (
+          <Link href={ROUTES.returnsNew}>
+            <EmptyStateActionButton>Create return</EmptyStateActionButton>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        toolbar={
-          <ReturnStatusFilterChips
-            value={statusFilterValue}
-            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
-            counts={statusCounts}
-          />
-        }
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search returns..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search returns"
-          />
-        }
-        filters={
-          <>
+      <div className="space-y-3">
+        <ReturnStatusFilterChips
+          value={statusFilterValue}
+          onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+          counts={statusCounts}
+        />
+        <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search return number or remarks..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search returns by number or remarks"
+            />
             <Select
               value={params.rentalOrderId ?? "all"}
               onValueChange={(value) => {
@@ -213,9 +272,7 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
               className="w-full sm:w-40"
               aria-label="Return date to"
             />
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -226,29 +283,53 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No returns found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Get started by creating your first return."
-            }
-            action={
-              canCreate ? (
-                <Link href={ROUTES.returnsNew}>
-                  <EmptyStateActionButton>Create return</EmptyStateActionButton>
-                </Link>
-              ) : undefined
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading returns..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading returns..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading returns..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <ReturnMobileList
+              rows={rows}
+              resolveOrderLabel={(rentalOrderId) =>
+                rentalOrderLabelById.get(rentalOrderId) ?? rentalOrderId
+              }
+              resolveDispatchLabel={(dispatchId) =>
+                dispatchLabelById.get(dispatchId) ?? dispatchId
+              }
+              canUpdate={canUpdate}
+              canReceive={canReceive}
+              canInspect={canInspect}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              onReceive={setReceiveTarget}
+              onInspect={setInspectTarget}
+              onComplete={setCompleteTarget}
+              onCancel={setCancelTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <ReceiveReturnDialog
         returnRecord={receiveTarget}

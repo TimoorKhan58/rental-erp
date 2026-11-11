@@ -14,10 +14,10 @@ export function MaintenanceListPage() {
   const { stats, statusCounts, serviceTypeCounts, isLoading } = useMaintenanceSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Maintenance"
-        description="Manage scheduled and preventive maintenance activities."
+        description="Schedule service against available inventory. Starting a job posts stock OUT; completing it posts stock IN. Costs stay on the job and are not posted to expenses."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Maintenance" },

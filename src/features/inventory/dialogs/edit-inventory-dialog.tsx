@@ -36,8 +36,8 @@ export function EditInventoryDialog({
     <AppModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Edit inventory record"
-      description="Update stock levels and thresholds for this product-warehouse assignment."
+      title="Edit thresholds"
+      description="Update reorder level, maximum stock, and active status only. On-hand and committed quantities cannot be changed here — use Adjust stock for count corrections (ADJUSTMENT movement)."
       size="xl"
     >
       <InventoryForm

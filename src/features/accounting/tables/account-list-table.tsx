@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCwIcon } from "lucide-react";
+import { PlusIcon, RefreshCwIcon } from "lucide-react";
 import { DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
@@ -20,12 +20,16 @@ import { ACCOUNT_TYPE_LABELS } from "../mappers";
 import { ACCOUNT_TYPES } from "../types";
 import {
   useAccountListParams,
+  useAccountingPermissions,
   useChartOfAccounts,
 } from "../hooks";
+import { CreateAccountDialog } from "../dialogs/create-account-dialog";
 import { getAccountTableColumns } from "./account-list-table-columns";
 
 export function AccountListTable() {
   const queryClient = useQueryClient();
+  const { canCreateAccounts } = useAccountingPermissions();
+  const [createOpen, setCreateOpen] = useState(false);
   const {
     params,
     localSearch,
@@ -76,7 +80,8 @@ export function AccountListTable() {
   }
 
   return (
-    <DataTableShell
+    <>
+      <DataTableShell
       columns={columns}
       data={data?.items ?? []}
       getRowId={(row) => row.id}
@@ -145,16 +150,27 @@ export function AccountListTable() {
         </>
       }
       actions={
-        <AppButton
-          variant="outline"
-          size="sm"
-          leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
-          onClick={handleRefresh}
-          loading={isFetching && !isLoading}
-          aria-label="Refresh chart of accounts"
-        >
-          Refresh
-        </AppButton>
+        <>
+          {canCreateAccounts ? (
+            <AppButton
+              size="sm"
+              leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+              onClick={() => setCreateOpen(true)}
+            >
+              New account
+            </AppButton>
+          ) : null}
+          <AppButton
+            variant="outline"
+            size="sm"
+            leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
+            onClick={handleRefresh}
+            loading={isFetching && !isLoading}
+            aria-label="Refresh chart of accounts"
+          >
+            Refresh
+          </AppButton>
+        </>
       }
       emptyState={
         <EmptyState
@@ -171,5 +187,8 @@ export function AccountListTable() {
         data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
       }
     />
+
+      <CreateAccountDialog open={createOpen} onOpenChange={setCreateOpen} />
+    </>
   );
 }

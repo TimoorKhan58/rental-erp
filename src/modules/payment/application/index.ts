@@ -22,6 +22,16 @@ export {
   type ListPaymentsInput,
 } from "./schemas/list-payments.schema";
 export {
+  GetPaymentSummarySchema,
+  type GetPaymentSummaryInput,
+} from "./schemas/get-payment-summary.schema";
+export type {
+  PaymentSummaryDto,
+  PaymentSummaryMethodCountsDto,
+  PaymentSummaryStatsDto,
+  PaymentSummaryStatusCountsDto,
+} from "./dtos/payment-summary.dto";
+export {
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
   type PaymentMethod,
@@ -35,6 +45,7 @@ export type {
 export type { IPaymentTransactionRunner } from "./services/payment-transaction.runner";
 export { CreatePaymentService } from "./services/create-payment.service";
 export { GetPaymentByIdService } from "./services/get-payment-by-id.service";
+export { GetPaymentSummaryService } from "./services/get-payment-summary.service";
 export { ListPaymentsService } from "./services/list-payments.service";
 export { PaymentService } from "./services/payment.service";
 export { PostPaymentService } from "./services/post-payment.service";

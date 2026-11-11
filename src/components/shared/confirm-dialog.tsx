@@ -21,6 +21,8 @@ type ConfirmDialogProps = {
   onConfirm: () => void;
   isLoading?: boolean;
   destructive?: boolean;
+  /** When true, confirm stays disabled (e.g. server rule blocked in UI). */
+  confirmDisabled?: boolean;
 };
 
 export function ConfirmDialog({
@@ -33,6 +35,7 @@ export function ConfirmDialog({
   onConfirm,
   isLoading = false,
   destructive = false,
+  confirmDisabled = false,
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,7 +55,7 @@ export function ConfirmDialog({
           <Button
             variant={destructive ? "destructive" : "default"}
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
           >
             {confirmLabel}
           </Button>

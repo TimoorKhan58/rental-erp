@@ -8,6 +8,7 @@ import {
   UpdateMaintenanceSchema,
 } from "@/modules/maintenance/application/schemas/maintenance.schemas";
 import { ListMaintenancesSchema } from "@/modules/maintenance/application/schemas/maintenance.schemas";
+import { GetMaintenanceSummarySchema } from "@/modules/maintenance/application/schemas/get-maintenance-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -15,6 +16,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toMaintenanceListResponse,
   toMaintenanceResponse,
+  toMaintenanceSummaryResponse,
 } from "../mappers/maintenance-response.mapper";
 import {
   runMaintenanceApiRoute,
@@ -48,6 +50,38 @@ export async function handleListMaintenances(
         body: {
           ...result.body,
           data: toMaintenanceListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetMaintenanceSummary(
+  request: NextRequest,
+  resolveServices: MaintenanceServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetMaintenanceSummarySchema, query);
+
+    const result = await runMaintenanceApiRoute({
+      request,
+      route: MAINTENANCE_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.maintenances.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getMaintenanceSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toMaintenanceSummaryResponse(result.body.data),
         },
       });
     }

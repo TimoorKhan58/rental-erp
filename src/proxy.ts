@@ -11,20 +11,24 @@ function isPublicPath(pathname: string): boolean {
     return true;
   }
 
-  if (pathname.startsWith("/api/auth")) {
-    return true;
-  }
-
-  // Liveness / readiness / metrics must remain reachable without a session.
-  if (pathname.startsWith("/api/health")) {
-    return true;
-  }
-
-  if (pathname === "/api/metrics") {
+  // Dev-only layout QA harness (no session) — presentation verification.
+  if (
+    process.env.NODE_ENV === "development" &&
+    pathname === "/dev/fluid-grid-qa"
+  ) {
     return true;
   }
 
   return false;
+}
+
+/**
+ * API routes authenticate themselves (authenticateApiRequest) and answer
+ * with a JSON 401/403. Redirecting them to the HTML login page here would
+ * break API clients, so the proxy only gates pages.
+ */
+function isApiPath(pathname: string): boolean {
+  return pathname === "/api" || pathname.startsWith("/api/");
 }
 
 async function hasActiveSession(): Promise<boolean> {
@@ -52,6 +56,10 @@ async function hasActiveSession(): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isApiPath(pathname)) {
+    return NextResponse.next();
+  }
 
   if (isPublicPath(pathname)) {
     if (pathname === "/login") {

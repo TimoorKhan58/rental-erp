@@ -1,5 +1,10 @@
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import type { RentalOrderListQuery } from "@/modules/rental-order/domain/rental-order-list.query";
+import type { RentalOrderSummaryQuery } from "@/modules/rental-order/domain/rental-order-summary.query";
+import {
+  computeRentalOrderSummaryResult,
+  filterRentalOrdersForSummary,
+} from "@/modules/rental-order/domain/rental-order-summary.rules";
 import type {
   AvailabilityCommitmentLineProjection,
   FindAvailabilityCommitmentLinesParams,
@@ -15,6 +20,7 @@ import type { RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import { acquireDispatchClaimLock } from "@/modules/dispatch/infrastructure/dispatch-claim-lock";
+import { acquireInvoiceCommandLock } from "@/modules/rental-order/infrastructure/invoice-command-lock";
 import { acquireReserveCommandLock } from "@/modules/rental-order/infrastructure/reserve-command-lock";
 
 import { buildRentalOrderEntity } from "./rental-order.fixtures";
@@ -200,6 +206,17 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: RentalOrderSummaryQuery) {
+    const items = filterRentalOrdersForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        RentalOrder.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(computeRentalOrderSummaryResult(items));
   }
 
   async create(data: CreateRentalOrderData): Promise<RentalOrder> {
@@ -395,6 +412,14 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
     }
 
     await acquireReserveCommandLock(id);
+  }
+
+  async lockForInvoiceCommand(id: RentalOrderId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Rental order not found");
+    }
+
+    await acquireInvoiceCommandLock(id);
   }
 
   count(): number {

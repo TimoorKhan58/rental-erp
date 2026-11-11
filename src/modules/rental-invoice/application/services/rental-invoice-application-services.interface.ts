@@ -13,6 +13,7 @@ import type { GenerateRentalInvoiceFromOrderService } from "./generate-rental-in
 import type { GenerateRentalInvoiceFromOrderInput } from "../schemas/generate-rental-invoice.schema";
 import type { GetRentalInvoiceByIdService } from "./get-rental-invoice-by-id.service";
 import type { IssueRentalInvoiceService } from "./issue-rental-invoice.service";
+import type { GetRentalInvoiceSummaryService } from "./get-rental-invoice-summary.service";
 import type { ListRentalInvoicesService } from "./list-rental-invoices.service";
 import type { UpdateRentalInvoiceService } from "./update-rental-invoice.service";
 import type { VoidRentalInvoiceService } from "./void-rental-invoice.service";
@@ -20,6 +21,7 @@ import type { VoidRentalInvoiceService } from "./void-rental-invoice.service";
 export interface RentalInvoiceApplicationServices {
   getRentalInvoiceById: GetRentalInvoiceByIdService;
   listRentalInvoices: ListRentalInvoicesService;
+  getRentalInvoiceSummary: GetRentalInvoiceSummaryService;
   createRentalInvoice: CreateRentalInvoiceService;
   generateRentalInvoiceFromOrder: GenerateRentalInvoiceFromOrderService;
   updateRentalInvoice: UpdateRentalInvoiceService;

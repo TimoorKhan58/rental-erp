@@ -18,6 +18,19 @@ export {
   createPaymentNumber,
 } from "./payment.errors";
 export type { PaymentListQuery } from "./payment-list.query";
+export type { PaymentSummaryQuery } from "./payment-summary.query";
+export type {
+  PaymentSummaryMethodCounts,
+  PaymentSummaryProjection,
+  PaymentSummaryResult,
+  PaymentSummaryStats,
+  PaymentSummaryStatusCounts,
+} from "./payment-summary.types";
+export {
+  computePaymentSummaryResult,
+  filterPaymentsForSummary,
+  matchesPaymentSummaryQuery,
+} from "./payment-summary.rules";
 export type { IPaymentRepository } from "./payment.repository.interface";
 export {
   assertCanPost,

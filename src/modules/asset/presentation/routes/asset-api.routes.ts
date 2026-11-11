@@ -11,6 +11,7 @@ import {
   UpdateAssetSchema,
 } from "@/modules/asset/application";
 import { ListAssetsSchema } from "@/modules/asset/application/schemas/list-assets.schema";
+import { GetAssetSummarySchema } from "@/modules/asset/application/schemas/get-asset-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -18,6 +19,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toAssetListResponse,
   toAssetResponse,
+  toAssetSummaryResponse,
 } from "../mappers/asset-response.mapper";
 import {
   runAssetApiRoute,
@@ -50,6 +52,38 @@ export async function handleListAssets(
         body: {
           ...result.body,
           data: toAssetListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetAssetSummary(
+  request: NextRequest,
+  resolveServices: AssetServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetAssetSummarySchema, query);
+
+    const result = await runAssetApiRoute({
+      request,
+      route: ASSET_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.assets.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getAssetSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toAssetSummaryResponse(result.body.data),
         },
       });
     }

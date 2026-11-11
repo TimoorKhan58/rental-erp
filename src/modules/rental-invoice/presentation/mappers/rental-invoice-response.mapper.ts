@@ -46,6 +46,27 @@ export interface RentalInvoiceListResponse {
   meta: PaginationMeta;
 }
 
+export interface RentalInvoiceSummaryResponse {
+  stats: {
+    totalInvoices: number;
+    activeInvoices: number;
+    outstandingCount: number;
+    partiallyPaidCount: number;
+    paidCount: number;
+    draftCount: number;
+    totalOutstanding: number;
+    totalCollected: number;
+  };
+  statusCounts: Record<
+    "all" | RentalInvoiceDto["status"],
+    number
+  >;
+  paymentStatusCounts: Record<
+    "all" | "unpaid" | "partial" | "paid" | "void",
+    number
+  >;
+}
+
 export function toRentalInvoiceResponse(
   dto: RentalInvoiceDto,
 ): RentalInvoiceResponse {
@@ -95,4 +116,10 @@ export function toRentalInvoiceListResponse(
     items: result.items.map(toRentalInvoiceResponse),
     meta: result.meta,
   };
+}
+
+export function toRentalInvoiceSummaryResponse(
+  summary: import("@/modules/rental-invoice/application/dtos/rental-invoice-summary.dto").RentalInvoiceSummaryDto,
+): RentalInvoiceSummaryResponse {
+  return summary;
 }

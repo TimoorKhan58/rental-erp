@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useProcurement, useUpdateProcurement } from "../hooks";
@@ -16,7 +18,7 @@ type ProcurementEditPageProps = {
 
 export function ProcurementEditPage({ procurementId }: ProcurementEditPageProps) {
   const router = useRouter();
-  const { data: procurement, isLoading, isError } = useProcurement(procurementId);
+  const { data: procurement, isLoading, isError, error, refetch } = useProcurement(procurementId);
   const updateMutation = useUpdateProcurement();
 
   const isEditable = procurement ? canEditProcurement(procurement.status) : false;
@@ -43,6 +45,17 @@ export function ProcurementEditPage({ procurementId }: ProcurementEditPageProps)
           role="alert"
         >
           <p className="text-sm font-medium">Purchase order not found</p>
+          <p className="text-sm text-muted-foreground">
+            {error?.message ?? "The requested purchase order could not be loaded."}
+          </p>
+          <div className="flex gap-2">
+            <AppButton variant="outline" onClick={() => void refetch()}>
+              Try again
+            </AppButton>
+            <AppButton variant="outline" render={<Link href={ROUTES.procurements} />}>
+              Back to list
+            </AppButton>
+          </div>
         </div>
       </PageContainer>
     );

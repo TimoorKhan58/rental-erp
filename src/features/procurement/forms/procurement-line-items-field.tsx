@@ -178,7 +178,7 @@ export function ProcurementLineItemsField({
                         disabled={fields.length <= 1}
                         aria-label={`Remove line item ${index + 1}`}
                       >
-                        <Trash2Icon className="size-4" />
+                        <Trash2Icon className="size-4" aria-hidden="true" />
                       </AppButton>
                     </td>
                   ) : null}

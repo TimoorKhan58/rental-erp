@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { SearchIcon } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { Input } from "@/components/ui/input";
+import { canAccessNavHref } from "@/constants/navigation-access";
+import { useVisibleNavigation } from "./use-visible-navigation";
 
 type GlobalSearchInputProps = {
   className?: string;
@@ -17,9 +19,14 @@ type GlobalSearchInputProps = {
 type SearchTarget = {
   label: string;
   href: string;
+  listHref: string;
 };
 
-function buildSearchTargets(query: string): SearchTarget[] {
+function buildSearchTargets(
+  query: string,
+  permissions: readonly string[],
+  ready: boolean,
+): SearchTarget[] {
   const trimmed = query.trim();
 
   if (trimmed.length === 0) {
@@ -29,10 +36,22 @@ function buildSearchTargets(query: string): SearchTarget[] {
   const encoded = encodeURIComponent(trimmed);
 
   return [
-    { label: "Customers", href: `${ROUTES.customers}?search=${encoded}` },
-    { label: "Rental orders", href: `${ROUTES.rentalOrders}?search=${encoded}` },
-    { label: "Products", href: `${ROUTES.products}?search=${encoded}` },
-  ];
+    {
+      label: "Customers",
+      listHref: ROUTES.customers,
+      href: `${ROUTES.customers}?search=${encoded}`,
+    },
+    {
+      label: "Rental orders",
+      listHref: ROUTES.rentalOrders,
+      href: `${ROUTES.rentalOrders}?search=${encoded}`,
+    },
+    {
+      label: "Products",
+      listHref: ROUTES.products,
+      href: `${ROUTES.products}?search=${encoded}`,
+    },
+  ].filter((target) => !ready || canAccessNavHref(target.listHref, permissions));
 }
 
 export function GlobalSearchInput({
@@ -42,10 +61,12 @@ export function GlobalSearchInput({
   onNavigate,
 }: GlobalSearchInputProps) {
   const router = useRouter();
+  const resultsId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { permissions, ready } = useVisibleNavigation();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const targets = buildSearchTargets(query);
+  const targets = buildSearchTargets(query, permissions, ready);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -91,8 +112,11 @@ export function GlobalSearchInput({
         <Input
           value={query}
           onChange={(event) => {
-            setQuery(event.target.value);
-            setOpen(false);
+            const nextQuery = event.target.value;
+            setQuery(nextQuery);
+            setOpen(
+              buildSearchTargets(nextQuery, permissions, ready).length > 0,
+            );
           }}
           onFocus={() => {
             if (targets.length > 0) {
@@ -100,33 +124,32 @@ export function GlobalSearchInput({
             }
           }}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && targets.length > 0) {
+            if (event.key === "Enter" && targets[0]) {
               event.preventDefault();
-              setOpen(true);
+              navigateTo(targets[0].href);
             }
 
             if (event.key === "Escape") {
               close();
             }
           }}
-          placeholder="Search customers, orders, products..."
+          placeholder="Search customers, orders, or products..."
           className={inputClassName}
-          aria-label="Global search"
+          aria-label="Search customers, rental orders, or products"
           aria-expanded={open}
-          aria-controls="global-search-results"
+          aria-controls={resultsId}
           autoFocus={autoFocus}
         />
       </div>
 
       {open && targets.length > 0 ? (
         <div
-          id="global-search-results"
+          id={resultsId}
           className="absolute z-[var(--z-popover)] mt-2 w-full overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md"
-          role="listbox"
           aria-label="Search destinations"
         >
           <p className="border-b px-3 py-2 text-xs text-muted-foreground">
-            Search &ldquo;{query.trim()}&rdquo; in
+            Open &ldquo;{query.trim()}&rdquo; in a list that already supports search
           </p>
           <ul>
             {targets.map((target) => (

@@ -1,5 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { InventoryListQuery } from "@/modules/inventory/domain/inventory-list.query";
+import type { InventorySummaryQuery } from "@/modules/inventory/domain/inventory-summary.query";
+import {
+  computeInventorySummaryResult,
+} from "@/modules/inventory/domain/inventory-summary.rules";
+import { buildInventorySummaryWhere } from "@/modules/inventory/infrastructure/repositories/inventory-query.filters";
 import type { InventoryId, ProductId, WarehouseId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import type { RepositoryRunner } from "@/shared/infrastructure/database";
@@ -154,6 +159,34 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       items: result.items.map(toInventoryDomain),
       meta: result.meta,
     };
+  }
+
+  findSummaryStats(query: InventorySummaryQuery) {
+    const where = buildInventorySummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const records = await db.inventory.findMany({
+          where,
+          select: {
+            quantityOnHand: true,
+            reservedQuantity: true,
+            minimumStock: true,
+            maximumStock: true,
+          },
+        });
+
+        return computeInventorySummaryResult(
+          records.map((record) => ({
+            quantityOnHand: record.quantityOnHand,
+            reservedQuantity: record.reservedQuantity,
+            minimumStock: record.minimumStock,
+            maximumStock: record.maximumStock,
+          })),
+        );
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
   }
 
   async exists(id: InventoryId): Promise<boolean> {

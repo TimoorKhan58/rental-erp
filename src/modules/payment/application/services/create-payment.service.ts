@@ -71,9 +71,8 @@ export class CreatePaymentService {
           throw error;
         }
 
-        const invoice = await rentalInvoiceRepository.findById(
-          toRentalInvoiceId(data.rentalInvoiceId),
-        );
+        const invoiceId = toRentalInvoiceId(data.rentalInvoiceId);
+        const invoice = await rentalInvoiceRepository.findById(invoiceId);
 
         if (invoice === null) {
           throw new NotFoundError({
@@ -82,7 +81,29 @@ export class CreatePaymentService {
           });
         }
 
-        validateInvoiceForPayment(invoice, data.customerId, data.amount);
+        await rentalInvoiceRepository.lockForPaymentCommitment(invoiceId);
+
+        const authoritativeInvoice =
+          await rentalInvoiceRepository.findById(invoiceId);
+
+        if (authoritativeInvoice === null) {
+          throw new NotFoundError({
+            message: "Rental invoice not found",
+            details: { rentalInvoiceId: data.rentalInvoiceId },
+          });
+        }
+
+        validateInvoiceForPayment(
+          authoritativeInvoice,
+          data.customerId,
+          data.amount,
+          {
+            pendingAmount:
+              await paymentRepository.sumPendingAmountByRentalInvoiceId(
+                invoiceId,
+              ),
+          },
+        );
 
         const existing = await paymentRepository.findByPaymentNumber(
           createData.paymentNumber,

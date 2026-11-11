@@ -4,6 +4,7 @@ import { USER_ROLE_LIST } from "@/constants/roles";
 import {
   EmailSchema,
   NonEmptyStringSchema,
+  PasswordSchema,
   UUIDSchema,
 } from "@/shared/application/validation";
 
@@ -14,7 +15,7 @@ export const IdentityUserIdParamSchema = z.object({
 export const CreateIdentityUserSchema = z.object({
   name: NonEmptyStringSchema.max(200),
   email: EmailSchema,
-  password: NonEmptyStringSchema.min(8).max(128),
+  password: PasswordSchema,
   role: z.enum(USER_ROLE_LIST),
   isActive: z.boolean().optional(),
 });
@@ -36,7 +37,7 @@ export const UpdateIdentityUserSchema = z
   );
 
 export const ResetIdentityUserPasswordSchema = z.object({
-  password: NonEmptyStringSchema.min(8).max(128),
+  password: PasswordSchema,
 });
 
 export type CreateIdentityUserInput = z.infer<typeof CreateIdentityUserSchema>;

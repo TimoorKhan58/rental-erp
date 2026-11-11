@@ -23,7 +23,10 @@ export function PaymentStatusBadge({
   const label = getPaymentStatusLabel({ status, balance, paidAmount });
 
   return (
-    <SemanticBadge semantic={paymentSemantic[label] ?? "pending"}>
+    <SemanticBadge
+      semantic={paymentSemantic[label] ?? "pending"}
+      aria-label={`Collection status: ${label}`}
+    >
       {label}
     </SemanticBadge>
   );

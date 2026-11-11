@@ -73,7 +73,7 @@ function SummaryCard({
   return (
     <Card
       className={cn(
-        "group border-border/60 shadow-soft transition-all duration-200 hover:shadow-soft-md",
+        "border-border transition-colors hover:bg-muted/30",
         config.accentClass,
       )}
     >

@@ -32,7 +32,7 @@ export function PostPaymentDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Post payment"
-      description={`Post "${payment.paymentNumber}" for ${formatCurrency(payment.amount)}? This will apply the payment to the linked invoice.`}
+      description={`Post "${payment.paymentNumber}" for ${formatCurrency(payment.amount)}? Posting applies this payment to the linked invoice. Settlement rules remain enforced by the server.`}
       confirmLabel="Post payment"
       onConfirm={() => void handleConfirm()}
       isLoading={postMutation.isPending}

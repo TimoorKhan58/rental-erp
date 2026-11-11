@@ -14,13 +14,13 @@ export function DispatchListPage() {
   const { stats, statusCounts, isLoading } = useDispatchSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
-        title="Deliveries"
-        description="Manage rental order fulfillment and deliveries."
+        title="Dispatches"
+        description="Fulfill rental orders by delivery or customer pickup. Completing a ready dispatch posts stock OUT and can move the order On rent."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Deliveries" },
+          { label: "Dispatches" },
         ]}
         actions={
           canCreate ? (

@@ -11,15 +11,22 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import { useSupplier, useSupplierPermissions } from "../hooks";
-import { SupplierStatusBadge } from "../components/supplier-status-badge";
+import {
+  SupplierAuditSummarySection,
+  SupplierExternalRentalsSection,
+  SupplierPaymentsSummarySection,
+  SupplierProcurementSummarySection,
+  SupplierRecentActivitySection,
+  SupplierStatusBadge,
+} from "../components";
 import { DeleteSupplierDialog } from "../dialogs/delete-supplier-dialog";
 import { ToggleSupplierStatusDialog } from "../dialogs/toggle-supplier-status-dialog";
+import { useSupplier, useSupplierPermissions } from "../hooks";
 
 type SupplierDetailPageProps = {
   supplierId: string;
@@ -154,15 +161,11 @@ export function SupplierDetailPage({ supplierId }: SupplierDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Procurement summary"
-            description="Purchase orders and outstanding balances will appear here when the procurement module is connected."
-          />
+          <SupplierProcurementSummarySection supplierId={supplier.id} />
 
-          <EmptyCard
-            title="Recent activity"
-            description="Supplier activity timeline is not yet available."
-          />
+          <SupplierExternalRentalsSection supplierId={supplier.id} />
+
+          <SupplierRecentActivitySection supplierId={supplier.id} />
         </div>
 
         <div className="space-y-6">
@@ -174,10 +177,9 @@ export function SupplierDetailPage({ supplierId }: SupplierDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Audit summary"
-            description="Audit trail details will be shown when available from the API."
-          />
+          <SupplierPaymentsSummarySection supplierId={supplier.id} />
+
+          <SupplierAuditSummarySection supplierId={supplier.id} />
         </div>
       </div>
 

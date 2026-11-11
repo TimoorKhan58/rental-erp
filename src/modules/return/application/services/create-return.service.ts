@@ -110,6 +110,8 @@ export class CreateReturnService {
           });
         }
 
+        await dispatchRepository.lockForReturnCapacity(dispatch.id);
+
         const priorReturns = await loadPriorReturnsForDispatch(
           returnRepository,
           dispatch.id,

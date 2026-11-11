@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useReturn, useUpdateReturn } from "../hooks";
@@ -16,7 +18,7 @@ type ReturnEditPageProps = {
 
 export function ReturnEditPage({ returnId }: ReturnEditPageProps) {
   const router = useRouter();
-  const { data: returnRecord, isLoading, isError } = useReturn(returnId);
+  const { data: returnRecord, isLoading, isError, error, refetch } = useReturn(returnId);
   const updateMutation = useUpdateReturn();
 
   useEffect(() => {
@@ -42,8 +44,16 @@ export function ReturnEditPage({ returnId }: ReturnEditPageProps) {
         >
           <p className="text-sm font-medium">Return not found</p>
           <p className="text-sm text-muted-foreground">
-            The requested return could not be loaded.
+            {error?.message ?? "The requested return could not be loaded."}
           </p>
+          <div className="flex gap-2">
+            <AppButton variant="outline" onClick={() => void refetch()}>
+              Try again
+            </AppButton>
+            <AppButton variant="outline" render={<Link href={ROUTES.returns} />}>
+              Back to list
+            </AppButton>
+          </div>
         </div>
       </PageContainer>
     );

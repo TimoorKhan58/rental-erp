@@ -1,4 +1,5 @@
 export * from "./maintenance-asset-details-table";
+export * from "./maintenance-mobile-list";
 export * from "./maintenance-service-type-filter-chips";
 export * from "./maintenance-status-badge";
 export * from "./maintenance-status-filter-chips";

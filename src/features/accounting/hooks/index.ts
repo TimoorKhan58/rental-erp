@@ -6,6 +6,8 @@ export {
   useAccountingPermissions,
   useAccountingSummary,
   useChartOfAccounts,
+  useCreateAccount,
+  useCreateJournalEntry,
   useDeleteJournalEntry,
   useGeneralLedger,
   useJournalEntries,

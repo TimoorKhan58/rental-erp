@@ -16,6 +16,8 @@ import {
   RENTAL_INVOICE_ENTITY_NAME,
   RENTAL_INVOICE_MODULE,
 } from "@/modules/rental-invoice/application/services/rental-invoice-service.constants";
+import { InMemoryAccountRepository } from "@/modules/accounting/tests/helpers/in-memory-account.repository";
+import { InMemoryJournalEntryRepository } from "@/modules/accounting/tests/helpers/in-memory-journal-entry.repository";
 import { InMemoryRentalInvoiceRepository } from "@/modules/rental-invoice/tests/helpers/in-memory-rental-invoice.repository";
 import {
   buildIssuedRentalInvoiceEntity,
@@ -68,6 +70,8 @@ function createWriteScope(
   return createPassThroughTransactionRunner({
     paymentRepository,
     rentalInvoiceRepository,
+    accountRepository: new InMemoryAccountRepository(),
+    journalEntryRepository: new InMemoryJournalEntryRepository(),
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId,

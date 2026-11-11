@@ -191,6 +191,23 @@ describe("DeleteWarehouseService", () => {
       NotFoundError,
     );
   });
+
+  it("throws when warehouse is referenced by other records", async () => {
+    const repository = new InMemoryWarehouseRepository();
+    repository.seed([buildWarehouseEntity()]);
+    repository.setReferenceCount(WAREHOUSE_ID, 3);
+    const auditLogger = new MockAuditLogger();
+    const service = new DeleteWarehouseService(
+      createPassThroughTransactionRunner({ repository, auditLogger }),
+    );
+
+    await expect(service.execute({ id: WAREHOUSE_ID })).rejects.toBeInstanceOf(
+      ConflictError,
+    );
+
+    expect(repository.count()).toBe(1);
+    expect(auditLogger.entries).toHaveLength(0);
+  });
 });
 
 describe("GetWarehouseByIdService", () => {

@@ -7,6 +7,7 @@ import type { IAssetService } from "@/modules/asset/application/services/asset-a
 import { CreateAssetService } from "@/modules/asset/application/services/create-asset.service";
 import { DisposeAssetService } from "@/modules/asset/application/services/dispose-asset.service";
 import { GetAssetByIdService } from "@/modules/asset/application/services/get-asset-by-id.service";
+import { GetAssetSummaryService } from "@/modules/asset/application/services/get-asset-summary.service";
 import { ListAssetsService } from "@/modules/asset/application/services/list-assets.service";
 import { TransferAssetService } from "@/modules/asset/application/services/transfer-asset.service";
 import { UpdateAssetService } from "@/modules/asset/application/services/update-asset.service";
@@ -31,6 +32,7 @@ export function createAssetApplicationServices(
 
   const getAssetById = new GetAssetByIdService(repository);
   const listAssets = new ListAssetsService(repository);
+  const getAssetSummary = new GetAssetSummaryService(repository);
   const createAsset = new CreateAssetService(transactionRunner);
   const updateAsset = new UpdateAssetService(transactionRunner);
   const transferAsset = new TransferAssetService(transactionRunner);
@@ -42,6 +44,7 @@ export function createAssetApplicationServices(
   return {
     getAssetById,
     listAssets,
+    getAssetSummary,
     createAsset,
     updateAsset,
     transferAsset,

@@ -31,6 +31,7 @@ export function SettingsProfilePage() {
   if (!canReadProfile) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <AccessDeniedState description="You do not have permission to view your profile." />
       </PageContainer>
     );
@@ -39,6 +40,7 @@ export function SettingsProfilePage() {
   if (isError || !profile) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <QueryErrorState
           title="Failed to load profile"
           description={error?.message ?? "An error occurred."}

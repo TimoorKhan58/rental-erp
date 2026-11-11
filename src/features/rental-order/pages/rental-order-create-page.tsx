@@ -34,7 +34,7 @@ export function RentalOrderCreatePage() {
     <PageContainer>
       <PageHeader
         title="New rental order"
-        description="Create a rental order or book dates in advance for the reservation calendar."
+        description="Guided flow: customer → dates → inventory → review. Availability and reservation stay server-enforced."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Orders", href: ROUTES.rentalOrders },

@@ -40,7 +40,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           />
         }
       >
-        <ActiveIcon className="size-4" />
+        <ActiveIcon className="size-4" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {THEME_OPTIONS.map((option) => {

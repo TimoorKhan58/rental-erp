@@ -1,5 +1,6 @@
 export const ASSET_ROUTES = {
   base: "/api/assets",
+  summary: "/api/assets/summary",
   byId: (id: string) => `/api/assets/${id}`,
   transfer: (id: string) => `/api/assets/${id}/transfer`,
   dispose: (id: string) => `/api/assets/${id}/dispose`,

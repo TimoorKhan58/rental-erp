@@ -32,7 +32,7 @@ export function ApproveExpenseDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Approve expense"
-      description={`Approve "${expense.expenseNumber}" for ${formatCurrency(expense.amount)}?`}
+      description={`Approve "${expense.expenseNumber}" for ${formatCurrency(expense.amount)}? This does not post a journal, mark the expense paid, or create a payment. After approval, an authorized user can mark it paid.`}
       confirmLabel="Approve"
       onConfirm={() => void handleConfirm()}
       isLoading={approveMutation.isPending}

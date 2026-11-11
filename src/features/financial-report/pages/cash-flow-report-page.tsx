@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { ActiveFilters } from "@/components/shared";
 import { MetricCard, SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
@@ -9,14 +10,24 @@ import { ROUTES } from "@/config/routes";
 import { formatCurrency } from "@/lib/utils";
 import {
   DateRangeFilterBar,
-  ExportPlaceholderButton,
+  ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
+import {
+  buildCashFlowCsvRows,
+  CASH_FLOW_CSV_COLUMNS,
+  compactActiveFilters,
+  dateRangeFilterChip,
+} from "../mappers";
 import { useCashFlow, useDateRangeParams } from "../hooks";
 
 function CashFlowContent() {
-  const { params, dateFrom, dateTo, setDateRange } = useDateRangeParams();
+  const { params, dateFrom, dateTo, setDateRange, clearDateRange } = useDateRangeParams();
+  const activeFilters = compactActiveFilters([
+    dateRangeFilterChip(dateFrom, dateTo, "Journal date", clearDateRange),
+  ]);
   const { data, isLoading, isError, error, refetch, isFetching } = useCashFlow(params);
 
   const chartData = useMemo(
@@ -50,9 +61,14 @@ function CashFlowContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangeFilterBar dateFrom={dateFrom} dateTo={dateTo} onChange={setDateRange} />
+        <DateRangeFilterBar
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onChange={setDateRange}
+          fieldHint="Posted journal date"
+        />
         <AppButton
           variant="outline"
           size="sm"
@@ -61,8 +77,15 @@ function CashFlowContent() {
         >
           Refresh
         </AppButton>
-        <ExportPlaceholderButton />
+        <ExportReportButton
+          filename="cash-flow-report.csv"
+          rows={data ? buildCashFlowCsvRows(data) : []}
+          columns={CASH_FLOW_CSV_COLUMNS}
+          csvLabel="CSV"
+          disabled={isLoading || !data}
+        />
       </div>
+      <ActiveFilters filters={activeFilters} onClearAll={clearDateRange} />
 
       {isLoading && !data ? (
         <LoadingState label="Loading cash flow..." />
@@ -79,15 +102,16 @@ function CashFlowContent() {
 
           <AmountBarChart
             title="Cash flow summary"
-            description="Backend cash flow components"
+            description="Posted journal cash-flow components"
             data={chartData}
             isLoading={isLoading}
           />
 
           <SectionCard title="Notes">
             <p className="text-sm text-muted-foreground">
-              Values are provided by the cash-flow summary API. Investing and financing
-              breakdowns are not exposed as separate sections in the current backend response.
+              Values come from the posted-journal cash-flow summary. Investing and financing
+              breakdowns are not exposed as separate sections. This is not a bank-statement
+              cash report.
             </p>
           </SectionCard>
         </>
@@ -101,7 +125,7 @@ export function CashFlowReportPage() {
     <PageContainer>
       <PageHeader
         title="Cash Flow"
-        description="Backend-generated cash flow summary."
+        description="Posted journal cash-flow summary for the selected journal dates."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -109,9 +133,11 @@ export function CashFlowReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading cash flow..." />}>
-        <CashFlowContent />
-      </Suspense>
+      <ReportPermissionGate requireFinancial>
+        <Suspense fallback={<LoadingState label="Loading cash flow..." />}>
+          <CashFlowContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

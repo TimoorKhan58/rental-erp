@@ -9,6 +9,7 @@ import {
   UpdateRentalInvoiceSchema,
 } from "@/modules/rental-invoice/application";
 import { ListRentalInvoicesSchema } from "@/modules/rental-invoice/application/schemas/list-rental-invoices.schema";
+import { GetRentalInvoiceSummarySchema } from "@/modules/rental-invoice/application/schemas/get-rental-invoice-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -16,6 +17,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toRentalInvoiceListResponse,
   toRentalInvoiceResponse,
+  toRentalInvoiceSummaryResponse,
 } from "../mappers/rental-invoice-response.mapper";
 import {
   runRentalInvoiceApiRoute,
@@ -49,6 +51,38 @@ export async function handleListRentalInvoices(
         body: {
           ...result.body,
           data: toRentalInvoiceListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetRentalInvoiceSummary(
+  request: NextRequest,
+  resolveServices: RentalInvoiceServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetRentalInvoiceSummarySchema, query);
+
+    const result = await runRentalInvoiceApiRoute({
+      request,
+      route: RENTAL_INVOICE_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.rentalInvoices.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getRentalInvoiceSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toRentalInvoiceSummaryResponse(result.body.data),
         },
       });
     }

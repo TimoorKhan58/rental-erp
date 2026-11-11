@@ -1,4 +1,8 @@
 import type { DispatchResponse, DispatchStatus } from "../types";
+import {
+  getOperatorDispatchWorkflowIndex,
+  getOperatorDispatchWorkflowProgress as getOperatorProgress,
+} from "./dispatch-workflow-presentation.mapper";
 
 export type DispatchSummaryStats = {
   totalDispatches: number;
@@ -65,14 +69,9 @@ export function computeDispatchStatusCounts(
   return counts;
 }
 
-const WORKFLOW_STEPS: DispatchStatus[] = ["DRAFT", "READY", "DISPATCHED", "COMPLETED"];
-
+/** Operator workflow step index (0 = prepare … 2 = complete). Not the raw domain status ordinal. */
 export function getDispatchWorkflowStep(status: DispatchStatus): number {
-  if (status === "CANCELLED") {
-    return -1;
-  }
-
-  return WORKFLOW_STEPS.indexOf(status);
+  return getOperatorDispatchWorkflowIndex(status);
 }
 
 export function getDispatchTotalQuantity(dispatch: DispatchResponse): number {
@@ -80,11 +79,5 @@ export function getDispatchTotalQuantity(dispatch: DispatchResponse): number {
 }
 
 export function getDispatchWorkflowProgress(status: DispatchStatus): number {
-  const step = getDispatchWorkflowStep(status);
-
-  if (step < 0) {
-    return 0;
-  }
-
-  return Math.round(((step + 1) / WORKFLOW_STEPS.length) * 100);
+  return getOperatorProgress(status);
 }

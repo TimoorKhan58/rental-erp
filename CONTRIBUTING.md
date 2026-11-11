@@ -1,6 +1,6 @@
-# Contributing to Rental ERP
+# Contributing to RentCore
 
-Thank you for contributing to Rental ERP — the enterprise rental management system for **Manyar Tent Service** (Pakistan).
+Thank you for contributing to RentCore — the enterprise rental management system for **Manyar Tent Service** (Pakistan).
 
 This document defines the standards and workflow for all contributors. Follow these guidelines to keep the codebase consistent, reviewable, and maintainable.
 

@@ -1,5 +1,10 @@
 import { Asset } from "@/modules/asset/domain/asset.entity";
 import type { AssetListQuery } from "@/modules/asset/domain/asset-list.query";
+import type { AssetSummaryQuery } from "@/modules/asset/domain/asset-summary.query";
+import {
+  computeAssetSummaryResult,
+  filterAssetsForSummary,
+} from "@/modules/asset/domain/asset-summary.rules";
 import type { IAssetRepository } from "@/modules/asset/domain/asset.repository.interface";
 import type {
   AddMaintenanceHistoryData,
@@ -182,6 +187,24 @@ export class InMemoryAssetRepository implements IAssetRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: AssetSummaryQuery) {
+    const items = filterAssetsForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Asset.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeAssetSummaryResult(
+        items.map((asset) => ({
+          status: asset.status,
+          currentBookValue: asset.currentBookValue,
+        })),
+      ),
+    );
   }
 
   async create(data: CreateAssetData): Promise<Asset> {

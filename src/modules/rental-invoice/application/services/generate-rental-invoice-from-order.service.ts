@@ -1,3 +1,4 @@
+import { createCustomerRepositoryFromUnitOfWork } from "@/modules/customer/infrastructure/factories/create-customer.repository";
 import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
 import { assertRentalOrderEligibleForInvoice } from "@/modules/rental-invoice/domain";
 import { createProductRepositoryFromUnitOfWork } from "@/modules/product/infrastructure/factories/create-product.repository";
@@ -8,27 +9,32 @@ import { parseRequest } from "@/shared/application/validation";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
 import { runWithRepositoryUnitOfWork } from "@/shared/infrastructure/database";
 import {
-  ConflictError,
   NotFoundError,
+  UnauthorizedError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 import type { ProductId } from "@/shared/domain/ids";
 
 import type { RentalInvoiceDto } from "../dtos/rental-invoice.dto";
-import { toRentalOrderId } from "../mappers/rental-invoice.mapper";
+import { toCreateRentalInvoiceData, toRentalOrderId, toUserId } from "../mappers/rental-invoice.mapper";
 import {
   GenerateRentalInvoiceFromOrderSchema,
   type GenerateRentalInvoiceFromOrderInput,
 } from "../schemas/generate-rental-invoice.schema";
 import { buildRentalInvoiceLinesFromOrder, appendOptionalInvoiceCharges } from "./build-rental-invoice-lines";
-import type { CreateRentalInvoiceService } from "./create-rental-invoice.service";
+import { createRentalInvoiceInWriteScope } from "./create-rental-invoice-in-scope";
 import { generateNextInvoiceNumber } from "./generate-invoice-number";
+import { loadReturnsForRentalOrder } from "./load-rental-order-returns";
+import { validateCustomerForInvoice } from "./rental-invoice-rental-order.validation";
 import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
+import { isInvoiceNumberConflict } from "./is-invoice-number-conflict";
+
+const INVOICE_NUMBER_ALLOCATION_MAX_ATTEMPTS = 5;
 
 export class GenerateRentalInvoiceFromOrderService {
   constructor(
     private readonly deps: SharedDeps,
-    private readonly createRentalInvoiceService: CreateRentalInvoiceService,
+    private readonly userId: string | undefined,
   ) {}
 
   async execute(
@@ -36,14 +42,22 @@ export class GenerateRentalInvoiceFromOrderService {
   ): Promise<RentalInvoiceDto> {
     const data = parseRequest(GenerateRentalInvoiceFromOrderSchema, input);
     const rentalOrderId = toRentalOrderId(data.rentalOrderId);
+    const userId = this.userId;
 
-    const createInput = await runWithRepositoryUnitOfWork(this.deps, async (context) => {
+    if (userId === undefined) {
+      throw new UnauthorizedError({
+        message: "User context is required to create rental invoice",
+      });
+    }
+
+    return runWithRepositoryUnitOfWork(this.deps, async (context) => {
       const rentalOrderRepository = createRentalOrderRepositoryFromUnitOfWork(context);
       const dispatchRepository = createDispatchRepositoryFromUnitOfWork(context);
       const returnRepository = createReturnRepositoryFromUnitOfWork(context);
       const rentalInvoiceRepository =
         createRentalInvoiceRepositoryFromUnitOfWork(context);
       const productRepository = createProductRepositoryFromUnitOfWork(context);
+      const customerRepository = createCustomerRepositoryFromUnitOfWork(context);
 
       await syncRentalOrderStatusFromReturns(rentalOrderId, {
         dispatchRepository,
@@ -70,41 +84,15 @@ export class GenerateRentalInvoiceFromOrderService {
         });
       }
 
-      const existingInvoices = await rentalInvoiceRepository.findPaged({
-        page: 1,
-        pageSize: 10,
-        rentalOrderId,
-        sortOrder: "desc",
-      });
+      const customer = await customerRepository.findById(rentalOrder.customerId);
 
-      const activeInvoice = existingInvoices.items.find(
-        (invoice) => invoice.status !== "VOID",
+      validateCustomerForInvoice(customer);
+
+      const returns = await loadReturnsForRentalOrder(
+        rentalOrderId,
+        dispatchRepository,
+        returnRepository,
       );
-
-      if (activeInvoice !== undefined) {
-        throw new ConflictError({
-          message: "An active invoice already exists for this rental order",
-          details: {
-            invoiceId: activeInvoice.id,
-            invoiceNumber: activeInvoice.invoiceNumber,
-          },
-        });
-      }
-
-      const dispatches = await dispatchRepository.findPaged({
-        page: 1,
-        pageSize: 100,
-        rentalOrderId,
-        sortOrder: "desc",
-      });
-
-      const returns = (
-        await Promise.all(
-          dispatches.items.map((dispatch) =>
-            returnRepository.findByDispatchId(dispatch.id),
-          ),
-        )
-      ).flat();
 
       const uniqueProductIds = [
         ...new Set(rentalOrder.items.map((item) => item.productId)),
@@ -148,44 +136,69 @@ export class GenerateRentalInvoiceFromOrderService {
         });
       }
 
-      const invoiceNumber = await generateNextInvoiceNumber(rentalInvoiceRepository);
       const invoiceDate = new Date();
       const dueDate = new Date(invoiceDate);
       dueDate.setDate(dueDate.getDate() + 7);
 
-      return {
-        invoiceNumber,
-        rentalOrderId: data.rentalOrderId,
-        customerId: rentalOrder.customerId,
-        invoiceDate,
-        dueDate,
-        notes: `Invoice for rental order ${rentalOrder.orderNumber}`,
-        items: items.map((item) => ({
-          lineType: item.lineType,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          sortOrder: item.sortOrder,
-          productName: item.productName,
-          dailyRate: item.dailyRate,
-          numberOfDays: item.numberOfDays,
-          damagedQuantity: item.damagedQuantity,
-          lostQuantity: item.lostQuantity,
-          missingQuantity: item.missingQuantity,
-          notes: item.notes,
-          lineTotal: item.lineTotal,
-        })),
-      };
-    });
+      for (
+        let attempt = 0;
+        attempt < INVOICE_NUMBER_ALLOCATION_MAX_ATTEMPTS;
+        attempt += 1
+      ) {
+        const invoiceNumber = await generateNextInvoiceNumber(
+          rentalInvoiceRepository,
+          invoiceDate,
+        );
 
-    return this.createRentalInvoiceService.execute({
-      invoiceNumber: createInput.invoiceNumber,
-      rentalOrderId: createInput.rentalOrderId,
-      customerId: String(createInput.customerId),
-      invoiceDate: createInput.invoiceDate,
-      dueDate: createInput.dueDate,
-      notes: createInput.notes,
-      items: createInput.items,
+        const createData = toCreateRentalInvoiceData(
+          {
+            invoiceNumber,
+            rentalOrderId: data.rentalOrderId,
+            customerId: String(rentalOrder.customerId),
+            invoiceDate,
+            dueDate,
+            notes: `Invoice for rental order ${rentalOrder.orderNumber}`,
+            items: items.map((item) => ({
+              lineType: item.lineType,
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              sortOrder: item.sortOrder,
+              productName: item.productName,
+              dailyRate: item.dailyRate,
+              numberOfDays: item.numberOfDays,
+              damagedQuantity: item.damagedQuantity,
+              lostQuantity: item.lostQuantity,
+              missingQuantity: item.missingQuantity,
+              notes: item.notes,
+              lineTotal: item.lineTotal,
+            })),
+          },
+          toUserId(userId),
+        );
+
+        try {
+          return await createRentalInvoiceInWriteScope(
+            {
+              rentalInvoiceRepository,
+              rentalOrderRepository,
+              auditLogger: context.deps.auditLogger,
+            },
+            createData,
+          );
+        } catch (error) {
+          if (isInvoiceNumberConflict(error)) {
+            continue;
+          }
+
+          throw error;
+        }
+      }
+
+      throw new UnprocessableError({
+        message:
+          "Unable to allocate a unique invoice number after multiple attempts",
+      });
     });
   }
 }

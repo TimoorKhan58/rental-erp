@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Inventory } from "./inventory.entity";
 import type { InventoryListQuery } from "./inventory-list.query";
+import type { InventorySummaryQuery } from "./inventory-summary.query";
+import type { InventorySummaryResult } from "./inventory-summary.types";
 import type { CreateInventoryData, UpdateInventoryData } from "./inventory.types";
 
 export interface IInventoryRepository {
@@ -12,6 +14,7 @@ export interface IInventoryRepository {
     warehouseId: WarehouseId,
   ): Promise<Inventory | null>;
   findPaged(query: InventoryListQuery): Promise<PaginatedResult<Inventory>>;
+  findSummaryStats(query: InventorySummaryQuery): Promise<InventorySummaryResult>;
   exists(id: InventoryId): Promise<boolean>;
   create(data: CreateInventoryData): Promise<Inventory>;
   update(id: InventoryId, data: UpdateInventoryData): Promise<Inventory>;

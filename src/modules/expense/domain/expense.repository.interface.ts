@@ -3,6 +3,8 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { Expense } from "./expense.entity";
 import type { ExpenseListQuery } from "./expense-list.query";
+import type { ExpenseSummaryQuery } from "./expense-summary.query";
+import type { ExpenseSummaryResult } from "./expense-summary.types";
 import type {
   CreateExpenseData,
   UpdateExpenseData,
@@ -13,6 +15,7 @@ export interface IExpenseRepository {
   findById(id: ExpenseId): Promise<Expense | null>;
   findByExpenseNumber(expenseNumber: string): Promise<Expense | null>;
   findPaged(query: ExpenseListQuery): Promise<PaginatedResult<Expense>>;
+  findSummaryStats(query: ExpenseSummaryQuery): Promise<ExpenseSummaryResult>;
   create(data: CreateExpenseData): Promise<Expense>;
   update(id: ExpenseId, data: UpdateExpenseData, existing: Expense): Promise<Expense>;
   updateStatus(

@@ -18,13 +18,19 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
-import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
+import {
+  buildWorkflowDetailBreadcrumbs,
+  rentalOrderBackHref,
+  rentalOrderBackLabel,
+  resolveRentalWorkflowParent,
+} from "@/features/rental-order/navigation/rental-workflow-breadcrumbs";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
+import { usePaymentPermissions } from "@/features/payment/hooks";
 import {
   canIssueRentalInvoice,
   canVoidRentalInvoice,
@@ -39,10 +45,13 @@ import {
 } from "../hooks";
 import { PaymentStatusBadge } from "../components/payment-status-badge";
 import { RentalInvoiceLineItemsTable } from "../components/rental-invoice-line-items-table";
+import { RentalInvoiceJournalSection } from "../components/rental-invoice-journal-section";
+import { RentalInvoicePaymentsSection } from "../components/rental-invoice-payments-section";
 import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-payment-progress-bar";
 import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { RentalInvoiceStatusTimeline } from "../components/rental-invoice-status-timeline";
 import { RentalInvoiceWorkflowProgressBar } from "../components/rental-invoice-workflow-progress-bar";
+import { ConfirmModal } from "@/components/design-system/modal";
 import { EditInvoiceAdditionalChargesDialog } from "../dialogs/edit-invoice-additional-charges-dialog";
 import { IssueRentalInvoiceDialog } from "../dialogs/issue-rental-invoice-dialog";
 import { VoidRentalInvoiceDialog } from "../dialogs/void-rental-invoice-dialog";
@@ -86,7 +95,7 @@ function MetricTile({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+    <div className="rounded-md border border-border bg-muted/20 p-3.5">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
@@ -151,6 +160,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
   const router = useRouter();
   const { data: invoice, isLoading, isError, error, refetch } = useRentalInvoice(invoiceId);
   const { canIssue, canVoid, canUpdate } = useRentalInvoicePermissions();
+  const { canCreate: canCreatePayment } = usePaymentPermissions();
   const { rentalOrderLabelById } = useRentalInvoiceFilterOptions();
   const { data: customer } = useCustomer(invoice?.customerId ?? "");
   const convertMissingToLoss = useConvertMissingToLoss();
@@ -159,6 +169,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
   const [voidOpen, setVoidOpen] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [chargesOpen, setChargesOpen] = useState(false);
+  const [convertMissingOpen, setConvertMissingOpen] = useState(false);
 
   const metrics = useMemo(() => {
     if (!invoice) {
@@ -205,26 +216,44 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
   }
 
   const rentalOrderLabel = rentalOrderLabelById.get(invoice.rentalOrderId);
+  const rentalParent = resolveRentalWorkflowParent({
+    rentalOrderId: invoice.rentalOrderId,
+    rentalOrderNumber: rentalOrderLabel,
+  });
+  const rentalBackHref = rentalOrderBackHref(rentalParent);
+  const canRecordPayment =
+    canCreatePayment &&
+    invoice.status !== "VOID" &&
+    invoice.status !== "DRAFT" &&
+    invoice.balance > 0;
 
   return (
-    <PageContainer className="space-y-6 print:space-y-4">
+    <PageContainer className="space-y-5 print:space-y-4">
       <div className="print:hidden">
       <PageHeader
         title={invoice.invoiceNumber}
         description={customer?.name ?? invoice.customerId}
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Rental invoices", href: ROUTES.rentalInvoices },
-          { label: invoice.invoiceNumber },
-        ]}
+        breadcrumbs={buildWorkflowDetailBreadcrumbs({
+          rentalParent,
+          module: { label: "Rental Invoices", href: ROUTES.rentalInvoices },
+          currentLabel: invoice.invoiceNumber,
+        })}
         actions={
           <>
+            {rentalBackHref && rentalParent ? (
+              <AppButton
+                leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
+                render={<Link href={rentalBackHref} />}
+              >
+                {rentalOrderBackLabel(rentalParent)}
+              </AppButton>
+            ) : null}
             <AppButton
               variant="outline"
               leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.rentalInvoices} />}
             >
-              Back
+              All invoices
             </AppButton>
             <AppButton
               variant="outline"
@@ -233,6 +262,19 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             >
               Print preview
             </AppButton>
+            {canRecordPayment ? (
+              <AppButton
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
+                leftIcon={<WalletIcon className="size-4" aria-hidden="true" />}
+                render={
+                  <Link
+                    href={ROUTES.paymentNewForInvoice(invoice.id, invoice.customerId)}
+                  />
+                }
+              >
+                Record payment
+              </AppButton>
+            ) : null}
             {canUpdate && invoice.status === "DRAFT" ? (
               <AppButton
                 variant="outline"
@@ -247,7 +289,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
                 variant="outline"
                 leftIcon={<ClipboardListIcon className="size-4" aria-hidden="true" />}
                 loading={convertMissingToLoss.isPending}
-                onClick={() => void convertMissingToLoss.mutateAsync(invoice.id)}
+                onClick={() => setConvertMissingOpen(true)}
               >
                 Convert missing to loss
               </AppButton>
@@ -274,17 +316,29 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
       />
       </div>
 
-      <Card className="overflow-hidden border-border/60 shadow-soft print:hidden">
-        <CardContent className="space-y-6 p-6">
+      <section
+        className="space-y-5 rounded-md border border-border bg-card p-4 sm:p-5 print:hidden"
+        aria-label="Invoice financial overview"
+      >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <RentalInvoiceStatusBadge status={invoice.status} />
-                <PaymentStatusBadge
-                  status={invoice.status}
-                  balance={invoice.balance}
-                  paidAmount={invoice.paidAmount}
-                />
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Invoice
+                  </p>
+                  <RentalInvoiceStatusBadge status={invoice.status} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Collection
+                  </p>
+                  <PaymentStatusBadge
+                    status={invoice.status}
+                    balance={invoice.balance}
+                    paidAmount={invoice.paidAmount}
+                  />
+                </div>
               </div>
               <p className="text-sm text-muted-foreground">
                 Invoiced {formatDate(invoice.invoiceDate)}
@@ -349,12 +403,14 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
               </div>
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-3 print:hidden">
-        <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Customer bill">
+      <div className="app-grid print:hidden">
+        <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-8">
+          <SectionCard
+            title="Charges"
+            description="Line amounts are authoritative invoice values — totals are not recalculated in the UI."
+          >
             <RentalInvoiceLineItemsTable
               items={invoice.items}
               subtotal={invoice.subtotal}
@@ -364,8 +420,8 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             />
           </SectionCard>
 
-          <SectionCard title="Payment summary">
-            <dl className="grid gap-4 sm:grid-cols-2">
+          <SectionCard title="Payment state">
+            <dl className="grid gap-3 sm:grid-cols-2">
               <DetailField label="Subtotal" value={formatCurrency(invoice.subtotal)} />
               <DetailField label="Discount" value={formatCurrency(invoice.discount)} />
               <DetailField label="Tax" value={formatCurrency(invoice.tax)} />
@@ -373,6 +429,12 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
               <DetailField label="Paid amount" value={formatCurrency(invoice.paidAmount)} />
               <DetailField label="Outstanding balance" value={formatCurrency(invoice.balance)} />
             </dl>
+            {canVoid && canVoidRentalInvoice(invoice.status) ? (
+              <p className="mt-4 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                Void is blocked when POSTED payments exist for this invoice. The void dialog
+                checks linked payments; the server remains authoritative.
+              </p>
+            ) : null}
           </SectionCard>
 
           {invoice.notes ? (
@@ -403,13 +465,10 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             linkLabel="View rental order"
           />
 
-          <EmptyCard
-            title="Payment history"
-            description="Payment records will appear here when the payments module is connected."
-          />
+          <RentalInvoicePaymentsSection invoice={invoice} />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
             title="Invoice workflow"
             actions={<RentalInvoiceStatusBadge status={invoice.status} />}
@@ -449,10 +508,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             </div>
           </SectionCard>
 
-          <EmptyCard
-            title="Accounting journal"
-            description="Accounting entries will appear here when accounting integration is connected."
-          />
+          <RentalInvoiceJournalSection invoiceId={invoice.id} />
         </div>
       </div>
 
@@ -481,6 +537,20 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
         invoice={invoice}
         open={chargesOpen}
         onOpenChange={setChargesOpen}
+      />
+
+      <ConfirmModal
+        open={convertMissingOpen}
+        onOpenChange={setConvertMissingOpen}
+        title="Convert missing to loss"
+        description="Charge missing items at replacement / actual price on this draft invoice? The server remains authoritative for the resulting loss lines."
+        confirmLabel="Convert to loss"
+        onConfirm={() => {
+          void convertMissingToLoss.mutateAsync(invoice.id).then(() => {
+            setConvertMissingOpen(false);
+          });
+        }}
+        isLoading={convertMissingToLoss.isPending}
       />
     </PageContainer>
   );

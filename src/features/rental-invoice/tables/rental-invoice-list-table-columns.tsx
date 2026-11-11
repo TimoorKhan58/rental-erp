@@ -13,7 +13,11 @@ import {
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { canIssueRentalInvoice, canVoidRentalInvoice } from "../mappers";
+import {
+  canIssueRentalInvoice,
+  canVoidRentalInvoice,
+  getInvoiceAmountRemainderLabel,
+} from "../mappers";
 import { PaymentStatusBadge } from "../components/payment-status-badge";
 import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-payment-progress-bar";
@@ -122,13 +126,15 @@ export function getRentalInvoiceTableColumns({
       cell: (row) => (
         <div className="min-w-[6rem] text-sm">
           <p className="font-medium tabular-nums">{formatCurrency(row.grandTotal)}</p>
-          {row.balance > 0 && row.status !== "VOID" ? (
-            <p className="text-xs text-warning-foreground tabular-nums">
-              {formatCurrency(row.balance)} due
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">Paid in full</p>
-          )}
+          <p
+            className={
+              row.status !== "VOID" && row.balance > 0 && row.status !== "DRAFT"
+                ? "text-xs text-warning-foreground tabular-nums"
+                : "text-xs text-muted-foreground"
+            }
+          >
+            {getInvoiceAmountRemainderLabel(row)}
+          </p>
         </div>
       ),
     },

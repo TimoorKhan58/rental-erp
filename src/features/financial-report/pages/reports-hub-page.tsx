@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { ROUTES } from "@/config/routes";
 import { REPORT_HUB_CARDS } from "../mappers";
-import { ReportsSubNav, ExportPlaceholderButton } from "../components";
+import { ReportsSubNav } from "../components";
 import { useFinancialReportPermissions } from "../hooks";
 
 export function ReportsHubPage() {
@@ -25,7 +25,7 @@ export function ReportsHubPage() {
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports" },
         ]}
-        actions={<ExportPlaceholderButton />}
+        actions={null}
       />
 
       <ReportsSubNav />
@@ -67,15 +67,43 @@ export function ReportsHubPage() {
           </SectionCard>
         ) : null}
 
+        {!canReadFinancial && !canReadOperational ? (
+          <SectionCard title="Access">
+            <p className="text-sm text-muted-foreground">
+              You do not have permission to view financial or operational reports. Contact an
+              administrator if you need access.
+            </p>
+          </SectionCard>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-2">
-          <EmptyCard
-            title="Audit links"
-            description="Links to related audit trails will appear here when audit integration is connected."
-          />
-          <EmptyCard
-            title="Scheduled reports"
-            description="Report scheduling will be available in a future phase."
-          />
+          <SectionCard title="Related modules">
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href={ROUTES.accounting} className="text-primary hover:underline">
+                  Accounting dashboard
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.audit} className="text-primary hover:underline">
+                  Audit trail
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.reportsAnalytics} className="text-primary hover:underline">
+                  Executive analytics
+                </Link>
+              </li>
+            </ul>
+          </SectionCard>
+
+          <SectionCard title="Export">
+            <p className="text-sm text-muted-foreground">
+              Open a report to download CSV of the current page (or the full financial
+              statement when that report is not paginated). Filters on screen apply to that
+              download. PDF and Excel remain planned.
+            </p>
+          </SectionCard>
         </div>
       </div>
     </PageContainer>

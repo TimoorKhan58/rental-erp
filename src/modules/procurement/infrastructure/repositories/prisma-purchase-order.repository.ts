@@ -228,4 +228,84 @@ export class PrismaPurchaseOrderRepository implements IPurchaseOrderRepository {
       { model: MODEL, operation: "updatePaidAmount" },
     ).then(toPurchaseOrderDomain);
   }
+
+  applyPaymentDelta(
+    id: PurchaseOrderId,
+    delta: number,
+  ): Promise<PurchaseOrder | null> {
+    return this.runner.run(
+      async (db) => {
+        if (delta === 0) {
+          return null;
+        }
+
+        const decimalDelta = new Prisma.Decimal(delta);
+
+        if (delta > 0) {
+          const rows = await db.$queryRaw<Array<{ id: string }>>`
+            UPDATE "purchase_orders" po
+            SET
+              "paidAmount" = po."paidAmount" + ${decimalDelta},
+              "updatedAt" = CURRENT_TIMESTAMP
+            WHERE po."id" = ${id}::uuid
+              AND po."status" IN ('APPROVED', 'PARTIALLY_RECEIVED', 'RECEIVED')
+              AND ${decimalDelta} > 0
+              AND po."paidAmount" + ${decimalDelta} >= 0
+              AND po."paidAmount" + ${decimalDelta} <= (
+                SELECT COALESCE(SUM(poi."quantity" * poi."unitCost"), 0)
+                FROM "purchase_order_items" poi
+                WHERE poi."purchaseOrderId" = po."id"
+              )
+            RETURNING po."id"
+          `;
+
+          if (rows.length === 0) {
+            return null;
+          }
+        } else {
+          const absDelta = new Prisma.Decimal(-delta);
+
+          const rows = await db.$queryRaw<Array<{ id: string }>>`
+            UPDATE "purchase_orders" po
+            SET
+              "paidAmount" = po."paidAmount" + ${decimalDelta},
+              "updatedAt" = CURRENT_TIMESTAMP
+            WHERE po."id" = ${id}::uuid
+              AND po."status" <> 'CANCELLED'
+              AND ${decimalDelta} < 0
+              AND po."paidAmount" + ${decimalDelta} >= 0
+              AND ${absDelta} > 0
+            RETURNING po."id"
+          `;
+
+          if (rows.length === 0) {
+            return null;
+          }
+        }
+
+        const record = await db.purchaseOrder.findUnique({
+          where: { id },
+          include: PURCHASE_ORDER_INCLUDE,
+        });
+
+        return record === null ? null : toPurchaseOrderDomain(record);
+      },
+      { model: MODEL, operation: "applyPaymentDelta" },
+    );
+  }
+
+  lockForSupplierPaymentCommitment(id: PurchaseOrderId): Promise<void> {
+    return this.runner.run(
+      async (db) => {
+        const rows = await db.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "purchase_orders" WHERE id = ${id}::uuid FOR UPDATE
+        `;
+
+        if (rows.length === 0) {
+          throw new Error("Purchase order not found");
+        }
+      },
+      { model: MODEL, operation: "lockForSupplierPaymentCommitment" },
+    );
+  }
 }

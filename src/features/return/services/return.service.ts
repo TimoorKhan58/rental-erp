@@ -1,9 +1,11 @@
 import type {
   CreateReturnPayload,
+  GetReturnSummaryParams,
   InspectReturnPayload,
   ListReturnsParams,
   ReturnListResponse,
   ReturnResponse,
+  ReturnSummaryResponse,
   UpdateReturnPayload,
 } from "../types";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
@@ -14,6 +16,12 @@ export async function getReturns(
   params: ListReturnsParams = {},
 ): Promise<ReturnListResponse> {
   return apiGet<ReturnListResponse>(BASE, { params });
+}
+
+export async function getReturnSummary(
+  params: GetReturnSummaryParams = {},
+): Promise<ReturnSummaryResponse> {
+  return apiGet<ReturnSummaryResponse>(`${BASE}/summary`, { params });
 }
 
 export async function getReturn(id: string): Promise<ReturnResponse> {

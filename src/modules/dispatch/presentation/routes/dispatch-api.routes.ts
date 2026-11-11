@@ -8,6 +8,7 @@ import {
   UpdateDispatchSchema,
 } from "@/modules/dispatch/application";
 import { ListDispatchesSchema } from "@/modules/dispatch/application/schemas/list-dispatches.schema";
+import { GetDispatchSummarySchema } from "@/modules/dispatch/application/schemas/get-dispatch-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -15,6 +16,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toDispatchListResponse,
   toDispatchResponse,
+  toDispatchSummaryResponse,
 } from "../mappers/dispatch-response.mapper";
 import {
   runDispatchApiRoute,
@@ -48,6 +50,38 @@ export async function handleListDispatches(
         body: {
           ...result.body,
           data: toDispatchListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetDispatchSummary(
+  request: NextRequest,
+  resolveServices: DispatchServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetDispatchSummarySchema, query);
+
+    const result = await runDispatchApiRoute({
+      request,
+      route: DISPATCH_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.dispatches.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getDispatchSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toDispatchSummaryResponse(result.body.data),
         },
       });
     }

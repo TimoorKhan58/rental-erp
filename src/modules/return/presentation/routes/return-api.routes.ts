@@ -9,6 +9,7 @@ import {
   UpdateReturnSchema,
 } from "@/modules/return/application";
 import { ListReturnsSchema } from "@/modules/return/application/schemas/list-returns.schema";
+import { GetReturnSummarySchema } from "@/modules/return/application/schemas/get-return-summary.schema";
 import { parseRequest } from "@/shared/application/validation";
 import { PERMISSIONS } from "@/shared/application/authorization";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -16,6 +17,7 @@ import type { PaginatedResult } from "@/shared/domain/pagination";
 import {
   toReturnListResponse,
   toReturnResponse,
+  toReturnSummaryResponse,
 } from "../mappers/return-response.mapper";
 import {
   runReturnApiRoute,
@@ -48,6 +50,38 @@ export async function handleListReturns(
         body: {
           ...result.body,
           data: toReturnListResponse(paginated),
+        },
+      });
+    }
+
+    return toJsonResponse(result);
+  });
+}
+
+export async function handleGetReturnSummary(
+  request: NextRequest,
+  resolveServices: ReturnServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const summaryInput = parseRequest(GetReturnSummarySchema, query);
+
+    const result = await runReturnApiRoute({
+      request,
+      route: RETURN_ROUTES.summary,
+      httpMethod: "GET",
+      permission: PERMISSIONS.returns.read,
+      resolveServices,
+      handler: async (_ctx, services) =>
+        services.getReturnSummary.execute(summaryInput),
+    });
+
+    if (result.status === 200 && "data" in result.body) {
+      return toJsonResponse({
+        ...result,
+        body: {
+          ...result.body,
+          data: toReturnSummaryResponse(result.body.data),
         },
       });
     }

@@ -1,5 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { RepairListQuery } from "@/modules/repair/domain/repair-list.query";
+import type { RepairSummaryQuery } from "@/modules/repair/domain/repair-summary.query";
+import type { RepairSummaryResult } from "@/modules/repair/domain/repair-summary.types";
+import { REPAIR_STATUSES } from "@/modules/repair/domain/repair.constants";
+import { buildRepairSummaryWhere } from "@/modules/repair/infrastructure/repositories/repair-query.filters";
 import type { RepairId } from "@/shared/domain/ids";
 import type { ReturnInspectionId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
@@ -199,6 +203,61 @@ export class PrismaRepairRepository implements IRepairRepository {
       items: result.items.map(toRepairDomain),
       meta: result.meta,
     }));
+  }
+
+  findSummaryStats(
+    query: RepairSummaryQuery,
+  ): Promise<RepairSummaryResult> {
+    const where = buildRepairSummaryWhere(query);
+
+    return this.runner.run(
+      async (db) => {
+        const [totalRepairs, statusGroups, costSum] = await Promise.all([
+          db.repair.count({ where }),
+          db.repair.groupBy({
+            by: ["status"],
+            where,
+            _count: { _all: true },
+          }),
+          db.repair.aggregate({
+            where,
+            _sum: { actualCost: true },
+          }),
+        ]);
+
+        const statusCounts = Object.fromEntries(
+          REPAIR_STATUSES.map((status) => [status, 0]),
+        ) as RepairSummaryResult["statusCounts"];
+
+        statusCounts.all = totalRepairs;
+
+        for (const group of statusGroups) {
+          if ((REPAIR_STATUSES as readonly string[]).includes(group.status)) {
+            statusCounts[group.status as keyof typeof statusCounts] =
+              group._count._all;
+          }
+        }
+
+        const pendingCount = statusCounts.PENDING;
+        const inProgressCount = statusCounts.IN_PROGRESS;
+        const completedCount = statusCounts.COMPLETED;
+        const cancelledCount = statusCounts.CANCELLED;
+
+        return {
+          stats: {
+            totalRepairs,
+            activeRepairs: totalRepairs - cancelledCount,
+            pendingActionCount: pendingCount + inProgressCount,
+            pendingCount,
+            inProgressCount,
+            completedCount,
+            totalRepairCost: Number(costSum._sum.actualCost?.toString() ?? 0),
+          },
+          statusCounts,
+        };
+      },
+      { model: MODEL, operation: "findSummaryStats" },
+    );
   }
 
   create(data: CreateRepairData): Promise<Repair> {

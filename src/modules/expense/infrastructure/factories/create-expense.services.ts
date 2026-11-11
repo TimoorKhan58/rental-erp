@@ -6,6 +6,7 @@ import {
 } from "@/modules/expense/application/services/expense.service";
 import type { IExpenseService } from "@/modules/expense/application/services/expense-application-services.interface";
 import { GetExpenseByIdService } from "@/modules/expense/application/services/get-expense-by-id.service";
+import { GetExpenseSummaryService } from "@/modules/expense/application/services/get-expense-summary.service";
 import { ListExpensesService } from "@/modules/expense/application/services/list-expenses.service";
 import { PayExpenseService } from "@/modules/expense/application/services/pay-expense.service";
 import { RejectExpenseService } from "@/modules/expense/application/services/reject-expense.service";
@@ -32,6 +33,7 @@ export function createExpenseApplicationServices(
 
   const getExpenseById = new GetExpenseByIdService(repository);
   const listExpenses = new ListExpensesService(repository);
+  const getExpenseSummary = new GetExpenseSummaryService(repository);
   const createExpense = new CreateExpenseService(transactionRunner);
   const updateExpense = new UpdateExpenseService(transactionRunner);
   const submitExpense = new SubmitExpenseService(transactionRunner);
@@ -42,6 +44,7 @@ export function createExpenseApplicationServices(
   return {
     getExpenseById,
     listExpenses,
+    getExpenseSummary,
     createExpense,
     updateExpense,
     submitExpense,

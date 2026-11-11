@@ -4,6 +4,7 @@ import { CreateRentalInvoiceService } from "@/modules/rental-invoice/application
 import { GenerateRentalInvoiceFromOrderService } from "@/modules/rental-invoice/application/services/generate-rental-invoice-from-order.service";
 import { GetRentalInvoiceByIdService } from "@/modules/rental-invoice/application/services/get-rental-invoice-by-id.service";
 import { IssueRentalInvoiceService } from "@/modules/rental-invoice/application/services/issue-rental-invoice.service";
+import { GetRentalInvoiceSummaryService } from "@/modules/rental-invoice/application/services/get-rental-invoice-summary.service";
 import { ListRentalInvoicesService } from "@/modules/rental-invoice/application/services/list-rental-invoices.service";
 import {
   RentalInvoiceService,
@@ -34,10 +35,11 @@ export function createRentalInvoiceApplicationServices(
 
   const getRentalInvoiceById = new GetRentalInvoiceByIdService(repository);
   const listRentalInvoices = new ListRentalInvoicesService(repository);
+  const getRentalInvoiceSummary = new GetRentalInvoiceSummaryService(repository);
   const createRentalInvoice = new CreateRentalInvoiceService(transactionRunner);
   const generateRentalInvoiceFromOrder = new GenerateRentalInvoiceFromOrderService(
     deps,
-    createRentalInvoice,
+    userId,
   );
   const updateRentalInvoice = new UpdateRentalInvoiceService(transactionRunner);
   const issueRentalInvoice = new IssueRentalInvoiceService(transactionRunner);
@@ -47,6 +49,7 @@ export function createRentalInvoiceApplicationServices(
   return {
     getRentalInvoiceById,
     listRentalInvoices,
+    getRentalInvoiceSummary,
     createRentalInvoice,
     generateRentalInvoiceFromOrder,
     updateRentalInvoice,

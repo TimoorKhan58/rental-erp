@@ -5,6 +5,7 @@ export {
   NonEmptyStringSchema,
   NonNegativeIntSchema,
   OptionalDateSchema,
+  PasswordSchema,
   PhoneSchema,
   PositiveIntSchema,
   PositiveNumberSchema,

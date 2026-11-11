@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useExpense, useUpdateExpense } from "../hooks";
@@ -20,7 +22,7 @@ type ExpenseEditPageProps = {
 
 export function ExpenseEditPage({ expenseId }: ExpenseEditPageProps) {
   const router = useRouter();
-  const { data: expense, isLoading, isError } = useExpense(expenseId);
+  const { data: expense, isLoading, isError, error, refetch } = useExpense(expenseId);
   const updateMutation = useUpdateExpense();
 
   useEffect(() => {
@@ -46,8 +48,16 @@ export function ExpenseEditPage({ expenseId }: ExpenseEditPageProps) {
         >
           <p className="text-sm font-medium">Expense not found</p>
           <p className="text-sm text-muted-foreground">
-            The requested expense could not be loaded.
+            {error?.message ?? "The requested expense could not be loaded."}
           </p>
+          <div className="flex gap-2">
+            <AppButton variant="outline" onClick={() => void refetch()}>
+              Try again
+            </AppButton>
+            <AppButton variant="outline" render={<Link href={ROUTES.expenses} />}>
+              Back to list
+            </AppButton>
+          </div>
         </div>
       </PageContainer>
     );

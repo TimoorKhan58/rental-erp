@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { APPLICATION } from "@/constants/application";
 import { BOOTSTRAP_COMPANY_SETTINGS } from "@/modules/settings/domain/settings.constants";
 import { Settings } from "@/modules/settings/domain/settings.entity";
 import { SystemSettings } from "@/modules/settings/domain/system-settings.entity";
@@ -62,6 +63,45 @@ describe("GetSettingsService", () => {
     );
     expect(systemSettingsRepository.createDefault).toHaveBeenCalled();
     expect(result.company.companyName).toBe("Your Company");
-    expect(result.system.appName).toBeTruthy();
+    expect(result.system.appName).toBe(APPLICATION.name);
+  });
+
+  it("returns existing stored system settings without rewriting app name", async () => {
+    const company = createCompanySettings();
+    const storedName = "Legacy Stored Name";
+    const system = SystemSettings.reconstitute({
+      id: "00000000-0000-4000-8000-000000000102" as SystemSettingId,
+      ...SystemSettings.create(),
+      appName: storedName,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const settingsRepository: ISettingsRepository = {
+      findActive: vi.fn().mockResolvedValue(company),
+      ensureExists: vi.fn(),
+      createDefault: vi.fn(),
+      update: vi.fn(),
+    };
+
+    const systemSettingsRepository: ISystemSettingsRepository = {
+      findActive: vi.fn().mockResolvedValue(system),
+      createDefault: vi.fn(),
+      update: vi.fn(),
+    };
+
+    const ensureActiveCompanySettings = new EnsureActiveCompanySettingsService(
+      settingsRepository,
+    );
+
+    const service = new GetSettingsService(
+      ensureActiveCompanySettings,
+      systemSettingsRepository,
+    );
+
+    const result = await service.execute();
+
+    expect(result.system.appName).toBe(storedName);
+    expect(systemSettingsRepository.createDefault).not.toHaveBeenCalled();
   });
 });

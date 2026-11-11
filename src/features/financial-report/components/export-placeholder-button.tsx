@@ -15,6 +15,8 @@ type ExportReportButtonProps<T> = {
   rows: T[];
   columns: Array<CsvColumnDef<T>>;
   disabled?: boolean;
+  /** CSV downloads the rows passed in — typically the current page. */
+  csvLabel?: string;
 };
 
 /**
@@ -25,6 +27,7 @@ export function ExportReportButton<T>({
   rows,
   columns,
   disabled = false,
+  csvLabel = "CSV (this page)",
 }: ExportReportButtonProps<T>) {
   const canCsv = !disabled && rows.length > 0 && columns.length > 0;
 
@@ -52,7 +55,7 @@ export function ExportReportButton<T>({
         <DropdownMenuItem disabled>PDF (coming soon)</DropdownMenuItem>
         <DropdownMenuItem disabled>Excel (coming soon)</DropdownMenuItem>
         <DropdownMenuItem disabled={!canCsv} onClick={handleCsv}>
-          CSV
+          {csvLabel}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

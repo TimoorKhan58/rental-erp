@@ -1,5 +1,4 @@
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -9,15 +8,12 @@ import { getProducts } from "@/features/product/services";
 import { getReturns } from "@/features/return/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListRepairsParams } from "../types";
-import { REPAIR_STATUSES } from "../types";
-import {
-  computeRepairSummary,
-} from "../mappers/repair-summary.mapper";
 import {
   cancelRepair,
   completeRepair,
   createRepair,
   getRepair,
+  getRepairSummary,
   getRepairs,
   startRepair,
   updateRepair,
@@ -106,68 +102,16 @@ export function useRepairFilterOptions() {
 }
 
 export function useRepairSummaryStats() {
-  const totalQuery = useQuery({
-    queryKey: queryKeys.repairs.list({ pageSize: 1 }),
-    queryFn: () => getRepairs({ pageSize: 1 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.repairs.summary({}),
+    queryFn: () => getRepairSummary({}),
     staleTime: 60_000,
   });
-
-  const costSampleQuery = useQuery({
-    queryKey: queryKeys.repairs.list({ pageSize: 100, sortBy: "createdAt", sortOrder: "desc" }),
-    queryFn: () => getRepairs({ pageSize: 100, sortBy: "createdAt", sortOrder: "desc" }),
-    staleTime: 60_000,
-  });
-
-  const statusQueries = useQueries({
-    queries: REPAIR_STATUSES.map((status) => ({
-      queryKey: queryKeys.repairs.list({ status, pageSize: 1 }),
-      queryFn: () => getRepairs({ status, pageSize: 1 }),
-      staleTime: 60_000,
-    })),
-  });
-
-  const statusCounts = useMemo(() => {
-    const counts: Partial<Record<"all" | (typeof REPAIR_STATUSES)[number], number>> = {
-      all: totalQuery.data?.meta.total ?? 0,
-    };
-
-    REPAIR_STATUSES.forEach((status, index) => {
-      counts[status] = statusQueries[index]?.data?.meta.total ?? 0;
-    });
-
-    return counts;
-  }, [totalQuery.data, statusQueries]);
-
-  const stats = useMemo(() => {
-    if (!totalQuery.data) {
-      return undefined;
-    }
-
-    const total = totalQuery.data.meta.total;
-    const pendingCount = statusCounts.PENDING ?? 0;
-    const inProgressCount = statusCounts.IN_PROGRESS ?? 0;
-    const completedCount = statusCounts.COMPLETED ?? 0;
-    const cancelledCount = statusCounts.CANCELLED ?? 0;
-    const costSample = computeRepairSummary(costSampleQuery.data?.items ?? []);
-
-    return {
-      totalRepairs: total,
-      activeRepairs: total - cancelledCount,
-      pendingActionCount: pendingCount + inProgressCount,
-      pendingCount,
-      inProgressCount,
-      completedCount,
-      totalRepairCost: costSample.totalRepairCost,
-    };
-  }, [totalQuery.data, costSampleQuery.data, statusCounts]);
 
   return {
-    stats,
-    statusCounts,
-    isLoading:
-      totalQuery.isLoading ||
-      costSampleQuery.isLoading ||
-      statusQueries.some((query) => query.isLoading),
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 
@@ -205,6 +149,7 @@ export function useCreateRepair() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repairs.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
       ]);
     },
@@ -247,6 +192,7 @@ export function useUpdateRepair() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repairs.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
       ]);
@@ -264,6 +210,7 @@ export function useStartRepair() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repairs.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
       ]);
@@ -281,6 +228,7 @@ export function useCompleteRepair() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repairs.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
@@ -299,6 +247,7 @@ export function useCancelRepair() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repairs.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.repairs.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.returns.lists() }),
       ]);

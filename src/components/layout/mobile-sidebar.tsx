@@ -17,10 +17,11 @@ export function MobileSidebar() {
   return (
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <SheetContent
+        id="mobile-navigation"
         side="left"
-        className="w-72 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+        className="w-[min(20rem,88vw)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-none"
       >
-        <SheetHeader className="border-b border-sidebar-border/60 px-4 py-4 text-left">
+        <SheetHeader className="border-b border-sidebar-border px-4 py-3.5 text-left">
           <BrandLogo size="sm" showTagline />
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SheetDescription className="sr-only">

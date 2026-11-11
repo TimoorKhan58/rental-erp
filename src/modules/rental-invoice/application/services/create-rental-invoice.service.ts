@@ -4,7 +4,6 @@ import {
 } from "@/modules/rental-invoice/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
-  ConflictError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableError,
@@ -14,7 +13,6 @@ import type { RentalInvoiceDto } from "../dtos/rental-invoice.dto";
 import {
   toCreateRentalInvoiceData,
   toCustomerId,
-  toRentalInvoiceDto,
   toRentalOrderId,
   toUserId,
 } from "../mappers/rental-invoice.mapper";
@@ -22,15 +20,11 @@ import {
   CreateRentalInvoiceSchema,
   type CreateRentalInvoiceInput,
 } from "../schemas/rental-invoice.schemas";
-import { toRentalInvoiceAuditValues } from "./rental-invoice-audit.mapper";
+import { createRentalInvoiceInWriteScope } from "./create-rental-invoice-in-scope";
 import {
   validateCustomerForInvoice,
   validateRentalOrderForInvoice,
 } from "./rental-invoice-rental-order.validation";
-import {
-  RENTAL_INVOICE_ENTITY_NAME,
-  RENTAL_INVOICE_MODULE,
-} from "./rental-invoice-service.constants";
 import type { IRentalInvoiceTransactionRunner } from "./rental-invoice-transaction.runner";
 
 export class CreateRentalInvoiceService {
@@ -44,6 +38,7 @@ export class CreateRentalInvoiceService {
     return this.transactionRunner.run(
       async ({
         rentalInvoiceRepository,
+        rentalOrderRepository,
         rentalOrderInvoiceLookup,
         customerRepository,
         auditLogger,
@@ -89,29 +84,14 @@ export class CreateRentalInvoiceService {
 
         validateCustomerForInvoice(customer);
 
-        const existing = await rentalInvoiceRepository.findByInvoiceNumber(
-          createData.invoiceNumber,
+        return createRentalInvoiceInWriteScope(
+          {
+            rentalInvoiceRepository,
+            rentalOrderRepository,
+            auditLogger,
+          },
+          createData,
         );
-
-        if (existing !== null) {
-          throw new ConflictError({
-            message: "Invoice number already exists",
-            details: { invoiceNumber: createData.invoiceNumber },
-          });
-        }
-
-        const invoice = await rentalInvoiceRepository.create(createData);
-
-        await auditLogger.log({
-          module: RENTAL_INVOICE_MODULE,
-          entityName: RENTAL_INVOICE_ENTITY_NAME,
-          recordId: invoice.id,
-          action: "CREATE",
-          status: "SUCCESS",
-          newValues: toRentalInvoiceAuditValues(invoice),
-        });
-
-        return toRentalInvoiceDto(invoice);
       },
     );
   }

@@ -113,7 +113,7 @@ export function ProcurementAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="General ledger integration for purchase orders."
+      description="Purchase orders do not post automatic journals."
       actions={
         <AppButton
           variant="outline"
@@ -125,9 +125,9 @@ export function ProcurementAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Receive and supplier payment flows update inventory and payment balances, but automatic
-        journal posting is not configured for purchase orders yet. Record manual journal entries
-        from accounting when needed.
+        Receiving posts inventory IN only. Posted supplier payments update the paid amount
+        on this order. Neither flow creates an expense, cash journal, or inventory valuation
+        entry. Record manual journal entries from accounting when needed.
       </p>
     </SectionCard>
   );

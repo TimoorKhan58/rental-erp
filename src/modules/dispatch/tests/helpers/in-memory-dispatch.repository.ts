@@ -1,5 +1,10 @@
 import { Dispatch } from "@/modules/dispatch/domain/dispatch.entity";
 import type { DispatchListQuery } from "@/modules/dispatch/domain/dispatch-list.query";
+import type { DispatchSummaryQuery } from "@/modules/dispatch/domain/dispatch-summary.query";
+import {
+  computeDispatchSummaryResult,
+  filterDispatchesForSummary,
+} from "@/modules/dispatch/domain/dispatch-summary.rules";
 import type {
   DispatchClaimedSourceQuantities,
   IDispatchRepository,
@@ -13,6 +18,8 @@ import { toClaimedSourceQuantityMaps } from "@/modules/dispatch/domain/dispatch.
 import { validateDispatchItems } from "@/modules/dispatch/domain/dispatch.rules";
 import type { DispatchId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+
+import { acquireReturnCapacityLock } from "@/modules/dispatch/infrastructure/return-capacity-lock";
 
 import { buildDispatchEntity } from "./dispatch.fixtures";
 
@@ -118,6 +125,17 @@ export class InMemoryDispatchRepository implements IDispatchRepository {
         totalPages: query.pageSize > 0 ? Math.ceil(total / query.pageSize) : 0,
       },
     };
+  }
+
+  findSummaryStats(query: DispatchSummaryQuery) {
+    const items = filterDispatchesForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Dispatch.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(computeDispatchSummaryResult(items));
   }
 
   async sumClaimedSourceQuantitiesByRentalOrderId(
@@ -346,6 +364,14 @@ export class InMemoryDispatchRepository implements IDispatchRepository {
     }
 
     return this.updateStatus(id, next, timestamps);
+  }
+
+  async lockForReturnCapacity(id: DispatchId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Dispatch not found");
+    }
+
+    await acquireReturnCapacityLock(id);
   }
 
   count(): number {

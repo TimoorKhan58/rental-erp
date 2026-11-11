@@ -25,25 +25,25 @@ export const RentalInsightsSection = memo(function RentalInsightsSection({
 
   return (
     <section aria-label="Rental business insights" className={className}>
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
+          <h2 className="font-heading text-[length:var(--text-small)] font-semibold tracking-[0.06em] text-foreground uppercase">
             Rental insights
           </h2>
-          <p className="text-xs text-muted-foreground">
-            What rents, what earns, what sits idle, and who owes — {periodLabel}
+          <p className="text-[length:var(--text-caption)] text-muted-foreground">
+            Supporting detail — {periodLabel}
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-xs">
           <Link
             href={ROUTES.reportsProducts}
-            className="font-medium text-primary hover:underline"
+            className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Product report
           </Link>
           <Link
             href={`${ROUTES.rentalInvoices}?paymentStatus=unpaid`}
-            className="font-medium text-primary hover:underline"
+            className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Unpaid invoices
           </Link>
@@ -56,7 +56,7 @@ export const RentalInsightsSection = memo(function RentalInsightsSection({
         </p>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <TopProductsChart
           title="Top products by revenue"
           description="Line revenue from bookings in period"
@@ -102,11 +102,11 @@ export const RentalInsightsSection = memo(function RentalInsightsSection({
 export function RentalInsightsSectionSkeleton() {
   return (
     <section aria-busy="true" aria-label="Loading rental insights">
-      <div className="mb-3 space-y-2">
-        <Skeleton className="h-4 w-36" />
+      <div className="mb-2 space-y-1">
+        <Skeleton className="h-3.5 w-36" />
         <Skeleton className="h-3 w-64" />
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
           <Skeleton key={index} className="h-64 w-full rounded-xl" />
         ))}

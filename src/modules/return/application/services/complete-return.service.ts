@@ -2,6 +2,10 @@ import { syncRentalOrderStatusFromReturns } from "@/modules/rental-order/applica
 import { RENTAL_ORDER_REFERENCE_TYPE } from "@/modules/rental-order/domain/rental-order.constants";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import {
+  releaseReferenceReservationInScope,
+  sumReservedForProduct,
+} from "@/modules/stock-movement/application/services/release-reference-reservation-in-scope";
+import {
   ReturnInvalidItemError,
   ReturnInvalidStatusError,
   computeExternalCustomerReturnQuantity,
@@ -196,18 +200,19 @@ export class CompleteReturnService {
               userId,
             };
 
-            const releaseNow = Math.min(
-              releaseQuantity,
-              inventory.reservedQuantity,
-            );
-
-            if (releaseNow > 0) {
-              await executeCreateStockMovementInScope(movementScope, {
+            // Only clears a hold this order still has (legacy dispatches that
+            // never released); current dispatches already consumed it, and
+            // other orders' holds must stay untouched (QA-012).
+            if (releaseQuantity > 0) {
+              await releaseReferenceReservationInScope(movementScope, {
                 inventoryId: inventory.id,
-                movementType: "RELEASE",
-                quantity: releaseNow,
                 referenceType: RENTAL_ORDER_REFERENCE_TYPE,
                 referenceId: rentalOrder.id,
+                reservedByReference: sumReservedForProduct(
+                  rentalOrder.items,
+                  rentalItem.productId,
+                ),
+                maxQuantity: releaseQuantity,
                 remarks: `Released reservation for return ${existing.returnNumber} on rental order ${rentalOrder.orderNumber}`,
               });
             }
@@ -359,11 +364,53 @@ export class CompleteReturnService {
           },
         });
 
-        await syncRentalOrderStatusFromReturns(existing.rentalOrderId, {
-          dispatchRepository,
-          returnRepository,
-          rentalOrderRepository,
-        });
+        const orderStatus = await syncRentalOrderStatusFromReturns(
+          existing.rentalOrderId,
+          {
+            dispatchRepository,
+            returnRepository,
+            rentalOrderRepository,
+          },
+        );
+
+        // A completed order can't use leftover holds (units reserved but
+        // never dispatched); free them so stock doesn't stay stuck (QA-012).
+        if (orderStatus === "COMPLETED") {
+          const releaseScope = {
+            stockMovementRepository,
+            inventoryRepository,
+            auditLogger,
+            userId,
+          };
+          const releasedProducts = new Set<string>();
+
+          for (const orderItem of rentalOrder.items) {
+            if (releasedProducts.has(orderItem.productId)) {
+              continue;
+            }
+            releasedProducts.add(orderItem.productId);
+
+            const inventory = await inventoryRepository.findByProductAndWarehouse(
+              toProductId(orderItem.productId),
+              rentalOrder.warehouseId,
+            );
+
+            if (inventory === null) {
+              continue;
+            }
+
+            await releaseReferenceReservationInScope(releaseScope, {
+              inventoryId: inventory.id,
+              referenceType: RENTAL_ORDER_REFERENCE_TYPE,
+              referenceId: rentalOrder.id,
+              reservedByReference: sumReservedForProduct(
+                rentalOrder.items,
+                orderItem.productId,
+              ),
+              remarks: `Released undispatched reservation on completion of rental order ${rentalOrder.orderNumber}`,
+            });
+          }
+        }
 
         await enqueueWorkflowNotification(notificationService, db, {
           eventKey: NOTIFICATION_EVENT_KEYS.RETURN_COMPLETED,

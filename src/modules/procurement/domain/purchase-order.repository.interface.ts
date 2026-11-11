@@ -32,4 +32,18 @@ export interface IPurchaseOrderRepository {
     id: PurchaseOrderId,
     paidAmount: number,
   ): Promise<PurchaseOrder>;
+  /**
+   * Phase 44 (N-44-04): atomically applies a signed payment delta to
+   * paidAmount with SQL/domain predicates (non-negative, not above order total).
+   */
+  applyPaymentDelta(
+    id: PurchaseOrderId,
+    delta: number,
+  ): Promise<PurchaseOrder | null>;
+  /**
+   * Phase 46 (N-44-06): serializes pending supplier-payment commitment for one
+   * purchase order. Must remain held through read → validate → create in the
+   * same UoW.
+   */
+  lockForSupplierPaymentCommitment(id: PurchaseOrderId): Promise<void>;
 }

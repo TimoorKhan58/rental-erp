@@ -1,6 +1,6 @@
 import { SemanticBadge } from "@/components/design-system/badge";
 import type { DispatchStatus } from "../types";
-import { STATUS_LABELS } from "../mappers";
+import { getOperatorFacingStatusLabel } from "../mappers/dispatch-workflow-presentation.mapper";
 
 type DispatchStatusBadgeProps = {
   status: DispatchStatus;
@@ -20,7 +20,7 @@ const statusSemantic: Record<
 export function DispatchStatusBadge({ status }: DispatchStatusBadgeProps) {
   return (
     <SemanticBadge semantic={statusSemantic[status]}>
-      {STATUS_LABELS[status]}
+      {getOperatorFacingStatusLabel(status)}
     </SemanticBadge>
   );
 }

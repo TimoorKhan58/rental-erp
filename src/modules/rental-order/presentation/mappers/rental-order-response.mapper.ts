@@ -66,3 +66,9 @@ export function toRentalOrderListResponse(
     meta: result.meta,
   };
 }
+
+export function toRentalOrderSummaryResponse(
+  summary: import("@/modules/rental-order/application/dtos/rental-order-summary.dto").RentalOrderSummaryDto,
+) {
+  return summary;
+}

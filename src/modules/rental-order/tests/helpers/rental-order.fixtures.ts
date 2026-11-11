@@ -69,6 +69,7 @@ export function buildCreateRentalOrderData(
 export function buildRentalOrderEntity(
   override: {
     id?: RentalOrderId;
+    warehouseId?: WarehouseId;
     status?: RentalOrder["status"];
     reservedQuantity?: number;
     items?: RentalOrder["items"];
@@ -83,7 +84,7 @@ export function buildRentalOrderEntity(
     id: override.id ?? RENTAL_ORDER_ID,
     orderNumber: created.orderNumber,
     customerId: created.customerId,
-    warehouseId: created.warehouseId,
+    warehouseId: override.warehouseId ?? created.warehouseId,
     status: override.status ?? "DRAFT",
     startDate: created.startDate,
     endDate: created.endDate,

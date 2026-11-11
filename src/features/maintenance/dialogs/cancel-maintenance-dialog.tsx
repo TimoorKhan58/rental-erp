@@ -34,7 +34,11 @@ export function CancelMaintenanceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel maintenance"
-      description={`Cancel maintenance "${maintenance.maintenanceNumber}"? This action cannot be undone.`}
+      description={
+        maintenance.status === "IN_PROGRESS" || maintenance.startedAt
+          ? `Cancel "${maintenance.maintenanceNumber}"? Quantity taken out at start will be returned to inventory. This cannot be undone.`
+          : `Cancel "${maintenance.maintenanceNumber}"? Inventory is unchanged because stock is only removed when maintenance starts. This cannot be undone.`
+      }
       confirmLabel="Cancel maintenance"
       onConfirm={() => void handleConfirm()}
       isLoading={cancelMutation.isPending}

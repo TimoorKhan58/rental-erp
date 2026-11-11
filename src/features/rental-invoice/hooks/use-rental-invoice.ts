@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
@@ -13,14 +12,10 @@ import { getCustomers } from "@/features/customer/services";
 import { getRentalOrders } from "@/features/rental-order/services";
 import type { ListRentalInvoicesParams } from "../types";
 import {
-  computeRentalInvoicePaymentStatusCounts,
-  computeRentalInvoiceStatusCounts,
-  computeRentalInvoiceSummary,
-} from "../mappers/rental-invoice-summary.mapper";
-import {
   convertMissingToLoss,
   generateRentalInvoiceFromOrder,
   getRentalInvoice,
+  getRentalInvoiceSummary,
   getRentalInvoices,
   issueRentalInvoice,
   updateRentalInvoice,
@@ -89,41 +84,17 @@ export function useRentalInvoiceFilterOptions() {
 }
 
 export function useRentalInvoiceSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.rentalInvoices.list({ pageSize: 100 }),
-    queryFn: () => getRentalInvoices({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.rentalInvoices.summary({}),
+    queryFn: () => getRentalInvoiceSummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeRentalInvoiceSummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const statusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeRentalInvoiceStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const paymentStatusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeRentalInvoicePaymentStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
   return {
-    stats,
-    statusCounts,
-    paymentStatusCounts,
-    isLoading: listQuery.isLoading,
+    stats: summaryQuery.data?.stats,
+    statusCounts: summaryQuery.data?.statusCounts,
+    paymentStatusCounts: summaryQuery.data?.paymentStatusCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 
@@ -153,6 +124,7 @@ export function useGenerateRentalInvoiceFromOrder() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.all }),
       ]);
       router.push(ROUTES.rentalInvoiceDetail(data.id));
@@ -171,6 +143,7 @@ export function useConvertMissingToLoss() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.rentalInvoices.detail(data.id),
         }),
@@ -253,6 +226,7 @@ export function useUpdateRentalInvoiceAdditionalCharges() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.rentalInvoices.detail(data.id),
         }),
@@ -271,6 +245,7 @@ export function useIssueRentalInvoice() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.detail(data.id) }),
       ]);
     },
@@ -287,6 +262,7 @@ export function useVoidRentalInvoice() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.detail(data.id) }),
       ]);
     },

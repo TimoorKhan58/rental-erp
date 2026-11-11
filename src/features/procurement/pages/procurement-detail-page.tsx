@@ -26,12 +26,12 @@ import { useSupplier } from "@/features/supplier/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
 import {
   calculateLineSubtotal,
-  calculateOrderTotal,
   canApproveProcurement,
   canCancelProcurement,
   canEditProcurement,
   canReceiveProcurement,
   getRemainingQuantity,
+  STATUS_LABELS,
 } from "../mappers";
 import {
   useProcurement,
@@ -318,11 +318,11 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
                 label="Units received"
                 value={`${totalReceived} of ${totalOrdered}`}
               />
-              <DetailField label="Current status" value={procurement.status} />
+              <DetailField label="Current status" value={STATUS_LABELS[procurement.status]} />
             </dl>
           </SectionCard>
 
-          <SectionCard title="Account">
+          <SectionCard title="Record details">
             <dl className="space-y-4">
               <DetailField label="Created" value={formatDate(procurement.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(procurement.updatedAt)} />

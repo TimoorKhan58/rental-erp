@@ -24,6 +24,7 @@ import {
   handleCreateInventory,
   handleDeleteInventory,
   handleGetInventoryById,
+  handleGetInventorySummary,
   handleListInventory,
   handleUpdateInventory,
 } from "@/modules/inventory/presentation/routes/inventory-api.routes";
@@ -43,6 +44,7 @@ function createMockServices() {
   return {
     getInventoryById: { execute: vi.fn() },
     listInventory: { execute: vi.fn() },
+    getInventorySummary: { execute: vi.fn() },
     createInventory: { execute: vi.fn() },
     updateInventory: { execute: vi.fn() },
     deleteInventory: { execute: vi.fn() },
@@ -183,22 +185,45 @@ describe("Inventory API handlers", () => {
     expect(services.createInventory.execute).toHaveBeenCalledOnce();
   });
 
-  it("PATCH /api/inventory/{id} updates inventory", async () => {
+  it("PATCH /api/inventory/{id} updates inventory metadata", async () => {
     const services = createMockServices();
     services.updateInventory.execute.mockResolvedValue({
       ...mockInventoryDto,
-      quantityOnHand: 200,
-      availableQuantity: 190,
+      minimumStock: 25,
     });
 
     const response = await handleUpdateInventory(
-      createMockNextRequest({ json: { quantityOnHand: 200 } }),
+      createMockNextRequest({ json: { minimumStock: 25 } }),
       INVENTORY_ID,
       () => services,
     );
 
     expect(response.status).toBe(200);
     expect(services.updateInventory.execute).toHaveBeenCalledOnce();
+  });
+
+  it("PATCH /api/inventory/{id} rejects quantityOnHand (Phase 43)", async () => {
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { quantityOnHand: 200 } }),
+      INVENTORY_ID,
+      () => createMockServices(),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
+  });
+
+  it("PATCH /api/inventory/{id} rejects reservedQuantity (Phase 43)", async () => {
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { reservedQuantity: 20 } }),
+      INVENTORY_ID,
+      () => createMockServices(),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
   });
 
   it("DELETE /api/inventory/{id} deletes inventory", async () => {
@@ -350,5 +375,83 @@ describe("Inventory permission matrix", () => {
 
     expect(response.status).toBe(403);
     expect(body.error.code).toBe(ERROR_CODES.FORBIDDEN);
+  });
+
+  it("allows worker metadata PATCH when inventory.update is granted (T43.11)", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+    services.updateInventory.execute.mockResolvedValue({
+      ...mockInventoryDto,
+      minimumStock: 20,
+    });
+
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { minimumStock: 20 } }),
+      INVENTORY_ID,
+      () => services,
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.updateInventory.execute).toHaveBeenCalledOnce();
+  });
+
+  it("denies viewer metadata PATCH without inventory.update", async () => {
+    mockSession(USER_ROLES.VIEWER);
+
+    const response = await handleUpdateInventory(
+      createMockNextRequest({ json: { minimumStock: 20 } }),
+      INVENTORY_ID,
+      () => createMockServices(),
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe(ERROR_CODES.FORBIDDEN);
+  });
+
+  it("handleGetInventorySummary returns summary envelope with read permission", async () => {
+    mockSession(USER_ROLES.ACCOUNTANT);
+    const services = createMockServices();
+    services.getInventorySummary.execute.mockResolvedValue({
+      stats: {
+        totalRecords: 101,
+        totalOnHand: 1010,
+        totalAvailable: 808,
+        lowStockCount: 0,
+        outOfStockCount: 0,
+        overstockCount: 0,
+      },
+      stockStatusCounts: {
+        all: 101,
+        "in-stock": 101,
+        "low-stock": 0,
+        "out-of-stock": 0,
+        overstock: 0,
+      },
+    });
+
+    const response = await handleGetInventorySummary(
+      createMockNextRequest(),
+      () => services,
+    );
+    const body = await readJsonResponse<{
+      data: { stats: { totalRecords: number } };
+    }>(response);
+
+    expect(response.status).toBe(200);
+    expect(body.data.stats.totalRecords).toBe(101);
+  });
+
+  it("denies inventory summary when unauthenticated", async () => {
+    mockUnauthenticatedUser();
+
+    const response = await handleGetInventorySummary(
+      createMockNextRequest({ url: "http://localhost/api/inventory/summary" }),
+      () => createMockServices(),
+    );
+    const body = await readJsonResponse<{ error: { code: string } }>(response);
+
+    expect(response.status).toBe(401);
+    expect(body.error.code).toBe(ERROR_CODES.UNAUTHORIZED);
   });
 });

@@ -62,6 +62,15 @@ export function useUserListParams() {
     setRoleFilter: (role: UserRole | undefined) => updateParams({ role, page: DEFAULT_PAGE }),
     setSorting: (sortBy: UserSortField, sortOrder: ListUsersParams["sortOrder"] = "asc") =>
       updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        isActive: undefined,
+        role: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

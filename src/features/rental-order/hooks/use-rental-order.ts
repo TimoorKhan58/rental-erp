@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -8,12 +7,6 @@ import { getCurrentUserPermissions } from "@/features/customer/services";
 import { getCustomers } from "@/features/customer/services";
 import { getProducts } from "@/features/product/services";
 import { getWarehouses } from "@/features/warehouse/services";
-import type { ListRentalOrdersParams } from "../types";
-import {
-  computeOrderStatusCounts,
-  computeRentalOrderSummary,
-  computeReservationStatusCounts,
-} from "../mappers/rental-order-summary.mapper";
 import {
   cancelRentalOrder,
   confirmRentalOrder,
@@ -21,6 +14,7 @@ import {
   getDateAwareAvailability,
   getRentalOrder,
   getRentalOrderShortfall,
+  getRentalOrderSummary,
   getRentalOrders,
   reserveRentalOrder,
   sourceRentalOrderExternally,
@@ -28,6 +22,7 @@ import {
 } from "../services";
 import type {
   GetDateAwareAvailabilityParams,
+  ListRentalOrdersParams,
   SourceRentalOrderExternallyPayload,
 } from "../types";
 import { useExternalRentalPermissions } from "@/features/external-rental/hooks";
@@ -80,6 +75,10 @@ export function useRentalOrderFilterOptions() {
   const customerOptions: LookupOption[] = (customers.data?.items ?? []).map((item) => ({
     id: item.id,
     label: `${item.customerCode} — ${item.name}`,
+    // Include phone so the searchable customer selector matches the same
+    // fields as the Customers list (name, code, phone). The label already
+    // contains customerCode and name.
+    keywords: item.phone,
   }));
 
   const warehouseOptions: LookupOption[] = (warehouses.data?.items ?? []).map((item) => ({
@@ -120,49 +119,29 @@ export function useRentalOrderFilterOptions() {
   };
 }
 
-export function useRentalOrders(params: ListRentalOrdersParams) {
+export function useRentalOrders(
+  params: ListRentalOrdersParams,
+  options?: { keepPreviousData?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.rentalOrders.list(params),
     queryFn: () => getRentalOrders(params),
+    placeholderData: options?.keepPreviousData ? keepPreviousData : undefined,
   });
 }
 
 export function useRentalOrderSummaryStats() {
-  const listQuery = useQuery({
-    queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
-    queryFn: () => getRentalOrders({ pageSize: 100 }),
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.rentalOrders.summary({}),
+    queryFn: () => getRentalOrderSummary({}),
     staleTime: 60_000,
   });
 
-  const stats = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeRentalOrderSummary(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const orderStatusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeOrderStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
-  const reservationStatusCounts = useMemo(() => {
-    if (!listQuery.data) {
-      return undefined;
-    }
-
-    return computeReservationStatusCounts(listQuery.data.items);
-  }, [listQuery.data]);
-
   return {
-    stats,
-    orderStatusCounts,
-    reservationStatusCounts,
-    isLoading: listQuery.isLoading,
+    stats: summaryQuery.data?.stats,
+    orderStatusCounts: summaryQuery.data?.statusCounts,
+    reservationStatusCounts: summaryQuery.data?.reservationStatusCounts,
+    isLoading: summaryQuery.isLoading,
   };
 }
 

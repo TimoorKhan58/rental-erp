@@ -1,6 +1,7 @@
 import { RentalInvoiceInvalidStatusError } from "@/modules/rental-invoice/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
+  ConcurrentUpdateError,
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
@@ -19,6 +20,7 @@ import {
   RENTAL_INVOICE_ENTITY_NAME,
   RENTAL_INVOICE_MODULE,
 } from "./rental-invoice-service.constants";
+import { assertInvoiceVoidWithoutPostedPayments } from "./assert-invoice-void-without-posted-payments";
 import type { IRentalInvoiceTransactionRunner } from "./rental-invoice-transaction.runner";
 
 export class VoidRentalInvoiceService {
@@ -30,10 +32,9 @@ export class VoidRentalInvoiceService {
     const { id } = parseRequest(RentalInvoiceIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ rentalInvoiceRepository, auditLogger }) => {
-        const existing = await rentalInvoiceRepository.findById(
-          toRentalInvoiceId(id),
-        );
+      async ({ rentalInvoiceRepository, paymentRepository, auditLogger }) => {
+        const invoiceId = toRentalInvoiceId(id);
+        const existing = await rentalInvoiceRepository.findById(invoiceId);
 
         if (existing === null) {
           throw new NotFoundError({
@@ -41,6 +42,12 @@ export class VoidRentalInvoiceService {
             details: { id },
           });
         }
+
+        await rentalInvoiceRepository.lockForPaymentCommitment(invoiceId);
+        await assertInvoiceVoidWithoutPostedPayments(
+          paymentRepository,
+          invoiceId,
+        );
 
         let voided;
 
@@ -61,25 +68,35 @@ export class VoidRentalInvoiceService {
         }
 
         const previousValues = toRentalInvoiceAuditValues(existing);
-        const updated = await rentalInvoiceRepository.updateStatus(
+        const claimed = await rentalInvoiceRepository.claimStatusTransition(
           existing.id,
+          ["DRAFT", "ISSUED", "PARTIALLY_PAID"],
           {
             status: voided.status,
             voidedAt: voided.voidedAt,
           },
         );
 
+        if (claimed === null) {
+          throw new ConcurrentUpdateError({
+            entity: RENTAL_INVOICE_ENTITY_NAME,
+            id: existing.id,
+            expectedStatus: "DRAFT|ISSUED|PARTIALLY_PAID",
+            action: "void",
+          });
+        }
+
         await auditLogger.log({
           module: RENTAL_INVOICE_MODULE,
           entityName: RENTAL_INVOICE_ENTITY_NAME,
-          recordId: updated.id,
+          recordId: claimed.id,
           action: "CANCEL",
           status: "SUCCESS",
           oldValues: previousValues,
-          newValues: toRentalInvoiceAuditValues(updated),
+          newValues: toRentalInvoiceAuditValues(claimed),
         });
 
-        return toRentalInvoiceDto(updated);
+        return toRentalInvoiceDto(claimed);
       },
     );
   }

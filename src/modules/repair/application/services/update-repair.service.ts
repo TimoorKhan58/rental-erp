@@ -111,6 +111,8 @@ export class UpdateRepairService {
         }
 
         if (updateData.quantity !== undefined) {
+          await returnRepository.lockForRepairCapacity(existing.returnId);
+
           const returnRecord = await returnRepository.findById(existing.returnId);
 
           if (returnRecord === null) {

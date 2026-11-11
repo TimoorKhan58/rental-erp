@@ -34,7 +34,7 @@ export function CancelRepairDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel repair"
-      description={`Cancel repair "${repair.repairNumber}"? This action cannot be undone.`}
+      description={`Cancel repair "${repair.repairNumber}"? This cannot be undone. Inventory is unchanged because stock is restocked only when a repair is completed.`}
       confirmLabel="Cancel repair"
       onConfirm={() => void handleConfirm()}
       isLoading={cancelMutation.isPending}

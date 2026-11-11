@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { useMaintenance, useUpdateMaintenance } from "../hooks";
@@ -20,7 +22,7 @@ type MaintenanceEditPageProps = {
 
 export function MaintenanceEditPage({ maintenanceId }: MaintenanceEditPageProps) {
   const router = useRouter();
-  const { data: maintenance, isLoading, isError } = useMaintenance(maintenanceId);
+  const { data: maintenance, isLoading, isError, error, refetch } = useMaintenance(maintenanceId);
   const updateMutation = useUpdateMaintenance();
 
   useEffect(() => {
@@ -46,8 +48,16 @@ export function MaintenanceEditPage({ maintenanceId }: MaintenanceEditPageProps)
         >
           <p className="text-sm font-medium">Maintenance not found</p>
           <p className="text-sm text-muted-foreground">
-            The requested maintenance record could not be loaded.
+            {error?.message ?? "The requested maintenance record could not be loaded."}
           </p>
+          <div className="flex gap-2">
+            <AppButton variant="outline" onClick={() => void refetch()}>
+              Try again
+            </AppButton>
+            <AppButton variant="outline" render={<Link href={ROUTES.maintenance} />}>
+              Back to list
+            </AppButton>
+          </div>
         </div>
       </PageContainer>
     );

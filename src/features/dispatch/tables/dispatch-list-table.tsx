@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
@@ -19,7 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { DispatchStatusFilterChips } from "../components";
+import { STATUS_LABELS } from "../mappers";
+import { DispatchMobileList, DispatchStatusFilterChips } from "../components";
 import {
   useDispatchFilterOptions,
   useDispatchListParams,
@@ -51,6 +52,7 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     setStatusFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useDispatchListParams();
   const { canCreate, canUpdate, canComplete, canCancel } = useDispatchPermissions();
   const {
@@ -58,6 +60,8 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     warehouseOptions,
     rentalOrderLabelById,
     rentalOrderWarehouseById,
+    rentalOrderCustomerById,
+    customerNameById,
     warehouseLabelById,
     warehouseNameById,
   } = useDispatchFilterOptions();
@@ -86,6 +90,8 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     onSort: setSorting,
     rentalOrderLabelById,
     rentalOrderWarehouseById,
+    rentalOrderCustomerById,
+    customerNameById,
     warehouseLabelById,
     warehouseNameById,
     canUpdate,
@@ -109,6 +115,47 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     Boolean(params.dispatchDateFrom) ||
     Boolean(params.dispatchDateTo);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.rentalOrderId
+      ? {
+          id: "order",
+          label: `Order: ${rentalOrderLabelById.get(params.rentalOrderId) ?? params.rentalOrderId}`,
+          onClear: () => setRentalOrderFilter(undefined),
+        }
+      : null,
+    params.warehouseId
+      ? {
+          id: "warehouse",
+          label: `Warehouse: ${warehouseLabelById.get(params.warehouseId) ?? params.warehouseId}`,
+          onClear: () => setWarehouseFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    dispatchDateFrom || dispatchDateTo
+      ? {
+          id: "dates",
+          label: `Dates: ${dispatchDateFrom ?? "…"} → ${dispatchDateTo ?? "…"}`,
+          onClear: () => setDateRange(undefined, undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
@@ -124,31 +171,56 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No dispatches found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Dispatches will appear here once created."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={clearAllFilters}>
+            Clear filters
+          </AppButton>
+        ) : canCreate ? (
+          <Link href={ROUTES.dispatchesNew}>
+            <EmptyStateActionButton>Create dispatch</EmptyStateActionButton>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
+
+  const resolveCustomerName = (rentalOrderId: string) => {
+    const customerId = rentalOrderCustomerById.get(rentalOrderId);
+    if (!customerId) {
+      return "Unknown customer";
+    }
+
+    return customerNameById.get(customerId) ?? "Unknown customer";
+  };
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        toolbar={
-          <DispatchStatusFilterChips
-            value={statusFilterValue}
-            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
-            counts={statusCounts}
-          />
-        }
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search deliveries..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search dispatches"
-          />
-        }
-        filters={
-          <>
+      <div className="space-y-3">
+        <DispatchStatusFilterChips
+          value={statusFilterValue}
+          onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+          counts={statusCounts}
+        />
+        <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search dispatch number, address, or remarks..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search dispatches by number, address, or remarks"
+            />
             <Select
               value={params.rentalOrderId ?? "all"}
               onValueChange={(value) => {
@@ -215,9 +287,7 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
               className="w-full sm:w-40"
               aria-label="Dispatch date to"
             />
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -228,29 +298,48 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No dispatches found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Get started by creating your first dispatch."
-            }
-            action={
-              canCreate ? (
-                <Link href={ROUTES.dispatchesNew}>
-                  <EmptyStateActionButton>Create dispatch</EmptyStateActionButton>
-                </Link>
-              ) : undefined
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading dispatches..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading dispatches..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading dispatches..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <DispatchMobileList
+              rows={rows}
+              resolveOrderLabel={(rentalOrderId) =>
+                rentalOrderLabelById.get(rentalOrderId) ?? rentalOrderId
+              }
+              resolveCustomerName={resolveCustomerName}
+              canUpdate={canUpdate}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              onMarkReady={setMarkReadyTarget}
+              onComplete={setCompleteTarget}
+              onCancel={setCancelTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <MarkReadyDispatchDialog
         dispatch={markReadyTarget}

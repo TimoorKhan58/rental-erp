@@ -1,5 +1,10 @@
 import { Return } from "@/modules/return/domain/return.entity";
 import type { ReturnListQuery } from "@/modules/return/domain/return-list.query";
+import type { ReturnSummaryQuery } from "@/modules/return/domain/return-summary.query";
+import {
+  computeReturnSummaryResult,
+  filterReturnsForSummary,
+} from "@/modules/return/domain/return-summary.rules";
 import type { IReturnRepository } from "@/modules/return/domain/return.repository.interface";
 import { validateReturnItems } from "@/modules/return/domain/return.rules";
 import type {
@@ -9,6 +14,7 @@ import type {
 } from "@/modules/return/domain/return.types";
 import type { DispatchId, ReturnInspectionId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { acquireRepairCapacityLock } from "@/modules/repair/infrastructure/repair-capacity-lock";
 
 import { buildReturnEntity } from "./return.fixtures";
 
@@ -141,6 +147,27 @@ export class InMemoryReturnRepository implements IReturnRepository {
     };
   }
 
+  findSummaryStats(query: ReturnSummaryQuery) {
+    const items = filterReturnsForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        Return.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(
+      computeReturnSummaryResult(
+        items.map((item) => ({
+          status: item.status,
+          totalReturnedUnits: item.items.reduce(
+            (sum, line) => sum + line.returnedQuantity,
+            0,
+          ),
+        })),
+      ),
+    );
+  }
+
   async create(data: CreateReturnData): Promise<Return> {
     const normalized = Return.create(data);
     const now = new Date();
@@ -249,6 +276,14 @@ export class InMemoryReturnRepository implements IReturnRepository {
     }
 
     return this.updateStatus(id, data);
+  }
+
+  async lockForRepairCapacity(id: ReturnInspectionId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Return inspection not found");
+    }
+
+    await acquireRepairCapacityLock(id);
   }
 
   count(): number {

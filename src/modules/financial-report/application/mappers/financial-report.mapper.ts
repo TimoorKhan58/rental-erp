@@ -89,6 +89,7 @@ export function toAccountLedgerQuery(
     pageSize: input.pageSize,
     sortBy: input.sortBy,
     sortOrder: input.sortOrder,
+    search: input.search,
   };
 }
 

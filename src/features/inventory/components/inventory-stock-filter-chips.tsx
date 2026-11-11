@@ -14,9 +14,9 @@ type InventoryStockFilterChipsProps = {
 
 const filterOptions: Array<{ value: StockFilterValue; label: string }> = [
   { value: "all", label: "All" },
-  { value: "in-stock", label: "In stock" },
-  { value: "low-stock", label: "Low stock" },
-  { value: "out-of-stock", label: "Out of stock" },
+  { value: "in-stock", label: "Available" },
+  { value: "low-stock", label: "Shortage" },
+  { value: "out-of-stock", label: "Out" },
   { value: "overstock", label: "Overstock" },
 ];
 
@@ -28,7 +28,7 @@ export function InventoryStockFilterChips({
 }: InventoryStockFilterChipsProps) {
   return (
     <div
-      className={cn("flex flex-wrap gap-2", className)}
+      className={cn("flex flex-wrap gap-1.5", className)}
       role="group"
       aria-label="Filter by stock status"
     >
@@ -43,17 +43,17 @@ export function InventoryStockFilterChips({
             onClick={() => onChange(option.value)}
             aria-pressed={isActive}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
               isActive
-                ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
             )}
           >
             {option.label}
             {count !== undefined ? (
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                  "rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
                   isActive ? "bg-primary-foreground/20" : "bg-muted",
                 )}
               >

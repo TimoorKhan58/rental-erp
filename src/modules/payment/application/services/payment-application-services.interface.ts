@@ -9,6 +9,7 @@ import type {
 import type { ListPaymentsInput } from "../schemas/list-payments.schema";
 import type { CreatePaymentService } from "./create-payment.service";
 import type { GetPaymentByIdService } from "./get-payment-by-id.service";
+import type { GetPaymentSummaryService } from "./get-payment-summary.service";
 import type { ListPaymentsService } from "./list-payments.service";
 import type { PostPaymentService } from "./post-payment.service";
 import type { UpdatePaymentService } from "./update-payment.service";
@@ -16,6 +17,7 @@ import type { VoidPaymentService } from "./void-payment.service";
 
 export interface PaymentApplicationServices {
   getPaymentById: GetPaymentByIdService;
+  getPaymentSummary: GetPaymentSummaryService;
   listPayments: ListPaymentsService;
   createPayment: CreatePaymentService;
   updatePayment: UpdatePaymentService;

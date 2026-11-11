@@ -12,15 +12,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { formatDateTime } from "@/lib/utils";
-import { deriveStockStatus, calculateInventoryRecovery } from "../mappers";
-import { InventoryStatusBadge } from "../components/inventory-status-badge";
-import { InventoryStockStatusBadge } from "../components/inventory-stock-status-badge";
-import { InventoryRecoveryIndicator } from "../components/inventory-recovery-indicator";
+import { cn } from "@/lib/utils";
+import {
+  deriveInventoryPresentationChips,
+  needsInventoryAttention,
+  resolveInventoryRowAccentClass,
+} from "../mappers";
+import { InventoryPresentationChipBadge } from "../components/inventory-presentation-chip";
+import { InventoryQuantityBreakdown } from "../components/inventory-quantity-breakdown";
 import { InventoryStockLevelBar } from "../components/inventory-stock-level-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { InventoryResponse, InventorySortField, ListInventoryParams } from "../types";
-import type { ProductPricing, ProductRecoveryStats } from "../mappers";
 
 type InventoryTableColumnOptions = {
   params: ListInventoryParams;
@@ -29,11 +31,11 @@ type InventoryTableColumnOptions = {
   warehouseLabelById: Map<string, string>;
   productNameById: Map<string, string>;
   warehouseNameById: Map<string, string>;
-  productPricingById: Map<string, ProductPricing>;
-  productRecoveryById: Map<string, ProductRecoveryStats>;
   canUpdate: boolean;
   canDelete: boolean;
+  canAdjust: boolean;
   onEdit: (inventory: InventoryResponse) => void;
+  onAdjust: (inventory: InventoryResponse) => void;
   onDelete: (inventory: InventoryResponse) => void;
   onToggleStatus: (inventory: InventoryResponse) => void;
 };
@@ -45,11 +47,11 @@ export function getInventoryTableColumns({
   warehouseLabelById,
   productNameById,
   warehouseNameById,
-  productPricingById,
-  productRecoveryById,
   canUpdate,
   canDelete,
+  canAdjust,
   onEdit,
+  onAdjust,
   onDelete,
   onToggleStatus,
 }: InventoryTableColumnOptions): Array<DataTableColumn<InventoryResponse>> {
@@ -70,34 +72,56 @@ export function getInventoryTableColumns({
   return [
     {
       id: "product",
-      header: "Product",
-      cell: (row) => (
-        <Link
-          href={ROUTES.inventoryDetail(row.id)}
-          className="group block min-w-[10rem]"
-        >
-          <span className="font-medium text-primary group-hover:underline">
-            {resolveProductName(row.productId)}
-          </span>
-        </Link>
-      ),
+      header: "Item",
+      cell: (row) => {
+        // Accent semantics are shared with InventoryMobileList so desktop
+        // and mobile stay consistent (destructive = out, warning = low,
+        // muted = inactive-only, transparent = stock-ok active).
+        const accentClass = needsInventoryAttention(row)
+          ? resolveInventoryRowAccentClass(row)
+          : "border-l-transparent";
+
+        return (
+          <div className={cn("min-w-[11rem] border-l-2 pl-2.5", accentClass)}>
+            <Link
+              href={ROUTES.inventoryDetail(row.id)}
+              className="group block"
+            >
+              <span className="font-medium text-foreground group-hover:text-primary group-hover:underline">
+                {resolveProductName(row.productId)}
+              </span>
+            </Link>
+          </div>
+        );
+      },
     },
     {
       id: "warehouse",
       header: "Warehouse",
       cell: (row) => (
-        <span className="text-sm">{resolveWarehouseName(row.warehouseId)}</span>
+        <span className="max-w-[9rem] truncate text-sm text-muted-foreground">
+          {resolveWarehouseName(row.warehouseId)}
+        </span>
       ),
     },
     {
-      id: "stockLevel",
-      header: "Stock level",
+      id: "quantities",
+      header: (
+        <SortableColumnHeader
+          label="Stock"
+          field="quantityOnHand"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
+        />
+      ),
       cell: (row) => (
-        <div className="min-w-[8rem] space-y-1.5">
-          <div className="flex items-center justify-between gap-2 text-xs tabular-nums">
-            <span className="font-medium">{row.availableQuantity.toLocaleString()}</span>
-            <span className="text-muted-foreground">/ {row.quantityOnHand.toLocaleString()}</span>
-          </div>
+        <div className="min-w-[12rem] space-y-1.5">
+          <InventoryQuantityBreakdown
+            quantityOnHand={row.quantityOnHand}
+            reservedQuantity={row.reservedQuantity}
+            availableQuantity={row.availableQuantity}
+          />
           <InventoryStockLevelBar
             available={row.availableQuantity}
             minimum={row.minimumStock}
@@ -105,37 +129,6 @@ export function getInventoryTableColumns({
             onHand={row.quantityOnHand}
           />
         </div>
-      ),
-    },
-    {
-      id: "reservedQuantity",
-      header: (
-        <SortableColumnHeader
-          label="Reserved"
-          field="reservedQuantity"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => (
-        <span className="tabular-nums text-muted-foreground">
-          {row.reservedQuantity.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      id: "recovery",
-      header: "Recovery",
-      cell: (row) => (
-        <InventoryRecoveryIndicator
-          metrics={calculateInventoryRecovery({
-            quantityOnHand: row.quantityOnHand,
-            reservedQuantity: row.reservedQuantity,
-            pricing: productPricingById.get(row.productId),
-            productRecovery: productRecoveryById.get(row.productId),
-          })}
-        />
       ),
     },
     {
@@ -150,43 +143,30 @@ export function getInventoryTableColumns({
         />
       ),
       cell: (row) => (
-        <span className="tabular-nums">{row.minimumStock.toLocaleString()}</span>
+        <span className="tabular-nums text-muted-foreground">
+          {row.minimumStock.toLocaleString()}
+        </span>
       ),
+      className: "hidden xl:table-cell",
+      headerClassName: "hidden xl:table-cell",
     },
     {
-      id: "stockStatus",
-      header: "Stock",
-      cell: (row) => (
-        <InventoryStockStatusBadge status={deriveStockStatus(row)} />
-      ),
-    },
-    {
-      id: "isActive",
-      header: (
-        <SortableColumnHeader
-          label="Status"
-          field="isActive"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => <InventoryStatusBadge isActive={row.isActive} />,
-    },
-    {
-      id: "updatedAt",
-      header: (
-        <SortableColumnHeader
-          label="Updated"
-          field="updatedAt"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => (
-        <span className="text-sm text-muted-foreground">{formatDateTime(row.updatedAt)}</span>
-      ),
+      id: "operationalState",
+      header: "Status",
+      cell: (row) => {
+        const chips = deriveInventoryPresentationChips(row);
+        return (
+          <div className="flex min-w-[7rem] flex-wrap gap-1">
+            {chips.map((chip) => (
+              <InventoryPresentationChipBadge
+                key={chip.id}
+                label={chip.label}
+                tone={chip.tone}
+              />
+            ))}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -208,8 +188,11 @@ export function getInventoryTableColumns({
             <DropdownMenuItem render={<Link href={ROUTES.inventoryDetail(row.id)} />}>
               View details
             </DropdownMenuItem>
+            {canAdjust ? (
+              <DropdownMenuItem onClick={() => onAdjust(row)}>Adjust stock</DropdownMenuItem>
+            ) : null}
             {canUpdate ? (
-              <DropdownMenuItem onClick={() => onEdit(row)}>Edit quantities</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(row)}>Edit thresholds</DropdownMenuItem>
             ) : null}
             {canUpdate ? (
               <DropdownMenuItem onClick={() => onToggleStatus(row)}>

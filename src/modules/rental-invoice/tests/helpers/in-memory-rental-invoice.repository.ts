@@ -1,13 +1,21 @@
 import { RentalInvoice } from "@/modules/rental-invoice/domain/rental-invoice.entity";
+import { parseInvoiceNumberSequence } from "@/modules/rental-invoice/domain/rental-invoice-number.rules";
 import type { RentalInvoiceListQuery } from "@/modules/rental-invoice/domain/rental-invoice-list.query";
+import type { RentalInvoiceSummaryQuery } from "@/modules/rental-invoice/domain/rental-invoice-summary.query";
+import {
+  computeRentalInvoiceSummaryResult,
+  filterRentalInvoicesForSummary,
+} from "@/modules/rental-invoice/domain/rental-invoice-summary.rules";
+import { acquirePaymentCommitmentLock } from "@/modules/payment/infrastructure/payment-commitment-lock";
 import type { IRentalInvoiceRepository } from "@/modules/rental-invoice/domain/rental-invoice.repository.interface";
 import type {
   CreateRentalInvoiceData,
   UpdateRentalInvoiceData,
   UpdateRentalInvoiceStatusData,
 } from "@/modules/rental-invoice/domain/rental-invoice.types";
-import type { RentalInvoiceId } from "@/shared/domain/ids";
+import type { RentalInvoiceId, RentalOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
+import { ConflictError } from "@/shared/infrastructure/errors";
 
 import { buildRentalInvoiceEntity } from "./rental-invoice.fixtures";
 
@@ -17,6 +25,15 @@ interface StoredRentalInvoice {
 
 export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository {
   private readonly store = new Map<string, StoredRentalInvoice>();
+  private readonly invoiceNumbers = new Set<string>();
+
+  private rebuildInvoiceNumberIndex(): void {
+    this.invoiceNumbers.clear();
+
+    for (const stored of this.store.values()) {
+      this.invoiceNumbers.add(stored.record.invoiceNumber);
+    }
+  }
 
   snapshot(): Map<string, StoredRentalInvoice> {
     return new Map(
@@ -32,6 +49,7 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     for (const [id, value] of snapshot.entries()) {
       this.store.set(id, { record: structuredClone(value.record) });
     }
+    this.rebuildInvoiceNumberIndex();
   }
 
   seed(invoices: RentalInvoice[]): void {
@@ -40,6 +58,7 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
       const props = invoice.toProps();
       this.store.set(props.id, { record: props });
     }
+    this.rebuildInvoiceNumberIndex();
   }
 
   findById(id: RentalInvoiceId): Promise<RentalInvoice | null> {
@@ -59,6 +78,37 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     return Promise.resolve(null);
   }
 
+  findActiveByRentalOrderId(
+    rentalOrderId: RentalOrderId,
+  ): Promise<RentalInvoice | null> {
+    const active = Array.from(this.store.values())
+      .map((stored) => RentalInvoice.reconstitute(stored.record))
+      .filter(
+        (invoice) =>
+          invoice.rentalOrderId === rentalOrderId && invoice.status !== "VOID",
+      )
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+
+    return Promise.resolve(active[0] ?? null);
+  }
+
+  async findMaxSequenceForInvoicePrefix(prefix: string): Promise<number> {
+    let max = 0;
+
+    for (const stored of this.store.values()) {
+      const sequence = parseInvoiceNumberSequence(
+        stored.record.invoiceNumber,
+        prefix,
+      );
+
+      if (sequence !== null) {
+        max = Math.max(max, sequence);
+      }
+    }
+
+    return max;
+  }
+
   async findPaged(
     query: RentalInvoiceListQuery,
   ): Promise<PaginatedResult<RentalInvoice>> {
@@ -76,6 +126,23 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
 
     if (query.rentalOrderId !== undefined) {
       items = items.filter((item) => item.rentalOrderId === query.rentalOrderId);
+    }
+
+    if (query.paymentStatus !== undefined) {
+      items = items.filter((item) =>
+        matchesPaymentStatus(item, query.paymentStatus!),
+      );
+    }
+
+    if (query.invoiceDateFrom !== undefined) {
+      const from = query.invoiceDateFrom.getTime();
+      items = items.filter((item) => item.invoiceDate.getTime() >= from);
+    }
+
+    if (query.invoiceDateTo !== undefined) {
+      const end = new Date(query.invoiceDateTo);
+      end.setHours(23, 59, 59, 999);
+      items = items.filter((item) => item.invoiceDate.getTime() <= end.getTime());
     }
 
     if (query.search) {
@@ -133,8 +200,29 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     };
   }
 
+  findSummaryStats(query: RentalInvoiceSummaryQuery) {
+    const items = filterRentalInvoicesForSummary(
+      Array.from(this.store.values()).map((stored) =>
+        RentalInvoice.reconstitute(stored.record),
+      ),
+      query,
+    );
+
+    return Promise.resolve(computeRentalInvoiceSummaryResult(items));
+  }
+
   async create(data: CreateRentalInvoiceData): Promise<RentalInvoice> {
     const normalized = RentalInvoice.create(data);
+
+    if (this.invoiceNumbers.has(normalized.invoiceNumber)) {
+      throw new ConflictError({
+        message: "Invoice number already exists",
+        details: { invoiceNumber: normalized.invoiceNumber },
+      });
+    }
+
+    this.invoiceNumbers.add(normalized.invoiceNumber);
+
     const now = new Date();
     const id = crypto.randomUUID() as RentalInvoiceId;
     const items = normalized.items.map((item) => ({
@@ -209,9 +297,107 @@ export class InMemoryRentalInvoiceRepository implements IRentalInvoiceRepository
     return updated;
   }
 
+  async claimStatusTransition(
+    id: RentalInvoiceId,
+    expected: RentalInvoice["status"] | ReadonlyArray<RentalInvoice["status"]>,
+    data: UpdateRentalInvoiceStatusData,
+  ): Promise<RentalInvoice | null> {
+    const existing = this.store.get(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    if (!expectedList.includes(existing.record.status)) {
+      return null;
+    }
+
+    return this.updateStatus(id, data);
+  }
+
+  async applyPaymentDelta(
+    id: RentalInvoiceId,
+    delta: number,
+  ): Promise<RentalInvoice | null> {
+    const existing = this.store.get(id);
+
+    if (!existing || delta === 0) {
+      return null;
+    }
+
+    const invoice = RentalInvoice.reconstitute(existing.record);
+
+    if (delta > 0) {
+      if (
+        invoice.status !== "ISSUED" &&
+        invoice.status !== "PARTIALLY_PAID" &&
+        invoice.status !== "PAID"
+      ) {
+        return null;
+      }
+
+      const nextPaid = roundMoney(invoice.paidAmount + delta);
+      if (nextPaid > invoice.grandTotal) {
+        return null;
+      }
+    } else {
+      if (invoice.status === "DRAFT" || invoice.status === "VOID") {
+        return null;
+      }
+
+      const absDelta = -delta;
+      if (absDelta <= 0 || invoice.paidAmount < absDelta) {
+        return null;
+      }
+    }
+
+    const nextPaid = roundMoney(invoice.paidAmount + delta);
+    const nextBalance = roundMoney(invoice.grandTotal - nextPaid);
+    const updated = RentalInvoice.reconstitute({
+      ...existing.record,
+      paidAmount: nextPaid,
+      balance: nextBalance,
+      updatedAt: new Date(),
+    });
+
+    this.store.set(id, { record: updated.toProps() });
+    return updated;
+  }
+
+  async lockForPaymentCommitment(id: RentalInvoiceId): Promise<void> {
+    if (!this.store.has(id)) {
+      throw new Error("Rental invoice not found");
+    }
+
+    await acquirePaymentCommitmentLock(id);
+  }
+
   count(): number {
     return this.store.size;
   }
+}
+
+function matchesPaymentStatus(
+  invoice: RentalInvoice,
+  filter: NonNullable<RentalInvoiceListQuery["paymentStatus"]>,
+): boolean {
+  if (filter === "void") {
+    return invoice.status === "VOID";
+  }
+
+  if (filter === "paid") {
+    return invoice.status === "PAID" || (invoice.status !== "VOID" && invoice.balance <= 0);
+  }
+
+  if (filter === "partial") {
+    return (
+      invoice.status === "PARTIALLY_PAID" ||
+      (invoice.paidAmount > 0 && invoice.balance > 0 && invoice.status !== "VOID")
+    );
+  }
+
+  return invoice.status === "ISSUED" || (invoice.status === "DRAFT" && invoice.paidAmount === 0);
 }
 
 export function createSeededRentalInvoiceRepository(
@@ -220,4 +406,8 @@ export function createSeededRentalInvoiceRepository(
   const repository = new InMemoryRentalInvoiceRepository();
   repository.seed(invoices);
   return repository;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }

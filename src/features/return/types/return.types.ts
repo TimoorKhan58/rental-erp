@@ -71,6 +71,25 @@ export type ListReturnsParams = {
   returnDateTo?: string;
 };
 
+export type GetReturnSummaryParams = Omit<
+  ListReturnsParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type ReturnSummaryStats = {
+  totalReturns: number;
+  activeReturns: number;
+  pendingActionCount: number;
+  awaitingInspectionCount: number;
+  completedCount: number;
+  totalReturnedUnits: number;
+};
+
+export type ReturnSummaryResponse = {
+  stats: ReturnSummaryStats;
+  statusCounts: Partial<Record<"all" | ReturnStatus, number>>;
+};
+
 export type ReturnLineItemPayload = {
   rentalOrderItemId: string;
   dispatchItemId?: string | null;

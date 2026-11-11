@@ -41,6 +41,7 @@ export function SettingsPreferencesPage() {
   if (!canReadSettings) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <AccessDeniedState description="You do not have permission to view preferences." />
       </PageContainer>
     );
@@ -49,6 +50,7 @@ export function SettingsPreferencesPage() {
   if (isError || !preferences) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <QueryErrorState
           title="Failed to load preferences"
           description={error?.message ?? "An error occurred."}
@@ -105,7 +107,7 @@ export function SettingsPreferencesPage() {
     <PageContainer>
       <PageHeader
         title="Preferences"
-        description="Locale, formats, dashboard defaults, and browser theme."
+        description="Browser theme plus locale codes used for on-screen formatting. Dashboard preference fields are stored only."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

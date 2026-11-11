@@ -3,22 +3,31 @@
 import { Suspense, useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { MetricCard, SectionCard } from "@/components/design-system/card";
-import { DataTableShell } from "@/components/shared";
+import { ActiveFilters, DataTableShell } from "@/components/shared";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState, EmptyState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency } from "@/lib/utils";
 import {
   DateRangeFilterBar,
-  ExportPlaceholderButton,
+  ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
 import { getAccountAmountColumns } from "../tables";
+import {
+  compactActiveFilters,
+  dateRangeFilterChip,
+  REVENUE_SUMMARY_CSV_COLUMNS,
+} from "../mappers";
 import { useDateRangeParams, useRevenueReport } from "../hooks";
 
 function RevenueContent() {
-  const { params, dateFrom, dateTo, setDateRange } = useDateRangeParams();
+  const { params, dateFrom, dateTo, setDateRange, clearDateRange } = useDateRangeParams();
+  const activeFilters = compactActiveFilters([
+    dateRangeFilterChip(dateFrom, dateTo, "Journal date", clearDateRange),
+  ]);
   const { data, isLoading, isError, error, refetch, isFetching } = useRevenueReport(params);
   const columns = getAccountAmountColumns("Revenue");
 
@@ -47,9 +56,14 @@ function RevenueContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangeFilterBar dateFrom={dateFrom} dateTo={dateTo} onChange={setDateRange} />
+        <DateRangeFilterBar
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onChange={setDateRange}
+          fieldHint="Posted journal date"
+        />
         <AppButton
           variant="outline"
           size="sm"
@@ -58,17 +72,28 @@ function RevenueContent() {
         >
           Refresh
         </AppButton>
-        <ExportPlaceholderButton />
+        <ExportReportButton
+          filename="revenue-report.csv"
+          rows={data?.lines ?? []}
+          columns={REVENUE_SUMMARY_CSV_COLUMNS}
+          csvLabel="CSV"
+          disabled={isLoading || !(data?.lines?.length)}
+        />
       </div>
+      <ActiveFilters filters={activeFilters} onClearAll={clearDateRange} />
 
       {isLoading && !data ? (
         <LoadingState label="Loading revenue report..." />
       ) : data ? (
         <>
-          <MetricCard label="Total revenue" value={formatCurrency(data.totalRevenue)} />
+          <MetricCard
+            label="Posted journal revenue"
+            value={formatCurrency(data.totalRevenue)}
+            hint="Posted INCOME accounts"
+          />
           <AmountBarChart
             title="Revenue by account"
-            description="Backend revenue summary lines"
+            description="Posted journal income accounts"
             data={chartData}
             isLoading={isLoading}
           />
@@ -93,7 +118,7 @@ export function RevenueReportPage() {
     <PageContainer>
       <PageHeader
         title="Revenue Report"
-        description="Backend-generated revenue by income account."
+        description="Posted journal income accounts for the selected journal dates."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -101,9 +126,11 @@ export function RevenueReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading revenue report..." />}>
-        <RevenueContent />
-      </Suspense>
+      <ReportPermissionGate requireFinancial>
+        <Suspense fallback={<LoadingState label="Loading revenue report..." />}>
+          <RevenueContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

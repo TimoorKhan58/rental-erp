@@ -56,8 +56,6 @@ export type CreateInventoryPayload = {
 };
 
 export type UpdateInventoryPayload = {
-  quantityOnHand?: number;
-  reservedQuantity?: number;
   minimumStock?: number;
   maximumStock?: number | null;
   isActive?: boolean;
@@ -70,4 +68,16 @@ export type InventorySummaryStats = {
   lowStockCount: number;
   outOfStockCount: number;
   overstockCount: number;
+};
+
+export type GetInventorySummaryParams = Omit<
+  ListInventoryParams,
+  "page" | "pageSize" | "sortBy" | "sortOrder"
+>;
+
+export type InventorySummaryResponse = {
+  stats: InventorySummaryStats;
+  stockStatusCounts: Partial<
+    Record<"all" | StockStatusFilter, number>
+  >;
 };

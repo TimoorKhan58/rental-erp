@@ -263,18 +263,44 @@ export function applyInspectionToItems(
     throw new ReturnInvalidItemError("At least one item must be provided for inspect");
   }
 
-  const inspectMap = new Map(
-    inspectItems.map((item) => [item.rentalOrderItemId, item]),
-  );
+  const inspectMap = new Map<string, InspectReturnItemData>();
 
-  return items.map((item) => {
-    const inspectItem = inspectMap.get(item.rentalOrderItemId);
-
-    if (inspectItem === undefined) {
-      return item;
+  for (const inspectItem of inspectItems) {
+    if (inspectMap.has(inspectItem.rentalOrderItemId)) {
+      throw new ReturnInvalidItemError(
+        "Duplicate rental order item in inspection",
+        inspectItem.rentalOrderItemId,
+      );
     }
 
-    inspectMap.delete(item.rentalOrderItemId);
+    inspectMap.set(inspectItem.rentalOrderItemId, inspectItem);
+  }
+
+  const returnLineIds = new Set(items.map((item) => item.rentalOrderItemId));
+
+  for (const rentalOrderItemId of inspectMap.keys()) {
+    if (!returnLineIds.has(rentalOrderItemId)) {
+      throw new ReturnInvalidItemError(
+        "Inspection item does not exist on return",
+        rentalOrderItemId,
+      );
+    }
+  }
+
+  // An uninspected line would keep zero condition totals and, on completion,
+  // restock nothing — so a return is only INSPECTED when every line is.
+  const skipped = items.find((item) => !inspectMap.has(item.rentalOrderItemId));
+
+  if (skipped !== undefined) {
+    throw new ReturnInvalidItemError(
+      "Every returned item must be inspected",
+      skipped.rentalOrderItemId,
+    );
+  }
+
+  return items.map((item) => {
+    // Presence of every line is checked above.
+    const inspectItem = inspectMap.get(item.rentalOrderItemId)!;
 
     if (
       inspectItem.goodQuantity < 0 ||

@@ -1,4 +1,4 @@
-import type { SupplierPaymentId } from "@/shared/domain/ids";
+import type { SupplierPaymentId, PurchaseOrderId } from "@/shared/domain/ids";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 
 import type { SupplierPayment } from "./supplier-payment.entity";
@@ -19,4 +19,13 @@ export interface ISupplierPaymentRepository {
     id: SupplierPaymentId,
     data: UpdateSupplierPaymentStatusData,
   ): Promise<SupplierPayment>;
+  claimStatusTransition(
+    id: SupplierPaymentId,
+    expected: SupplierPayment["status"] | ReadonlyArray<SupplierPayment["status"]>,
+    data: UpdateSupplierPaymentStatusData,
+  ): Promise<SupplierPayment | null>;
+  sumPendingAmountByPurchaseOrderId(
+    purchaseOrderId: PurchaseOrderId,
+    excludePaymentId?: SupplierPaymentId,
+  ): Promise<number>;
 }

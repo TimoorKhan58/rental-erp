@@ -3,10 +3,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileTextIcon, IdCardIcon, StickyNoteIcon } from "lucide-react";
 import { useState } from "react";
 import { PageContainer } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppBreadcrumb } from "@/components/design-system/navigation";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
@@ -14,6 +13,8 @@ import { ROUTES } from "@/config/routes";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer, useCustomerPermissions } from "../hooks";
 import { CustomerProfileCard } from "../components/customer-profile-card";
+import { CustomerBillingSection } from "../components/customer-billing-section";
+import { CustomerRentalActivitySection } from "../components/customer-rental-activity-section";
 import { DeleteCustomerDialog } from "../dialogs/delete-customer-dialog";
 import { ToggleCustomerStatusDialog } from "../dialogs/toggle-customer-status-dialog";
 
@@ -24,23 +25,15 @@ type CustomerDetailPageProps = {
 function DetailField({
   label,
   value,
-  icon,
 }: {
   label: string;
   value: string | null | undefined;
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
-      {icon ? (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          {icon}
-        </div>
-      ) : null}
-      <div className="min-w-0 space-y-0.5">
-        <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-        <dd className="text-sm font-medium">{value?.trim() ? value : "—"}</dd>
-      </div>
+    <div className="space-y-1 rounded-md border border-border bg-muted/15 px-3 py-2.5">
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium">{value?.trim() ? value : "—"}</dd>
     </div>
   );
 }
@@ -64,7 +57,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
     return (
       <PageContainer>
         <div
-          className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center"
+          className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-8 text-center"
           role="alert"
         >
           <p className="text-sm font-medium">Customer not found</p>
@@ -85,7 +78,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
   }
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <AppBreadcrumb
         items={[
           { label: "Dashboard", href: ROUTES.dashboard },
@@ -102,40 +95,22 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
         onDelete={() => setDeleteOpen(true)}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Customer details" description="Profile and identification information">
+      <div className="app-grid">
+        <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-8">
+          <SectionCard title="Customer details">
             <dl className="grid gap-3 sm:grid-cols-2">
-              <DetailField
-                label="Customer code"
-                value={customer.customerCode}
-                icon={<FileTextIcon className="size-4" aria-hidden="true" />}
-              />
-              <DetailField
-                label="CNIC"
-                value={customer.cnic}
-                icon={<IdCardIcon className="size-4" aria-hidden="true" />}
-              />
-              <DetailField
-                label="Address"
-                value={customer.address}
-                icon={<FileTextIcon className="size-4" aria-hidden="true" />}
-              />
-              <DetailField
-                label="Notes"
-                value={customer.notes}
-                icon={<StickyNoteIcon className="size-4" aria-hidden="true" />}
-              />
+              <DetailField label="Customer code" value={customer.customerCode} />
+              <DetailField label="CNIC" value={customer.cnic} />
+              <DetailField label="Address" value={customer.address} />
+              <DetailField label="Notes" value={customer.notes} />
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Rental summary"
-            description="Rental history and outstanding balances will appear here when the rental module is connected."
-          />
+          <CustomerRentalActivitySection customerId={customer.id} />
+          <CustomerBillingSection customerId={customer.id} />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-4">
           <SectionCard title="Account timeline">
             <dl className="space-y-3">
               <DetailField
@@ -146,11 +121,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
               <DetailField label="Last updated" value={formatDateTime(customer.updatedAt)} />
             </dl>
           </SectionCard>
-
-          <EmptyCard
-            title="Recent activity"
-            description="Customer activity timeline is not yet available."
-          />
         </div>
       </div>
 

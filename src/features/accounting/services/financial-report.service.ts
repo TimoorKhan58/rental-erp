@@ -45,8 +45,9 @@ export async function getAccountsSummary(): Promise<AccountsSummaryResponse> {
 export async function getAccountingSummary(
   params: DateRangeParams = {},
 ): Promise<AccountingSummaryResponse> {
+  const asOfDate = params.dateTo ?? params.dateFrom;
   const [balanceSheet, profitLoss, accountsSummary] = await Promise.all([
-    getBalanceSheet(),
+    getBalanceSheet(asOfDate ? { asOfDate } : {}),
     getProfitLoss(params),
     getAccountsSummary(),
   ]);

@@ -35,6 +35,7 @@ export function SettingsCompanyPage() {
   if (!canReadSettings) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <AccessDeniedState description="You do not have permission to view company settings." />
       </PageContainer>
     );
@@ -43,6 +44,7 @@ export function SettingsCompanyPage() {
   if (isError || !company) {
     return (
       <PageContainer>
+        <SettingsSubNav />
         <QueryErrorState
           title="Failed to load company settings"
           description={error?.message ?? "An error occurred."}
@@ -60,7 +62,7 @@ export function SettingsCompanyPage() {
     <PageContainer>
       <PageHeader
         title="Company"
-        description="Organization and business configuration from the settings API."
+        description="Organization record from the settings API. Company name and locale codes apply after save; other defaults are stored until a later feature uses them."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

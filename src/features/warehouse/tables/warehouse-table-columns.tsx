@@ -66,6 +66,31 @@ export function getWarehouseTableColumns({
       headerClassName: "w-10",
     },
     {
+      id: "name",
+      header: (
+        <SortableColumnHeader
+          label="Warehouse"
+          field="name"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
+        />
+      ),
+      cell: (row) => (
+        <Link
+          href={ROUTES.warehouseDetail(row.id)}
+          className="group block min-w-[8rem]"
+        >
+          <span className="block truncate font-medium text-primary group-hover:underline">
+            {row.name}
+          </span>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            {row.warehouseCode}
+          </span>
+        </Link>
+      ),
+    },
+    {
       id: "warehouseCode",
       header: (
         <SortableColumnHeader
@@ -77,26 +102,8 @@ export function getWarehouseTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.warehouseDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.warehouseCode}
-        </Link>
+        <span className="text-sm text-muted-foreground">{row.warehouseCode}</span>
       ),
-    },
-    {
-      id: "name",
-      header: (
-        <SortableColumnHeader
-          label="Name"
-          field="name"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => row.name,
     },
     {
       id: "contactPerson",

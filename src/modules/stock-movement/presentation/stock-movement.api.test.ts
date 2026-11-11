@@ -96,10 +96,18 @@ describe("runStockMovementApiRoute authorization", () => {
     });
   });
 
-  it("allows manager to create stock movement", async () => {
+  it("allows manager to create ADJUSTMENT stock movement", async () => {
     mockSession(USER_ROLES.MANAGER);
     const services = createMockServices();
-    services.createStockMovement.execute.mockResolvedValue(mockStockMovementDto);
+    const adjustmentInput = {
+      ...VALID_CREATE_INPUT,
+      movementType: "ADJUSTMENT" as const,
+      quantity: 5,
+    };
+    services.createStockMovement.execute.mockResolvedValue({
+      ...mockStockMovementDto,
+      ...adjustmentInput,
+    });
 
     const result = await runStockMovementApiRoute({
       request: createMockNextRequest(),
@@ -108,7 +116,7 @@ describe("runStockMovementApiRoute authorization", () => {
       permission: PERMISSIONS.stockMovements.create,
       resolveServices: () => services,
       handler: async (_ctx, resolved) =>
-        resolved.createStockMovement.execute(VALID_CREATE_INPUT),
+        resolved.createStockMovement.execute(adjustmentInput),
     });
 
     expect(result.status).toBe(200);
@@ -193,14 +201,24 @@ describe("Stock movement API handlers", () => {
     );
   });
 
-  it("POST /api/stock-movements creates movement", async () => {
+  it("POST /api/stock-movements creates ADJUSTMENT movement", async () => {
+    mockSession(USER_ROLES.WORKER);
     const services = createMockServices();
-    services.createStockMovement.execute.mockResolvedValue(mockStockMovementDto);
+    const adjustmentInput = {
+      inventoryId: INVENTORY_ID,
+      movementType: "ADJUSTMENT" as const,
+      quantity: 5,
+      remarks: "Cycle count",
+    };
+    services.createStockMovement.execute.mockResolvedValue({
+      ...mockStockMovementDto,
+      ...adjustmentInput,
+    });
 
     const response = await handleCreateStockMovement(
       createMockNextRequest({
         method: "POST",
-        json: VALID_CREATE_INPUT,
+        json: adjustmentInput,
       }),
       () => services,
     );
@@ -210,8 +228,24 @@ describe("Stock movement API handlers", () => {
     expect(response.status).toBe(200);
     expect(body.data.id).toBe(STOCK_MOVEMENT_ID);
     expect(services.createStockMovement.execute).toHaveBeenCalledWith(
-      VALID_CREATE_INPUT,
+      adjustmentInput,
     );
+  });
+
+  it("POST /api/stock-movements rejects non-ADJUSTMENT movement types", async () => {
+    mockSession(USER_ROLES.WORKER);
+    const services = createMockServices();
+
+    const response = await handleCreateStockMovement(
+      createMockNextRequest({
+        method: "POST",
+        json: VALID_CREATE_INPUT,
+      }),
+      () => services,
+    );
+
+    expect(response.status).toBe(422);
+    expect(services.createStockMovement.execute).not.toHaveBeenCalled();
   });
 
   it("GET /api/stock-movements/:id returns movement", async () => {

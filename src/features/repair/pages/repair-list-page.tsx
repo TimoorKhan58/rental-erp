@@ -14,10 +14,10 @@ export function RepairListPage() {
   const { stats, statusCounts, isLoading } = useRepairSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Repairs"
-        description="Manage repair jobs for returned rental assets."
+        description="Create a job from damaged quantity on a completed return. Inventory is restocked only when the repair is completed. Cost is recorded on the job, not posted to expenses or invoices."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Repairs" },

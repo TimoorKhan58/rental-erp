@@ -91,7 +91,10 @@ export function toPaymentListQuery(input: ListPaymentsInput): PaymentListQuery {
     sortOrder: input.sortOrder,
     search: input.search,
     status: input.status,
+    paymentMethod: input.paymentMethod,
     customerId: input.customerId as CustomerId | undefined,
     rentalInvoiceId: input.rentalInvoiceId as RentalInvoiceId | undefined,
+    paymentDateFrom: input.paymentDateFrom,
+    paymentDateTo: input.paymentDateTo,
   };
 }

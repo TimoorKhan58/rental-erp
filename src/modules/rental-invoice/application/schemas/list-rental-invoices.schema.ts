@@ -1,15 +1,21 @@
 import { z } from "zod";
 
-import { PaginationSchema, UUIDSchema } from "@/shared/application/validation";
+import { DateSchema, PaginationSchema, UUIDSchema } from "@/shared/application/validation";
 
 import { RENTAL_INVOICE_SORT_FIELDS } from "@/modules/rental-invoice/domain/rental-invoice.constants";
 
-import { RentalInvoiceStatusFilterSchema } from "./rental-invoice.schemas";
+import {
+  RentalInvoicePaymentStatusFilterSchema,
+  RentalInvoiceStatusFilterSchema,
+} from "./rental-invoice.schemas";
 
 export const ListRentalInvoicesSchema = PaginationSchema.extend({
   status: RentalInvoiceStatusFilterSchema.optional(),
+  paymentStatus: RentalInvoicePaymentStatusFilterSchema.optional(),
   customerId: UUIDSchema.optional(),
   rentalOrderId: UUIDSchema.optional(),
+  invoiceDateFrom: DateSchema.optional(),
+  invoiceDateTo: DateSchema.optional(),
   sortBy: z.enum(RENTAL_INVOICE_SORT_FIELDS).optional(),
 }).superRefine((value, ctx) => {
   if (value.search !== undefined && value.search.length > 200) {
