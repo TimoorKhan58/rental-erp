@@ -2,7 +2,10 @@ import {
   RentalOrderInvalidStatusError,
   RentalOrderInvariantError,
 } from "@/modules/rental-order/domain/rental-order.errors";
-import { validateRentalOrderItems } from "@/modules/rental-order/domain/rental-order.rules";
+import {
+  assertStartNotInPast,
+  validateRentalOrderItems,
+} from "@/modules/rental-order/domain/rental-order.rules";
 import { parseRequest } from "@/shared/application/validation";
 import {
   NotFoundError,
@@ -31,6 +34,7 @@ import type { IRentalOrderTransactionRunner } from "./rental-order-transaction.r
 export class UpdateRentalOrderService {
   constructor(
     private readonly transactionRunner: IRentalOrderTransactionRunner,
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   async execute(
@@ -40,6 +44,28 @@ export class UpdateRentalOrderService {
     const { id } = parseRequest(RentalOrderIdParamSchema, params);
     const data = parseRequest(UpdateRentalOrderSchema, input);
     const updateData = toUpdateRentalOrderData(data);
+
+    // Only dates being changed are checked, so older orders can still be
+    // edited in other ways (QA-008).
+    const newStartDates = [
+      ...(data.startDate !== undefined ? [data.startDate] : []),
+      ...(data.items ?? []).flatMap((item) =>
+        item.startDate !== undefined ? [item.startDate] : [],
+      ),
+    ];
+
+    try {
+      assertStartNotInPast(newStartDates, this.now());
+    } catch (error) {
+      if (error instanceof RentalOrderInvariantError) {
+        throw new UnprocessableError({
+          message: error.message,
+          details: { field: error.field },
+        });
+      }
+
+      throw error;
+    }
 
     return this.transactionRunner.run(async ({ rentalOrderRepository, auditLogger }) => {
       const existing = await rentalOrderRepository.findById(toRentalOrderId(id));

@@ -9,6 +9,7 @@ import {
 } from "@/modules/rental-order/domain/rental-order.errors";
 import {
   applyReserveToItems,
+  assertStartNotInPast,
   computeStatusAfterReserve,
   validateRentalOrderItems,
   validateRentalPeriod,
@@ -371,5 +372,36 @@ describe("createOrderNumber", () => {
 
   it("rejects empty order number", () => {
     expect(() => createOrderNumber("  ")).toThrow(RentalOrderInvariantError);
+  });
+});
+
+describe("assertStartNotInPast (QA-008)", () => {
+  const today = new Date("2026-11-11T15:30:00.000Z");
+
+  it("allows a booking starting today", () => {
+    expect(() =>
+      assertStartNotInPast([new Date("2026-11-11T00:00:00.000Z")], today),
+    ).not.toThrow();
+  });
+
+  it("allows future bookings", () => {
+    expect(() =>
+      assertStartNotInPast([new Date("2026-12-01T00:00:00.000Z")], today),
+    ).not.toThrow();
+  });
+
+  it("rejects a start date before today", () => {
+    expect(() =>
+      assertStartNotInPast([new Date("2026-11-10T00:00:00.000Z")], today),
+    ).toThrow("Rental start date cannot be in the past");
+  });
+
+  it("rejects when any one line starts in the past", () => {
+    expect(() =>
+      assertStartNotInPast(
+        [new Date("2026-12-01T00:00:00.000Z"), new Date("2020-01-01T00:00:00.000Z")],
+        today,
+      ),
+    ).toThrow(RentalOrderInvariantError);
   });
 });

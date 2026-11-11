@@ -80,6 +80,7 @@ export {
   DISPATCHABLE_RENTAL_ORDER_STATUSES,
   validateRentalOrderItems,
   validateRentalPeriod,
+  assertStartNotInPast,
 } from "./rental-order.rules";
 export type {
   CreateRentalOrderData,
