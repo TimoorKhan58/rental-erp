@@ -97,7 +97,7 @@ export class PrismaAssetRepository implements IAssetRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.asset.findUnique({
+        db.asset.findFirst({
           where: { assetCode },
         }),
       { model: MODEL, operation: "findByAssetCode" },

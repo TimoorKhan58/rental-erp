@@ -91,7 +91,7 @@ export class PrismaPurchaseOrderRepository implements IPurchaseOrderRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.purchaseOrder.findUnique({
+        db.purchaseOrder.findFirst({
           where: { poNumber },
           include: PURCHASE_ORDER_INCLUDE,
         }),

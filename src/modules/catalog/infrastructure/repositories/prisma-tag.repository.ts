@@ -72,7 +72,7 @@ export class PrismaTagRepository implements ITagRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.productTag.findUnique({
+        db.productTag.findFirst({
           where: { name },
         }),
       { model: MODEL, operation: "findByName" },

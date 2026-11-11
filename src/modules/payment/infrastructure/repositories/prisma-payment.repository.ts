@@ -64,7 +64,7 @@ export class PrismaPaymentRepository implements IPaymentRepository {
   findByPaymentNumber(paymentNumber: string): Promise<Payment | null> {
     return repositoryFindFirst(
       this.runner,
-      (db) => db.payment.findUnique({ where: { paymentNumber } }),
+      (db) => db.payment.findFirst({ where: { paymentNumber } }),
       { model: MODEL, operation: "findByPaymentNumber" },
     ).then((record) => (record ? toPaymentDomain(record) : null));
   }

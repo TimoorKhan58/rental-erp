@@ -71,7 +71,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.warehouse.findUnique({
+        db.warehouse.findFirst({
           where: { warehouseCode },
         }),
       { model: MODEL, operation: "findByWarehouseCode" },

@@ -125,7 +125,7 @@ export class PrismaProductRepository implements IProductRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.product.findUnique({
+        db.product.findFirst({
           where: { productCode },
           include: PRODUCT_DETAIL_INCLUDE,
         }),

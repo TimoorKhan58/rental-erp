@@ -74,7 +74,7 @@ export class PrismaExpenseCategoryRepository
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.expenseCategory.findUnique({
+        db.expenseCategory.findFirst({
           where: { name },
         }),
       { model: MODEL, operation: "findByName" },

@@ -72,7 +72,7 @@ export class PrismaAssetCategoryRepository implements IAssetCategoryRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.assetCategory.findUnique({
+        db.assetCategory.findFirst({
           where: { name },
         }),
       { model: MODEL, operation: "findByName" },

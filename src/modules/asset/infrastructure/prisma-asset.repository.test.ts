@@ -323,6 +323,8 @@ function createMockAssetStore(initial: AssetRecord[] = []) {
     ),
   };
 
+  // Lookups by business code use findFirst (unique per organization).
+  Object.assign(asset, { findFirst: asset.findUnique });
   return {
     db: { asset, assetTransfer, assetMaintenanceHistory } as unknown as DbClient,
     store: records,

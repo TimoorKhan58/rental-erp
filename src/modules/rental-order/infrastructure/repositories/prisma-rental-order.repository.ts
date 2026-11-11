@@ -81,7 +81,7 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.rentalOrder.findUnique({
+        db.rentalOrder.findFirst({
           where: { orderNumber },
           include: RENTAL_ORDER_INCLUDE,
         }),

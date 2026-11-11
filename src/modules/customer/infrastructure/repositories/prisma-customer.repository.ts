@@ -71,7 +71,7 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.customer.findUnique({
+        db.customer.findFirst({
           where: { phone },
         }),
       { model: MODEL, operation: "findByPhone" },
@@ -82,7 +82,7 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.customer.findUnique({
+        db.customer.findFirst({
           where: { customerCode },
         }),
       { model: MODEL, operation: "findByCustomerCode" },

@@ -171,6 +171,8 @@ function createMockCategoryStore(initial: AssetCategoryRecord[] = []) {
     }),
   };
 
+  // Lookups by business code use findFirst (unique per organization).
+  Object.assign(assetCategory, { findFirst: assetCategory.findUnique });
   return {
     db: { assetCategory } as unknown as DbClient,
     store: records,

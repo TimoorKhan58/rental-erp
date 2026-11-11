@@ -71,7 +71,7 @@ export class PrismaRentalInvoiceRepository implements IRentalInvoiceRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.rentalInvoice.findUnique({
+        db.rentalInvoice.findFirst({
           where: { invoiceNumber },
           include: RENTAL_INVOICE_INCLUDE,
         }),

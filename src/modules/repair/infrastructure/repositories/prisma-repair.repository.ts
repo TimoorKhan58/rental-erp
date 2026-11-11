@@ -121,7 +121,7 @@ export class PrismaRepairRepository implements IRepairRepository {
   findByRepairNumber(repairNumber: string): Promise<Repair | null> {
     return repositoryFindFirst(
       this.runner,
-      (db) => db.repair.findUnique({ where: { repairNumber } }),
+      (db) => db.repair.findFirst({ where: { repairNumber } }),
       { model: MODEL, operation: "findByRepairNumber" },
     ).then((record) => (record ? toRepairDomain(record) : null));
   }

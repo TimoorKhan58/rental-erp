@@ -83,6 +83,71 @@ model AuthVerification {
   @@map("verification")
 }
 
+// ── Organizations (SaaS tenants) ─────────────────────────────────
+//
+// Every per-business row belongs to exactly one organization.
+// Phase 1: all rows default to the first organization (MT Service).
+
+model Organization {
+  id                           String                        @id @default(uuid()) @db.Uuid
+  name                         String
+  slug                         String                        @unique
+  isActive                     Boolean                       @default(true)
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  users                        User[]
+  customers                    Customer[]
+  suppliers                    Supplier[]
+  warehouses                   Warehouse[]
+  categorys                    Category[]
+  brands                       Brand[]
+  unitOfMeasures               UnitOfMeasure[]
+  productAttributes            ProductAttribute[]
+  productTags                  ProductTag[]
+  productTagAssignments        ProductTagAssignment[]
+  productImages                ProductImage[]
+  productSpecifications        ProductSpecification[]
+  productAttributeValues       ProductAttributeValue[]
+  productVariants              ProductVariant[]
+  products                     Product[]
+  inventorys                   Inventory[]
+  inventoryTransactions        InventoryTransaction[]
+  purchaseOrders               PurchaseOrder[]
+  purchaseOrderItems           PurchaseOrderItem[]
+  rentalOrders                 RentalOrder[]
+  rentalOrderItems             RentalOrderItem[]
+  externalRentalAgreements     ExternalRentalAgreement[]
+  externalRentalAgreementItems ExternalRentalAgreementItem[]
+  dispatchs                    Dispatch[]
+  dispatchItems                DispatchItem[]
+  returnInspections            ReturnInspection[]
+  returnInspectionItems        ReturnInspectionItem[]
+  repairs                      Repair[]
+  repairItems                  RepairItem[]
+  maintenances                 Maintenance[]
+  rentalInvoices               RentalInvoice[]
+  rentalInvoiceItems           RentalInvoiceItem[]
+  payments                     Payment[]
+  supplierPayments             SupplierPayment[]
+  accounts                     Account[]
+  journalEntrys                JournalEntry[]
+  journalEntryLines            JournalEntryLine[]
+  expenseCategorys             ExpenseCategory[]
+  expenses                     Expense[]
+  companySettings              CompanySetting[]
+  documentSequences            DocumentSequence[]
+  auditLogs                    AuditLog[]
+  notifications                Notification[]
+  notificationRecipients       NotificationRecipient[]
+  assetCategorys               AssetCategory[]
+  assets                       Asset[]
+  assetTransfers               AssetTransfer[]
+  assetMaintenanceHistorys     AssetMaintenanceHistory[]
+  userDashboards               UserDashboard[]
+
+  @@map("organizations")
+}
+
 // ── Access control ────────────────────────────────────────────
 //
 // Soft delete (deletedAt, deletedBy) is planned for a future production phase
@@ -97,44 +162,47 @@ model Role {
 }
 
 model User {
-  id                     String                 @id @default(uuid()) @db.Uuid
-  name                   String
-  email                  String                 @unique
-  passwordHash           String?
-  authUserId             String?                @unique
-  authUser               AuthUser?              @relation("ErpUserToAuthUser", fields: [authUserId], references: [id], onDelete: SetNull)
-  linkedAuthUser         AuthUser?              @relation("AuthUserToErpUser")
-  roleId                 String                 @db.Uuid
-  role                   Role                   @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  isActive               Boolean                @default(true)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  inventoryTransactions  InventoryTransaction[]
-  rentalOrders           RentalOrder[]
-  dispatches             Dispatch[]
-  returnInspections      ReturnInspection[]
-  repairs                Repair[]
-  maintenances           Maintenance[]
-  rentalInvoices         RentalInvoice[]
-  createdPayments         Payment[]
-  createdSupplierPayments SupplierPayment[]
-  createdJournalEntries  JournalEntry[] @relation("JournalEntryCreatedBy")
-  postedJournalEntries   JournalEntry[] @relation("JournalEntryPostedBy")
-  recordedExpenses       Expense[]               @relation("ExpenseRecordedBy")
-  approvedExpenses       Expense[]               @relation("ExpenseApprovedBy")
-  paidExpenses           Expense[]               @relation("ExpensePaidBy")
-  auditLogs              AuditLog[]
-  notificationRecipients NotificationRecipient[]
-  userDashboards         UserDashboard[]
-  createdAssets          Asset[]                 @relation("AssetCreatedBy")
-  assignedAssets         Asset[]                 @relation("AssetAssignedTo")
-  disposedAssets         Asset[]                 @relation("AssetDisposedBy")
-  assetTransfers         AssetTransfer[]
-  assetMaintenanceRecords AssetMaintenanceHistory[]
+  id                              String                    @id @default(uuid()) @db.Uuid
+  organizationId                  String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization                    Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name                            String
+  email                           String                    @unique
+  passwordHash                    String?
+  authUserId                      String?                   @unique
+  authUser                        AuthUser?                 @relation("ErpUserToAuthUser", fields: [authUserId], references: [id], onDelete: SetNull)
+  linkedAuthUser                  AuthUser?                 @relation("AuthUserToErpUser")
+  roleId                          String                    @db.Uuid
+  role                            Role                      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive                        Boolean                   @default(true)
+  createdAt                       DateTime                  @default(now())
+  updatedAt                       DateTime                  @updatedAt
+  inventoryTransactions           InventoryTransaction[]
+  rentalOrders                    RentalOrder[]
+  dispatches                      Dispatch[]
+  returnInspections               ReturnInspection[]
+  repairs                         Repair[]
+  maintenances                    Maintenance[]
+  rentalInvoices                  RentalInvoice[]
+  createdPayments                 Payment[]
+  createdSupplierPayments         SupplierPayment[]
+  createdJournalEntries           JournalEntry[]            @relation("JournalEntryCreatedBy")
+  postedJournalEntries            JournalEntry[]            @relation("JournalEntryPostedBy")
+  recordedExpenses                Expense[]                 @relation("ExpenseRecordedBy")
+  approvedExpenses                Expense[]                 @relation("ExpenseApprovedBy")
+  paidExpenses                    Expense[]                 @relation("ExpensePaidBy")
+  auditLogs                       AuditLog[]
+  notificationRecipients          NotificationRecipient[]
+  userDashboards                  UserDashboard[]
+  createdAssets                   Asset[]                   @relation("AssetCreatedBy")
+  assignedAssets                  Asset[]                   @relation("AssetAssignedTo")
+  disposedAssets                  Asset[]                   @relation("AssetDisposedBy")
+  assetTransfers                  AssetTransfer[]
+  assetMaintenanceRecords         AssetMaintenanceHistory[]
   createdExternalRentalAgreements ExternalRentalAgreement[]
 
   @@index([roleId])
   @@index([isActive])
+  @@index([organizationId])
   @@map("users")
 }
 
@@ -144,22 +212,27 @@ model User {
 // after business approval. Not implemented in the current schema freeze.
 
 model Customer {
-  id           String   @id @default(uuid()) @db.Uuid
-  customerCode String   @unique
-  name         String
-  phone        String   @unique
-  cnic         String?
-  address      String
-  notes        String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id             String          @id @default(uuid()) @db.Uuid
+  organizationId String          @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  customerCode   String
+  name           String
+  phone          String
+  cnic           String?
+  address        String
+  notes          String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   rentalOrders   RentalOrder[]
   rentalInvoices RentalInvoice[]
   payments       Payment[]
 
+  @@unique([organizationId, customerCode])
+  @@unique([organizationId, phone])
   @@index([name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("customers")
 }
 
@@ -169,24 +242,29 @@ model Customer {
 // after business approval. Not implemented in the current schema freeze.
 
 model Supplier {
-  id           String   @id @default(uuid()) @db.Uuid
-  supplierCode String   @unique
-  name         String
-  phone        String   @unique
-  email        String?
-  address      String
-  notes        String?
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  purchaseOrders             PurchaseOrder[]
-  supplierPayments           SupplierPayment[]
-  assets                     Asset[]
-  expenses                   Expense[]
-  externalRentalAgreements   ExternalRentalAgreement[]
+  id                       String                    @id @default(uuid()) @db.Uuid
+  organizationId           String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  supplierCode             String
+  name                     String
+  phone                    String
+  email                    String?
+  address                  String
+  notes                    String?
+  isActive                 Boolean                   @default(true)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  purchaseOrders           PurchaseOrder[]
+  supplierPayments         SupplierPayment[]
+  assets                   Asset[]
+  expenses                 Expense[]
+  externalRentalAgreements ExternalRentalAgreement[]
 
+  @@unique([organizationId, supplierCode])
+  @@unique([organizationId, phone])
   @@index([name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("suppliers")
 }
 
@@ -196,28 +274,32 @@ model Supplier {
 // after business approval. Not implemented in the current schema freeze.
 
 model Warehouse {
-  id            String   @id @default(uuid()) @db.Uuid
-  warehouseCode String   @unique
-  name          String
-  description   String?
-  address       String?
-  contactPerson String?
-  phone         String?
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  updatedAt      DateTime        @updatedAt
-  inventories                Inventory[]
-  purchaseOrders             PurchaseOrder[]
-  rentalOrders               RentalOrder[]
-  repairs                    Repair[]
-  maintenances               Maintenance[]
-  assets                     Asset[]
-  assetTransfersFrom         AssetTransfer[] @relation("AssetTransferFrom")
-  assetTransfersTo           AssetTransfer[] @relation("AssetTransferTo")
-  externalRentalAgreements   ExternalRentalAgreement[]
+  id                       String                    @id @default(uuid()) @db.Uuid
+  organizationId           String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  warehouseCode            String
+  name                     String
+  description              String?
+  address                  String?
+  contactPerson            String?
+  phone                    String?
+  isActive                 Boolean                   @default(true)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  inventories              Inventory[]
+  purchaseOrders           PurchaseOrder[]
+  rentalOrders             RentalOrder[]
+  repairs                  Repair[]
+  maintenances             Maintenance[]
+  assets                   Asset[]
+  assetTransfersFrom       AssetTransfer[]           @relation("AssetTransferFrom")
+  assetTransfersTo         AssetTransfer[]           @relation("AssetTransferTo")
+  externalRentalAgreements ExternalRentalAgreement[]
 
+  @@unique([organizationId, warehouseCode])
   @@index([name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("warehouses")
 }
 
@@ -233,162 +315,200 @@ enum AttributeDataType {
 }
 
 model Category {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique
-  description String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name           String
+  description    String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  products       Product[]
 
+  @@unique([organizationId, name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("categories")
 }
 
 model Brand {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique
-  description String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name           String
+  description    String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  products       Product[]
 
+  @@unique([organizationId, name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("brands")
 }
 
 model UnitOfMeasure {
-  id          String    @id @default(uuid()) @db.Uuid
-  code        String    @unique
-  name        String
-  description String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  code           String
+  name           String
+  description    String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  products       Product[]
 
+  @@unique([organizationId, code])
   @@index([isActive])
+  @@index([organizationId])
   @@map("units_of_measure")
 }
 
 model ProductAttribute {
-  id        String              @id @default(uuid()) @db.Uuid
-  name      String              @unique
-  dataType  AttributeDataType   @default(TEXT)
-  isActive  Boolean             @default(true)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  values    ProductAttributeValue[]
+  id             String                  @id @default(uuid()) @db.Uuid
+  organizationId String                  @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name           String
+  dataType       AttributeDataType       @default(TEXT)
+  isActive       Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  values         ProductAttributeValue[]
 
+  @@unique([organizationId, name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("product_attributes")
 }
 
 model ProductTag {
-  id          String                 @id @default(uuid()) @db.Uuid
-  name        String                 @unique
-  color       String?
-  isActive    Boolean                @default(true)
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  assignments ProductTagAssignment[]
+  id             String                 @id @default(uuid()) @db.Uuid
+  organizationId String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name           String
+  color          String?
+  isActive       Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  assignments    ProductTagAssignment[]
 
+  @@unique([organizationId, name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("product_tags")
 }
 
 model ProductTagAssignment {
-  productId String     @db.Uuid
-  tagId     String     @db.Uuid
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag       ProductTag @relation(fields: [tagId], references: [id], onDelete: Restrict)
-  createdAt DateTime   @default(now())
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  productId      String       @db.Uuid
+  tagId          String       @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag            ProductTag   @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  createdAt      DateTime     @default(now())
 
   @@id([productId, tagId])
   @@index([tagId])
+  @@index([organizationId])
   @@map("product_tag_assignments")
 }
 
 model ProductImage {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  url       String
-  altText   String?
-  sortOrder Int      @default(0)
-  isPrimary Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  productId      String       @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url            String
+  altText        String?
+  sortOrder      Int          @default(0)
+  isPrimary      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([productId])
+  @@index([organizationId])
   @@map("product_images")
 }
 
 model ProductSpecification {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  key       String
-  value     String
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  productId      String       @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  key            String
+  value          String
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@unique([productId, key])
   @@index([productId])
+  @@index([organizationId])
   @@map("product_specifications")
 }
 
 model ProductAttributeValue {
-  id          String           @id @default(uuid()) @db.Uuid
-  productId   String           @db.Uuid
-  attributeId String           @db.Uuid
-  product     Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  attribute   ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Restrict)
-  value       String
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  productId      String           @db.Uuid
+  attributeId    String           @db.Uuid
+  product        Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attribute      ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Restrict)
+  value          String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@unique([productId, attributeId])
   @@index([attributeId])
+  @@index([organizationId])
   @@map("product_attribute_values")
 }
 
 model ProductVariant {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku       String   @unique
-  name      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  productId      String       @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku            String
+  name           String
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
+  @@unique([organizationId, sku])
   @@index([productId])
+  @@index([organizationId])
   @@map("product_variants")
 }
 
 model Product {
-  id                String    @id @default(uuid()) @db.Uuid
-  productCode       String    @unique
-  categoryId        String?   @db.Uuid
-  category          Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  brandId           String?   @db.Uuid
-  brand             Brand?    @relation(fields: [brandId], references: [id], onDelete: Restrict)
-  unitId            String?   @db.Uuid
-  unitOfMeasure     UnitOfMeasure? @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  name              String
-  description       String?
-  purchaseCost      Decimal   @db.Decimal(12, 2)
-  rentalPricePerDay Decimal   @db.Decimal(12, 2)
-  totalQuantity     Int       @default(0)
-  minimumStock      Int       @default(0)
-  unit              String
-  isRentable        Boolean   @default(true)
-  isActive          Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                           String                        @id @default(uuid()) @db.Uuid
+  organizationId               String                        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization                 Organization                  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  productCode                  String
+  categoryId                   String?                       @db.Uuid
+  category                     Category?                     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brandId                      String?                       @db.Uuid
+  brand                        Brand?                        @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  unitId                       String?                       @db.Uuid
+  unitOfMeasure                UnitOfMeasure?                @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  name                         String
+  description                  String?
+  purchaseCost                 Decimal                       @db.Decimal(12, 2)
+  rentalPricePerDay            Decimal                       @db.Decimal(12, 2)
+  totalQuantity                Int                           @default(0)
+  minimumStock                 Int                           @default(0)
+  unit                         String
+  isRentable                   Boolean                       @default(true)
+  isActive                     Boolean                       @default(true)
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
   inventories                  Inventory[]
   purchaseOrderItems           PurchaseOrderItem[]
   rentalOrderItems             RentalOrderItem[]
@@ -403,12 +523,14 @@ model Product {
   variants                     ProductVariant[]
   externalRentalAgreementItems ExternalRentalAgreementItem[]
 
+  @@unique([organizationId, productCode])
   @@index([categoryId])
   @@index([brandId])
   @@index([unitId])
   @@index([name])
   @@index([productCode])
   @@index([isActive])
+  @@index([organizationId])
   @@map("products")
 }
 
@@ -424,6 +546,8 @@ enum StockMovementType {
 
 model Inventory {
   id               String                 @id @default(uuid()) @db.Uuid
+  organizationId   String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId        String                 @db.Uuid
   product          Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
   warehouseId      String                 @db.Uuid
@@ -442,11 +566,14 @@ model Inventory {
   @@index([productId])
   @@index([warehouseId])
   @@index([isActive])
+  @@index([organizationId])
   @@map("inventory")
 }
 
 model InventoryTransaction {
   id               String            @id @default(uuid()) @db.Uuid
+  organizationId   String            @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   inventoryId      String            @db.Uuid
   inventory        Inventory         @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
   productId        String            @db.Uuid
@@ -467,6 +594,7 @@ model InventoryTransaction {
   @@index([warehouseId])
   @@index([movementType])
   @@index([createdAt])
+  @@index([organizationId])
   @@map("inventory_transactions")
 }
 
@@ -481,30 +609,36 @@ enum PurchaseOrderStatus {
 }
 
 model PurchaseOrder {
-  id           String                @id @default(uuid()) @db.Uuid
-  poNumber     String                @unique
-  supplierId   String                @db.Uuid
-  supplier     Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  warehouseId  String                @db.Uuid
-  warehouse    Warehouse             @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  status       PurchaseOrderStatus   @default(DRAFT)
-  orderDate    DateTime
-  expectedDate DateTime?
-  remarks      String?
-  paidAmount   Decimal               @default(0) @db.Decimal(12, 2)
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  items        PurchaseOrderItem[]
+  id               String              @id @default(uuid()) @db.Uuid
+  organizationId   String              @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  poNumber         String
+  supplierId       String              @db.Uuid
+  supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  warehouseId      String              @db.Uuid
+  warehouse        Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  status           PurchaseOrderStatus @default(DRAFT)
+  orderDate        DateTime
+  expectedDate     DateTime?
+  remarks          String?
+  paidAmount       Decimal             @default(0) @db.Decimal(12, 2)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  items            PurchaseOrderItem[]
   supplierPayments SupplierPayment[]
 
+  @@unique([organizationId, poNumber])
   @@index([status])
   @@index([supplierId])
   @@index([warehouseId])
+  @@index([organizationId])
   @@map("purchase_orders")
 }
 
 model PurchaseOrderItem {
   id               String        @id @default(uuid()) @db.Uuid
+  organizationId   String        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   purchaseOrderId  String        @db.Uuid
   purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   productId        String        @db.Uuid
@@ -515,6 +649,7 @@ model PurchaseOrderItem {
 
   @@index([purchaseOrderId])
   @@index([productId])
+  @@index([organizationId])
   @@map("purchase_order_items")
 }
 
@@ -533,30 +668,32 @@ enum RentalOrderStatus {
 }
 
 model RentalOrder {
-  id                 String             @id @default(uuid()) @db.Uuid
-  orderNumber        String             @unique
-  customerId         String             @db.Uuid
-  customer           Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  warehouseId        String             @db.Uuid
-  warehouse          Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  status             RentalOrderStatus  @default(DRAFT)
-  bookingDate        DateTime           @db.Date
-  eventStartDate     DateTime           @db.Date
-  eventEndDate       DateTime           @db.Date
-  expectedReturnDate DateTime           @db.Date
-  actualReturnDate   DateTime?          @db.Date
-  deliveryRequired   Boolean
-  deliveryAddress    String
-  deliveryCharges    Decimal            @db.Decimal(12, 2)
-  labourCharges      Decimal            @db.Decimal(12, 2)
-  discount           Decimal            @db.Decimal(12, 2)
-  notes              String?
-  subtotal           Decimal            @db.Decimal(12, 2)
-  grandTotal         Decimal            @db.Decimal(12, 2)
-  createdById        String             @db.Uuid
-  createdBy          User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                       String                    @id @default(uuid()) @db.Uuid
+  organizationId           String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  orderNumber              String
+  customerId               String                    @db.Uuid
+  customer                 Customer                  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  warehouseId              String                    @db.Uuid
+  warehouse                Warehouse                 @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  status                   RentalOrderStatus         @default(DRAFT)
+  bookingDate              DateTime                  @db.Date
+  eventStartDate           DateTime                  @db.Date
+  eventEndDate             DateTime                  @db.Date
+  expectedReturnDate       DateTime                  @db.Date
+  actualReturnDate         DateTime?                 @db.Date
+  deliveryRequired         Boolean
+  deliveryAddress          String
+  deliveryCharges          Decimal                   @db.Decimal(12, 2)
+  labourCharges            Decimal                   @db.Decimal(12, 2)
+  discount                 Decimal                   @db.Decimal(12, 2)
+  notes                    String?
+  subtotal                 Decimal                   @db.Decimal(12, 2)
+  grandTotal               Decimal                   @db.Decimal(12, 2)
+  createdById              String                    @db.Uuid
+  createdBy                User                      @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
   items                    RentalOrderItem[]
   dispatches               Dispatch[]
   returnInspections        ReturnInspection[]
@@ -565,30 +702,34 @@ model RentalOrder {
   // (PostgreSQL partial unique index; see migration external_rental_active_only_uniqueness).
   externalRentalAgreements ExternalRentalAgreement[]
 
+  @@unique([organizationId, orderNumber])
   @@index([customerId])
   @@index([warehouseId])
   @@index([status])
   @@index([customerId, status])
   @@index([eventStartDate])
   @@index([eventEndDate])
+  @@index([organizationId])
   @@map("rental_orders")
 }
 
 model RentalOrderItem {
-  id                String      @id @default(uuid()) @db.Uuid
-  rentalOrderId     String      @db.Uuid
-  rentalOrder       RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
-  productId         String      @db.Uuid
-  product           Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  quantity          Int
-  rentalPricePerDay Decimal     @db.Decimal(12, 2)
+  id                           String                        @id @default(uuid()) @db.Uuid
+  organizationId               String                        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization                 Organization                  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  rentalOrderId                String                        @db.Uuid
+  rentalOrder                  RentalOrder                   @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  productId                    String                        @db.Uuid
+  product                      Product                       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity                     Int
+  rentalPricePerDay            Decimal                       @db.Decimal(12, 2)
   // OWNED-STOCK reservation only (F-01). External hire-in qty is NOT stored here.
-  reservedQuantity  Int         @default(0)
-  eventStartDate    DateTime    @db.Date
-  eventEndDate      DateTime    @db.Date
-  numberOfDays      Int
-  lineTotal         Decimal     @db.Decimal(12, 2)
-  notes             String?
+  reservedQuantity             Int                           @default(0)
+  eventStartDate               DateTime                      @db.Date
+  eventEndDate                 DateTime                      @db.Date
+  numberOfDays                 Int
+  lineTotal                    Decimal                       @db.Decimal(12, 2)
+  notes                        String?
   dispatchItems                DispatchItem[]
   returnInspectionItems        ReturnInspectionItem[]
   externalRentalAgreementItems ExternalRentalAgreementItem[]
@@ -597,6 +738,7 @@ model RentalOrderItem {
   @@index([productId])
   @@index([eventStartDate])
   @@index([eventEndDate])
+  @@index([organizationId])
   @@map("rental_order_items")
 }
 
@@ -626,7 +768,9 @@ enum ExternalRentalSettlementStatus {
 
 model ExternalRentalAgreement {
   id                           String                         @id @default(uuid()) @db.Uuid
-  agreementNumber              String                         @unique
+  organizationId               String                         @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization                 Organization                   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  agreementNumber              String
   supplierId                   String                         @db.Uuid
   supplier                     Supplier                       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   warehouseId                  String                         @db.Uuid
@@ -650,6 +794,7 @@ model ExternalRentalAgreement {
   updatedAt                    DateTime                       @updatedAt
   items                        ExternalRentalAgreementItem[]
 
+  @@unique([organizationId, agreementNumber])
   @@index([rentalOrderId])
   @@index([supplierId])
   @@index([warehouseId])
@@ -657,11 +802,14 @@ model ExternalRentalAgreement {
   @@index([settlementStatus])
   @@index([hireStartDate])
   @@index([hireEndDate])
+  @@index([organizationId])
   @@map("external_rental_agreements")
 }
 
 model ExternalRentalAgreementItem {
   id                           String                  @id @default(uuid()) @db.Uuid
+  organizationId               String                  @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization                 Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   agreementId                  String                  @db.Uuid
   agreement                    ExternalRentalAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
   productId                    String                  @db.Uuid
@@ -688,6 +836,7 @@ model ExternalRentalAgreementItem {
   @@unique([agreementId, rentalOrderItemId])
   @@index([agreementId])
   @@index([productId])
+  @@index([organizationId])
   @@map("external_rental_agreement_items")
 }
 
@@ -707,42 +856,48 @@ enum DispatchStatus {
 }
 
 model Dispatch {
-  id              String         @id @default(uuid()) @db.Uuid
-  dispatchNumber  String         @unique
-  rentalOrderId   String         @db.Uuid
-  rentalOrder     RentalOrder    @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
-  dispatchDate    DateTime
-  deliveryMethod  DeliveryMethod
+  id                String             @id @default(uuid()) @db.Uuid
+  organizationId    String             @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  dispatchNumber    String
+  rentalOrderId     String             @db.Uuid
+  rentalOrder       RentalOrder        @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  dispatchDate      DateTime
+  deliveryMethod    DeliveryMethod
   // Future architecture: vehicleNumber will migrate to a dedicated Vehicle module.
   // driverName and driverPhone will migrate to dedicated Employee and Driver modules.
   // These free-text fields are retained until those modules are implemented.
   /// Temporary free-text fields — will migrate to dedicated Vehicle and Driver modules.
-  vehicleNumber   String?
+  vehicleNumber     String?
   /// Temporary free-text fields — will migrate to dedicated Employee and Driver modules.
-  driverName      String?
+  driverName        String?
   /// Temporary free-text fields — will migrate to dedicated Employee and Driver modules.
-  driverPhone     String?
-  deliveryAddress String
-  remarks         String?
-  status          DispatchStatus @default(DRAFT)
-  loadedAt        DateTime?
-  departedAt      DateTime?
-  deliveredAt     DateTime?
-  createdById     String         @db.Uuid
-  createdBy       User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  items           DispatchItem[]
+  driverPhone       String?
+  deliveryAddress   String
+  remarks           String?
+  status            DispatchStatus     @default(DRAFT)
+  loadedAt          DateTime?
+  departedAt        DateTime?
+  deliveredAt       DateTime?
+  createdById       String             @db.Uuid
+  createdBy         User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  items             DispatchItem[]
   returnInspections ReturnInspection[]
 
+  @@unique([organizationId, dispatchNumber])
   @@index([rentalOrderId])
   @@index([dispatchDate])
   @@index([status])
+  @@index([organizationId])
   @@map("dispatches")
 }
 
 model DispatchItem {
   id                String           @id @default(uuid()) @db.Uuid
+  organizationId    String           @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization      Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   dispatchId        String           @db.Uuid
   dispatch          Dispatch         @relation(fields: [dispatchId], references: [id], onDelete: Restrict)
   productId         String           @db.Uuid
@@ -757,6 +912,7 @@ model DispatchItem {
 
   @@index([dispatchId])
   @@index([productId])
+  @@index([organizationId])
   @@map("dispatch_items")
 }
 
@@ -772,7 +928,9 @@ enum ReturnStatus {
 
 model ReturnInspection {
   id             String                 @id @default(uuid()) @db.Uuid
-  returnNumber   String                 @unique
+  organizationId String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  returnNumber   String
   rentalOrderId  String                 @db.Uuid
   rentalOrder    RentalOrder            @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
   dispatchId     String                 @db.Uuid
@@ -790,39 +948,44 @@ model ReturnInspection {
   items          ReturnInspectionItem[]
   repairs        Repair[]
 
+  @@unique([organizationId, returnNumber])
   @@index([rentalOrderId])
   @@index([dispatchId])
   @@index([inspectionDate])
   @@index([status])
+  @@index([organizationId])
   @@map("return_inspections")
 }
 
 model ReturnInspectionItem {
-  id                 String           @id @default(uuid()) @db.Uuid
-  returnInspectionId String           @db.Uuid
-  returnInspection   ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
-  rentalOrderItemId  String           @db.Uuid
-  rentalOrderItem    RentalOrderItem  @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
-  returnedQuantity   Int
+  id                      String           @id @default(uuid()) @db.Uuid
+  organizationId          String           @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization            Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  returnInspectionId      String           @db.Uuid
+  returnInspection        ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
+  rentalOrderItemId       String           @db.Uuid
+  rentalOrderItem         RentalOrderItem  @relation(fields: [rentalOrderItemId], references: [id], onDelete: Restrict)
+  returnedQuantity        Int
   // Source split (Phase 25.5.4). Null = legacy owned-only return.
-  ownedQuantity      Int?
-  externalQuantity   Int?
-  goodQuantity       Int
-  brokenQuantity     Int
-  repairQuantity     Int
-  lostQuantity       Int
-  missingQuantity    Int
+  ownedQuantity           Int?
+  externalQuantity        Int?
+  goodQuantity            Int
+  brokenQuantity          Int
+  repairQuantity          Int
+  lostQuantity            Int
+  missingQuantity         Int
   // Phase 28.1 — source × condition attribution (additive; legacy rows remain 0).
-  ownedGoodQuantity      Int @default(0)
-  ownedDamagedQuantity   Int @default(0)
-  ownedLostQuantity      Int @default(0)
-  externalGoodQuantity   Int @default(0)
-  externalDamagedQuantity Int @default(0)
-  externalLostQuantity   Int @default(0)
-  damageCharge       Decimal          @db.Decimal(12, 2)
-  notes              String?
-  repairs            Repair[]
+  ownedGoodQuantity       Int              @default(0)
+  ownedDamagedQuantity    Int              @default(0)
+  ownedLostQuantity       Int              @default(0)
+  externalGoodQuantity    Int              @default(0)
+  externalDamagedQuantity Int              @default(0)
+  externalLostQuantity    Int              @default(0)
+  damageCharge            Decimal          @db.Decimal(12, 2)
+  notes                   String?
+  repairs                 Repair[]
 
+  @@index([organizationId])
   @@map("return_inspection_items")
 }
 
@@ -847,53 +1010,60 @@ enum RepairType {
 }
 
 model Repair {
-  id                     String           @id @default(uuid()) @db.Uuid
-  repairNumber           String           @unique
+  id                     String               @id @default(uuid()) @db.Uuid
+  organizationId         String               @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization           Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  repairNumber           String
   returnInspectionId     String               @db.Uuid
   returnInspection       ReturnInspection     @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
   returnInspectionItemId String               @db.Uuid
   returnInspectionItem   ReturnInspectionItem @relation(fields: [returnInspectionItemId], references: [id], onDelete: Restrict)
-  productId              String           @db.Uuid
-  product                Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
-  warehouseId            String           @db.Uuid
-  warehouse              Warehouse        @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  productId              String               @db.Uuid
+  product                Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouseId            String               @db.Uuid
+  warehouse              Warehouse            @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   quantity               Int
   repairDate             DateTime
   assignedTo             String?
-  estimatedCost          Decimal          @default(0) @db.Decimal(12, 2)
-  actualCost             Decimal          @default(0) @db.Decimal(12, 2)
-  status                 RepairStatus     @default(PENDING)
+  estimatedCost          Decimal              @default(0) @db.Decimal(12, 2)
+  actualCost             Decimal              @default(0) @db.Decimal(12, 2)
+  status                 RepairStatus         @default(PENDING)
   remarks                String?
   startedAt              DateTime?
   completedAt            DateTime?
-  createdById            String           @db.Uuid
-  createdBy              User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
+  createdById            String               @db.Uuid
+  createdBy              User                 @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
   items                  RepairItem[]
 
+  @@unique([organizationId, repairNumber])
   @@index([repairDate])
   @@index([status])
   @@index([returnInspectionId])
   @@index([returnInspectionItemId])
   @@index([productId])
   @@index([warehouseId])
+  @@index([organizationId])
   @@map("repairs")
 }
 
 model RepairItem {
-  id         String     @id @default(uuid()) @db.Uuid
-  repairId   String     @db.Uuid
-  repair     Repair     @relation(fields: [repairId], references: [id], onDelete: Restrict)
-  productId  String     @db.Uuid
-  product    Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
-  quantity   Int
-  repairType RepairType
-  repairCost Decimal    @db.Decimal(12, 2)
-  remarks    String?
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  repairId       String       @db.Uuid
+  repair         Repair       @relation(fields: [repairId], references: [id], onDelete: Restrict)
+  productId      String       @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity       Int
+  repairType     RepairType
+  repairCost     Decimal      @db.Decimal(12, 2)
+  remarks        String?
 
   @@index([repairId])
   @@index([productId])
+  @@index([organizationId])
   @@map("repair_items")
 }
 
@@ -916,36 +1086,40 @@ enum MaintenanceServiceType {
 }
 
 model Maintenance {
-  id                 String                 @id @default(uuid()) @db.Uuid
-  maintenanceNumber  String                 @unique
-  productId          String                 @db.Uuid
-  product            Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
-  warehouseId        String                 @db.Uuid
-  warehouse          Warehouse              @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  inventoryId        String                 @db.Uuid
-  inventory          Inventory              @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
-  quantity           Int
-  serviceType        MaintenanceServiceType
-  technician         String?
-  vendor             String?
-  scheduledDate      DateTime
-  startedAt          DateTime?
-  completedAt        DateTime?
-  estimatedCost      Decimal                @default(0) @db.Decimal(12, 2)
-  actualCost         Decimal                @default(0) @db.Decimal(12, 2)
-  notes              String?
-  status             MaintenanceStatus      @default(SCHEDULED)
-  createdById        String                 @db.Uuid
-  createdBy          User                   @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
+  id                String                 @id @default(uuid()) @db.Uuid
+  organizationId    String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  maintenanceNumber String
+  productId         String                 @db.Uuid
+  product           Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouseId       String                 @db.Uuid
+  warehouse         Warehouse              @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  inventoryId       String                 @db.Uuid
+  inventory         Inventory              @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  quantity          Int
+  serviceType       MaintenanceServiceType
+  technician        String?
+  vendor            String?
+  scheduledDate     DateTime
+  startedAt         DateTime?
+  completedAt       DateTime?
+  estimatedCost     Decimal                @default(0) @db.Decimal(12, 2)
+  actualCost        Decimal                @default(0) @db.Decimal(12, 2)
+  notes             String?
+  status            MaintenanceStatus      @default(SCHEDULED)
+  createdById       String                 @db.Uuid
+  createdBy         User                   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
+  @@unique([organizationId, maintenanceNumber])
   @@index([maintenanceNumber])
   @@index([productId])
   @@index([warehouseId])
   @@index([inventoryId])
   @@index([scheduledDate])
   @@index([status])
+  @@index([organizationId])
   @@map("maintenances")
 }
 
@@ -973,59 +1147,66 @@ enum RentalInvoiceLineType {
 }
 
 model RentalInvoice {
-  id            String              @id @default(uuid()) @db.Uuid
-  invoiceNumber String              @unique
-  rentalOrderId String              @db.Uuid
-  rentalOrder   RentalOrder         @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
-  customerId    String              @db.Uuid
-  customer      Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  invoiceDate   DateTime            @db.Date
-  dueDate       DateTime?           @db.Date
-  subtotal      Decimal             @db.Decimal(12, 2)
-  discount      Decimal             @db.Decimal(12, 2)
-  tax           Decimal             @db.Decimal(12, 2)
-  grandTotal    Decimal             @db.Decimal(12, 2)
-  paidAmount    Decimal             @default(0) @db.Decimal(12, 2)
-  balance       Decimal             @db.Decimal(12, 2)
-  status        RentalInvoiceStatus @default(DRAFT)
-  notes         String?
-  issuedAt      DateTime?
-  voidedAt      DateTime?
-  createdById   String              @db.Uuid
-  createdBy     User                @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  items         RentalInvoiceItem[]
-  payments      Payment[]
+  id             String              @id @default(uuid()) @db.Uuid
+  organizationId String              @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invoiceNumber  String
+  rentalOrderId  String              @db.Uuid
+  rentalOrder    RentalOrder         @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
+  customerId     String              @db.Uuid
+  customer       Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invoiceDate    DateTime            @db.Date
+  dueDate        DateTime?           @db.Date
+  subtotal       Decimal             @db.Decimal(12, 2)
+  discount       Decimal             @db.Decimal(12, 2)
+  tax            Decimal             @db.Decimal(12, 2)
+  grandTotal     Decimal             @db.Decimal(12, 2)
+  paidAmount     Decimal             @default(0) @db.Decimal(12, 2)
+  balance        Decimal             @db.Decimal(12, 2)
+  status         RentalInvoiceStatus @default(DRAFT)
+  notes          String?
+  issuedAt       DateTime?
+  voidedAt       DateTime?
+  createdById    String              @db.Uuid
+  createdBy      User                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  items          RentalInvoiceItem[]
+  payments       Payment[]
 
+  @@unique([organizationId, invoiceNumber])
   @@index([invoiceNumber])
   @@index([rentalOrderId])
   @@index([customerId])
   @@index([invoiceDate])
   @@index([status])
   @@index([customerId, status])
+  @@index([organizationId])
   @@map("rental_invoices")
 }
 
 model RentalInvoiceItem {
-  id               String                @id @default(uuid()) @db.Uuid
-  rentalInvoiceId  String                @db.Uuid
-  rentalInvoice    RentalInvoice         @relation(fields: [rentalInvoiceId], references: [id], onDelete: Cascade)
-  lineType         RentalInvoiceLineType
-  description      String
-  quantity         Int
-  unitPrice        Decimal               @db.Decimal(12, 2)
-  lineTotal        Decimal               @db.Decimal(12, 2)
-  sortOrder        Int                   @default(0)
-  productName      String?
-  dailyRate        Decimal?              @db.Decimal(12, 2)
-  numberOfDays     Int?
-  damagedQuantity  Int                   @default(0)
-  lostQuantity     Int                   @default(0)
-  missingQuantity  Int                   @default(0)
-  notes            String?
+  id              String                @id @default(uuid()) @db.Uuid
+  organizationId  String                @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  rentalInvoiceId String                @db.Uuid
+  rentalInvoice   RentalInvoice         @relation(fields: [rentalInvoiceId], references: [id], onDelete: Cascade)
+  lineType        RentalInvoiceLineType
+  description     String
+  quantity        Int
+  unitPrice       Decimal               @db.Decimal(12, 2)
+  lineTotal       Decimal               @db.Decimal(12, 2)
+  sortOrder       Int                   @default(0)
+  productName     String?
+  dailyRate       Decimal?              @db.Decimal(12, 2)
+  numberOfDays    Int?
+  damagedQuantity Int                   @default(0)
+  lostQuantity    Int                   @default(0)
+  missingQuantity Int                   @default(0)
+  notes           String?
 
   @@index([rentalInvoiceId])
+  @@index([organizationId])
   @@map("rental_invoice_items")
 }
 
@@ -1048,7 +1229,9 @@ enum PaymentMethod {
 
 model Payment {
   id              String        @id @default(uuid()) @db.Uuid
-  paymentNumber   String        @unique
+  organizationId  String        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  paymentNumber   String
   rentalInvoiceId String        @db.Uuid
   rentalInvoice   RentalInvoice @relation(fields: [rentalInvoiceId], references: [id], onDelete: Restrict)
   customerId      String        @db.Uuid
@@ -1066,6 +1249,7 @@ model Payment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@unique([organizationId, paymentNumber])
   @@index([paymentNumber])
   @@index([paymentDate])
   @@index([paymentMethod])
@@ -1073,12 +1257,15 @@ model Payment {
   @@index([rentalInvoiceId])
   @@index([customerId])
   @@index([rentalInvoiceId, paymentDate])
+  @@index([organizationId])
   @@map("payments")
 }
 
 model SupplierPayment {
   id              String        @id @default(uuid()) @db.Uuid
-  paymentNumber   String        @unique
+  organizationId  String        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  paymentNumber   String
   purchaseOrderId String        @db.Uuid
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
   supplierId      String        @db.Uuid
@@ -1096,12 +1283,14 @@ model SupplierPayment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@unique([organizationId, paymentNumber])
   @@index([paymentNumber])
   @@index([paymentDate])
   @@index([status])
   @@index([purchaseOrderId])
   @@index([supplierId])
   @@index([purchaseOrderId, paymentDate])
+  @@index([organizationId])
   @@map("supplier_payments")
 }
 
@@ -1129,50 +1318,60 @@ enum JournalReferenceType {
 }
 
 model Account {
-  id           String             @id @default(uuid()) @db.Uuid
-  accountCode  String             @unique
-  name         String
-  accountType  AccountType
-  description  String?
-  isActive     Boolean            @default(true)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  journalLines JournalEntryLine[]
+  id             String             @id @default(uuid()) @db.Uuid
+  organizationId String             @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  accountCode    String
+  name           String
+  accountType    AccountType
+  description    String?
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  journalLines   JournalEntryLine[]
 
+  @@unique([organizationId, accountCode])
   @@index([accountCode])
   @@index([accountType])
   @@index([isActive])
+  @@index([organizationId])
   @@map("accounts")
 }
 
 model JournalEntry {
-  id            String                @id @default(uuid()) @db.Uuid
-  journalNumber String                @unique
-  journalDate   DateTime              @db.Date
-  description   String
-  referenceType JournalReferenceType?
-  referenceId   String?               @db.Uuid
-  status        JournalEntryStatus    @default(DRAFT)
-  postedAt      DateTime?
-  voidedAt      DateTime?
-  createdById   String                @db.Uuid
-  createdBy     User                  @relation("JournalEntryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  postedById    String?               @db.Uuid
-  postedBy      User?                 @relation("JournalEntryPostedBy", fields: [postedById], references: [id], onDelete: Restrict)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  lines         JournalEntryLine[]
-  expenses      Expense[]
+  id             String                @id @default(uuid()) @db.Uuid
+  organizationId String                @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  journalNumber  String
+  journalDate    DateTime              @db.Date
+  description    String
+  referenceType  JournalReferenceType?
+  referenceId    String?               @db.Uuid
+  status         JournalEntryStatus    @default(DRAFT)
+  postedAt       DateTime?
+  voidedAt       DateTime?
+  createdById    String                @db.Uuid
+  createdBy      User                  @relation("JournalEntryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  postedById     String?               @db.Uuid
+  postedBy       User?                 @relation("JournalEntryPostedBy", fields: [postedById], references: [id], onDelete: Restrict)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  lines          JournalEntryLine[]
+  expenses       Expense[]
 
+  @@unique([organizationId, journalNumber])
   @@index([journalNumber])
   @@index([journalDate])
   @@index([status])
   @@index([referenceType, referenceId])
+  @@index([organizationId])
   @@map("journal_entries")
 }
 
 model JournalEntryLine {
   id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   journalEntryId String       @db.Uuid
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   accountId      String       @db.Uuid
@@ -1184,6 +1383,7 @@ model JournalEntryLine {
 
   @@index([journalEntryId])
   @@index([accountId])
+  @@index([organizationId])
   @@map("journal_entry_lines")
 }
 
@@ -1203,21 +1403,27 @@ enum ExpenseType {
 }
 
 model ExpenseCategory {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique
-  description String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  expenses    Expense[]
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name           String
+  description    String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  expenses       Expense[]
 
+  @@unique([organizationId, name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("expense_categories")
 }
 
 model Expense {
   id              String          @id @default(uuid()) @db.Uuid
-  expenseNumber   String          @unique
+  organizationId  String          @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  expenseNumber   String
   expenseDate     DateTime
   categoryId      String          @db.Uuid
   category        ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -1248,11 +1454,13 @@ model Expense {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  @@unique([organizationId, expenseNumber])
   @@index([expenseDate])
   @@index([status])
   @@index([categoryId])
   @@index([supplierId])
   @@index([expenseDate, status])
+  @@index([organizationId])
   @@map("expenses")
 }
 
@@ -1280,6 +1488,8 @@ enum DocumentType {
 
 model CompanySetting {
   id                     String             @id @default(uuid()) @db.Uuid
+  organizationId         String             @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   companyName            String
   businessName           String
   ownerName              String?
@@ -1315,11 +1525,14 @@ model CompanySetting {
   updatedAt              DateTime           @updatedAt
   documentSequences      DocumentSequence[]
 
+  @@index([organizationId])
   @@map("company_settings")
 }
 
 model DocumentSequence {
   id               String         @id @default(uuid()) @db.Uuid
+  organizationId   String         @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   companySettingId String         @db.Uuid
   companySetting   CompanySetting @relation(fields: [companySettingId], references: [id], onDelete: Restrict)
   documentType     DocumentType
@@ -1332,6 +1545,7 @@ model DocumentSequence {
   updatedAt        DateTime       @updatedAt
 
   @@unique([companySettingId, documentType])
+  @@index([organizationId])
   @@map("document_sequences")
 }
 
@@ -1354,39 +1568,39 @@ enum BackupFrequency {
 }
 
 model SystemSetting {
-  id                         String          @id @default(uuid()) @db.Uuid
-  appName                    String
-  appVersion                 String
-  environment                Environment     @default(DEVELOPMENT)
-  supportEmail               String?
-  supportPhone               String?
-  minPasswordLength          Int             @default(8)
-  maxLoginAttempts           Int             @default(5)
-  lockoutDurationMinutes     Int             @default(30)
-  requireEmailVerification   Boolean         @default(false)
-  allowPasswordReset         Boolean         @default(true)
-  sessionTimeoutMinutes      Int             @default(60)
-  rememberMeDurationDays     Int             @default(7)
-  maxConcurrentSessions      Int             @default(3)
-  passwordExpiryDays         Int?
-  ipWhitelistEnabled         Boolean         @default(false)
-  auditLogRetentionDays      Int             @default(90)
-  maxUploadSizeMb            Int             @default(10)
-  allowedFileTypes           String
-  uploadStoragePath          String?
-  emailNotificationsEnabled  Boolean         @default(true)
-  smsNotificationsEnabled    Boolean         @default(false)
-  defaultNotificationEmail   String?
-  backupEnabled              Boolean         @default(false)
-  backupFrequency            BackupFrequency @default(DAILY)
-  backupRetentionDays        Int             @default(30)
-  lastBackupAt               DateTime?
-  defaultDashboardView       String          @default("overview")
-  recentItemsLimit           Int             @default(10)
-  chartDefaultPeriodDays     Int             @default(30)
-  createdAt                  DateTime        @default(now())
-  updatedAt                  DateTime        @updatedAt
-  featureFlags               FeatureFlag[]
+  id                        String          @id @default(uuid()) @db.Uuid
+  appName                   String
+  appVersion                String
+  environment               Environment     @default(DEVELOPMENT)
+  supportEmail              String?
+  supportPhone              String?
+  minPasswordLength         Int             @default(8)
+  maxLoginAttempts          Int             @default(5)
+  lockoutDurationMinutes    Int             @default(30)
+  requireEmailVerification  Boolean         @default(false)
+  allowPasswordReset        Boolean         @default(true)
+  sessionTimeoutMinutes     Int             @default(60)
+  rememberMeDurationDays    Int             @default(7)
+  maxConcurrentSessions     Int             @default(3)
+  passwordExpiryDays        Int?
+  ipWhitelistEnabled        Boolean         @default(false)
+  auditLogRetentionDays     Int             @default(90)
+  maxUploadSizeMb           Int             @default(10)
+  allowedFileTypes          String
+  uploadStoragePath         String?
+  emailNotificationsEnabled Boolean         @default(true)
+  smsNotificationsEnabled   Boolean         @default(false)
+  defaultNotificationEmail  String?
+  backupEnabled             Boolean         @default(false)
+  backupFrequency           BackupFrequency @default(DAILY)
+  backupRetentionDays       Int             @default(30)
+  lastBackupAt              DateTime?
+  defaultDashboardView      String          @default("overview")
+  recentItemsLimit          Int             @default(10)
+  chartDefaultPeriodDays    Int             @default(30)
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+  featureFlags              FeatureFlag[]
 
   @@map("system_settings")
 }
@@ -1439,23 +1653,25 @@ enum AuditStatus {
 }
 
 model AuditLog {
-  id           String      @id @default(uuid()) @db.Uuid
-  userId       String?     @db.Uuid
-  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  module       String
-  entityName   String
-  recordId     String
-  action       AuditAction
-  status       AuditStatus
-  oldValues    Json?
-  newValues    Json?
-  ipAddress    String?
-  userAgent    String?
-  requestId    String?
-  httpMethod   String?
-  route        String?
-  errorMessage String?
-  createdAt    DateTime    @default(now())
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  userId         String?      @db.Uuid
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  module         String
+  entityName     String
+  recordId       String
+  action         AuditAction
+  status         AuditStatus
+  oldValues      Json?
+  newValues      Json?
+  ipAddress      String?
+  userAgent      String?
+  requestId      String?
+  httpMethod     String?
+  route          String?
+  errorMessage   String?
+  createdAt      DateTime     @default(now())
 
   @@index([createdAt])
   @@index([userId])
@@ -1465,6 +1681,7 @@ model AuditLog {
   @@index([action])
   @@index([status])
   @@index([requestId])
+  @@index([organizationId])
   @@map("audit_logs")
 }
 
@@ -1498,28 +1715,30 @@ enum NotificationPriority {
 }
 
 model NotificationTemplate {
-  id            String               @id @default(uuid()) @db.Uuid
+  id            String              @id @default(uuid()) @db.Uuid
   name          String
-  eventKey      String               @unique
+  eventKey      String              @unique
   channel       NotificationChannel
   subject       String?
   title         String
   body          String
-  enabled       Boolean              @default(true)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  enabled       Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   notifications Notification[]
 
   @@map("notification_templates")
 }
 
 model Notification {
-  id             String                 @id @default(uuid()) @db.Uuid
-  templateId     String?                @db.Uuid
-  template       NotificationTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  id             String                  @id @default(uuid()) @db.Uuid
+  organizationId String                  @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  templateId     String?                 @db.Uuid
+  template       NotificationTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
   channel        NotificationChannel
-  status         NotificationStatus     @default(PENDING)
-  priority       NotificationPriority   @default(NORMAL)
+  status         NotificationStatus      @default(PENDING)
+  priority       NotificationPriority    @default(NORMAL)
   module         String
   entityName     String
   recordId       String
@@ -1530,10 +1749,10 @@ model Notification {
   sentAt         DateTime?
   deliveredAt    DateTime?
   failedAt       DateTime?
-  retryCount     Int                    @default(0)
+  retryCount     Int                     @default(0)
   failureReason  String?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
   recipients     NotificationRecipient[]
 
   @@index([status])
@@ -1543,11 +1762,14 @@ model Notification {
   @@index([module])
   @@index([entityName])
   @@index([recordId])
+  @@index([organizationId])
   @@map("notifications")
 }
 
 model NotificationRecipient {
   id                String       @id @default(uuid()) @db.Uuid
+  organizationId    String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   notificationId    String       @db.Uuid
   notification      Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
   userId            String?      @db.Uuid
@@ -1562,6 +1784,7 @@ model NotificationRecipient {
 
   @@index([userId])
   @@index([isRead])
+  @@index([organizationId])
   @@map("notification_recipients")
 }
 
@@ -1577,91 +1800,105 @@ enum AssetStatus {
 }
 
 model AssetCategory {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  assets      Asset[]
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name           String
+  description    String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  assets         Asset[]
 
+  @@unique([organizationId, name])
   @@index([isActive])
+  @@index([organizationId])
   @@map("asset_categories")
 }
 
 model Asset {
-  id                 String      @id @default(uuid()) @db.Uuid
-  assetCode          String      @unique
+  id                 String                    @id @default(uuid()) @db.Uuid
+  organizationId     String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization       Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assetCode          String
   name               String
-  categoryId         String      @db.Uuid
-  category           AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryId         String                    @db.Uuid
+  category           AssetCategory             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   serialNumber       String?
-  purchaseDate       DateTime    @db.Date
-  purchaseCost       Decimal     @db.Decimal(12, 2)
-  residualValue      Decimal     @db.Decimal(12, 2)
+  purchaseDate       DateTime                  @db.Date
+  purchaseCost       Decimal                   @db.Decimal(12, 2)
+  residualValue      Decimal                   @db.Decimal(12, 2)
   usefulLifeMonths   Int
-  currentBookValue   Decimal     @db.Decimal(12, 2)
-  warehouseId        String      @db.Uuid
-  warehouse          Warehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  assignedEmployeeId String?     @db.Uuid
-  assignedEmployee   User?       @relation("AssetAssignedTo", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
-  vendorId           String?     @db.Uuid
-  vendor             Supplier?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  currentBookValue   Decimal                   @db.Decimal(12, 2)
+  warehouseId        String                    @db.Uuid
+  warehouse          Warehouse                 @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  assignedEmployeeId String?                   @db.Uuid
+  assignedEmployee   User?                     @relation("AssetAssignedTo", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  vendorId           String?                   @db.Uuid
+  vendor             Supplier?                 @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   notes              String?
-  status             AssetStatus @default(ACTIVE)
-  disposalDate       DateTime?   @db.Date
-  disposalAmount     Decimal?    @db.Decimal(12, 2)
+  status             AssetStatus               @default(ACTIVE)
+  disposalDate       DateTime?                 @db.Date
+  disposalAmount     Decimal?                  @db.Decimal(12, 2)
   disposalReason     String?
-  disposedById       String?     @db.Uuid
-  disposedBy         User?       @relation("AssetDisposedBy", fields: [disposedById], references: [id], onDelete: SetNull)
-  createdById        String      @db.Uuid
-  createdBy          User        @relation("AssetCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  disposedById       String?                   @db.Uuid
+  disposedBy         User?                     @relation("AssetDisposedBy", fields: [disposedById], references: [id], onDelete: SetNull)
+  createdById        String                    @db.Uuid
+  createdBy          User                      @relation("AssetCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
   transfers          AssetTransfer[]
   maintenanceHistory AssetMaintenanceHistory[]
 
+  @@unique([organizationId, assetCode])
   @@index([categoryId])
   @@index([warehouseId])
   @@index([status])
   @@index([assetCode])
   @@index([name])
+  @@index([organizationId])
   @@map("assets")
 }
 
 model AssetTransfer {
-  id              String    @id @default(uuid()) @db.Uuid
-  assetId         String    @db.Uuid
-  asset           Asset     @relation(fields: [assetId], references: [id], onDelete: Restrict)
-  fromWarehouseId String    @db.Uuid
-  fromWarehouse   Warehouse @relation("AssetTransferFrom", fields: [fromWarehouseId], references: [id], onDelete: Restrict)
-  toWarehouseId   String    @db.Uuid
-  toWarehouse     Warehouse @relation("AssetTransferTo", fields: [toWarehouseId], references: [id], onDelete: Restrict)
-  transferDate    DateTime  @db.Date
+  id              String       @id @default(uuid()) @db.Uuid
+  organizationId  String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assetId         String       @db.Uuid
+  asset           Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  fromWarehouseId String       @db.Uuid
+  fromWarehouse   Warehouse    @relation("AssetTransferFrom", fields: [fromWarehouseId], references: [id], onDelete: Restrict)
+  toWarehouseId   String       @db.Uuid
+  toWarehouse     Warehouse    @relation("AssetTransferTo", fields: [toWarehouseId], references: [id], onDelete: Restrict)
+  transferDate    DateTime     @db.Date
   reason          String?
-  transferredById String    @db.Uuid
-  transferredBy   User      @relation(fields: [transferredById], references: [id], onDelete: Restrict)
-  createdAt       DateTime  @default(now())
+  transferredById String       @db.Uuid
+  transferredBy   User         @relation(fields: [transferredById], references: [id], onDelete: Restrict)
+  createdAt       DateTime     @default(now())
 
   @@index([assetId])
   @@index([transferDate])
+  @@index([organizationId])
   @@map("asset_transfers")
 }
 
 model AssetMaintenanceHistory {
-  id            String   @id @default(uuid()) @db.Uuid
-  assetId       String   @db.Uuid
-  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
-  serviceDate   DateTime @db.Date
-  vendor        String?
-  cost          Decimal  @db.Decimal(12, 2)
-  description   String
-  completedById String   @db.Uuid
-  completedBy   User     @relation(fields: [completedById], references: [id], onDelete: Restrict)
-  createdAt     DateTime @default(now())
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assetId        String       @db.Uuid
+  asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  serviceDate    DateTime     @db.Date
+  vendor         String?
+  cost           Decimal      @db.Decimal(12, 2)
+  description    String
+  completedById  String       @db.Uuid
+  completedBy    User         @relation(fields: [completedById], references: [id], onDelete: Restrict)
+  createdAt      DateTime     @default(now())
 
   @@index([assetId])
   @@index([serviceDate])
+  @@index([organizationId])
   @@map("asset_maintenance_history")
 }
 
@@ -1696,9 +1933,9 @@ model Dashboard {
 }
 
 model DashboardWidget {
-  id                     String    @id @default(uuid()) @db.Uuid
-  dashboardId            String    @db.Uuid
-  dashboard              Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  id                     String     @id @default(uuid()) @db.Uuid
+  dashboardId            String     @db.Uuid
+  dashboard              Dashboard  @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
   widgetKey              String
   title                  String
   widgetType             WidgetType
@@ -1708,9 +1945,9 @@ model DashboardWidget {
   width                  Int
   height                 Int
   refreshIntervalSeconds Int?
-  visible                Boolean   @default(true)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  visible                Boolean    @default(true)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 
   @@unique([dashboardId, widgetKey])
   @@index([dashboardId])
@@ -1720,20 +1957,23 @@ model DashboardWidget {
 }
 
 model UserDashboard {
-  id           String    @id @default(uuid()) @db.Uuid
-  userId       String    @db.Uuid
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dashboardId  String    @db.Uuid
-  dashboard    Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Restrict)
-  isFavorite   Boolean   @default(false)
-  isDefault    Boolean   @default(false)
-  customLayout Json?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dashboardId    String       @db.Uuid
+  dashboard      Dashboard    @relation(fields: [dashboardId], references: [id], onDelete: Restrict)
+  isFavorite     Boolean      @default(false)
+  isDefault      Boolean      @default(false)
+  customLayout   Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@unique([userId, dashboardId])
   @@index([userId])
   @@index([dashboardId])
   @@index([isFavorite])
+  @@index([organizationId])
   @@map("user_dashboards")
 }

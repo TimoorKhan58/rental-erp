@@ -81,7 +81,7 @@ export class PrismaSupplierPaymentRepository
   findByPaymentNumber(paymentNumber: string): Promise<SupplierPayment | null> {
     return repositoryFindFirst(
       this.runner,
-      (db) => db.supplierPayment.findUnique({ where: { paymentNumber } }),
+      (db) => db.supplierPayment.findFirst({ where: { paymentNumber } }),
       { model: MODEL, operation: "findByPaymentNumber" },
     ).then((record) => (record ? toSupplierPaymentDomain(record) : null));
   }

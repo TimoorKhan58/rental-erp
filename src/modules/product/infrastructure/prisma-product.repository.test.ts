@@ -208,6 +208,8 @@ function createMockProductStore(initial: MockProductRow[] = []) {
     }),
   };
 
+  // Lookups by business code use findFirst (unique per organization).
+  Object.assign(product, { findFirst: product.findUnique });
   return {
     db: { product } as unknown as DbClient,
     store: records,

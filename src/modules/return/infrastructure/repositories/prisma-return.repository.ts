@@ -117,7 +117,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.returnInspection.findUnique({
+        db.returnInspection.findFirst({
           where: { returnNumber },
           include: RETURN_INCLUDE,
         }),
