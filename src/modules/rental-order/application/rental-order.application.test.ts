@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createMockNumberSequenceRepository } from "@/modules/settings/tests/helpers/mock-number-sequence.repository";
 
 import { CancelRentalOrderService } from "@/modules/rental-order/application/services/cancel-rental-order.service";
@@ -83,6 +83,34 @@ const VALID_CREATE_SERVICE_INPUT =
   VALID_CREATE_INPUT as unknown as CreateRentalOrderInput;
 
 describe("CreateRentalOrderService", () => {
+  // Fixtures book February 2026; pin "today" before that (QA-008 rule).
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-01-15T10:00:00.000Z") });
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  it("rejects a booking that starts in the past (QA-008)", async () => {
+    const numberSequences = createMockNumberSequenceRepository();
+    const service = new CreateRentalOrderService(
+      createWriteScope(
+        new InMemoryRentalOrderRepository(),
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      numberSequences,
+      () => new Date("2026-03-01T00:00:00.000Z"),
+    );
+
+    await expect(service.execute(VALID_CREATE_INPUT)).rejects.toMatchObject({
+      message: "Rental start date cannot be in the past",
+    });
+  });
+
   it("creates a rental order and returns a DTO", async () => {
     const rentalOrderRepository = new InMemoryRentalOrderRepository();
     const auditLogger = new MockAuditLogger();
@@ -185,6 +213,33 @@ describe("UpdateRentalOrderService", () => {
     );
 
     expect(result.remarks).toBe("Updated remarks");
+  });
+
+  it("rejects moving the start date into the past but allows other edits (QA-008)", async () => {
+    const rentalOrderRepository = new InMemoryRentalOrderRepository();
+    rentalOrderRepository.seed([buildRentalOrderEntity()]);
+    const service = new UpdateRentalOrderService(
+      createWriteScope(
+        rentalOrderRepository,
+        new InMemoryInventoryRepository(),
+        new InMemoryStockMovementRepository(),
+        new MockAuditLogger(),
+        USER_ID,
+      ),
+      () => new Date("2026-03-01T00:00:00.000Z"),
+    );
+
+    await expect(
+      service.execute(
+        { id: RENTAL_ORDER_ID },
+        { startDate: "2026-02-20", endDate: "2026-03-05" } as never,
+      ),
+    ).rejects.toMatchObject({ message: "Rental start date cannot be in the past" });
+
+    // The order itself is dated February; editing remarks still works.
+    await expect(
+      service.execute({ id: RENTAL_ORDER_ID }, { remarks: "still editable" }),
+    ).resolves.toMatchObject({ remarks: "still editable" });
   });
 
   it("rejects update when not draft", async () => {

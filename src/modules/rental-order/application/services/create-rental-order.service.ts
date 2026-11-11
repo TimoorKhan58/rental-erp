@@ -2,6 +2,7 @@ import { resolveDocumentCode } from "@/modules/settings/application/services/res
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
 import { RentalOrderInvariantError } from "@/modules/rental-order/domain/rental-order.errors";
+import { assertStartNotInPast } from "@/modules/rental-order/domain/rental-order.rules";
 import { parseRequest } from "@/shared/application/validation";
 import {
   ConflictError,
@@ -30,10 +31,30 @@ export class CreateRentalOrderService {
   constructor(
     private readonly transactionRunner: IRentalOrderTransactionRunner,
     private readonly numberSequences: INumberSequenceRepository,
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   async execute(input: CreateRentalOrderInput): Promise<RentalOrderDto> {
     const data = parseRequest(CreateRentalOrderSchema, input);
+
+    // Checked before an order number is consumed so a rejected booking
+    // leaves no gap in the sequence.
+    try {
+      assertStartNotInPast(
+        [data.startDate, ...data.items.map((item) => item.startDate ?? data.startDate)],
+        this.now(),
+      );
+    } catch (error) {
+      if (error instanceof RentalOrderInvariantError) {
+        throw new UnprocessableError({
+          message: error.message,
+          details: { field: error.field },
+        });
+      }
+
+      throw error;
+    }
+
     const orderNumber = await resolveDocumentCode(
       this.numberSequences,
       "RENTAL_ORDER",

@@ -12,6 +12,35 @@ import type {
   ReserveRentalOrderItemData,
 } from "./rental-order.types";
 
+/**
+ * A rental cannot start before today (QA-008). Compares UTC calendar days,
+ * matching how @db.Date values are stored; for a business ahead of UTC (e.g.
+ * Pakistan, UTC+5) this is at most a few hours lenient around midnight and
+ * never blocks a same-day booking.
+ */
+export function assertStartNotInPast(startDates: Date[], today: Date): void {
+  const todayKey = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  );
+
+  for (const startDate of startDates) {
+    const startKey = Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate(),
+    );
+
+    if (startKey < todayKey) {
+      throw new RentalOrderInvariantError(
+        "Rental start date cannot be in the past",
+        "startDate",
+      );
+    }
+  }
+}
+
 export function validateRentalPeriod(startDate: Date, endDate: Date): void {
   if (endDate.getTime() < startDate.getTime()) {
     throw new RentalOrderInvariantError(
