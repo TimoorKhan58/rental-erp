@@ -30,6 +30,7 @@ import {
   RETURN_INCLUDE,
   toReturnCreateInput,
   toReturnDomain,
+  toReturnItemConditionUpdateInput,
   toReturnStatusUpdateInput,
   toReturnUpdateInput,
 } from "../mappers/return.persistence.mapper";
@@ -336,6 +337,18 @@ export class PrismaReturnRepository implements IReturnRepository {
 
         if (claimed.count !== 1) {
           return null;
+        }
+
+        // updateMany cannot write nested relations, so inspection results
+        // are saved per item inside the same transaction as the status claim.
+        // Scoped to this return so a foreign item id can never be touched.
+        if (data.items !== undefined) {
+          for (const item of data.items) {
+            await db.returnInspectionItem.updateMany({
+              where: { id: item.id, returnInspectionId: id },
+              data: toReturnItemConditionUpdateInput(item),
+            });
+          }
         }
 
         const record = await db.returnInspection.findUnique({

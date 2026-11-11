@@ -11,6 +11,7 @@ import type {
   UpdateReturnData,
   UpdateReturnStatusData,
 } from "@/modules/return/domain";
+import type { ReturnItemProps } from "@/modules/return/domain/return.types";
 import type {
   DispatchId,
   RentalOrderId,
@@ -198,24 +199,31 @@ export function toReturnStatusUpdateInput(
     update.items = {
       update: data.items.map((item) => ({
         where: { id: item.id },
-        data: {
-          goodQuantity: item.goodQuantity,
-          brokenQuantity: item.damagedQuantity,
-          lostQuantity: item.lostQuantity,
-          missingQuantity: item.missingQuantity,
-          ownedGoodQuantity: item.ownedGoodQuantity,
-          ownedDamagedQuantity: item.ownedDamagedQuantity,
-          ownedLostQuantity: item.ownedLostQuantity,
-          externalGoodQuantity: item.externalGoodQuantity,
-          externalDamagedQuantity: item.externalDamagedQuantity,
-          externalLostQuantity: item.externalLostQuantity,
-          notes: item.notes,
-        },
+        data: toReturnItemConditionUpdateInput(item),
       })),
     };
   }
 
   return update;
+}
+
+/** Inspection result columns for one return item (domain "damaged" = DB "broken"). */
+export function toReturnItemConditionUpdateInput(
+  item: ReturnItemProps,
+): Prisma.ReturnInspectionItemUpdateManyMutationInput {
+  return {
+    goodQuantity: item.goodQuantity,
+    brokenQuantity: item.damagedQuantity,
+    lostQuantity: item.lostQuantity,
+    missingQuantity: item.missingQuantity,
+    ownedGoodQuantity: item.ownedGoodQuantity,
+    ownedDamagedQuantity: item.ownedDamagedQuantity,
+    ownedLostQuantity: item.ownedLostQuantity,
+    externalGoodQuantity: item.externalGoodQuantity,
+    externalDamagedQuantity: item.externalDamagedQuantity,
+    externalLostQuantity: item.externalLostQuantity,
+    notes: item.notes,
+  };
 }
 
 export const RETURN_INCLUDE = {
