@@ -11,4 +11,10 @@ export interface IStockMovementRepository {
     query: StockMovementListQuery,
   ): Promise<PaginatedResult<StockMovement>>;
   create(data: CreateStockMovementData): Promise<StockMovement>;
+  /** Total RELEASE quantity recorded for one reference on one inventory row. */
+  sumReleased(
+    inventoryId: string,
+    referenceType: string,
+    referenceId: string,
+  ): Promise<number>;
 }

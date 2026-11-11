@@ -156,4 +156,27 @@ export class PrismaStockMovementRepository implements IStockMovementRepository {
 
     return toStockMovementDomain(record);
   }
+
+  sumReleased(
+    inventoryId: string,
+    referenceType: string,
+    referenceId: string,
+  ): Promise<number> {
+    return this.runner.run(
+      async (db) => {
+        const total = await db.inventoryTransaction.aggregate({
+          where: {
+            inventoryId,
+            referenceType,
+            referenceId,
+            movementType: "RELEASE",
+          },
+          _sum: { quantity: true },
+        });
+
+        return total._sum.quantity ?? 0;
+      },
+      { model: MODEL, operation: "sumReleased" },
+    );
+  }
 }

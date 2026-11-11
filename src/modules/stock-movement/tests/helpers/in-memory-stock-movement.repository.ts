@@ -128,6 +128,27 @@ export class InMemoryStockMovementRepository implements IStockMovementRepository
   count(): number {
     return this.store.size;
   }
+
+  sumReleased(
+    inventoryId: string,
+    referenceType: string,
+    referenceId: string,
+  ): Promise<number> {
+    let released = 0;
+
+    for (const { record } of this.store.values()) {
+      if (
+        record.inventoryId === inventoryId &&
+        record.referenceType === referenceType &&
+        record.referenceId === referenceId &&
+        record.movementType === "RELEASE"
+      ) {
+        released += record.quantity;
+      }
+    }
+
+    return Promise.resolve(released);
+  }
 }
 
 export function createSeededStockMovementRepository(

@@ -551,7 +551,20 @@ describe("Source-aware dispatch + customer return (Phase 25.5.4)", () => {
 
     expect(onHandBefore).toBe(50);
     expect(onHandAfter).toBe(50);
-    expect(stockMovementRepository.count()).toBe(0);
+
+    // External units never restock owned inventory.
+    const { items: movements } = await stockMovementRepository.findPaged({
+      page: 1,
+      pageSize: 50,
+    });
+    expect(movements.some((m) => m.movementType === "IN")).toBe(false);
+
+    // The order completed without shipping its owned hold, so that hold is
+    // released instead of staying stuck (QA-012).
+    expect(movements.map((m) => m.movementType)).toEqual(["RELEASE"]);
+    expect(
+      (await inventoryRepository.findById(INVENTORY_ID))?.reservedQuantity,
+    ).toBe(0);
 
     const agreement = await externalRentalRepository.findById(AGREEMENT_ID);
     expect(agreement?.items[0].quantityReturnedFromCustomer).toBe(40);
