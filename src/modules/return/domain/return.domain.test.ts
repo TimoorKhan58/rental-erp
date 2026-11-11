@@ -287,6 +287,73 @@ describe("Return rules", () => {
     ).toThrow(ReturnInvalidItemError);
   });
 
+  describe("every return line must be inspected exactly once (QA-010)", () => {
+    const OTHER_LINE_ID = "dd0e8400-e29b-41d4-a716-446655440099";
+    const twoLines = () => [
+      { ...buildReturnEntity().items[0]!, returnedQuantity: 4 },
+      {
+        ...buildReturnEntity().items[0]!,
+        id: "line-2",
+        rentalOrderItemId: OTHER_LINE_ID,
+        returnedQuantity: 5,
+      },
+    ];
+    const allGood = (rentalOrderItemId: string, quantity: number) => ({
+      rentalOrderItemId,
+      goodQuantity: quantity,
+      damagedQuantity: 0,
+      lostQuantity: 0,
+      missingQuantity: 0,
+    });
+
+    it("rejects an inspection that skips a line", () => {
+      expect(() =>
+        applyInspectionToItems(twoLines(), [allGood(ITEM_ID, 4)]),
+      ).toThrow("Every returned item must be inspected");
+    });
+
+    it("names the skipped line in the error", () => {
+      try {
+        applyInspectionToItems(twoLines(), [allGood(ITEM_ID, 4)]);
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(ReturnInvalidItemError);
+        expect((error as ReturnInvalidItemError).rentalOrderItemId).toBe(
+          OTHER_LINE_ID,
+        );
+      }
+    });
+
+    it("rejects a line that is not on the return", () => {
+      expect(() =>
+        applyInspectionToItems(twoLines(), [
+          allGood(ITEM_ID, 4),
+          allGood(OTHER_LINE_ID, 5),
+          allGood("ee0e8400-e29b-41d4-a716-44665544ffff", 1),
+        ]),
+      ).toThrow("Inspection item does not exist on return");
+    });
+
+    it("rejects the same line sent twice", () => {
+      expect(() =>
+        applyInspectionToItems(twoLines(), [
+          allGood(ITEM_ID, 4),
+          allGood(ITEM_ID, 4),
+          allGood(OTHER_LINE_ID, 5),
+        ]),
+      ).toThrow("Duplicate rental order item in inspection");
+    });
+
+    it("accepts an inspection that covers every line", () => {
+      const result = applyInspectionToItems(twoLines(), [
+        allGood(ITEM_ID, 4),
+        allGood(OTHER_LINE_ID, 5),
+      ]);
+
+      expect(result.map((item) => item.goodQuantity)).toEqual([4, 5]);
+    });
+  });
+
   it("rejects negative inspection quantities", () => {
     expect(() =>
       applyInspectionToItems(
