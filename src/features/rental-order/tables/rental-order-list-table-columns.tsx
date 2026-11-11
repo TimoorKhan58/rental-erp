@@ -15,7 +15,7 @@ import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   calculateOrderTotalFromItems,
-  calculateRentalDays,
+  calculateOrderRentalDays,
   canCancelRentalOrder,
   canConfirmRentalOrder,
   canEditRentalOrder,
@@ -108,7 +108,7 @@ export function getRentalOrderTableColumns({
         />
       ),
       cell: (row) => {
-        const days = calculateRentalDays(row.startDate, row.endDate);
+        const days = calculateOrderRentalDays(row);
 
         return (
           <div className="min-w-[7rem] text-sm">

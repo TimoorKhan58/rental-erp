@@ -39,6 +39,26 @@ export function getLineRentalDays(item: {
   return 1;
 }
 
+/**
+ * Days shown for a saved order: the longest billed line (stored
+ * numberOfDays), so the summary always matches what lines are charged.
+ * Orders saved under an older day-counting rule keep their billed days
+ * instead of being recalculated from dates (QA-013).
+ */
+export function calculateOrderRentalDays(order: {
+  startDate: string;
+  endDate: string;
+  items?: ReadonlyArray<{ startDate?: string; endDate?: string; numberOfDays?: number }>;
+}): number {
+  const items = order.items ?? [];
+
+  if (items.length === 0) {
+    return calculateRentalDays(order.startDate, order.endDate);
+  }
+
+  return Math.max(...items.map((item) => getLineRentalDays(item)));
+}
+
 export function calculateLineSubtotal(
   item: { quantity: number; dailyRate: number; startDate?: string; endDate?: string; numberOfDays?: number },
   fallbackRentalDays?: number,
