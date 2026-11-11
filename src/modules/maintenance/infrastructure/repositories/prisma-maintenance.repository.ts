@@ -130,7 +130,7 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
   ): Promise<Maintenance | null> {
     return repositoryFindFirst(
       this.runner,
-      (db) => db.maintenance.findUnique({ where: { maintenanceNumber } }),
+      (db) => db.maintenance.findFirst({ where: { maintenanceNumber } }),
       { model: MODEL, operation: "findByMaintenanceNumber" },
     ).then((record) => (record ? toMaintenanceDomain(record) : null));
   }

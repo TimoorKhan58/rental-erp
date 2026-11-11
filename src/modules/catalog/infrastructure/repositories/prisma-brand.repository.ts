@@ -72,7 +72,7 @@ export class PrismaBrandRepository implements IBrandRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.brand.findUnique({
+        db.brand.findFirst({
           where: { name },
         }),
       { model: MODEL, operation: "findByName" },

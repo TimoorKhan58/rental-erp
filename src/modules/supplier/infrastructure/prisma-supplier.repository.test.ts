@@ -128,6 +128,8 @@ function createMockSupplierStore(initial: SupplierRecord[] = []) {
     }),
   };
 
+  // Lookups by business code use findFirst (unique per organization).
+  Object.assign(supplier, { findFirst: supplier.findUnique });
   return {
     db: { supplier } as unknown as DbClient,
     store: records,

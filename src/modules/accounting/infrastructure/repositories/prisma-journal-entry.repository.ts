@@ -95,7 +95,7 @@ export class PrismaJournalEntryRepository implements IJournalEntryRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.journalEntry.findUnique({
+        db.journalEntry.findFirst({
           where: { journalNumber },
           include: JOURNAL_ENTRY_INCLUDE,
         }),

@@ -72,7 +72,7 @@ export class PrismaUnitRepository implements IUnitRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.unitOfMeasure.findUnique({
+        db.unitOfMeasure.findFirst({
           where: { code },
         }),
       { model: MODEL, operation: "findByCode" },

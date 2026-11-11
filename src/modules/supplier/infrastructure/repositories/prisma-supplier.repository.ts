@@ -71,7 +71,7 @@ export class PrismaSupplierRepository implements ISupplierRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.supplier.findUnique({
+        db.supplier.findFirst({
           where: { phone },
         }),
       { model: MODEL, operation: "findByPhone" },
@@ -82,7 +82,7 @@ export class PrismaSupplierRepository implements ISupplierRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.supplier.findUnique({
+        db.supplier.findFirst({
           where: { supplierCode },
         }),
       { model: MODEL, operation: "findBySupplierCode" },

@@ -74,7 +74,7 @@ export class PrismaDispatchRepository implements IDispatchRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.dispatch.findUnique({
+        db.dispatch.findFirst({
           where: { dispatchNumber },
           include: DISPATCH_INCLUDE,
         }),

@@ -128,6 +128,8 @@ function createMockCustomerStore(initial: CustomerRecord[] = []) {
     }),
   };
 
+  // Lookups by business code use findFirst (unique per organization).
+  Object.assign(customer, { findFirst: customer.findUnique });
   return {
     db: { customer } as unknown as DbClient,
     store: records,

@@ -70,7 +70,7 @@ export class PrismaAccountRepository implements IAccountRepository {
   findByAccountCode(accountCode: string): Promise<Account | null> {
     return repositoryFindFirst(
       this.runner,
-      (db) => db.account.findUnique({ where: { accountCode } }),
+      (db) => db.account.findFirst({ where: { accountCode } }),
       { model: MODEL, operation: "findByAccountCode" },
     ).then((record) => (record ? toAccountDomain(record) : null));
   }

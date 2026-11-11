@@ -128,7 +128,7 @@ export class PrismaExternalRentalRepository
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.externalRentalAgreement.findUnique({
+        db.externalRentalAgreement.findFirst({
           where: { agreementNumber },
           include: EXTERNAL_RENTAL_AGREEMENT_INCLUDE,
         }),

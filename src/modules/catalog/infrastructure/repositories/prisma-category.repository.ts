@@ -72,7 +72,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.category.findUnique({
+        db.category.findFirst({
           where: { name },
         }),
       { model: MODEL, operation: "findByName" },

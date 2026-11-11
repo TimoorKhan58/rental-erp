@@ -131,6 +131,8 @@ function createMockWarehouseStore(initial: WarehouseRecord[] = []) {
     }),
   };
 
+  // Lookups by business code use findFirst (unique per organization).
+  Object.assign(warehouse, { findFirst: warehouse.findUnique });
   return {
     db: { warehouse } as unknown as DbClient,
     store: records,

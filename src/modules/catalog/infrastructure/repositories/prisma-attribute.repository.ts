@@ -77,7 +77,7 @@ export class PrismaAttributeRepository implements IAttributeRepository {
     return repositoryFindFirst(
       this.runner,
       (db) =>
-        db.productAttribute.findUnique({
+        db.productAttribute.findFirst({
           where: { name },
         }),
       { model: MODEL, operation: "findByName" },

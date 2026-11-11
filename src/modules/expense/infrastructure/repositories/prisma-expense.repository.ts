@@ -65,7 +65,7 @@ export class PrismaExpenseRepository implements IExpenseRepository {
   findByExpenseNumber(expenseNumber: string): Promise<Expense | null> {
     return repositoryFindFirst(
       this.runner,
-      (db) => db.expense.findUnique({ where: { expenseNumber } }),
+      (db) => db.expense.findFirst({ where: { expenseNumber } }),
       { model: MODEL, operation: "findByExpenseNumber" },
     ).then((record) => (record ? toExpenseDomain(record) : null));
   }
