@@ -66,3 +66,6 @@ next-env.d.ts
 /backups
 *.sql.gz
 *.sql.zip
+
+.qa-screenshots/
+.qa-auth/
