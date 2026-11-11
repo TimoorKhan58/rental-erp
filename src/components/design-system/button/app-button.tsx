@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { Loader2Icon } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,22 +36,13 @@ export function AppButton({
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
   const isIconOnly = Boolean(size?.startsWith("icon"));
+  const ghostIconClass =
+    // Ghost icon buttons need an explicit foreground so ⋯ menus stay
+    // visible in both light and dark themes.
+    isIconOnly && variant === "ghost" && "text-muted-foreground hover:text-foreground";
 
-  return (
-    <Button
-      variant={variant}
-      size={size}
-      className={cn(
-        // Ghost icon buttons need an explicit foreground so ⋯ menus stay
-        // visible in both light and dark themes.
-        isIconOnly && variant === "ghost" && "text-muted-foreground hover:text-foreground",
-        className,
-      )}
-      disabled={isDisabled}
-      aria-busy={loading}
-      aria-disabled={isDisabled}
-      {...props}
-    >
+  const content = (
+    <>
       {loading ? (
         <Loader2Icon className="animate-spin" aria-hidden="true" data-icon="inline-start" />
       ) : leftIcon ? (
@@ -63,6 +54,47 @@ export function AppButton({
         <span>{loading ? loadingLabel : children}</span>
       )}
       {!loading && rightIcon ? <span data-icon="inline-end">{rightIcon}</span> : null}
+    </>
+  );
+
+  // A link drawn as a button (render={<Link … />}) stays a real link: same
+  // look, but no button behaviour or role="button" from Base UI, which also
+  // warned on every such use (QA-004).
+  const { render, nativeButton, ...buttonProps } = props;
+
+  if (isValidElement(render) && nativeButton === undefined) {
+    const element = render as ReactElement<{ className?: string }>;
+
+    return cloneElement(
+      element,
+      {
+        "data-slot": "button",
+        className: cn(
+          buttonVariants({ variant, size }),
+          ghostIconClass,
+          className,
+          element.props.className,
+        ),
+        "aria-busy": loading || undefined,
+        "aria-disabled": isDisabled || undefined,
+      } as Record<string, unknown>,
+      content,
+    );
+  }
+
+  return (
+    <Button
+      variant={variant}
+      size={size}
+      className={cn(ghostIconClass, className)}
+      disabled={isDisabled}
+      aria-busy={loading}
+      aria-disabled={isDisabled}
+      render={render}
+      nativeButton={nativeButton}
+      {...buttonProps}
+    >
+      {content}
     </Button>
   );
 }
