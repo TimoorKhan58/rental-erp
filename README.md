@@ -1,4 +1,4 @@
-# Rental ERP
+# RentCore
 
 Enterprise rental management system for **Manyar Tent Service** (Pakistan).
 
@@ -16,7 +16,7 @@ Built to manage tent and event rental operations, with a long-term path toward a
 
 ## Purpose
 
-Rental ERP centralizes rental business operations — inventory, bookings, customers, billing, and reporting — for tent and event rental companies. This repository is the foundation for that platform.
+RentCore centralizes rental business operations — inventory, bookings, customers, billing, and reporting — for tent and event rental companies. This repository is the foundation for that platform.
 
 ## Folder Structure
 
@@ -52,10 +52,13 @@ rental-erp/
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js **22.x** (see `package.json` `engines`)
 - npm
+- PostgreSQL (local business database: `rental_erp` on port **5432**)
 
 ### Setup
+
+**Windows operators:** use the step-by-step guide [docs/local/LOCAL-FIRST-WINDOWS-RUNBOOK.md](./docs/local/LOCAL-FIRST-WINDOWS-RUNBOOK.md) (PostgreSQL, `.env`, migrations, admin, backup).
 
 ```bash
 # Install dependencies
@@ -77,12 +80,13 @@ npm run start   # Start production server (after build)
 
 ## Version
 
-**0.1.0** — Feature-complete ERP with Phase 8 production engineering (see completion report).
+**1.1.2** — see `package.json` and [CHANGELOG.md](./CHANGELOG.md).
 
 ## Documentation
 
 | Document | Purpose |
 | -------- | ------- |
+| [docs/local/LOCAL-FIRST-WINDOWS-RUNBOOK.md](./docs/local/LOCAL-FIRST-WINDOWS-RUNBOOK.md) | **Local-first Windows operator guide** (start, backup, QA vs business DB) |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Coding standards, branching, commits, and review process |
 | [CHANGELOG.md](./CHANGELOG.md) | Version history and release notes |
 | [docs/PROJECT_COMPLETION_REPORT.md](./docs/PROJECT_COMPLETION_REPORT.md) | Final project completion & production-ready verdict |

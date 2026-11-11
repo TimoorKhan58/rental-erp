@@ -1,6 +1,6 @@
 # Environment Variables — Phase 8-003
 
-**Project:** Rental ERP  
+**Project:** RentCore  
 **Source of truth:** `src/shared/config/env.schema.ts` + `src/shared/config/env.ts`  
 **Config modules:** `src/shared/config/*.config.ts`  
 **Templates:** `.env.example`, `.env.staging.example`, `.env.production.example`, `.env.docker.example`
@@ -54,7 +54,7 @@ When `APP_ENV` is omitted it defaults from `NODE_ENV` (`production` → `product
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `APP_NAME` | No | `Rental ERP` | Application display name |
+| `APP_NAME` | No | `RentCore` | Application display name |
 | `APP_URL` | No | `http://localhost:3000` | Canonical public origin (**HTTPS required** in staging/production) |
 | `APP_LOCALE` | No | `en-PK` | Default locale |
 | `TIMEZONE` | No | `UTC` | Application timezone |

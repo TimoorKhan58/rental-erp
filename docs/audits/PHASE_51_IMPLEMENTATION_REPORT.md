@@ -152,7 +152,7 @@ Migrations: NONE
 
 | Item | Value |
 |------|-------|
-| Commit | `f289520` — `fix(stock-movement): restrict public post to adjustments` |
+| Commit | `eeb0c6f` — `fix(stock-movement): restrict public post to adjustments` |
 | Message | `fix(stock-movement): restrict public post to adjustments` |
 | Push | NO |
 

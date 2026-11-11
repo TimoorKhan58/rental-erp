@@ -14,7 +14,7 @@ Invoice number allocation no longer depends on a bounded global paged scan. Allo
 |------|-------|
 | Branch | `main` |
 | Before HEAD | `41c27b3` — `fix(rental-invoice): harden derived status transition` |
-| Final HEAD | _(see Git section after commit)_ |
+| Final HEAD | `c5292a9` — `fix(invoice): harden invoice number allocation` |
 | Working tree | WIP preserved (~153 unrelated modified/untracked files unchanged by this commit) |
 | WIP count | ~155 total lines in `git status --short` (includes 2 new Phase 50 untracked files pre-commit) |
 
@@ -137,7 +137,7 @@ Unrelated WIP (~153 files) was not staged, reset, stashed, or reformatted. Only 
 
 | Item | Value |
 |------|-------|
-| Commit hash | _(filled after commit)_ |
+| Commit hash | `c5292a9` |
 | Commit message | `fix(invoice): harden invoice number allocation` |
 | Push status | **NO** (not pushed) |
 

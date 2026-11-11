@@ -16,6 +16,7 @@
 | Item | Value |
 |------|-------|
 | **HEAD before** | `2aab8cdf958739dee26a7adc83f82fe80c48231d` (`2aab8cd`) |
+| **New HEAD** | `41c27b3` |
 | **Branch** | `main` |
 | **WIP** | ~151 unrelated files preserved |
 
@@ -170,7 +171,7 @@ Retry path uses `refreshed.status` after authoritative re-read when concurrent p
 
 ## Commit
 
-`<filled after commit>`
+`41c27b3` — `fix(rental-invoice): harden derived status transition`
 
 ---
 

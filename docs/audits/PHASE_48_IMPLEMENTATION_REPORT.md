@@ -27,8 +27,8 @@
 | Item | Value |
 |------|-------|
 | **Previous HEAD** | `9e0eaf1a62b30137db939fd34e215b97823d369f` |
-| **Branch** | `main` |
-| **WIP** | ~150 unrelated files preserved |
+| **New HEAD** | `2aab8cdf958739dee26a7adc83f82fe80c48231d` (`2aab8cd`) |
+| **Commit** | `fix(rental-order): serialize external sourcing shortfall` |
 
 ---
 
