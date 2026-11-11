@@ -262,6 +262,7 @@ export async function assertExternalSourcingF02Gate(
         dispatches: line.dispatches,
         returns: line.returns,
       })),
+      ownReservedQuantity: authoritativeItem.reservedQuantity,
     });
 
     // Active ERA uniqueness is enforced above; no concurrent active agreement
@@ -270,7 +271,7 @@ export async function assertExternalSourcingF02Gate(
 
     const shortfall = calculateExternalSourcingShortfall({
       requiredQuantity: authoritativeItem.quantity,
-      dateAwareAvailableQuantity: snapshot.dateAwareAvailableQuantity,
+      dateAwareAvailableQuantity: snapshot.bookableQuantity,
       alreadyExternallyRequestedQuantity,
     });
 

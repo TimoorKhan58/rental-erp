@@ -217,6 +217,62 @@ describe("ReserveRentalOrderService date-aware availability (Phase 25.4.3)", () 
     expect(result.status).toBe("RESERVED");
   });
 
+  describe("QA-009: holds for other dates share one pool", () => {
+    function setup() {
+      const rentalOrders = new InMemoryRentalOrderRepository();
+      rentalOrders.seed([
+        buildConfirmedForPeriod(d(2027, 1, 10), d(2027, 1, 11), { quantity: 195 }),
+      ]);
+      rentalOrders.seedAvailabilityCommitmentLines([
+        commitment({
+          reservedQuantity: 10,
+          eventStartDate: d(2026, 12, 1),
+          eventEndDate: d(2026, 12, 3),
+        }),
+      ]);
+      const inventory = new InMemoryInventoryRepository();
+      inventory.seed([
+        buildInventoryEntity({ quantityOnHand: 200, reservedQuantity: 10 }),
+      ]);
+      return { rentalOrders, inventory };
+    }
+
+    it("explains the limit instead of failing deep in the stock movement", async () => {
+      const { rentalOrders, inventory } = setup();
+
+      await expect(
+        new ReserveRentalOrderService(
+          createWriteScope(rentalOrders, inventory),
+        ).execute(
+          { id: RENTAL_ORDER_ID },
+          { items: [{ productId: PRODUCT_ID, quantity: 195 }] },
+        ),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining("held by bookings on other dates"),
+        details: expect.objectContaining({
+          bookableQuantity: 190,
+          heldForOtherDatesQuantity: 10,
+        }),
+      });
+
+      expect((await inventory.findById(INVENTORY_ID))?.reservedQuantity).toBe(10);
+    });
+
+    it("reserves up to the bookable quantity", async () => {
+      const { rentalOrders, inventory } = setup();
+
+      const result = await new ReserveRentalOrderService(
+        createWriteScope(rentalOrders, inventory),
+      ).execute(
+        { id: RENTAL_ORDER_ID },
+        { items: [{ productId: PRODUCT_ID, quantity: 190 }] },
+      );
+
+      expect(result.items[0]?.reservedQuantity).toBe(190);
+      expect((await inventory.findById(INVENTORY_ID))?.reservedQuantity).toBe(200);
+    });
+  });
+
   it("D: boundary overlap (shared day) → conflict", async () => {
     const rentalOrders = new InMemoryRentalOrderRepository();
     rentalOrders.seed([

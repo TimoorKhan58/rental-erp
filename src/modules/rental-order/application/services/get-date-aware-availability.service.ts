@@ -85,6 +85,8 @@ export class GetDateAwareAvailabilityService {
       baseCapacity: snapshot.baseCapacity,
       dateAwareCommittedQuantity: snapshot.dateAwareCommittedQuantity,
       dateAwareAvailableQuantity: snapshot.dateAwareAvailableQuantity,
+      bookableQuantity: snapshot.bookableQuantity,
+      heldForOtherDatesQuantity: snapshot.heldForOtherDatesQuantity,
     };
   }
 }
