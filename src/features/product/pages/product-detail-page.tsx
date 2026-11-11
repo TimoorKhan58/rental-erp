@@ -58,29 +58,33 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
+  const categoryId = product?.categoryId;
+  const brandId = product?.brandId;
+  const unitId = product?.unitId;
+
   const categoryName = useMemo(() => {
-    if (!product?.categoryId) {
+    if (!categoryId) {
       return null;
     }
 
-    return categoryOptions.find((option) => option.value === product.categoryId)?.label ?? null;
-  }, [categoryOptions, product?.categoryId]);
+    return categoryOptions.find((option) => option.value === categoryId)?.label ?? null;
+  }, [categoryOptions, categoryId]);
 
   const brandName = useMemo(() => {
-    if (!product?.brandId) {
+    if (!brandId) {
       return null;
     }
 
-    return brandOptions.find((option) => option.value === product.brandId)?.label ?? null;
-  }, [brandOptions, product?.brandId]);
+    return brandOptions.find((option) => option.value === brandId)?.label ?? null;
+  }, [brandOptions, brandId]);
 
   const unitName = useMemo(() => {
-    if (!product?.unitId) {
+    if (!unitId) {
       return null;
     }
 
-    return unitOptions.find((option) => option.value === product.unitId)?.label ?? null;
-  }, [unitOptions, product?.unitId]);
+    return unitOptions.find((option) => option.value === unitId)?.label ?? null;
+  }, [unitOptions, unitId]);
 
   const tagNames = useMemo(
     () => (product?.tags ?? []).map((tagId) => tagNameById.get(tagId) ?? tagId),
