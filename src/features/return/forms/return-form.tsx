@@ -74,6 +74,24 @@ function CreateReturnForm({
 }: CreateReturnFormProps) {
   const { rentalOrderOptions, completedDispatchOptions, dispatchRentalOrderById } =
     useReturnFilterOptions();
+  const selectedRentalOrderId = defaultValues?.rentalOrderId;
+  const eligibleRentalOrderOptions = useMemo(() => {
+    const completedOrderIds = new Set(
+      completedDispatchOptions
+        .map((option) => dispatchRentalOrderById.get(option.id))
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    return rentalOrderOptions.filter(
+      (option) =>
+        completedOrderIds.has(option.id) || option.id === selectedRentalOrderId,
+    );
+  }, [
+    completedDispatchOptions,
+    dispatchRentalOrderById,
+    rentalOrderOptions,
+    selectedRentalOrderId,
+  ]);
   const form = useForm<CreateReturnFormValues>({
     resolver: zodResolver(createReturnFormSchema),
     defaultValues: { ...createDefaults, ...defaultValues },
@@ -169,7 +187,8 @@ function CreateReturnForm({
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Return details">
         <p className="mb-4 text-sm text-muted-foreground">
-          Return number is assigned automatically on save.
+          Only rental orders with a completed dispatch are listed. Return number is assigned
+          automatically on save. Quantities cannot exceed remaining dispatched units.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <SelectField
@@ -177,7 +196,7 @@ function CreateReturnForm({
             name="rentalOrderId"
             label="Rental order"
             placeholder="Select rental order"
-            options={rentalOrderOptions.map((option) => ({
+            options={eligibleRentalOrderOptions.map((option) => ({
               value: option.id,
               label: option.label,
             }))}
@@ -204,7 +223,7 @@ function CreateReturnForm({
       </SectionCard>
 
       <SectionCard title="Returned items">
-        <ReturnLineItemsField itemLabelById={itemLabelById} />
+        <ReturnLineItemsField itemLabelById={itemLabelById} allowAdd={false} />
       </SectionCard>
 
       <div className="flex justify-end gap-2">
@@ -298,7 +317,7 @@ function EditReturnForm({
       </SectionCard>
 
       <SectionCard title="Returned items">
-        <ReturnLineItemsField itemLabelById={itemLabelById} />
+        <ReturnLineItemsField itemLabelById={itemLabelById} allowAdd={false} />
       </SectionCard>
 
       <div className="flex justify-end gap-2">

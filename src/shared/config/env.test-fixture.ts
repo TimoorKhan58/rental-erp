@@ -7,7 +7,7 @@ import type { Env } from "./env.schema";
 export const testEnvFixture = {
   NODE_ENV: "test",
   APP_ENV: "test",
-  APP_NAME: "Rental ERP",
+  APP_NAME: "RentCore",
   APP_URL: "http://localhost:3000",
   APP_LOCALE: "en",
   DATABASE_URL: "postgresql://test:test@localhost:5432/test",

@@ -1,3 +1,4 @@
+export { ActiveFilters, type ActiveFilterChip } from "./active-filters";
 export { ConfirmDialog } from "./confirm-dialog";
 export { DataPagination } from "./data-pagination";
 export {

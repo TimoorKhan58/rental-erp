@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/utils";
 import type {
   PaymentStatusFilter,
   RentalInvoiceLineType,
@@ -91,4 +92,50 @@ export function matchesPaymentStatusFilter(
     invoice.status === "ISSUED" ||
     (invoice.status === "DRAFT" && invoice.paidAmount === 0)
   );
+}
+
+/**
+ * Presentation-only remainder copy for the list Amount column.
+ * Uses authoritative `status` + `balance`. Does not recompute totals.
+ */
+export function getInvoiceAmountRemainderLabel(invoice: {
+  status: RentalInvoiceStatus;
+  balance: number;
+}): string {
+  if (invoice.status === "VOID") {
+    return "Voided";
+  }
+
+  if (invoice.status === "DRAFT") {
+    return "Not issued";
+  }
+
+  if (invoice.balance > 0) {
+    return `${formatCurrency(invoice.balance)} due`;
+  }
+
+  return "Paid in full";
+}
+
+/**
+ * Empty-state copy for the invoice payment history section.
+ * Distinguishes void / draft / collected / none — does not invent balances.
+ */
+export function getInvoicePaymentsEmptyCopy(invoice: {
+  status: RentalInvoiceStatus;
+  balance: number;
+}): string {
+  if (invoice.status === "VOID") {
+    return "This invoice is void. Payments cannot be recorded.";
+  }
+
+  if (invoice.status === "DRAFT") {
+    return "Issue this invoice before recording payments.";
+  }
+
+  if (invoice.balance <= 0) {
+    return "This invoice is fully paid.";
+  }
+
+  return "No payments recorded yet.";
 }

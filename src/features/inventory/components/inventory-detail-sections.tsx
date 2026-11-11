@@ -111,7 +111,7 @@ function InventoryStockMovementSection({
   if (!canRead) {
     return (
       <EmptyCard
-        title="Activity history"
+        title="Stock movement history"
         description="You do not have permission to view stock movements."
       />
     );
@@ -119,8 +119,8 @@ function InventoryStockMovementSection({
 
   return (
     <StockMovementHistorySection
-      title="Activity history"
-      description="Stock movements from procurement, rentals, dispatch, returns, maintenance, and manual adjustments."
+      title="Stock movement history"
+      description="Authoritative movements from procurement, rentals, dispatch, returns, maintenance, and ADJUSTMENT corrections."
       actions={
         stockMovementTotal > 0 ? (
           <AppButton
@@ -128,7 +128,7 @@ function InventoryStockMovementSection({
             size="sm"
             render={
               <Link
-                href={`${ROUTES.reportsInventory}?search=${encodeURIComponent(inventoryId)}`}
+                href={`${ROUTES.reportsInventory}?inventoryId=${encodeURIComponent(inventoryId)}`}
               />
             }
           >

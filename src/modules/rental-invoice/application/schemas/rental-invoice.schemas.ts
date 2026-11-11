@@ -69,3 +69,10 @@ export type RentalInvoiceIdParamInput = z.infer<
 >;
 
 export const RentalInvoiceStatusFilterSchema = z.enum(RENTAL_INVOICE_STATUSES);
+
+export const RentalInvoicePaymentStatusFilterSchema = z.enum([
+  "unpaid",
+  "partial",
+  "paid",
+  "void",
+]);

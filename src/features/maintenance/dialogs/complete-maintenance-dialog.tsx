@@ -31,7 +31,7 @@ export function CompleteMaintenanceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Complete maintenance"
-      description={`Complete maintenance "${maintenance.maintenanceNumber}"? Items will be returned to inventory.`}
+      description={`Complete maintenance "${maintenance.maintenanceNumber}"? This posts inventory IN for the quantity removed at start. Estimated and actual cost stay on this job only — they do not create an expense or journal entry.`}
       confirmLabel="Complete maintenance"
       onConfirm={() => void handleConfirm()}
       isLoading={completeMutation.isPending}

@@ -187,7 +187,7 @@ export function SupplierPaymentsSection({
         title="Post supplier payment"
         description={
           postTarget
-            ? `Post "${postTarget.paymentNumber}" for ${formatCurrency(postTarget.amount)}? This will apply the amount to the purchase order.`
+            ? `Post "${postTarget.paymentNumber}" for ${formatCurrency(postTarget.amount)}? This applies the amount to the purchase order paid balance. It does not create a journal entry.`
             : undefined
         }
         confirmLabel="Post payment"
@@ -282,7 +282,7 @@ function RecordSupplierPaymentDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Record supplier payment"
-      description="Create a pending payment against this purchase order."
+      description="Creates a pending payment against this purchase order. Paid amount updates only after the payment is posted. This does not create a journal or expense."
       size="md"
       footer={
         <>

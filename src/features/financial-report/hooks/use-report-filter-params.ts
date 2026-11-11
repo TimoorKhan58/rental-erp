@@ -39,6 +39,7 @@ export function useDateRangeParams(defaults?: DateRangeParams) {
     dateTo: params.dateTo,
     setDateRange: (from?: string, to?: string) =>
       updateParams({ dateFrom: from, dateTo: to }),
+    clearDateRange: () => updateParams({ dateFrom: undefined, dateTo: undefined }),
   };
 }
 
@@ -62,5 +63,10 @@ export function useBalanceSheetParams() {
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
-  return { params: { asOfDate }, asOfDate, setAsOfDate };
+  return {
+    params: { asOfDate },
+    asOfDate,
+    setAsOfDate,
+    clearAsOfDate: () => setAsOfDate(undefined),
+  };
 }

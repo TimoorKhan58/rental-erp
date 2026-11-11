@@ -73,7 +73,10 @@ function CreateProcurementForm({
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Purchase order details">
         <p className="mb-4 text-sm text-muted-foreground">
-          PO number is assigned automatically on save.
+          PO number is assigned automatically on save. The order stays Draft until
+          approved. Inventory does not change on create. One warehouse applies to every
+          line. Order total is quantity × unit cost — tax, discount, and freight are not
+          modeled.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <DatePickerField control={form.control} name="orderDate" label="Order date" />
@@ -113,6 +116,10 @@ function CreateProcurementForm({
       </SectionCard>
 
       <SectionCard title="Line items">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Each product can appear once. Quantity must be a whole number greater than
+          zero. Unit cost can be zero. Duplicate products are rejected.
+        </p>
         <ProcurementLineItemsField productOptions={productOptions} />
       </SectionCard>
 
@@ -191,6 +198,10 @@ function EditProcurementForm({
       </SectionCard>
 
       <SectionCard title="Line items">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Draft only. Changing lines here does not receive stock. Each product can
+          appear once.
+        </p>
         <ProcurementLineItemsField productOptions={productOptions} />
       </SectionCard>
 

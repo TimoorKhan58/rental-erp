@@ -132,6 +132,7 @@ function CreateUserForm({
             control={form.control}
             name="role"
             label="Role"
+            description="Only an Owner can assign the Owner role. The last Owner cannot be demoted."
             placeholder="Select a role"
             options={roleOptions}
           />
@@ -192,6 +193,7 @@ function EditUserForm({
             control={form.control}
             name="role"
             label="Role"
+            description="Only an Owner can assign the Owner role. The last Owner cannot be demoted."
             placeholder="Select a role"
             options={roleOptions}
           />

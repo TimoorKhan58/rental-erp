@@ -1,4 +1,5 @@
 import type {
+  CreateJournalEntryPayload,
   JournalEntryListResponse,
   JournalEntryResponse,
   ListJournalEntriesParams,
@@ -15,6 +16,12 @@ export async function getJournalEntries(
 
 export async function getJournalEntry(id: string): Promise<JournalEntryResponse> {
   return apiGet<JournalEntryResponse>(`${BASE}/${id}`);
+}
+
+export async function createJournalEntry(
+  payload: CreateJournalEntryPayload,
+): Promise<JournalEntryResponse> {
+  return apiPost<JournalEntryResponse>(BASE, payload);
 }
 
 export async function postJournalEntry(id: string): Promise<JournalEntryResponse> {

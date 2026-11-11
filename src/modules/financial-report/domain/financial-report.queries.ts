@@ -24,6 +24,7 @@ export interface AccountLedgerQuery extends DateRangeQuery {
   pageSize: number;
   sortBy?: LedgerSortField;
   sortOrder?: "asc" | "desc";
+  search?: string;
 }
 
 export type GeneralLedgerQuery = AccountLedgerQuery;

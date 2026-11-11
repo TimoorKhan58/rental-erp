@@ -55,7 +55,7 @@ export function RejectExpenseDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Reject expense"
-      description={`Reject "${expense.expenseNumber}" for ${formatCurrency(expense.amount)}. Provide a reason.`}
+      description={`Reject "${expense.expenseNumber}" for ${formatCurrency(expense.amount)}. This does not post or reverse a journal. Rejected expenses cannot be edited or resubmitted.`}
       size="md"
     >
       <AppForm form={form} onSubmit={handleSubmit} className="space-y-4">

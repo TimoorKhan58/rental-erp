@@ -20,7 +20,7 @@ export function ResetPreferencesDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Reset preferences?"
-      description="This restores locale, format, and dashboard preference fields to the system defaults and saves them to the server."
+      description="This restores locale, format, and dashboard preference fields to the system defaults and saves them to the server. Theme for this browser is not changed."
       confirmLabel={isPending ? "Resetting..." : "Reset preferences"}
       cancelLabel="Cancel"
       onConfirm={onConfirm}

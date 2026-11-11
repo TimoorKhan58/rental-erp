@@ -66,6 +66,31 @@ export function getProductTableColumns({
       headerClassName: "w-10",
     },
     {
+      id: "name",
+      header: (
+        <SortableColumnHeader
+          label="Product"
+          field="name"
+          currentSortBy={params.sortBy}
+          currentSortOrder={params.sortOrder}
+          onSort={onSort}
+        />
+      ),
+      cell: (row) => (
+        <Link
+          href={ROUTES.productDetail(row.id)}
+          className="group block min-w-[8rem]"
+        >
+          <span className="block truncate font-medium text-primary group-hover:underline">
+            {row.name}
+          </span>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            {row.productCode}
+          </span>
+        </Link>
+      ),
+    },
+    {
       id: "productCode",
       header: (
         <SortableColumnHeader
@@ -77,26 +102,8 @@ export function getProductTableColumns({
         />
       ),
       cell: (row) => (
-        <Link
-          href={ROUTES.productDetail(row.id)}
-          className="font-medium text-primary hover:underline"
-        >
-          {row.productCode}
-        </Link>
+        <span className="text-sm text-muted-foreground">{row.productCode}</span>
       ),
-    },
-    {
-      id: "name",
-      header: (
-        <SortableColumnHeader
-          label="Name"
-          field="name"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => row.name,
     },
     {
       id: "unit",

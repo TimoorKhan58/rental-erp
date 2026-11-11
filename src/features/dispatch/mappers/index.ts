@@ -20,3 +20,16 @@ export {
   DELIVERY_METHOD_LABELS,
   STATUS_LABELS,
 } from "./dispatch-status.mapper";
+export {
+  getDispatchOperatorGuidance,
+  getOperatorDispatchWorkflowCaption,
+  getOperatorDispatchWorkflowIndex,
+  getOperatorDispatchWorkflowProgress,
+  getOperatorFacingStatusLabel,
+  OPERATOR_DISPATCH_WORKFLOW_STEPS,
+} from "./dispatch-workflow-presentation.mapper";
+export {
+  toRentalOrderSelectorOption,
+  type RentalOrderSelectorOption,
+  type RentalOrderSelectorSource,
+} from "./rental-order-option.mapper";

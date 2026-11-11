@@ -158,7 +158,7 @@ export function GenerateRentalInvoiceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Generate customer invoice"
-      description="Rental is billed separately. Damage and loss use actual product price by default — you can change the price here. Missing items are listed with no charge until converted to loss."
+      description="Creates a draft invoice for a Completed rental order. Rental is billed separately. Damage and loss use actual product price by default — you can change the price here. Missing items from completed returns are listed with no charge until converted to loss."
       size="lg"
     >
       {isLoading ? (

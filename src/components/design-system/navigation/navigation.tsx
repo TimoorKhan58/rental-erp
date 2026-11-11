@@ -46,10 +46,10 @@ export function SidebarItem({
       aria-current={isActive ? "page" : undefined}
       aria-disabled={disabled}
       className={cn(
-        "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-token",
+        "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium transition-token",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-        isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+        isActive && "nav-active-indicator bg-sidebar-accent text-sidebar-accent-foreground",
         disabled && "pointer-events-none opacity-[var(--opacity-disabled)]",
         collapsed && "justify-center px-2",
       )}

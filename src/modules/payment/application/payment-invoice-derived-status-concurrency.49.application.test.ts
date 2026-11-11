@@ -399,6 +399,8 @@ describe("Phase 49 F-37-R1: issue path unchanged", () => {
         rentalOrderRepository: new InMemoryRentalOrderRepository(),
         rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
         customerRepository,
+        accountRepository: new InMemoryAccountRepository(),
+        journalEntryRepository: new InMemoryJournalEntryRepository(),
         auditLogger: new MockAuditLogger(),
         ...mockNotificationWriteScopeDeps,
         userId: USER_ID,

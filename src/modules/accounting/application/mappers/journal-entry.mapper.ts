@@ -104,6 +104,7 @@ export function toJournalEntryListQuery(
     search: input.search,
     status: input.status,
     referenceType: input.referenceType,
+    referenceId: input.referenceId,
     journalDateFrom: input.journalDateFrom,
     journalDateTo: input.journalDateTo,
   };

@@ -4,15 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/config/routes";
+import { useFinancialReportPermissions } from "../hooks";
 
-const LINKS = [
-  { label: "Overview", href: ROUTES.reports },
-  { label: "Analytics", href: ROUTES.reportsAnalytics },
+const FINANCIAL_LINKS = [
   { label: "Profit & Loss", href: ROUTES.reportsProfitLoss },
   { label: "Balance Sheet", href: ROUTES.reportsBalanceSheet },
   { label: "Cash Flow", href: ROUTES.reportsCashFlow },
   { label: "Revenue", href: ROUTES.reportsRevenue },
   { label: "Expenses", href: ROUTES.reportsExpenses },
+] as const;
+
+const OPERATIONAL_LINKS = [
+  { label: "Analytics", href: ROUTES.reportsAnalytics },
   { label: "Rentals", href: ROUTES.reportsRental },
   { label: "Inventory", href: ROUTES.reportsInventory },
   { label: "Customers", href: ROUTES.reportsCustomers },
@@ -28,10 +31,21 @@ const LINKS = [
 
 export function ReportsSubNav() {
   const pathname = usePathname();
+  const { canReadFinancial, canReadOperational } = useFinancialReportPermissions();
+
+  const links = [
+    { label: "Overview", href: ROUTES.reports },
+    ...(canReadFinancial ? FINANCIAL_LINKS : []),
+    ...(canReadOperational ? OPERATIONAL_LINKS : []),
+  ];
+
+  if (links.length <= 1) {
+    return null;
+  }
 
   return (
     <nav aria-label="Report sections" className="mb-6 flex flex-wrap gap-2">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const isActive =
           link.href === ROUTES.reports
             ? pathname === ROUTES.reports

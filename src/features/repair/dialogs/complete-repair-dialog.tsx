@@ -31,7 +31,7 @@ export function CompleteRepairDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Complete repair"
-      description={`Complete repair "${repair.repairNumber}"? Repaired items will be restocked to inventory.`}
+      description={`Complete repair "${repair.repairNumber}"? This posts inventory IN for the repair quantity. Repair cost is recorded on this job only — it does not create an expense, invoice, or journal entry. Server rules remain authoritative.`}
       confirmLabel="Complete repair"
       onConfirm={() => void handleConfirm()}
       isLoading={completeMutation.isPending}

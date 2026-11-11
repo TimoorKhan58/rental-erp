@@ -536,6 +536,9 @@ export class InMemoryReportingRepository implements IReportingRepository {
     query: InventoryReportQuery,
   ): Promise<InventoryReport> {
     const preFiltered = this.inventories.filter((row) => {
+      if (query.inventoryId !== undefined && row.id !== query.inventoryId) {
+        return false;
+      }
       if (query.warehouseId !== undefined && row.warehouseId !== query.warehouseId) {
         return false;
       }

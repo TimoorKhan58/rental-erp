@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { usePayment, useUpdatePayment } from "../hooks";
@@ -20,7 +22,7 @@ type PaymentEditPageProps = {
 
 export function PaymentEditPage({ paymentId }: PaymentEditPageProps) {
   const router = useRouter();
-  const { data: payment, isLoading, isError } = usePayment(paymentId);
+  const { data: payment, isLoading, isError, error, refetch } = usePayment(paymentId);
   const updateMutation = useUpdatePayment();
 
   useEffect(() => {
@@ -46,8 +48,16 @@ export function PaymentEditPage({ paymentId }: PaymentEditPageProps) {
         >
           <p className="text-sm font-medium">Payment not found</p>
           <p className="text-sm text-muted-foreground">
-            The requested payment could not be loaded.
+            {error?.message ?? "The requested payment could not be loaded."}
           </p>
+          <div className="flex gap-2">
+            <AppButton variant="outline" onClick={() => void refetch()}>
+              Try again
+            </AppButton>
+            <AppButton variant="outline" render={<Link href={ROUTES.payments} />}>
+              Back to list
+            </AppButton>
+          </div>
         </div>
       </PageContainer>
     );

@@ -157,7 +157,7 @@ export function getReturnTableColumns({
               />
             }
           >
-            <MoreHorizontalIcon className="size-4" />
+            <MoreHorizontalIcon className="size-4" aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem render={<Link href={ROUTES.returnDetail(row.id)} />}>

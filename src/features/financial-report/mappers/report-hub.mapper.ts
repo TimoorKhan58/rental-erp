@@ -7,41 +7,42 @@ export const REPORT_HUB_CARDS: ReportHubCard[] = [
     description:
       "Executive snapshot — booked value, billed revenue, collected cash, rentals, inventory, and ops health.",
     href: ROUTES.reportsAnalytics,
-    category: "financial",
+    category: "operational",
   },
   {
     title: "Profit & Loss",
-    description: "Are we making money this month? Revenue vs cost of running jobs.",
+    description: "Posted journal income vs expense accounts for the selected journal dates.",
     href: ROUTES.reportsProfitLoss,
     category: "financial",
   },
   {
     title: "Balance Sheet",
-    description: "What we own vs what we owe — tents, cash, and liabilities.",
+    description: "Posted journal assets, liabilities, and equity as of a journal date.",
     href: ROUTES.reportsBalanceSheet,
     category: "financial",
   },
   {
     title: "Cash Flow",
-    description: "Cash in the door vs cash out — can we pay suppliers this week?",
+    description: "Posted journal cash-flow summary for the selected journal dates.",
     href: ROUTES.reportsCashFlow,
     category: "financial",
   },
   {
     title: "Revenue",
-    description: "Where billing is coming from — by income line.",
+    description: "Posted journal income accounts for the selected journal dates.",
     href: ROUTES.reportsRevenue,
     category: "financial",
   },
   {
     title: "Expenses",
-    description: "Where money is leaking — repairs, transport, overhead.",
+    description:
+      "Posted journal expense accounts — not the operational Expenses module.",
     href: ROUTES.reportsExpenses,
     category: "financial",
   },
   {
     title: "Rental Performance",
-    description: "Bookings, completion rate, and revenue per rental cycle.",
+    description: "Rental orders by booking date, status, and booked order totals.",
     href: ROUTES.reportsRental,
     category: "operational",
   },
@@ -53,13 +54,14 @@ export const REPORT_HUB_CARDS: ReportHubCard[] = [
   },
   {
     title: "Customers",
-    description: "Who pays, who owes, and who books the most events.",
+    description:
+      "Customer booking totals and open invoice balances (outstanding is not date-filtered).",
     href: ROUTES.reportsCustomers,
     category: "operational",
   },
   {
     title: "Products",
-    description: "Which tents and gear earn the most — revenue, volume, and rates.",
+    description: "Product rental volume and booked line totals by booking date.",
     href: ROUTES.reportsProducts,
     category: "operational",
   },
@@ -77,7 +79,7 @@ export const REPORT_HUB_CARDS: ReportHubCard[] = [
   },
   {
     title: "Procurement",
-    description: "Purchase orders by status, supplier, and warehouse.",
+    description: "Purchase orders by order date, status, supplier, and warehouse.",
     href: ROUTES.reportsProcurement,
     category: "operational",
   },
@@ -89,7 +91,8 @@ export const REPORT_HUB_CARDS: ReportHubCard[] = [
   },
   {
     title: "Returns",
-    description: "Return inspections, damage, and loss.",
+    description:
+      "Return inspections by inspection date. Inventory effect still occurs only on Complete.",
     href: ROUTES.reportsReturns,
     category: "operational",
   },

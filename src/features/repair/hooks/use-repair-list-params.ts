@@ -83,6 +83,20 @@ export function useRepairListParams() {
       sortBy: RepairSortField,
       sortOrder: ListRepairsParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        returnId: undefined,
+        productId: undefined,
+        warehouseId: undefined,
+        technician: undefined,
+        repairDateFrom: undefined,
+        repairDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

@@ -61,6 +61,14 @@ export function useCustomerListParams() {
       updateParams({ isActive, page: DEFAULT_PAGE }),
     setSorting: (sortBy: CustomerSortField, sortOrder: ListCustomersParams["sortOrder"] = "asc") =>
       updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        isActive: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

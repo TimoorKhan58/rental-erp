@@ -1,15 +1,21 @@
 import { z } from "zod";
 
-import { PaginationSchema, UUIDSchema } from "@/shared/application/validation";
+import { DateSchema, PaginationSchema, UUIDSchema } from "@/shared/application/validation";
 
 import { PAYMENT_SORT_FIELDS } from "@/modules/payment/domain/payment.constants";
 
-import { PaymentStatusFilterSchema } from "./payment.schemas";
+import {
+  PaymentMethodFilterSchema,
+  PaymentStatusFilterSchema,
+} from "./payment.schemas";
 
 export const ListPaymentsSchema = PaginationSchema.extend({
   status: PaymentStatusFilterSchema.optional(),
+  paymentMethod: PaymentMethodFilterSchema.optional(),
   customerId: UUIDSchema.optional(),
   rentalInvoiceId: UUIDSchema.optional(),
+  paymentDateFrom: DateSchema.optional(),
+  paymentDateTo: DateSchema.optional(),
   sortBy: z.enum(PAYMENT_SORT_FIELDS).optional(),
 }).superRefine((value, ctx) => {
   if (value.search !== undefined && value.search.length > 200) {

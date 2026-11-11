@@ -10,6 +10,7 @@ export interface IWarehouseRepository {
   findByWarehouseCode(warehouseCode: string): Promise<Warehouse | null>;
   findPaged(query: WarehouseListQuery): Promise<PaginatedResult<Warehouse>>;
   exists(id: WarehouseId): Promise<boolean>;
+  countReferences(id: WarehouseId): Promise<number>;
   create(data: CreateWarehouseData): Promise<Warehouse>;
   update(id: WarehouseId, data: UpdateWarehouseData): Promise<Warehouse>;
   delete(id: WarehouseId): Promise<void>;

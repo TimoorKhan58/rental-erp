@@ -156,7 +156,9 @@ function CreateRepairForm({
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Repair details">
         <p className="mb-4 text-sm text-muted-foreground">
-          Repair number is assigned automatically on save.
+          Only completed returns with remaining damaged quantity are eligible. Repair number is
+          assigned automatically. Quantity cannot exceed remaining damaged units. Cost is stored
+          on this job and is not billed or posted automatically.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <SelectField

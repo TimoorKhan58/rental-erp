@@ -1,5 +1,7 @@
 export * from "./payment-details-table";
+export * from "./payment-journal-section";
 export * from "./payment-method-filter-chips";
+export * from "./payment-mobile-list";
 export * from "./payment-status-badge";
 export * from "./payment-status-filter-chips";
 export * from "./payment-status-timeline";

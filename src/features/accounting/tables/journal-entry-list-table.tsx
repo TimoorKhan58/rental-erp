@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCwIcon } from "lucide-react";
+import { PlusIcon, RefreshCwIcon } from "lucide-react";
 import { DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
@@ -31,6 +31,7 @@ import {
 import { getJournalEntryTableColumns } from "./journal-entry-list-table-columns";
 import { PostJournalDialog } from "../dialogs/post-journal-dialog";
 import { VoidJournalDialog } from "../dialogs/void-journal-dialog";
+import { CreateJournalEntryDialog } from "../dialogs/create-journal-entry-dialog";
 
 export function JournalEntryListTable() {
   const queryClient = useQueryClient();
@@ -45,11 +46,12 @@ export function JournalEntryListTable() {
     setDateRange,
     setSorting,
   } = useJournalEntryListParams();
-  const { canPost, canVoid } = useAccountingPermissions();
+  const { canPost, canVoid, canCreateJournals } = useAccountingPermissions();
   const { data, isLoading, isError, error, refetch, isFetching } = useJournalEntries(params);
 
   const [postTarget, setPostTarget] = useState<JournalEntryResponse | null>(null);
   const [voidTarget, setVoidTarget] = useState<JournalEntryResponse | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -186,16 +188,27 @@ export function JournalEntryListTable() {
           </>
         }
         actions={
-          <AppButton
-            variant="outline"
-            size="sm"
-            leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
-            onClick={handleRefresh}
-            loading={isFetching && !isLoading}
-            aria-label="Refresh journal entries"
-          >
-            Refresh
-          </AppButton>
+          <>
+            {canCreateJournals ? (
+              <AppButton
+                size="sm"
+                leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+                onClick={() => setCreateOpen(true)}
+              >
+                New journal
+              </AppButton>
+            ) : null}
+            <AppButton
+              variant="outline"
+              size="sm"
+              leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
+              onClick={handleRefresh}
+              loading={isFetching && !isLoading}
+              aria-label="Refresh journal entries"
+            >
+              Refresh
+            </AppButton>
+          </>
         }
         emptyState={
           <EmptyState
@@ -232,6 +245,8 @@ export function JournalEntryListTable() {
           }
         }}
       />
+
+      <CreateJournalEntryDialog open={createOpen} onOpenChange={setCreateOpen} />
     </>
   );
 }

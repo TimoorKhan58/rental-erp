@@ -31,7 +31,7 @@ export function MarkReadyDispatchDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Mark dispatch ready"
-      description={`Mark "${dispatch.dispatchNumber}" as ready for completion?`}
+      description={`Mark "${dispatch.dispatchNumber}" as ready? This is the preparation step before you complete dispatch (inventory posts on complete, not on mark ready).`}
       confirmLabel="Mark ready"
       onConfirm={() => void handleConfirm()}
       isLoading={markReadyMutation.isPending}

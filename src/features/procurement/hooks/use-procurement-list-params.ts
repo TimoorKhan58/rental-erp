@@ -74,6 +74,18 @@ export function useProcurementListParams() {
       sortBy: ProcurementSortField,
       sortOrder: ListProcurementsParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        supplierId: undefined,
+        warehouseId: undefined,
+        orderDateFrom: undefined,
+        orderDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

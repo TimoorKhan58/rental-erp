@@ -29,6 +29,7 @@ type RepairTableColumnOptions = {
   onSort: (field: RepairSortField, order: ListRepairsParams["sortOrder"]) => void;
   returnLabelById: Map<string, string>;
   productLabelById: Map<string, string>;
+  productNameById: Map<string, string>;
   canUpdate: boolean;
   canStart: boolean;
   canComplete: boolean;
@@ -43,6 +44,7 @@ export function getRepairTableColumns({
   onSort,
   returnLabelById,
   productLabelById,
+  productNameById,
   canUpdate,
   canStart,
   canComplete,
@@ -63,16 +65,24 @@ export function getRepairTableColumns({
           onSort={onSort}
         />
       ),
-      cell: (row) => (
-        <Link href={ROUTES.repairDetail(row.id)} className="group block min-w-[8rem]">
-          <span className="font-medium text-primary group-hover:underline">
-            {row.repairNumber}
-          </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            {returnLabelById.get(row.returnId) ?? row.returnId}
-          </span>
-        </Link>
-      ),
+      cell: (row) => {
+        const productName =
+          productNameById.get(row.productId) ??
+          productLabelById.get(row.productId) ??
+          row.productId;
+        const returnLabel = returnLabelById.get(row.returnId) ?? row.returnId;
+
+        return (
+          <Link href={ROUTES.repairDetail(row.id)} className="group block min-w-[8rem]">
+            <span className="font-medium text-primary group-hover:underline">
+              {productName}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {row.repairNumber} · {returnLabel}
+            </span>
+          </Link>
+        );
+      },
     },
     {
       id: "product",
@@ -156,7 +166,7 @@ export function getRepairTableColumns({
               />
             }
           >
-            <MoreHorizontalIcon className="size-4" />
+            <MoreHorizontalIcon className="size-4" aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem render={<Link href={ROUTES.repairDetail(row.id)} />}>

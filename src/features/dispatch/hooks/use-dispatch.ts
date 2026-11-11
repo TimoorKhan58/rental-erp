@@ -3,11 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
 import { useAppMutation } from "@/lib/query";
-import { getCurrentUserPermissions } from "@/features/customer/services";
+import { getCurrentUserPermissions, getCustomers } from "@/features/customer/services";
 import { getProducts } from "@/features/product/services";
 import { getRentalOrders } from "@/features/rental-order/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ListDispatchesParams } from "../types";
+import { toRentalOrderSelectorOption } from "../mappers/rental-order-option.mapper";
 import {
   cancelDispatch,
   completeDispatch,
@@ -21,6 +22,8 @@ import {
 type LookupOption = {
   id: string;
   label: string;
+  description?: string;
+  keywords?: string;
 };
 
 export function useDispatchPermissions() {
@@ -42,22 +45,18 @@ export function useDispatchPermissions() {
   };
 }
 
+const ELIGIBLE_DISPATCH_ORDER_STATUSES = new Set(["CONFIRMED", "RESERVED", "ON_RENT"]);
+
 export function useDispatchFilterOptions() {
   const rentalOrders = useQuery({
-    queryKey: queryKeys.rentalOrders.list({ pageSize: 100, status: "CONFIRMED" }),
-    queryFn: () => getRentalOrders({ pageSize: 100, status: "CONFIRMED" }),
+    queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
+    queryFn: () => getRentalOrders({ pageSize: 100 }),
     staleTime: 5 * 60_000,
   });
 
-  const reservedOrders = useQuery({
-    queryKey: queryKeys.rentalOrders.list({ pageSize: 100, status: "RESERVED" }),
-    queryFn: () => getRentalOrders({ pageSize: 100, status: "RESERVED" }),
-    staleTime: 5 * 60_000,
-  });
-
-  const onRentOrders = useQuery({
-    queryKey: queryKeys.rentalOrders.list({ pageSize: 100, status: "ON_RENT" }),
-    queryFn: () => getRentalOrders({ pageSize: 100, status: "ON_RENT" }),
+  const customers = useQuery({
+    queryKey: queryKeys.customers.list({ pageSize: 100, isActive: true }),
+    queryFn: () => getCustomers({ pageSize: 100, isActive: true }),
     staleTime: 5 * 60_000,
   });
 
@@ -73,16 +72,24 @@ export function useDispatchFilterOptions() {
     staleTime: 5 * 60_000,
   });
 
-  const allRentalOrders = [
-    ...(rentalOrders.data?.items ?? []),
-    ...(reservedOrders.data?.items ?? []),
-    ...(onRentOrders.data?.items ?? []),
-  ];
+  const allRentalOrders = rentalOrders.data?.items ?? [];
+  const customerNameById = new Map(
+    (customers.data?.items ?? []).map((item) => [item.id, item.name]),
+  );
+  const customerPhoneById = new Map(
+    (customers.data?.items ?? []).map((item) => [item.id, item.phone]),
+  );
 
   const rentalOrderOptions: LookupOption[] = allRentalOrders.map((order) => ({
     id: order.id,
     label: order.orderNumber,
   }));
+
+  const eligibleRentalOrderOptions = allRentalOrders
+    .filter((order) => ELIGIBLE_DISPATCH_ORDER_STATUSES.has(order.status))
+    .map((order) =>
+      toRentalOrderSelectorOption(order, customerNameById, customerPhoneById),
+    );
 
   const warehouseOptions: LookupOption[] = (warehouses.data?.items ?? []).map((item) => ({
     id: item.id,
@@ -107,20 +114,26 @@ export function useDispatchFilterOptions() {
     (products.data?.items ?? []).map((item) => [item.id, item.name]),
   );
 
+  const rentalOrderCustomerById = new Map(
+    allRentalOrders.map((order) => [order.id, order.customerId]),
+  );
+
   return {
     rentalOrderOptions,
+    eligibleRentalOrderOptions,
     warehouseOptions,
     productOptions,
     rentalOrderLabelById,
     rentalOrderWarehouseById,
+    rentalOrderCustomerById,
+    customerNameById,
     warehouseLabelById,
     productLabelById,
     warehouseNameById,
     productNameById,
     isLoading:
       rentalOrders.isLoading ||
-      reservedOrders.isLoading ||
-      onRentOrders.isLoading ||
+      customers.isLoading ||
       warehouses.isLoading ||
       products.isLoading,
   };
@@ -162,9 +175,14 @@ export function useCreateDispatch() {
     mutationFn: createDispatch,
     showSuccessToast: true,
     successMessage: "Dispatch created successfully.",
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.summaries() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.detail(data.rentalOrderId),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
@@ -207,7 +225,12 @@ export function useUpdateDispatch() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.detail(data.rentalOrderId),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
@@ -224,7 +247,12 @@ export function useMarkDispatchReady() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.detail(data.rentalOrderId),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },
@@ -241,10 +269,16 @@ export function useCompleteDispatch() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.summaries() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.detail(data.rentalOrderId),
+        }),
       ]);
     },
   });
@@ -260,7 +294,12 @@ export function useCancelDispatch() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.detail(data.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalOrders.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalOrders.detail(data.rentalOrderId),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements.lists() }),
       ]);
     },

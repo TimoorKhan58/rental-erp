@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
@@ -19,7 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { RepairStatusFilterChips } from "../components";
+import { STATUS_LABELS } from "../mappers";
+import { RepairMobileList, RepairStatusFilterChips } from "../components";
 import {
   useRepairFilterOptions,
   useRepairListParams,
@@ -54,6 +55,7 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     setTechnicianFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useRepairListParams();
   const { canCreate, canUpdate, canStart, canComplete, canCancel } = useRepairPermissions();
   const {
@@ -62,6 +64,8 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     warehouseOptions,
     returnLabelById,
     productLabelById,
+    productNameById,
+    warehouseLabelById,
   } = useRepairFilterOptions();
   const { data, isLoading, isError, error, refetch, isFetching } = useRepairs(params);
 
@@ -69,6 +73,11 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
   const [completeTarget, setCompleteTarget] = useState<RepairResponse | null>(null);
   const [cancelTarget, setCancelTarget] = useState<RepairResponse | null>(null);
   const [localTechnician, setLocalTechnician] = useState(technician ?? "");
+
+  const handleClearAll = () => {
+    setLocalTechnician("");
+    clearAllFilters();
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -99,6 +108,7 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     onSort: setSorting,
     returnLabelById,
     productLabelById,
+    productNameById,
     canUpdate,
     canStart,
     canComplete,
@@ -123,6 +133,64 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     Boolean(params.repairDateFrom) ||
     Boolean(params.repairDateTo);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.returnId
+      ? {
+          id: "return",
+          label: `Return: ${returnLabelById.get(params.returnId) ?? params.returnId}`,
+          onClear: () => setReturnFilter(undefined),
+        }
+      : null,
+    params.productId
+      ? {
+          id: "product",
+          label: `Product: ${productLabelById.get(params.productId) ?? params.productId}`,
+          onClear: () => setProductFilter(undefined),
+        }
+      : null,
+    params.warehouseId
+      ? {
+          id: "warehouse",
+          label: `Warehouse: ${warehouseLabelById.get(params.warehouseId) ?? params.warehouseId}`,
+          onClear: () => setWarehouseFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    params.technician
+      ? {
+          id: "technician",
+          label: `Technician: ${params.technician}`,
+          onClear: () => {
+            setLocalTechnician("");
+            setTechnicianFilter(undefined);
+          },
+        }
+      : null,
+    repairDateFrom || repairDateTo
+      ? {
+          id: "dates",
+          label: `Dates: ${repairDateFrom ?? "…"} → ${repairDateTo ?? "…"}`,
+          onClear: () => setDateRange(undefined, undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
@@ -138,31 +206,47 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No repairs found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Repairs will appear here once created from a completed return with damaged quantity."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={handleClearAll}>
+            Clear filters
+          </AppButton>
+        ) : canCreate ? (
+          <Link href={ROUTES.repairsNew}>
+            <EmptyStateActionButton>Create repair</EmptyStateActionButton>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        toolbar={
-          <RepairStatusFilterChips
-            value={statusFilterValue}
-            onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
-            counts={statusCounts}
-          />
-        }
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search repairs..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search repairs"
-          />
-        }
-        filters={
-          <>
+      <div className="space-y-3">
+        <RepairStatusFilterChips
+          value={statusFilterValue}
+          onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+          counts={statusCounts}
+        />
+        <ActiveFilters filters={activeFilters} onClearAll={handleClearAll} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search repair number, remarks, or technician..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search repairs by number, remarks, or technician"
+            />
             <Select
               value={params.returnId ?? "all"}
               onValueChange={(value) => {
@@ -261,9 +345,7 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
               className="w-full sm:w-40"
               aria-label="Repair date to"
             />
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -274,29 +356,51 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No repairs found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Get started by creating your first repair."
-            }
-            action={
-              canCreate ? (
-                <Link href={ROUTES.repairsNew}>
-                  <EmptyStateActionButton>Create repair</EmptyStateActionButton>
-                </Link>
-              ) : undefined
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading repairs..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading repairs..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading repairs..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <RepairMobileList
+              rows={rows}
+              resolveProductLabel={(productId) =>
+                productNameById.get(productId) ??
+                productLabelById.get(productId) ??
+                productId
+              }
+              resolveReturnLabel={(returnId) => returnLabelById.get(returnId) ?? returnId}
+              canUpdate={canUpdate}
+              canStart={canStart}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              onStart={setStartTarget}
+              onComplete={setCompleteTarget}
+              onCancel={setCancelTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <StartRepairDialog
         repair={startTarget}

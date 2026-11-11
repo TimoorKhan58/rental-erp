@@ -91,21 +91,31 @@ export function AdjustInventoryDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Adjust stock"
-      description="Record a stock count correction. This creates an ADJUSTMENT movement and updates on-hand quantity."
+      description="Correct on-hand quantity via an ADJUSTMENT stock movement. Reserved/committed quantity stays workflow-controlled and is not edited here."
       size="md"
     >
       <AppForm form={form} onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-sm">
-          <p>
-            On hand:{" "}
-            <span className="font-medium tabular-nums">
-              {inventory.quantityOnHand.toLocaleString()}
-            </span>
-          </p>
-          <p className="text-muted-foreground">
-            Reserved {inventory.reservedQuantity.toLocaleString()} · Available{" "}
-            {inventory.availableQuantity.toLocaleString()}
-          </p>
+        <div className="rounded-md border border-border bg-muted/20 p-3 text-sm">
+          <div className="grid grid-cols-3 gap-2 tabular-nums">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                On hand
+              </p>
+              <p className="font-medium">{inventory.quantityOnHand.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Committed
+              </p>
+              <p className="font-medium">{inventory.reservedQuantity.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Available
+              </p>
+              <p className="font-medium">{inventory.availableQuantity.toLocaleString()}</p>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

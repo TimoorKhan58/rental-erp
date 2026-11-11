@@ -1,4 +1,5 @@
 export * from "./create-expense-category-dialog";
+export * from "./expense-mobile-list";
 export * from "./expense-status-badge";
 export * from "./expense-status-filter-chips";
 export * from "./expense-status-timeline";

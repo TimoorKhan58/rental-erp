@@ -32,7 +32,7 @@ export function PayExpenseDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Mark expense as paid"
-      description={`Mark "${expense.expenseNumber}" for ${formatCurrency(expense.amount)} as paid? This may post an accounting entry.`}
+      description={`Mark "${expense.expenseNumber}" for ${formatCurrency(expense.amount)} as paid? This is the financially authoritative step. When expense and cash accounts are configured, a journal is posted in the same transaction (debit expense, credit cash). If those accounts are missing, the expense still becomes Paid without a journal. This does not create a supplier payment, payment record, or inventory movement. Server rules remain authoritative.`}
       confirmLabel="Mark paid"
       onConfirm={() => void handleConfirm()}
       isLoading={payMutation.isPending}

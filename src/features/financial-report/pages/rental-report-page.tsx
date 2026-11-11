@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { MetricCard } from "@/components/design-system/card";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState, EmptyState } from "@/components/feedback";
@@ -22,13 +22,22 @@ import { getWarehouses } from "@/features/warehouse/services";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query";
 import {
-  ExportPlaceholderButton,
+  ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart, StatusPieChart } from "../charts";
 import { getRentalReportColumns } from "../tables";
-import { toPaginationMeta } from "../mappers";
+import { withReportSorting } from "../tables/report-sortable-columns";
+import {
+  compactActiveFilters,
+  dateRangeFilterChip,
+  RENTAL_REPORT_CSV_COLUMNS,
+  toPaginationMeta,
+} from "../mappers";
+import { RENTAL_REPORT_STATUS_OPTIONS } from "../constants/report-filter-options";
 import { useRentalReport, useRentalReportParams } from "../hooks";
+import type { RentalReportSortField } from "../types";
 
 function RentalReportContent() {
   const {
@@ -41,6 +50,8 @@ function RentalReportContent() {
     setCustomerFilter,
     setWarehouseFilter,
     setStatusFilter,
+    setSorting,
+    clearAllFilters,
   } = useRentalReportParams();
   const { data, isLoading, isError, error, refetch, isFetching } = useRentalReport(params);
 
@@ -66,7 +77,17 @@ function RentalReportContent() {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const columns = getRentalReportColumns();
+  const columns = withReportSorting(
+    getRentalReportColumns(),
+    {
+      orderNumber: "orderNumber",
+      status: "status",
+      bookingDate: "bookingDate",
+      grandTotal: "grandTotal",
+    },
+    params,
+    (field, order) => setSorting(field as RentalReportSortField, order ?? "asc"),
+  );
 
   const statusChartData = useMemo(
     () =>
@@ -86,6 +107,44 @@ function RentalReportContent() {
     [data],
   );
 
+  const activeFilters = compactActiveFilters([
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    dateRangeFilterChip(params.dateFrom, params.dateTo, "Booking date", () =>
+      setDateRange(undefined, undefined),
+    ),
+    params.customerId
+      ? {
+          id: "customer",
+          label: "Customer",
+          onClear: () => setCustomerFilter(undefined),
+        }
+      : null,
+    params.warehouseId
+      ? {
+          id: "warehouse",
+          label: "Warehouse",
+          onClear: () => setWarehouseFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${params.status}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+  ]);
+  const hasActiveFilters = activeFilters.length > 0;
+
   if (isError) {
     return (
       <div
@@ -102,14 +161,23 @@ function RentalReportContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {data ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <MetricCard label="Total orders" value={String(data.totalOrders)} />
-          <MetricCard label="Total revenue" value={formatCurrency(data.totalRevenue)} />
+          <MetricCard
+            label="Filtered orders"
+            value={String(data.totalOrders)}
+            hint="All matching orders, not this page only"
+          />
+          <MetricCard
+            label="Booked order total"
+            value={formatCurrency(data.totalRevenue)}
+            hint="Sum of order grand totals in the filter — all statuses, not collected cash"
+          />
           <MetricCard
             label="Average duration"
             value={`${data.averageDuration.toFixed(1)} days`}
+            hint="Event start to event end"
           />
         </div>
       ) : null}
@@ -117,17 +185,19 @@ function RentalReportContent() {
       <div className="grid gap-6 lg:grid-cols-2">
         <StatusPieChart
           title="Status mix"
-          description="Backend status counts"
+          description="Filtered status counts for the full matching set"
           data={statusChartData}
           isLoading={isLoading}
         />
         <AmountBarChart
-          title="Order totals"
-          description="Backend grand totals for listed orders"
+          title="Order totals (this page)"
+          description="Grand totals for the current page only"
           data={revenueChartData}
           isLoading={isLoading}
         />
       </div>
+
+      <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
 
       <DataTableShell
         columns={columns}
@@ -138,31 +208,36 @@ function RentalReportContent() {
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search rentals..."
+            placeholder="Search order number, customer, warehouse, or status..."
             className="w-full sm:max-w-xs"
             aria-label="Search rental report"
           />
         }
         filters={
           <>
-            <Input
-              type="date"
-              value={params.dateFrom ?? ""}
-              onChange={(event) =>
-                setDateRange(event.target.value || undefined, params.dateTo)
-              }
-              className="w-full sm:w-40"
-              aria-label="Date from"
-            />
-            <Input
-              type="date"
-              value={params.dateTo ?? ""}
-              onChange={(event) =>
-                setDateRange(params.dateFrom, event.target.value || undefined)
-              }
-              className="w-full sm:w-40"
-              aria-label="Date to"
-            />
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="date"
+                  value={params.dateFrom ?? ""}
+                  onChange={(event) =>
+                    setDateRange(event.target.value || undefined, params.dateTo)
+                  }
+                  className="w-full sm:w-40"
+                  aria-label="Date from (booking date)"
+                />
+                <Input
+                  type="date"
+                  value={params.dateTo ?? ""}
+                  onChange={(event) =>
+                    setDateRange(params.dateFrom, event.target.value || undefined)
+                  }
+                  className="w-full sm:w-40"
+                  aria-label="Date to (booking date)"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Filters on booking date</p>
+            </div>
             <Select
               value={params.customerId ?? "all"}
               onValueChange={(value) =>
@@ -210,9 +285,9 @@ function RentalReportContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                {(data?.statusCounts ?? []).map((item) => (
-                  <SelectItem key={item.status} value={item.status}>
-                    {item.status}
+                {RENTAL_REPORT_STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -229,13 +304,29 @@ function RentalReportContent() {
             >
               Refresh
             </AppButton>
-            <ExportPlaceholderButton />
+            <ExportReportButton
+              filename="rental-report.csv"
+              rows={data?.lines ?? []}
+              columns={RENTAL_REPORT_CSV_COLUMNS}
+              disabled={isLoading || !(data?.lines?.length)}
+            />
           </>
         }
         emptyState={
           <EmptyState
-            title="No rental data"
-            description="Rental performance lines will appear when orders exist."
+            title={hasActiveFilters ? "No matching rows" : "No rental data"}
+            description={
+              hasActiveFilters
+                ? "No rental orders match the current search or filters."
+                : "Rental performance lines will appear when orders exist."
+            }
+            action={
+              hasActiveFilters ? (
+                <AppButton variant="outline" onClick={clearAllFilters}>
+                  Clear filters
+                </AppButton>
+              ) : undefined
+            }
           />
         }
         loadingState={<LoadingState label="Loading rental report..." />}
@@ -254,7 +345,7 @@ export function RentalReportPage() {
     <PageContainer>
       <PageHeader
         title="Rental Performance"
-        description="Backend rental KPIs, status mix, and order totals."
+        description="Rental orders by booking date. Booked totals are order grand totals, not collected cash."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -262,9 +353,11 @@ export function RentalReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading rental report..." />}>
-        <RentalReportContent />
-      </Suspense>
+      <ReportPermissionGate requireOperational>
+        <Suspense fallback={<LoadingState label="Loading rental report..." />}>
+          <RentalReportContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

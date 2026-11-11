@@ -3,22 +3,32 @@
 import { Suspense, useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { MetricCard, SectionCard } from "@/components/design-system/card";
-import { DataTableShell } from "@/components/shared";
+import { ActiveFilters, DataTableShell } from "@/components/shared";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState, EmptyState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency } from "@/lib/utils";
 import {
   DateRangeFilterBar,
-  ExportPlaceholderButton,
+  ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
 import { getAccountAmountColumns } from "../tables";
+import {
+  buildProfitLossCsvRows,
+  compactActiveFilters,
+  dateRangeFilterChip,
+  PROFIT_LOSS_CSV_COLUMNS,
+} from "../mappers";
 import { useDateRangeParams, useProfitLoss } from "../hooks";
 
 function ProfitLossContent() {
-  const { params, dateFrom, dateTo, setDateRange } = useDateRangeParams();
+  const { params, dateFrom, dateTo, setDateRange, clearDateRange } = useDateRangeParams();
+  const activeFilters = compactActiveFilters([
+    dateRangeFilterChip(dateFrom, dateTo, "Journal date", clearDateRange),
+  ]);
   const { data, isLoading, isError, error, refetch, isFetching } = useProfitLoss(params);
 
   const revenueColumns = getAccountAmountColumns("Revenue");
@@ -54,9 +64,14 @@ function ProfitLossContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangeFilterBar dateFrom={dateFrom} dateTo={dateTo} onChange={setDateRange} />
+        <DateRangeFilterBar
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onChange={setDateRange}
+          fieldHint="Posted journal date"
+        />
         <AppButton
           variant="outline"
           size="sm"
@@ -65,22 +80,41 @@ function ProfitLossContent() {
         >
           Refresh
         </AppButton>
-        <ExportPlaceholderButton />
+        <ExportReportButton
+          filename="profit-loss-report.csv"
+          rows={data ? buildProfitLossCsvRows(data) : []}
+          columns={PROFIT_LOSS_CSV_COLUMNS}
+          csvLabel="CSV"
+          disabled={isLoading || !data || (data.revenue.length === 0 && data.expenses.length === 0)}
+        />
       </div>
+      <ActiveFilters filters={activeFilters} onClearAll={clearDateRange} />
 
       {isLoading && !data ? (
         <LoadingState label="Loading profit & loss..." />
       ) : data ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard label="Revenue" value={formatCurrency(data.totalRevenue)} />
-            <MetricCard label="Expenses" value={formatCurrency(data.totalExpenses)} />
-            <MetricCard label="Net profit" value={formatCurrency(data.netProfit)} />
+            <MetricCard
+              label="Posted journal revenue"
+              value={formatCurrency(data.totalRevenue)}
+              hint="Posted INCOME accounts"
+            />
+            <MetricCard
+              label="Posted journal expenses"
+              value={formatCurrency(data.totalExpenses)}
+              hint="Posted EXPENSE accounts — not the Expenses module"
+            />
+            <MetricCard
+              label="Net profit"
+              value={formatCurrency(data.netProfit)}
+              hint="Posted journal revenue minus posted journal expenses"
+            />
           </div>
 
           <AmountBarChart
             title="Account amounts"
-            description="Backend account-level revenue and expense amounts"
+            description="Posted journal account amounts for the selected dates"
             data={chartData}
             isLoading={isLoading}
           />
@@ -117,7 +151,7 @@ export function ProfitLossReportPage() {
     <PageContainer>
       <PageHeader
         title="Profit & Loss"
-        description="Backend-generated revenue, expenses, and net profit."
+        description="Posted journal income and expense accounts. Draft journals are excluded."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -125,9 +159,11 @@ export function ProfitLossReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading profit & loss..." />}>
-        <ProfitLossContent />
-      </Suspense>
+      <ReportPermissionGate requireFinancial>
+        <Suspense fallback={<LoadingState label="Loading profit & loss..." />}>
+          <ProfitLossContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

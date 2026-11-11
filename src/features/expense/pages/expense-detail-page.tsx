@@ -327,7 +327,10 @@ export function ExpenseDetailPage({ expenseId }: ExpenseDetailPageProps) {
             <ExpenseStatusTimeline status={expense.status} />
           </SectionCard>
 
-          <SectionCard title="Milestones">
+          <SectionCard
+            title="Milestones"
+            description="Mark paid is the accounting step. Create, submit, approve, and reject do not post journals."
+          >
             <dl className="space-y-4">
               <DetailField
                 label="Submitted at"
@@ -345,7 +348,25 @@ export function ExpenseDetailPage({ expenseId }: ExpenseDetailPageProps) {
                 label="Paid at"
                 value={expense.paidAt ? formatDateTime(expense.paidAt) : null}
               />
-              <DetailField label="Journal entry" value={expense.journalEntryId} />
+              <div className="space-y-1">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Journal entry
+                </dt>
+                <dd className="text-sm">
+                  {expense.journalEntryId ? (
+                    <Link
+                      href={ROUTES.accountingJournalEntryDetail(expense.journalEntryId)}
+                      className="text-primary hover:underline"
+                    >
+                      View journal entry
+                    </Link>
+                  ) : expense.status === "PAID" ? (
+                    "Paid without a journal — expense or cash accounts were not available"
+                  ) : (
+                    "No journal until marked paid"
+                  )}
+                </dd>
+              </div>
             </dl>
           </SectionCard>
 

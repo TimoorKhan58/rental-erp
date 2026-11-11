@@ -98,6 +98,7 @@ describe("Users management UI", () => {
       setStatusFilter: vi.fn(),
       setRoleFilter: vi.fn(),
       setSorting: vi.fn(),
+      clearAllFilters: vi.fn(),
       refreshKey: "",
     });
 

@@ -31,6 +31,8 @@ type DispatchTableColumnOptions = {
   onSort: (field: DispatchSortField, order: ListDispatchesParams["sortOrder"]) => void;
   rentalOrderLabelById: Map<string, string>;
   rentalOrderWarehouseById: Map<string, string>;
+  rentalOrderCustomerById: Map<string, string>;
+  customerNameById: Map<string, string>;
   warehouseLabelById: Map<string, string>;
   warehouseNameById: Map<string, string>;
   canUpdate: boolean;
@@ -46,6 +48,8 @@ export function getDispatchTableColumns({
   onSort,
   rentalOrderLabelById,
   rentalOrderWarehouseById,
+  rentalOrderCustomerById,
+  customerNameById,
   warehouseLabelById,
   warehouseNameById,
   canUpdate,
@@ -64,12 +68,21 @@ export function getDispatchTableColumns({
     return warehouseNameById.get(warehouseId) ?? warehouseLabelById.get(warehouseId) ?? warehouseId;
   };
 
+  const resolveCustomerName = (rentalOrderId: string) => {
+    const customerId = rentalOrderCustomerById.get(rentalOrderId);
+    if (!customerId) {
+      return undefined;
+    }
+
+    return customerNameById.get(customerId);
+  };
+
   return [
     {
       id: "dispatchNumber",
       header: (
         <SortableColumnHeader
-          label="Delivery"
+          label="Dispatch"
           field="dispatchNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -83,6 +96,9 @@ export function getDispatchTableColumns({
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
             {rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId}
+            {resolveCustomerName(row.rentalOrderId)
+              ? ` · ${resolveCustomerName(row.rentalOrderId)}`
+              : ""}
           </span>
         </Link>
       ),

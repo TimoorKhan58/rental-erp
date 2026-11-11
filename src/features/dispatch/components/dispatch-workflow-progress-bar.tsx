@@ -44,7 +44,7 @@ export function DispatchWorkflowProgressBar({
         aria-valuenow={fillPercent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`Delivery workflow ${fillPercent}% complete`}
+        aria-label={`Dispatch operator workflow ${fillPercent}% complete`}
       >
         <div
           className={cn("h-full rounded-full transition-all duration-300", barColor)}

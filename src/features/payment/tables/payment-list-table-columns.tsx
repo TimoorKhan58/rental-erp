@@ -74,9 +74,12 @@ export function getPaymentTableColumns({
       id: "invoice",
       header: "Invoice",
       cell: (row) => (
-        <span className="text-sm">
+        <Link
+          href={ROUTES.rentalInvoiceDetail(row.rentalInvoiceId)}
+          className="text-sm text-primary hover:underline"
+        >
           {invoiceLabelById.get(row.rentalInvoiceId) ?? row.rentalInvoiceId}
-        </span>
+        </Link>
       ),
     },
     {
@@ -151,11 +154,6 @@ export function getPaymentTableColumns({
         const showEdit = canUpdate && canEditPayment(row.status);
         const showPost = canPost && canPostPayment(row.status);
         const showVoid = canVoid && canVoidPayment(row.status);
-        const hasActions = showEdit || showPost || showVoid;
-
-        if (!hasActions) {
-          return null;
-        }
 
         return (
           <DropdownMenu>

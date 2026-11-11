@@ -66,6 +66,7 @@ export const InventoryReportQuerySchema = PaginationSchema.extend({
   dateFrom: DateSchema.optional(),
   dateTo: DateSchema.optional(),
   warehouseId: UUIDSchema.optional(),
+  inventoryId: UUIDSchema.optional(),
   lowStockOnly: BooleanStringSchema.optional(),
   overstockOnly: BooleanStringSchema.optional(),
   sortBy: z.enum(INVENTORY_REPORT_SORT_FIELDS).optional(),

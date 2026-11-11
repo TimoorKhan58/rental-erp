@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
+import { ActiveFilters } from "@/components/shared";
 import { MetricCard, SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
@@ -9,13 +10,24 @@ import { ROUTES } from "@/config/routes";
 import { formatCurrency } from "@/lib/utils";
 import {
   DateRangeFilterBar,
-  ExportPlaceholderButton,
+  ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
+import { buildBalanceSheetCsvRows, BALANCE_SHEET_CSV_COLUMNS } from "../mappers";
 import { useBalanceSheet, useBalanceSheetParams } from "../hooks";
 
 function BalanceSheetContent() {
-  const { params, asOfDate, setAsOfDate } = useBalanceSheetParams();
+  const { params, asOfDate, setAsOfDate, clearAsOfDate } = useBalanceSheetParams();
+  const activeFilters = asOfDate
+    ? [
+        {
+          id: "asOfDate",
+          label: `As of: ${asOfDate}`,
+          onClear: clearAsOfDate,
+        },
+      ]
+    : [];
   const { data, isLoading, isError, error, refetch, isFetching } = useBalanceSheet(params);
 
   if (isError) {
@@ -34,13 +46,14 @@ function BalanceSheetContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         <DateRangeFilterBar
           mode="asOf"
           asOfDate={asOfDate}
           onAsOfDateChange={setAsOfDate}
           onChange={() => undefined}
+          fieldHint="Posted journals as of this journal date"
         />
         <AppButton
           variant="outline"
@@ -50,21 +63,41 @@ function BalanceSheetContent() {
         >
           Refresh
         </AppButton>
-        <ExportPlaceholderButton />
+        <ExportReportButton
+          filename="balance-sheet-report.csv"
+          rows={data ? buildBalanceSheetCsvRows(data) : []}
+          columns={BALANCE_SHEET_CSV_COLUMNS}
+          csvLabel="CSV"
+          disabled={isLoading || !data}
+        />
       </div>
+      <ActiveFilters filters={activeFilters} onClearAll={clearAsOfDate} />
 
       {isLoading && !data ? (
         <LoadingState label="Loading balance sheet..." />
       ) : data ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard label="Total assets" value={formatCurrency(data.totalAssets)} />
+            <MetricCard
+              label="Total assets"
+              value={formatCurrency(data.totalAssets)}
+              hint="Posted journals"
+            />
             <MetricCard
               label="Total liabilities"
               value={formatCurrency(data.totalLiabilities)}
+              hint="Posted journals"
             />
-            <MetricCard label="Total equity" value={formatCurrency(data.totalEquity)} />
-            <MetricCard label="Net income" value={formatCurrency(data.netIncome)} />
+            <MetricCard
+              label="Total equity"
+              value={formatCurrency(data.totalEquity)}
+              hint="Posted journals"
+            />
+            <MetricCard
+              label="Net income"
+              value={formatCurrency(data.netIncome)}
+              hint="Posted journal income minus expenses"
+            />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
@@ -110,7 +143,7 @@ export function BalanceSheetReportPage() {
     <PageContainer>
       <PageHeader
         title="Balance Sheet"
-        description="Backend-generated assets, liabilities, and equity."
+        description="Posted journal assets, liabilities, and equity as of the selected journal date."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -118,9 +151,11 @@ export function BalanceSheetReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading balance sheet..." />}>
-        <BalanceSheetContent />
-      </Suspense>
+      <ReportPermissionGate requireFinancial>
+        <Suspense fallback={<LoadingState label="Loading balance sheet..." />}>
+          <BalanceSheetContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

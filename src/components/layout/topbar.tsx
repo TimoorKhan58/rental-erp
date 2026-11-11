@@ -26,8 +26,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { NotificationTopbarControl } from "@/features/notification";
+import {
+  canAccessWithPermissions,
+  QUICK_ACTION_REQUIRED_ANY,
+} from "@/constants/navigation-access";
 import { GlobalSearchInput } from "./global-search-input";
 import { useSidebar } from "./sidebar-context";
+import { useVisibleNavigation } from "./use-visible-navigation";
 
 function getInitials(name: string): string {
   return name
@@ -39,42 +44,53 @@ function getInitials(name: string): string {
 }
 
 const QUICK_ACTION_LINKS = [
-  { label: "New Customer", href: ROUTES.customersNew },
   { label: "New Rental Order", href: ROUTES.rentalOrdersNew },
+  { label: "New Customer", href: ROUTES.customersNew },
   { label: "Receive Payment", href: ROUTES.paymentsNew },
 ] as const;
 
 export function Topbar() {
-  const { openMobile } = useSidebar();
+  const { openMobile, mobileOpen } = useSidebar();
   const { session, signOut } = useAuth();
   const { organizationName } = useOrganizationName();
+  const { permissions, ready } = useVisibleNavigation();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  const quickActions = QUICK_ACTION_LINKS.filter(
+    (action) =>
+      !ready ||
+      canAccessWithPermissions(QUICK_ACTION_REQUIRED_ANY[action.href], permissions),
+  );
 
   const userName = session?.user.name ?? "Guest";
   const userInitials = session?.user.name ? getInitials(session.user.name) : "G";
 
   return (
     <header className="tent-navbar z-[var(--z-sticky)] shrink-0">
-      <div className="flex h-[3.75rem] items-center gap-3 px-4">
+      <div className="flex h-14 items-center gap-3 px-3 md:px-4">
         <Button
           variant="ghost"
           size="icon"
           className="text-white hover:bg-white/10 lg:hidden"
           onClick={openMobile}
           aria-label="Open navigation menu"
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-navigation"
         >
           <MenuIcon className="size-4" aria-hidden="true" />
         </Button>
 
         <div className="hidden min-w-0 flex-1 items-center gap-4 md:flex">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{organizationName}</p>
-            <p className="truncate text-[11px] text-white/60">Operations workspace</p>
+            <p className="truncate text-sm font-semibold tracking-tight text-white">
+              {organizationName}
+            </p>
+            <p className="truncate text-[11px] text-white/55">Operations workspace</p>
           </div>
           <GlobalSearchInput
-            className="relative hidden max-w-md flex-1 lg:block"
-            inputClassName="h-9 border-white/15 bg-white/10 pl-9 text-sm text-white placeholder:text-white/45 focus-visible:border-white/30 focus-visible:bg-white/15"
+            className="relative hidden min-w-0 max-w-3xl flex-1 lg:block"
+            inputClassName="h-8 border-white/15 bg-white/10 pl-9 text-sm text-white placeholder:text-white/45 focus-visible:border-white/30 focus-visible:bg-white/12 focus-visible:ring-white/20"
           />
         </div>
 
@@ -90,50 +106,52 @@ export function Topbar() {
             <SearchIcon className="size-4" aria-hidden="true" />
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <AppButton
-                  variant="default"
-                  size="sm"
-                  className="inline-flex size-9 shrink-0 bg-brand p-0 text-brand-foreground shadow-soft hover:bg-brand/90 sm:h-8 sm:w-auto sm:px-3"
-                  leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
-                  aria-label="Quick actions"
-                />
-              }
-            >
-              <span className="hidden sm:inline">New</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              {QUICK_ACTION_LINKS.map((action) => (
-                <DropdownMenuItem key={action.label} render={<Link href={action.href} />}>
-                  {action.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {quickActions.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <AppButton
+                    variant="default"
+                    size="sm"
+                    className="inline-flex size-8 shrink-0 bg-brand p-0 text-brand-foreground hover:bg-brand/90 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+                    leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+                    aria-label="Quick actions"
+                  />
+                }
+              >
+                <span className="hidden sm:inline">New</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                {quickActions.map((action) => (
+                  <DropdownMenuItem key={action.label} render={<Link href={action.href} />}>
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
 
           <NotificationTopbarControl className="text-white hover:bg-white/10" />
 
           <ThemeToggle className="text-white hover:bg-white/10" />
 
-          <Separator orientation="vertical" className="mx-1 hidden h-6 bg-white/20 sm:block" />
+          <Separator orientation="vertical" className="mx-1 hidden h-5 bg-white/20 sm:block" />
 
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="ghost"
-                  className="gap-2 px-2 text-white hover:bg-white/10"
+                  className="gap-2 px-1.5 text-white hover:bg-white/10 sm:px-2"
                   aria-label="Open profile menu"
                 />
               }
             >
-              <span className="flex size-8 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-white ring-2 ring-brand/40">
+              <span className="flex size-7 items-center justify-center rounded-md bg-white/15 text-[11px] font-semibold text-white">
                 {userInitials}
               </span>
               <span className="hidden max-w-32 truncate text-sm font-medium sm:inline">
@@ -180,10 +198,10 @@ export function Topbar() {
       </div>
 
       {mobileSearchOpen ? (
-        <div className="border-t border-white/10 px-4 py-2 lg:hidden">
+        <div className="border-t border-white/10 px-3 py-2 md:px-4 lg:hidden">
           <GlobalSearchInput
             className="relative"
-            inputClassName="h-9 border-white/15 bg-white/10 pl-9 text-sm text-white placeholder:text-white/45 focus-visible:border-white/30 focus-visible:bg-white/15"
+            inputClassName="h-8 border-white/15 bg-white/10 pl-9 text-sm text-white placeholder:text-white/45 focus-visible:border-white/30 focus-visible:bg-white/12 focus-visible:ring-white/20"
             autoFocus
             onNavigate={() => setMobileSearchOpen(false)}
           />

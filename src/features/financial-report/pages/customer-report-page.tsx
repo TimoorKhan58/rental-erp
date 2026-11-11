@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { MetricCard } from "@/components/design-system/card";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState, EmptyState } from "@/components/feedback";
@@ -21,13 +21,21 @@ import { getCustomers } from "@/features/customer/services";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query";
 import {
-  ExportPlaceholderButton,
+  ExportReportButton,
+  ReportPermissionGate,
   ReportsSubNav,
 } from "../components";
 import { AmountBarChart } from "../charts";
 import { getCustomerReportColumns } from "../tables";
-import { toPaginationMeta } from "../mappers";
+import { withReportSorting } from "../tables/report-sortable-columns";
+import {
+  compactActiveFilters,
+  CUSTOMER_REPORT_CSV_COLUMNS,
+  dateRangeFilterChip,
+  toPaginationMeta,
+} from "../mappers";
 import { useCustomerReport, useCustomerReportParams } from "../hooks";
+import type { CustomerReportSortField } from "../types";
 
 function CustomerReportContent() {
   const {
@@ -38,6 +46,8 @@ function CustomerReportContent() {
     setPage,
     setDateRange,
     setCustomerFilter,
+    setSorting,
+    clearAllFilters,
   } = useCustomerReportParams();
   const { data, isLoading, isError, error, refetch, isFetching } =
     useCustomerReport(params);
@@ -58,7 +68,16 @@ function CustomerReportContent() {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const columns = getCustomerReportColumns();
+  const columns = withReportSorting(
+    getCustomerReportColumns(),
+    {
+      customerCode: "customerCode",
+      orderCount: "orderCount",
+      revenue: "revenue",
+    },
+    params,
+    (field, order) => setSorting(field as CustomerReportSortField, order ?? "asc"),
+  );
 
   const chartData = useMemo(
     () =>
@@ -68,6 +87,30 @@ function CustomerReportContent() {
       })),
     [data],
   );
+
+  const activeFilters = compactActiveFilters([
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    dateRangeFilterChip(params.dateFrom, params.dateTo, "Booking date", () =>
+      setDateRange(undefined, undefined),
+    ),
+    params.customerId
+      ? {
+          id: "customer",
+          label: "Customer",
+          onClear: () => setCustomerFilter(undefined),
+        }
+      : null,
+  ]);
+  const hasActiveFilters = activeFilters.length > 0;
 
   if (isError) {
     return (
@@ -85,20 +128,30 @@ function CustomerReportContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {data ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <MetricCard label="Total customers" value={String(data.totalCustomers)} />
-          <MetricCard label="Total revenue" value={formatCurrency(data.totalRevenue)} />
+          <MetricCard
+            label="Customers"
+            value={String(data.totalCustomers)}
+            hint="Active customers matching the current filters"
+          />
+          <MetricCard
+            label="Booked order total"
+            value={formatCurrency(data.totalRevenue)}
+            hint="Order grand totals by booking date — not collected cash"
+          />
         </div>
       ) : null}
 
       <AmountBarChart
-        title="Customer revenue"
-        description="Backend revenue by customer"
+        title="Customer booked totals (this page)"
+        description="Order grand totals for the current page only"
         data={chartData}
         isLoading={isLoading}
       />
+
+      <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
 
       <DataTableShell
         columns={columns}
@@ -109,31 +162,38 @@ function CustomerReportContent() {
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search customers..."
+            placeholder="Search customer code or name..."
             className="w-full sm:max-w-xs"
             aria-label="Search customer report"
           />
         }
         filters={
           <>
-            <Input
-              type="date"
-              value={params.dateFrom ?? ""}
-              onChange={(event) =>
-                setDateRange(event.target.value || undefined, params.dateTo)
-              }
-              className="w-full sm:w-40"
-              aria-label="Date from"
-            />
-            <Input
-              type="date"
-              value={params.dateTo ?? ""}
-              onChange={(event) =>
-                setDateRange(params.dateFrom, event.target.value || undefined)
-              }
-              className="w-full sm:w-40"
-              aria-label="Date to"
-            />
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="date"
+                  value={params.dateFrom ?? ""}
+                  onChange={(event) =>
+                    setDateRange(event.target.value || undefined, params.dateTo)
+                  }
+                  className="w-full sm:w-40"
+                  aria-label="Date from (booking date)"
+                />
+                <Input
+                  type="date"
+                  value={params.dateTo ?? ""}
+                  onChange={(event) =>
+                    setDateRange(params.dateFrom, event.target.value || undefined)
+                  }
+                  className="w-full sm:w-40"
+                  aria-label="Date to (booking date)"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Booking date applies to order totals. Open invoice balance is not date-filtered.
+              </p>
+            </div>
             <Select
               value={params.customerId ?? "all"}
               onValueChange={(value) =>
@@ -164,13 +224,29 @@ function CustomerReportContent() {
             >
               Refresh
             </AppButton>
-            <ExportPlaceholderButton />
+            <ExportReportButton
+              filename="customer-report.csv"
+              rows={data?.lines ?? []}
+              columns={CUSTOMER_REPORT_CSV_COLUMNS}
+              disabled={isLoading || !(data?.lines?.length)}
+            />
           </>
         }
         emptyState={
           <EmptyState
-            title="No customer data"
-            description="Customer analytics will appear when rental activity exists."
+            title={hasActiveFilters ? "No matching rows" : "No customer data"}
+            description={
+              hasActiveFilters
+                ? "No customers match the current search or filters."
+                : "Customer analytics will appear when rental activity exists."
+            }
+            action={
+              hasActiveFilters ? (
+                <AppButton variant="outline" onClick={clearAllFilters}>
+                  Clear filters
+                </AppButton>
+              ) : undefined
+            }
           />
         }
         loadingState={<LoadingState label="Loading customer report..." />}
@@ -189,7 +265,7 @@ export function CustomerReportPage() {
     <PageContainer>
       <PageHeader
         title="Customer Report"
-        description="Backend customer revenue, orders, and outstanding balances."
+        description="Booked order totals by booking date. Outstanding invoice balances are current open amounts, not period-filtered."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },
@@ -197,9 +273,11 @@ export function CustomerReportPage() {
         ]}
       />
       <ReportsSubNav />
-      <Suspense fallback={<LoadingState label="Loading customer report..." />}>
-        <CustomerReportContent />
-      </Suspense>
+      <ReportPermissionGate requireOperational>
+        <Suspense fallback={<LoadingState label="Loading customer report..." />}>
+          <CustomerReportContent />
+        </Suspense>
+      </ReportPermissionGate>
     </PageContainer>
   );
 }

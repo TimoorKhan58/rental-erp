@@ -82,6 +82,8 @@ function buildInvoiceRunner(
     rentalOrderRepository: new InMemoryRentalOrderRepository(),
     rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
     customerRepository,
+    accountRepository: new InMemoryAccountRepository(),
+    journalEntryRepository: new InMemoryJournalEntryRepository(),
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     notificationService,

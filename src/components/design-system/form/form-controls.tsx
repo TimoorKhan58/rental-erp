@@ -227,7 +227,12 @@ export function ComboboxField<T extends FieldValues>({
   searchPlaceholder = "Search...",
   emptyMessage = "No results found.",
 }: BaseFieldProps<T> & {
-  options: Array<{ value: string; label: string; keywords?: string }>;
+  options: Array<{
+    value: string;
+    label: string;
+    description?: string;
+    keywords?: string;
+  }>;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
@@ -243,8 +248,8 @@ export function ComboboxField<T extends FieldValues>({
       description={description}
       className={className}
       render={(field) => {
-        const selectedLabel =
-          options.find((option) => option.value === field.value)?.label ?? null;
+        const selectedOption =
+          options.find((option) => option.value === field.value) ?? null;
 
         const filteredOptions = options.filter((option) => {
           const query = search.trim().toLowerCase();
@@ -252,7 +257,8 @@ export function ComboboxField<T extends FieldValues>({
             return true;
           }
 
-          const haystack = `${option.label} ${option.keywords ?? ""}`.toLowerCase();
+          const haystack =
+            `${option.label} ${option.description ?? ""} ${option.keywords ?? ""}`.toLowerCase();
           return haystack.includes(query);
         });
 
@@ -275,14 +281,26 @@ export function ComboboxField<T extends FieldValues>({
                   role="combobox"
                   aria-expanded={open}
                   disabled={disabled}
-                  className="w-full justify-between font-normal"
+                  className={cn(
+                    "h-auto min-h-9 w-full justify-between py-1.5 font-normal",
+                    selectedOption?.description && "items-start",
+                  )}
                   rightIcon={<ChevronsUpDownIcon className="size-4 opacity-50" />}
                 />
               }
             >
-              <span className={cn("truncate", !selectedLabel && "text-muted-foreground")}>
-                {selectedLabel ?? placeholder}
-              </span>
+              {selectedOption ? (
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block truncate">{selectedOption.label}</span>
+                  {selectedOption.description ? (
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {selectedOption.description}
+                    </span>
+                  ) : null}
+                </span>
+              ) : (
+                <span className="truncate text-muted-foreground">{placeholder}</span>
+              )}
             </PopoverTrigger>
             <PopoverContent className="w-[var(--anchor-width)] min-w-56 p-2" align="start">
               <SearchBox
@@ -308,7 +326,7 @@ export function ComboboxField<T extends FieldValues>({
                         role="option"
                         aria-selected={selected}
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                          "flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
                           selected && "bg-muted",
                         )}
                         onClick={() => {
@@ -319,12 +337,19 @@ export function ComboboxField<T extends FieldValues>({
                       >
                         <CheckIcon
                           className={cn(
-                            "size-4 shrink-0",
+                            "mt-0.5 size-4 shrink-0",
                             selected ? "opacity-100" : "opacity-0",
                           )}
                           aria-hidden="true"
                         />
-                        <span className="truncate">{option.label}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate">{option.label}</span>
+                          {option.description ? (
+                            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                              {option.description}
+                            </span>
+                          ) : null}
+                        </span>
                       </button>
                     );
                   })

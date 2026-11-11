@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState } from "@/components/feedback";
@@ -17,11 +17,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { queryKeys } from "@/lib/query";
+import { STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../mappers";
 import {
-  matchesInvoiceDateRange,
-  matchesPaymentStatusFilter,
-} from "../mappers";
-import {
+  RentalInvoiceMobileList,
   RentalInvoicePaymentStatusFilterChips,
   RentalInvoiceStatusFilterChips,
 } from "../components";
@@ -61,6 +59,7 @@ export function RentalInvoiceListTable({
     setPaymentStatusFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useRentalInvoiceListParams();
   const { canIssue, canVoid } = useRentalInvoicePermissions();
   const { customerOptions, rentalOrderOptions, customerLabelById, rentalOrderLabelById } =
@@ -80,15 +79,7 @@ export function RentalInvoiceListTable({
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const rows = useMemo(() => {
-    const items = data?.items ?? [];
-
-    return items.filter(
-      (item) =>
-        matchesInvoiceDateRange(item.invoiceDate, invoiceDateFrom, invoiceDateTo) &&
-        matchesPaymentStatusFilter(item, paymentStatus),
-    );
-  }, [data?.items, invoiceDateFrom, invoiceDateTo, paymentStatus]);
+  const rows = data?.items ?? [];
 
   const statusFilterValue = params.status ?? "all";
   const paymentStatusFilterValue = paymentStatus ?? "all";
@@ -118,10 +109,58 @@ export function RentalInvoiceListTable({
     Boolean(invoiceDateFrom) ||
     Boolean(invoiceDateTo);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.customerId
+      ? {
+          id: "customer",
+          label: `Customer: ${customerLabelById.get(params.customerId) ?? params.customerId}`,
+          onClear: () => setCustomerFilter(undefined),
+        }
+      : null,
+    params.rentalOrderId
+      ? {
+          id: "order",
+          label: `Order: ${rentalOrderLabelById.get(params.rentalOrderId) ?? params.rentalOrderId}`,
+          onClear: () => setRentalOrderFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    paymentStatus
+      ? {
+          id: "paymentStatus",
+          label: `Collection: ${PAYMENT_STATUS_LABELS[paymentStatus]}`,
+          onClear: () => setPaymentStatusFilter(undefined),
+        }
+      : null,
+    invoiceDateFrom || invoiceDateTo
+      ? {
+          id: "dates",
+          label: `Dates: ${invoiceDateFrom ?? "…"} → ${invoiceDateTo ?? "…"}`,
+          onClear: () => setDateRange(undefined, undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
-        className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center"
+        className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-8 text-center"
         role="alert"
       >
         <p className="text-sm font-medium">Failed to load rental invoices</p>
@@ -133,40 +172,50 @@ export function RentalInvoiceListTable({
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No rental invoices found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Rental invoices will appear here once created."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={clearAllFilters}>
+            Clear filters
+          </AppButton>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        toolbar={
-          <div className="space-y-3">
-            <RentalInvoiceStatusFilterChips
-              value={statusFilterValue}
-              onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
-              counts={statusCounts}
+      <div className="space-y-3">
+        <RentalInvoiceStatusFilterChips
+          value={statusFilterValue}
+          onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+          counts={statusCounts}
+        />
+        <RentalInvoicePaymentStatusFilterChips
+          value={paymentStatusFilterValue}
+          onChange={(value) =>
+            setPaymentStatusFilter(value === "all" ? undefined : value)
+          }
+          counts={paymentStatusCounts}
+        />
+        <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search invoice number or notes..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search rental invoices"
             />
-            <RentalInvoicePaymentStatusFilterChips
-              value={paymentStatusFilterValue}
-              onChange={(value) =>
-                setPaymentStatusFilter(value === "all" ? undefined : value)
-              }
-              counts={paymentStatusCounts}
-            />
-          </div>
-        }
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search invoices..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search rental invoices"
-          />
-        }
-        filters={
-          <>
             <Select
               value={params.customerId ?? "all"}
               onValueChange={(value) => {
@@ -233,9 +282,7 @@ export function RentalInvoiceListTable({
               className="w-full sm:w-40"
               aria-label="Invoice date to"
             />
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -246,22 +293,45 @@ export function RentalInvoiceListTable({
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No rental invoices found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Rental invoices will appear here once created."
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading rental invoices..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading rental invoices..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading rental invoices..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <RentalInvoiceMobileList
+              rows={rows}
+              resolveCustomerName={(customerId) =>
+                customerLabelById.get(customerId) ?? customerId
+              }
+              canIssue={canIssue}
+              canVoid={canVoid}
+              onIssue={setIssueTarget}
+              onVoid={setVoidTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <IssueRentalInvoiceDialog
         invoice={issueTarget}

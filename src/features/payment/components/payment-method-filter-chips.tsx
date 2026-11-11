@@ -44,17 +44,17 @@ export function PaymentMethodFilterChips({
             onClick={() => onChange(option.value)}
             aria-pressed={isActive}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
               isActive
-                ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
             )}
           >
             {option.label}
             {count !== undefined ? (
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                  "rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
                   isActive ? "bg-primary-foreground/20" : "bg-muted",
                 )}
               >

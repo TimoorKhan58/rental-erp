@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PlusIcon, RefreshCwIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
@@ -22,14 +23,21 @@ import {
 import type { ExternalRentalResponse } from "../types";
 
 export function ExternalRentalListPage() {
+  const searchParams = useSearchParams();
+  const supplierId = searchParams.get("supplierId") ?? undefined;
   const { canCreate } = useExternalRentalPermissions();
   const { supplierLabelById, warehouseLabelById } =
     useExternalRentalFilterOptions();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const params = useMemo(
-    () => ({ page, pageSize: 20, search: search || undefined }),
-    [page, search],
+    () => ({
+      page,
+      pageSize: 20,
+      search: search || undefined,
+      supplierId,
+    }),
+    [page, search, supplierId],
   );
   const { data, isLoading, isError, error, refetch, isFetching } =
     useExternalRentals(params);

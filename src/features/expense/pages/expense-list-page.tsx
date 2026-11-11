@@ -14,10 +14,10 @@ export function ExpenseListPage() {
   const { stats, statusCounts, isLoading } = useExpenseSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Expenses"
-        description="Record, approve, and pay operational expenses."
+        description="Record a draft, submit for approval, then mark paid. A journal is posted only when marked paid, and only if expense and cash accounts are configured. Paying does not create a supplier payment or change inventory."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Expenses" },

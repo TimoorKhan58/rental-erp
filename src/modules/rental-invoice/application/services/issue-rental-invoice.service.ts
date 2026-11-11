@@ -1,3 +1,4 @@
+import { postRentalInvoiceIssuedJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { RentalInvoiceInvalidStatusError } from "@/modules/rental-invoice/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
@@ -14,6 +15,7 @@ import type { RentalInvoiceDto } from "../dtos/rental-invoice.dto";
 import {
   toRentalInvoiceDto,
   toRentalInvoiceId,
+  toUserId,
 } from "../mappers/rental-invoice.mapper";
 import {
   RentalInvoiceIdParamSchema,
@@ -35,7 +37,15 @@ export class IssueRentalInvoiceService {
     const { id } = parseRequest(RentalInvoiceIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ rentalInvoiceRepository, auditLogger, notificationService, db }) => {
+      async ({
+        rentalInvoiceRepository,
+        accountRepository,
+        journalEntryRepository,
+        auditLogger,
+        notificationService,
+        db,
+        userId,
+      }) => {
         const existing = await rentalInvoiceRepository.findById(
           toRentalInvoiceId(id),
         );
@@ -102,6 +112,22 @@ export class IssueRentalInvoiceService {
           recipientUserIds: [claimed.createdById],
           data: { invoiceNumber: claimed.invoiceNumber },
         });
+
+        if (userId !== undefined) {
+          await postRentalInvoiceIssuedJournal(
+            {
+              accountRepository,
+              journalEntryRepository,
+              userId: toUserId(userId),
+            },
+            {
+              invoiceId: claimed.id,
+              invoiceNumber: claimed.invoiceNumber,
+              invoiceDate: claimed.invoiceDate,
+              amount: claimed.grandTotal,
+            },
+          );
+        }
 
         return toRentalInvoiceDto(claimed);
       },

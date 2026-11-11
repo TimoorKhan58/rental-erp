@@ -45,6 +45,7 @@ import { RentalOrderStatusBadge } from "../components/rental-order-status-badge"
 import { RentalOrderStatusTimeline } from "../components/rental-order-status-timeline";
 import { RentalReservationBadge } from "../components/rental-reservation-badge";
 import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
+import { RentalOrderLifecycleStrip } from "../components/rental-order-lifecycle-strip";
 import { RentalOrderLineItemsTable } from "../components/rental-order-line-items-table";
 import { RentalOrderShortfallSection } from "../components/rental-order-shortfall-section";
 import { RentalOrderDispatchesSection } from "@/features/dispatch/components";
@@ -91,15 +92,17 @@ function MetricTile({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+    <div className="rounded-md border border-border bg-muted/20 p-3.5">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-[length:var(--text-caption)] font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
         {icon}
       </div>
-      <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      <p className="font-heading text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
+        {value}
+      </p>
+      {hint ? <p className="mt-1 text-[length:var(--text-caption)] text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
@@ -257,6 +260,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             ) : null}
             {canReserve && canReserveRentalOrder(order.status) ? (
               <AppButton
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
                 leftIcon={<PackageIcon className="size-4" aria-hidden="true" />}
                 onClick={() => setReserveOpen(true)}
               >
@@ -276,8 +280,8 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
         }
       />
 
-      <Card className="overflow-hidden border-border/60 shadow-soft">
-        <CardContent className="space-y-6 p-6">
+      <Card className="overflow-hidden border-border">
+        <CardContent className="space-y-5 p-4 md:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -289,17 +293,19 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
                 {formatDateTime(order.updatedAt)}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="sm:text-right">
+              <p className="text-[length:var(--text-caption)] font-medium uppercase tracking-wide text-muted-foreground">
                 Order value
               </p>
-              <p className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+              <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
                 {formatCurrency(metrics.orderTotal)}
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <RentalOrderLifecycleStrip status={order.status} />
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <MetricTile
               label="Rental period"
               value={`${metrics.rentalDays} day${metrics.rentalDays === 1 ? "" : "s"}`}
@@ -342,8 +348,8 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="app-grid">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-8">
           <SectionCard title="Line items">
             <RentalOrderLineItemsTable
               items={order.items}
@@ -363,6 +369,12 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
           <RentalOrderDispatchesSection rentalOrderId={order.id} orderStatus={order.status} />
 
           <RentalOrderReturnsSection rentalOrderId={order.id} orderStatus={order.status} />
+
+          <RentalOrderBillingSection
+            rentalOrderId={order.id}
+            rentalOrderStatus={order.status}
+            canGenerate={order.status === "COMPLETED"}
+          />
 
           <RelatedEntityCard
             title="Customer"
@@ -396,14 +408,9 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
               <p className="text-sm text-muted-foreground">{order.remarks}</p>
             </SectionCard>
           ) : null}
-
-          <RentalOrderBillingSection
-            rentalOrderId={order.id}
-            canGenerate={order.status === "COMPLETED" || order.status === "RETURNED"}
-          />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
             title="Order workflow"
             actions={<RentalOrderStatusBadge status={order.status} />}

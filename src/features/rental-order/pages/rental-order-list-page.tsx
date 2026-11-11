@@ -15,10 +15,10 @@ export function RentalOrderListPage() {
     useRentalOrderSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Rental Orders"
-        description="Manage rental bookings, confirmations, and inventory reservations."
+        description="Scan bookings by customer, period, status, and reservation progress."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Orders" },
@@ -41,6 +41,7 @@ export function RentalOrderListPage() {
             </AppButton>
             {canCreate ? (
               <AppButton
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
                 leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
                 render={<Link href={ROUTES.rentalOrdersNew} />}
               >

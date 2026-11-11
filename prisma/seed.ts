@@ -4,6 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import {
+  SEED_ACCOUNTS,
   SEED_EXPENSE_CATEGORIES,
   SEED_NOTIFICATION_TEMPLATES,
   SEED_ROLES,
@@ -75,8 +76,22 @@ async function main(): Promise<void> {
       skipDuplicates: true,
     });
 
+    const accounts = await prisma.account.createMany({
+      data: SEED_ACCOUNTS.map((account) => ({
+        id: account.id,
+        accountCode: account.accountCode,
+        name: account.name,
+        accountType: account.accountType,
+        description: account.description,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      })),
+      skipDuplicates: true,
+    });
+
     console.log(
-      `Seed complete: roles +${roles.count}, units +${units.count}, expense categories +${categories.count}, notification templates +${notificationTemplates.count}`,
+      `Seed complete: roles +${roles.count}, units +${units.count}, expense categories +${categories.count}, notification templates +${notificationTemplates.count}, accounts +${accounts.count}`,
     );
   } finally {
     await prisma.$disconnect();

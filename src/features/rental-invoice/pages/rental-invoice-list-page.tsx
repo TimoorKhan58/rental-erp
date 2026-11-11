@@ -11,13 +11,13 @@ export function RentalInvoiceListPage() {
     useRentalInvoiceSummaryStats();
 
   return (
-    <PageContainer className="space-y-6">
+    <PageContainer className="space-y-5">
       <PageHeader
-        title="Rental invoices"
-        description="View and manage rental billing invoices."
+        title="Rental Invoices"
+        description="Scan invoice number, customer, status, totals, and collection state from authoritative billing data."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Rental invoices" },
+          { label: "Rental Invoices" },
         ]}
       />
 

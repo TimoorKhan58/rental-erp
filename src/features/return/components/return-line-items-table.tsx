@@ -46,6 +46,9 @@ export function ReturnLineItemsTable({
                 <th className="px-4 py-3 font-medium text-right" scope="col">
                   Lost
                 </th>
+                <th className="px-4 py-3 font-medium text-right" scope="col">
+                  Missing
+                </th>
               </>
             ) : null}
             <th className="px-4 py-3 font-medium" scope="col">
@@ -78,6 +81,9 @@ export function ReturnLineItemsTable({
                   <td className="px-4 py-3 text-right tabular-nums text-destructive">
                     {item.lostQuantity}
                   </td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                    {item.missingQuantity}
+                  </td>
                 </>
               ) : null}
               <td className="px-4 py-3 text-muted-foreground">{item.notes ?? "—"}</td>
@@ -91,7 +97,7 @@ export function ReturnLineItemsTable({
               {totalReturned.toLocaleString()}
             </td>
             <td colSpan={2} />
-            {showInspection ? <td colSpan={4} /> : <td />}
+            {showInspection ? <td colSpan={5} /> : <td />}
           </tr>
         </tfoot>
       </table>

@@ -15,22 +15,22 @@ type SummaryCardProps = {
 
 function SummaryCard({ label, value, icon: Icon, iconClassName, isLoading }: SummaryCardProps) {
   return (
-    <Card className="border-border/60 shadow-token-sm">
-      <CardContent className="flex items-center gap-4 p-4">
+    <Card className="border-border bg-card shadow-none">
+      <CardContent className="flex items-center gap-3 p-3.5">
         <div
           className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl",
+            "flex size-8 shrink-0 items-center justify-center rounded-md",
             iconClassName,
           )}
         >
-          <Icon className="size-5" aria-hidden="true" />
+          <Icon className="size-4" aria-hidden="true" />
         </div>
         <div className="min-w-0 space-y-0.5">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
           {isLoading ? (
-            <Skeleton className="h-7 w-12" />
+            <Skeleton className="h-6 w-10" />
           ) : (
-            <p className="font-heading text-2xl font-semibold tracking-tight">
+            <p className="font-heading text-xl font-semibold tracking-tight tabular-nums">
               {value.toLocaleString()}
             </p>
           )}
@@ -54,19 +54,19 @@ export function CustomerSummaryCards({
   isLoading,
 }: CustomerSummaryCardsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-3" aria-label="Customer summary">
       <SummaryCard
-        label="Total customers"
+        label="Total"
         value={total}
         icon={UsersIcon}
-        iconClassName="bg-primary/12 text-primary"
+        iconClassName="bg-primary/10 text-primary"
         isLoading={isLoading}
       />
       <SummaryCard
         label="Active"
         value={active}
         icon={UserCheckIcon}
-        iconClassName="bg-chart-2/12 text-chart-2"
+        iconClassName="bg-success-muted text-success"
         isLoading={isLoading}
       />
       <SummaryCard

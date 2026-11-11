@@ -71,23 +71,18 @@ function SummaryCard({
   const display = config.format ? config.format(value) : value.toLocaleString();
 
   return (
-    <Card
-      className={cn(
-        "group border-border/60 shadow-soft transition-all duration-200 hover:shadow-soft-md",
-        config.accentClass,
-      )}
-    >
-      <CardContent className="space-y-3 p-4">
+    <Card className={cn("border-border bg-card shadow-none", config.accentClass)}>
+      <CardContent className="flex items-start gap-3 p-3.5">
         <div
           className={cn(
-            "flex size-9 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105",
+            "flex size-8 shrink-0 items-center justify-center rounded-md",
             config.iconClass,
           )}
         >
-          <Icon className="size-4.5" aria-hidden="true" />
+          <Icon className="size-4" aria-hidden="true" />
         </div>
-        <div className="space-y-0.5">
-          <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">
+        <div className="min-w-0 space-y-0.5">
+          <p className="font-heading text-xl font-semibold tracking-tight tabular-nums">
             {display}
           </p>
           <p className="text-sm font-medium">{config.label}</p>

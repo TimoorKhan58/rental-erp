@@ -92,6 +92,21 @@ export function useMaintenanceListParams() {
       sortBy: MaintenanceSortField,
       sortOrder: ListMaintenancesParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        productId: undefined,
+        warehouseId: undefined,
+        inventoryId: undefined,
+        serviceType: undefined,
+        technician: undefined,
+        scheduledDateFrom: undefined,
+        scheduledDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

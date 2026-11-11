@@ -56,6 +56,20 @@ export function useRentalOrderListParams() {
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
+  const clearAllFilters = () => {
+    setLocalSearch("");
+    updateParams({
+      search: undefined,
+      status: undefined,
+      customerId: undefined,
+      warehouseId: undefined,
+      reservationStatus: undefined,
+      startDateFrom: undefined,
+      startDateTo: undefined,
+      page: DEFAULT_PAGE,
+    });
+  };
+
   return {
     params,
     reservationStatus,
@@ -86,6 +100,7 @@ export function useRentalOrderListParams() {
       sortBy: RentalOrderSortField,
       sortOrder: ListRentalOrdersParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters,
     refreshKey: searchParams.toString(),
   };
 }

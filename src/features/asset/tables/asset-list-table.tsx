@@ -121,9 +121,9 @@ export function AssetListTable({ statusCounts }: AssetListTableProps = {}) {
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search assets..."
+            placeholder="Search by name, asset code, serial number, or notes..."
             className="w-full sm:max-w-xs"
-            aria-label="Search assets"
+            aria-label="Search assets by name, asset code, serial number, or notes"
           />
         }
         filters={

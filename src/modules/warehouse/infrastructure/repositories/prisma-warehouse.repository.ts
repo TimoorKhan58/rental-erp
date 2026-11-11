@@ -136,6 +136,46 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
     return record !== null;
   }
 
+  async countReferences(id: WarehouseId): Promise<number> {
+    const counts = await this.runner.run(async (db) => {
+      const [
+        inventories,
+        purchaseOrders,
+        rentalOrders,
+        repairs,
+        maintenances,
+        assets,
+        assetTransfersFrom,
+        assetTransfersTo,
+        externalRentalAgreements,
+      ] = await Promise.all([
+        db.inventory.count({ where: { warehouseId: id } }),
+        db.purchaseOrder.count({ where: { warehouseId: id } }),
+        db.rentalOrder.count({ where: { warehouseId: id } }),
+        db.repair.count({ where: { warehouseId: id } }),
+        db.maintenance.count({ where: { warehouseId: id } }),
+        db.asset.count({ where: { warehouseId: id } }),
+        db.assetTransfer.count({ where: { fromWarehouseId: id } }),
+        db.assetTransfer.count({ where: { toWarehouseId: id } }),
+        db.externalRentalAgreement.count({ where: { warehouseId: id } }),
+      ]);
+
+      return [
+        inventories,
+        purchaseOrders,
+        rentalOrders,
+        repairs,
+        maintenances,
+        assets,
+        assetTransfersFrom,
+        assetTransfersTo,
+        externalRentalAgreements,
+      ];
+    });
+
+    return counts.reduce((total, count) => total + count, 0);
+  }
+
   async create(data: CreateWarehouseData): Promise<Warehouse> {
     const normalized = Warehouse.create(data);
 

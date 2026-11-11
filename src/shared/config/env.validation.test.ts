@@ -8,7 +8,7 @@ describe("environment validation", () => {
     const result = parseEnvResult({
       NODE_ENV: "development",
       APP_ENV: "local",
-      APP_NAME: "Rental ERP",
+      APP_NAME: "RentCore",
       APP_URL: "http://localhost:3000",
       DATABASE_URL: "postgresql://user:pass@localhost:5432/rental_erp",
       BETTER_AUTH_SECRET: "local-development-secret-value-32chars!",

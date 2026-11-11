@@ -1,9 +1,10 @@
 import type {
   AccountListResponse,
   AccountResponse,
+  CreateAccountPayload,
   ListAccountsParams,
 } from "../types";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 
 const BASE = "/accounts";
 
@@ -15,4 +16,10 @@ export async function getChartOfAccounts(
 
 export async function getAccount(id: string): Promise<AccountResponse> {
   return apiGet<AccountResponse>(`${BASE}/${id}`);
+}
+
+export async function createAccount(
+  payload: CreateAccountPayload,
+): Promise<AccountResponse> {
+  return apiPost<AccountResponse>(BASE, payload);
 }

@@ -6,6 +6,7 @@ import { Building2Icon, PackageIcon, TruckIcon, UsersIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/config/routes";
+import { formatNumber } from "@/lib/utils";
 
 type CatalogSnapshotProps = {
   customers: number;
@@ -55,7 +56,7 @@ export const CatalogSnapshot = memo(function CatalogSnapshot({
     return (
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          <Skeleton key={index} className="h-14 w-full rounded-md" />
         ))}
       </div>
     );
@@ -63,27 +64,35 @@ export const CatalogSnapshot = memo(function CatalogSnapshot({
 
   return (
     <section aria-label="Master data snapshot">
-      <div className="mb-3">
-        <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
+      <div className="mb-2">
+        <h2 className="font-heading text-[length:var(--text-small)] font-semibold tracking-[0.06em] text-foreground uppercase">
           Master data
         </h2>
-        <p className="text-xs text-muted-foreground">Reference counts — not day-to-day pain</p>
+        <p className="text-[length:var(--text-caption)] text-muted-foreground">
+          Reference counts — secondary to today&apos;s work
+        </p>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.key} href={item.href}>
-              <Card className="border-border/60 shadow-soft transition-all hover:shadow-soft-md">
+            <Link
+              key={item.key}
+              href={item.href}
+              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Card className="border-border transition-colors hover:bg-muted/30">
                 <CardContent className="flex items-center gap-3 p-3">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
                     <Icon className="size-4" aria-hidden="true" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-heading text-lg font-semibold tabular-nums">
-                      {values[item.key].toLocaleString()}
+                      {formatNumber(values[item.key])}
                     </p>
-                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="truncate text-[length:var(--text-caption)] text-muted-foreground">
+                      {item.label}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

@@ -98,10 +98,10 @@ export function DataTableShell<T>({
     }
 
     return (
-      <div className="overflow-safe rounded-xl border border-border bg-card shadow-soft">
+      <div className="overflow-safe rounded-lg border border-border bg-card">
         <Table>
           <TableHeader
-            className={cn(stickyHeader && "sticky top-0 z-[var(--z-sticky)] bg-background")}
+            className={cn(stickyHeader && "sticky top-0 z-[var(--z-sticky)] bg-muted/40")}
           >
             <TableRow>
               {columns.map((column) => (
@@ -134,11 +134,11 @@ export function DataTableShell<T>({
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("w-full min-w-0 space-y-3", className)}>
       {toolbar}
       {(search || filters || actions) && (
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
             {search}
             {filters}
           </div>
@@ -146,7 +146,7 @@ export function DataTableShell<T>({
         </div>
       )}
       {renderTableBody()}
-      {pagination ? <div className="flex justify-end">{pagination}</div> : null}
+      {pagination ? <div className="flex justify-end pt-1">{pagination}</div> : null}
     </div>
   );
 }

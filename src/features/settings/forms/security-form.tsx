@@ -85,7 +85,7 @@ export function SecurityForm({
       <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
         <SectionCard
           title="Security policy"
-          description="Values stored in system settings. Runtime auth may use separate configuration."
+          description="These values are saved on the system settings record. Sign-in, password length, lockout, and sessions are enforced by Better Auth and server environment configuration — not by these fields."
           actions={
             canUpdate ? (
               <AppButton
@@ -103,61 +103,70 @@ export function SecurityForm({
               control={form.control}
               name="minPasswordLength"
               label="Minimum password length"
+              description="Stored policy record. Live password rules use AUTH_MIN_PASSWORD_LENGTH."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="maxLoginAttempts"
               label="Max login attempts"
+              description="Stored policy record. Live sign-in limits use Better Auth rate-limit environment settings."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="lockoutDurationMinutes"
               label="Lockout duration (minutes)"
+              description="Stored policy record. It does not currently lock accounts after failed attempts."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="sessionTimeoutMinutes"
               label="Session timeout (minutes)"
+              description="Stored policy record. Session lifetime uses AUTH_SESSION_EXPIRES_IN_SECONDS."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="rememberMeDurationDays"
               label="Remember-me duration (days)"
+              description="Stored policy record. It is not applied to the current session cookie."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="maxConcurrentSessions"
               label="Max concurrent sessions"
+              description="Stored policy record. Concurrent sessions are not limited from this field."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="passwordExpiryDays"
               label="Password expiry (days)"
-              description="Leave empty for no expiry."
+              description="Stored policy record. Leave empty to store no expiry. Passwords do not expire from this field."
               disabled={disabled}
             />
             <SwitchField
               control={form.control}
               name="requireEmailVerification"
               label="Require email verification"
+              description="Stored flag only. Sign-in does not require email verification from this switch."
               disabled={disabled}
             />
             <SwitchField
               control={form.control}
               name="allowPasswordReset"
               label="Allow password reset"
+              description="Stored flag only. Administrator password reset remains available from Users."
               disabled={disabled}
             />
             <SwitchField
               control={form.control}
               name="ipWhitelistEnabled"
               label="IP whitelist enabled"
+              description="Stored flag only. Sign-in does not apply an IP allow-list from this switch."
               disabled={disabled}
             />
           </div>

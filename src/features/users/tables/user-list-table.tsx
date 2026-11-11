@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import Link from "next/link";
@@ -47,6 +47,7 @@ export function UserListTable({ onCreateClick }: UserListTableProps) {
     setStatusFilter,
     setRoleFilter,
     setSorting,
+    clearAllFilters,
   } = useUserListParams();
   const { canRead, canCreate, canUpdate, canDelete } = useUsersPermissions();
   const { data, isLoading, isError, error, refetch, isFetching } = useUsers(params, canRead);
@@ -90,6 +91,35 @@ export function UserListTable({ onCreateClick }: UserListTableProps) {
   const hasFilters =
     Boolean(params.search) || params.isActive !== undefined || params.role !== undefined;
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.isActive !== undefined
+      ? {
+          id: "status",
+          label: params.isActive ? "Status: Active" : "Status: Inactive",
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    params.role
+      ? {
+          id: "role",
+          label: `Role: ${USER_ROLE_LABELS[params.role] ?? params.role}`,
+          onClear: () => setRoleFilter(undefined),
+        }
+      : null,
+  ].filter((filter): filter is { id: string; label: string; onClear: () => void } =>
+    filter !== null,
+  );
+
   if (isError) {
     return (
       <div
@@ -113,7 +143,8 @@ export function UserListTable({ onCreateClick }: UserListTableProps) {
       />
 
       <Card className="border-border/60 shadow-token-sm">
-        <CardContent className="p-4 sm:p-6">
+        <CardContent className="space-y-3 p-4 sm:p-6">
+          <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
           <DataTableShell
             columns={columns}
             data={rows}
@@ -197,14 +228,18 @@ export function UserListTable({ onCreateClick }: UserListTableProps) {
             }
             emptyState={
               <EmptyState
-                title="No users found"
+                title={hasFilters ? "No matching users" : "No users found"}
                 description={
                   hasFilters
                     ? "Try adjusting your search or filters."
                     : "Get started by creating your first user account."
                 }
                 action={
-                  canCreate ? (
+                  hasFilters ? (
+                    <AppButton variant="outline" onClick={clearAllFilters}>
+                      Clear filters
+                    </AppButton>
+                  ) : canCreate ? (
                     onCreateClick ? (
                       <EmptyStateActionButton onClick={onCreateClick}>
                         Create user

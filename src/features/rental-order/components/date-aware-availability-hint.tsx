@@ -1,6 +1,8 @@
 "use client";
 
 import { useDateAwareAvailability } from "../hooks";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type DateAwareAvailabilityHintProps = {
   productId?: string;
@@ -8,6 +10,8 @@ type DateAwareAvailabilityHintProps = {
   startDate?: string;
   endDate?: string;
   excludeRentalOrderId?: string;
+  /** Form line quantity — compared to API available for shortage display only. */
+  requestedQuantity?: number;
   className?: string;
 };
 
@@ -21,6 +25,7 @@ export function DateAwareAvailabilityHint({
   startDate,
   endDate,
   excludeRentalOrderId,
+  requestedQuantity,
   className,
 }: DateAwareAvailabilityHintProps) {
   const query = useDateAwareAvailability({
@@ -32,12 +37,16 @@ export function DateAwareAvailabilityHint({
   });
 
   if (!productId || !warehouseId || !startDate || !endDate) {
-    return null;
+    return (
+      <p className={cn("text-[length:var(--text-caption)] text-muted-foreground", className)}>
+        Select product, warehouse, and dates to check availability.
+      </p>
+    );
   }
 
   if (query.isLoading) {
     return (
-      <p className={className ?? "text-xs text-muted-foreground"}>
+      <p className={cn("text-[length:var(--text-caption)] text-muted-foreground", className)}>
         Checking availability for selected dates…
       </p>
     );
@@ -45,7 +54,7 @@ export function DateAwareAvailabilityHint({
 
   if (query.isError) {
     return (
-      <p className={className ?? "text-xs text-destructive"}>
+      <p className={cn("text-[length:var(--text-caption)] text-destructive", className)} role="alert">
         Could not load date-aware availability.
       </p>
     );
@@ -55,12 +64,60 @@ export function DateAwareAvailabilityHint({
     return null;
   }
 
+  const available = query.data.dateAwareAvailableQuantity;
+  const onHand = query.data.quantityOnHand;
+  const committed = query.data.dateAwareCommittedQuantity;
+  const outstandingOut = query.data.outstandingOutQuantity;
+  const hasShortage =
+    typeof requestedQuantity === "number" &&
+    requestedQuantity > 0 &&
+    available < requestedQuantity;
+
+  const shortBy =
+    hasShortage && typeof requestedQuantity === "number"
+      ? Math.max(0, requestedQuantity - available)
+      : 0;
+
   return (
-    <p className={className ?? "text-xs text-muted-foreground"}>
-      Available for selected dates:{" "}
-      <span className="font-medium text-foreground">
-        {query.data.dateAwareAvailableQuantity}
-      </span>
-    </p>
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-2",
+        hasShortage
+          ? "border-destructive/30 bg-destructive/5"
+          : "border-border bg-muted/20",
+        className,
+      )}
+      role="status"
+      aria-live="polite"
+    >
+      <Badge variant={hasShortage ? "destructive" : "success"} className="tabular-nums">
+        Available {available}
+      </Badge>
+      {hasShortage ? (
+        <Badge variant="destructive" className="tabular-nums">
+          Short by {shortBy}
+        </Badge>
+      ) : null}
+      <Badge variant="outline" className="tabular-nums">
+        On hand {onHand}
+      </Badge>
+      <Badge variant="secondary" className="tabular-nums">
+        Committed {committed}
+      </Badge>
+      {outstandingOut > 0 ? (
+        <Badge variant="warning" className="tabular-nums">
+          Out {outstandingOut}
+        </Badge>
+      ) : null}
+      {hasShortage ? (
+        <span className="text-[length:var(--text-caption)] text-destructive">
+          Requested {requestedQuantity}; only {available} available for these dates.
+        </span>
+      ) : (
+        <span className="text-[length:var(--text-caption)] text-muted-foreground">
+          For selected rental dates (authoritative)
+        </span>
+      )}
+    </div>
   );
 }

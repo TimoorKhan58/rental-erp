@@ -11,10 +11,10 @@ type BrandLogoProps = {
 };
 
 const sizeConfig = {
-  icon: { box: "size-9", icon: "size-4", title: "text-sm", tagline: "text-[10px]" },
+  icon: { box: "size-8", icon: "size-4", title: "text-sm", tagline: "text-[10px]" },
   sm: { box: "size-8", icon: "size-4", title: "text-sm", tagline: "text-[10px]" },
-  md: { box: "size-10", icon: "size-5", title: "text-base", tagline: "text-xs" },
-  lg: { box: "size-12", icon: "size-6", title: "text-lg", tagline: "text-xs" },
+  md: { box: "size-9", icon: "size-[1.125rem]", title: "text-base", tagline: "text-xs" },
+  lg: { box: "size-11", icon: "size-5", title: "text-lg", tagline: "text-xs" },
 } as const;
 
 export function BrandLogo({
@@ -30,7 +30,7 @@ export function BrandLogo({
     return (
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-xl bg-primary shadow-soft",
+          "flex shrink-0 items-center justify-center rounded-md bg-primary",
           config.box,
           className,
         )}
@@ -45,7 +45,7 @@ export function BrandLogo({
     <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-xl shadow-soft",
+          "flex shrink-0 items-center justify-center rounded-md",
           config.box,
           isLight ? "bg-[#1b3a4b]" : "bg-primary",
         )}
@@ -82,9 +82,7 @@ export function BrandLogo({
 }
 
 export function BrandLogoMark({ className }: { className?: string }) {
-  return (
-    <BrandLogo size="icon" className={className} />
-  );
+  return <BrandLogo size="icon" className={className} />;
 }
 
 export function BrandLogoWithName({

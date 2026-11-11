@@ -32,8 +32,9 @@ function utilizationPercent(summary: LiveDashboardSummary): number {
 }
 
 /**
- * Maps live reporting counters into a 20–25 second business scan.
- * Priority: cash → collections → work in the field → assets at risk.
+ * Maps live reporting counters into Operations Control Center zones.
+ * Priority: today field work → attention → money → inventory → upcoming.
+ * Presentation only — no new business calculations beyond existing pulse math.
  */
 export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
   const rentalsActive = activeRentals(summary);
@@ -94,7 +95,7 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       trend: summary.outstandingInvoices > 0 ? "down" : "up",
       changeLabel: `${formatCount(summary.paidInvoices)} paid`,
       icon: "payments",
-      href: ROUTES.rentalInvoices,
+      href: `${ROUTES.rentalInvoices}?paymentStatus=unpaid`,
     },
   ];
 
@@ -106,7 +107,7 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       severity: summary.outstandingInvoices >= 5 ? "critical" : "warning",
       title: `${formatCount(summary.outstandingInvoices)} invoices unpaid`,
       detail: "Cash is sitting with customers — chase collections first.",
-      href: ROUTES.rentalInvoices,
+      href: `${ROUTES.rentalInvoices}?paymentStatus=unpaid`,
       cta: "Open invoices",
     });
   }
@@ -161,9 +162,10 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       severity: "warning",
       title: `${formatCount(assetJobs)} assets in repair / maintenance`,
       detail: "Damaged gear cannot go out on the next booking.",
-      href: summary.repairsPending + summary.repairsInProgress > 0
-        ? ROUTES.repairs
-        : ROUTES.maintenance,
+      href:
+        summary.repairsPending + summary.repairsInProgress > 0
+          ? ROUTES.repairs
+          : ROUTES.maintenance,
       cta: "Open work queue",
     });
   }
@@ -185,12 +187,12 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       severity: "critical",
       title: "No stock available to rent",
       detail: "Everything is reserved or out — new bookings will slip.",
-      href: ROUTES.inventory,
+      href: `${ROUTES.inventory}?stockStatus=out-of-stock`,
       cta: "Check inventory",
     });
   }
 
-  const opsHealth: OpsHealthItem[] = [
+  const todayOps: OpsHealthItem[] = [
     {
       id: "ready-dispatch",
       label: "Ready to dispatch",
@@ -204,7 +206,7 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       label: "In transit",
       value: formatCount(summary.dispatchesInProgress),
       hint: "On the road",
-      tone: "neutral",
+      tone: summary.dispatchesInProgress > 0 ? "neutral" : "ok",
       href: ROUTES.dispatches,
     },
     {
@@ -221,11 +223,25 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       value: formatCount(assetJobs),
       hint: "Assets offline",
       tone: assetJobs > 0 ? "warning" : "ok",
-      href: ROUTES.repairs,
+      href:
+        summary.repairsPending + summary.repairsInProgress > 0
+          ? ROUTES.repairs
+          : ROUTES.maintenance,
+    },
+  ];
+
+  const inventoryHealth: OpsHealthItem[] = [
+    {
+      id: "on-hand",
+      label: "On hand",
+      value: formatCount(summary.inventoryQuantity),
+      hint: formatCurrency(summary.inventoryValue) + " inventory value",
+      tone: "neutral",
+      href: ROUTES.inventory,
     },
     {
       id: "fleet-out",
-      label: "Qty on rent",
+      label: "Qty committed",
       value: formatCount(summary.reservedQuantity),
       hint: `${utilization}% of stock committed`,
       tone: utilization >= 85 ? "warning" : "neutral",
@@ -235,11 +251,45 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
       id: "available",
       label: "Available to rent",
       value: formatCount(summary.availableQuantity),
-      hint: formatCurrency(summary.inventoryValue) + " inventory value",
-      tone: summary.availableQuantity === 0 ? "critical" : "ok",
+      hint:
+        summary.availableQuantity === 0 && summary.inventoryQuantity > 0
+          ? "Stock-out risk"
+          : "Ready for new bookings",
+      tone: summary.availableQuantity === 0 && summary.inventoryQuantity > 0
+        ? "critical"
+        : "ok",
       href: ROUTES.inventory,
     },
   ];
+
+  const upcoming: OpsHealthItem[] = [
+    {
+      id: "reserved-orders",
+      label: "Reserved orders",
+      value: formatCount(summary.reservedOrders),
+      hint: "Holding availability",
+      tone: summary.reservedOrders > 0 ? "neutral" : "ok",
+      href: ROUTES.rentalOrders,
+    },
+    {
+      id: "confirmed-orders",
+      label: "Confirmed orders",
+      value: formatCount(summary.confirmedOrders),
+      hint: "Active commitments",
+      tone: summary.confirmedOrders > 0 ? "neutral" : "ok",
+      href: ROUTES.rentalOrders,
+    },
+    {
+      id: "open-pos",
+      label: "Open purchase orders",
+      value: formatCount(summary.openPurchaseOrders),
+      hint: "Inbound supply",
+      tone: summary.openPurchaseOrders > 0 ? "warning" : "ok",
+      href: ROUTES.procurements,
+    },
+  ];
+
+  const opsHealth: OpsHealthItem[] = [...todayOps, ...inventoryHealth.slice(1)];
 
   const headline =
     attention.length === 0
@@ -252,8 +302,11 @@ export function toBusinessPulse(summary: LiveDashboardSummary): BusinessPulse {
     headline,
     attentionCount: attention.length,
     pulseMetrics,
-    attention: attention.slice(0, 6),
+    attention,
     opsHealth,
+    todayOps,
+    inventoryHealth,
+    upcoming,
     catalog: {
       customers: summary.totalCustomers,
       products: summary.totalProducts,

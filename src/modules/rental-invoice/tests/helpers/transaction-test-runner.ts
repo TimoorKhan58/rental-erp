@@ -31,11 +31,15 @@ export function createRollbackTransactionRunner(
   auditLogger: MockAuditLogger,
   userId: string | undefined,
   paymentRepository: InMemoryPaymentRepository = new InMemoryPaymentRepository(),
+  accountRepository: InMemoryAccountRepository = new InMemoryAccountRepository(),
+  journalEntryRepository: InMemoryJournalEntryRepository = new InMemoryJournalEntryRepository(),
 ): IRentalInvoiceTransactionRunner {
   return {
     run: async (operation) => {
       const invoiceSnapshot = rentalInvoiceRepository.snapshot();
       const auditSnapshot = auditLogger.snapshot();
+      const journalSnapshot = journalEntryRepository.snapshot();
+      const accountSnapshot = accountRepository.snapshot();
 
       try {
         return await runWithPaymentCommitmentLockScope(() =>
@@ -45,8 +49,8 @@ export function createRollbackTransactionRunner(
           rentalOrderRepository,
           rentalOrderInvoiceLookup,
           customerRepository,
-          accountRepository: new InMemoryAccountRepository(),
-          journalEntryRepository: new InMemoryJournalEntryRepository(),
+          accountRepository,
+          journalEntryRepository,
           auditLogger,
           ...mockNotificationWriteScopeDeps,
           userId,
@@ -55,6 +59,8 @@ export function createRollbackTransactionRunner(
       } catch (error) {
         rentalInvoiceRepository.restore(invoiceSnapshot);
         auditLogger.restore(auditSnapshot);
+        journalEntryRepository.restore(journalSnapshot);
+        accountRepository.restore(accountSnapshot);
         throw error;
       }
     },

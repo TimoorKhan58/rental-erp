@@ -31,7 +31,7 @@ export function StartRepairDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Start repair"
-      description={`Start repair "${repair.repairNumber}"? The job will move to in progress.`}
+      description={`Start repair "${repair.repairNumber}"? The job moves to In progress. Inventory does not change until the repair is completed.`}
       confirmLabel="Start repair"
       onConfirm={() => void handleConfirm()}
       isLoading={startMutation.isPending}

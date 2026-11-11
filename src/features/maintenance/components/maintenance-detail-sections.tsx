@@ -122,7 +122,7 @@ export function MaintenanceAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="General ledger integration for maintenance jobs."
+      description="Maintenance does not post journal entries or expenses automatically."
       actions={
         <AppButton
           variant="outline"
@@ -134,9 +134,9 @@ export function MaintenanceAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Starting and completing maintenance updates inventory stock levels, but automatic journal
-        posting is not configured for maintenance yet. Record manual journal entries from accounting
-        when needed.
+        Starting posts inventory OUT and completing posts inventory IN. Estimated and actual cost
+        stay on this job. Maintenance does not create an expense or journal entry. Record a manual
+        journal from accounting if needed.
       </p>
     </SectionCard>
   );
@@ -175,7 +175,7 @@ export function MaintenanceInventoryImpactSection({
       {canReadInventory ? (
         <SectionCard
           title="Inventory record"
-          description="Stock position for the inventory item under maintenance."
+          description="Current warehouse position. Start posts OUT; Complete posts IN."
           actions={
             inventoryRecord ? (
               <AppButton
@@ -226,7 +226,7 @@ export function MaintenanceInventoryImpactSection({
       {canReadMovements ? (
         <SectionCard
           title="Inventory movements"
-          description="Stock movements created when this maintenance job is started or completed."
+          description="OUT posts at Start. IN posts at Complete, or at Cancel if the job had already started."
         >
           <StockMovementHistoryTable
             movements={stockMovements}

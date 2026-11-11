@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { PERMISSIONS } from "@/shared/application/authorization/permissions";
 import { queryKeys } from "@/lib/query";
@@ -75,6 +75,10 @@ export function useRentalOrderFilterOptions() {
   const customerOptions: LookupOption[] = (customers.data?.items ?? []).map((item) => ({
     id: item.id,
     label: `${item.customerCode} — ${item.name}`,
+    // Include phone so the searchable customer selector matches the same
+    // fields as the Customers list (name, code, phone). The label already
+    // contains customerCode and name.
+    keywords: item.phone,
   }));
 
   const warehouseOptions: LookupOption[] = (warehouses.data?.items ?? []).map((item) => ({
@@ -115,10 +119,14 @@ export function useRentalOrderFilterOptions() {
   };
 }
 
-export function useRentalOrders(params: ListRentalOrdersParams) {
+export function useRentalOrders(
+  params: ListRentalOrdersParams,
+  options?: { keepPreviousData?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.rentalOrders.list(params),
     queryFn: () => getRentalOrders(params),
+    placeholderData: options?.keepPreviousData ? keepPreviousData : undefined,
   });
 }
 

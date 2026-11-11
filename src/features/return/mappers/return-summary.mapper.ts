@@ -107,6 +107,7 @@ export function getReturnDamageTotals(returnRecord: ReturnResponse) {
   return {
     damaged: returnRecord.items.reduce((sum, item) => sum + item.damagedQuantity, 0),
     lost: returnRecord.items.reduce((sum, item) => sum + item.lostQuantity, 0),
+    missing: returnRecord.items.reduce((sum, item) => sum + (item.missingQuantity ?? 0), 0),
     good: returnRecord.items.reduce((sum, item) => sum + item.goodQuantity, 0),
   };
 }

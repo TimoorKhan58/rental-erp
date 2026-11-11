@@ -4,13 +4,27 @@ import { cn } from "@/lib/utils";
 type PageContainerProps = {
   children: ReactNode;
   className?: string;
+  /**
+   * `fluid` (default) — full application workspace after the sidebar.
+   * `readable` — optional centered measure for text-heavy surfaces only.
+   */
+  width?: "fluid" | "readable";
 };
 
-export function PageContainer({ children, className }: PageContainerProps) {
+/**
+ * Primary page wrapper for the operational application canvas.
+ * Fluid by default: no global max-width cap, responsive outer padding only.
+ */
+export function PageContainer({
+  children,
+  className,
+  width = "fluid",
+}: PageContainerProps) {
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-[90rem] flex-1 p-4 md:p-6 lg:p-8",
+        "app-workspace w-full min-w-0 flex-1 px-4 py-[var(--spacing-page-y)] sm:px-5 md:px-6 xl:px-8",
+        width === "readable" && "mx-auto max-w-[var(--measure-prose)]",
         className,
       )}
     >

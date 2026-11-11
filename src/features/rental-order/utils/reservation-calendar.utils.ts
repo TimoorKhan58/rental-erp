@@ -36,9 +36,12 @@ export function parseOrderDate(value: string): Date {
 export function toCalendarEvents(
   orders: RentalOrderResponse[],
   customerNameById: Map<string, string>,
+  options?: { includeCancelled?: boolean },
 ): CalendarOrderEvent[] {
+  const includeCancelled = options?.includeCancelled ?? false;
+
   return orders
-    .filter((order) => !HIDDEN_STATUSES.includes(order.status))
+    .filter((order) => includeCancelled || !HIDDEN_STATUSES.includes(order.status))
     .map((order) => {
       const start = parseOrderDate(order.startDate);
       const end = parseOrderDate(order.endDate);
@@ -46,12 +49,34 @@ export function toCalendarEvents(
         id: order.id,
         orderNumber: order.orderNumber,
         customerId: order.customerId,
-        customerLabel: customerNameById.get(order.customerId) ?? "Customer",
+        customerLabel: customerNameById.get(order.customerId) ?? "Unknown customer",
         status: order.status,
         start,
         end: end < start ? start : end,
       };
     });
+}
+
+export function parseCalendarDateParam(value: string | undefined): Date {
+  if (!value) {
+    return startOfDay(new Date());
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    return startOfDay(new Date());
+  }
+
+  const parsed = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(parsed.getTime())) {
+    return startOfDay(new Date());
+  }
+
+  return startOfDay(parsed);
+}
+
+export function formatCalendarDateParam(date: Date): string {
+  return format(date, "yyyy-MM-dd");
 }
 
 export function getVisibleRange(
@@ -127,13 +152,12 @@ export function isToday(day: Date): boolean {
 
 export const STATUS_EVENT_CLASS: Record<RentalOrderStatus, string> = {
   DRAFT: "border-l-muted-foreground/50 bg-muted text-muted-foreground",
-  CONFIRMED: "border-l-sky-500 bg-sky-500/10 text-sky-900 dark:text-sky-100",
-  RESERVED: "border-l-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
-  DISPATCHED: "border-l-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-100",
-  ON_RENT: "border-l-orange-500 bg-orange-500/10 text-orange-900 dark:text-orange-100",
-  PARTIALLY_RETURNED:
-    "border-l-violet-500 bg-violet-500/10 text-violet-900 dark:text-violet-100",
-  RETURNED: "border-l-teal-500 bg-teal-500/10 text-teal-900 dark:text-teal-100",
-  COMPLETED: "border-l-emerald-600 bg-emerald-600/10 text-emerald-950 dark:text-emerald-50",
+  CONFIRMED: "border-l-info bg-info-muted text-info",
+  RESERVED: "border-l-success bg-success-muted text-success",
+  DISPATCHED: "border-l-warning bg-warning-muted text-warning-foreground",
+  ON_RENT: "border-l-warning bg-warning-muted text-warning-foreground",
+  PARTIALLY_RETURNED: "border-l-info bg-info-muted text-info",
+  RETURNED: "border-l-success bg-success-muted text-success",
+  COMPLETED: "border-l-success bg-success-muted text-success",
   CANCELLED: "border-l-muted-foreground bg-muted text-muted-foreground line-through",
 };

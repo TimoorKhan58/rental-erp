@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { DateSchema, PaginationSchema } from "@/shared/application/validation";
+import { DateSchema, PaginationSchema, UUIDSchema } from "@/shared/application/validation";
 
 import { JOURNAL_ENTRY_SORT_FIELDS } from "@/modules/accounting/domain/journal-entry.constants";
 
@@ -12,6 +12,7 @@ import {
 export const ListJournalEntriesSchema = PaginationSchema.extend({
   status: JournalEntryStatusFilterSchema.optional(),
   referenceType: JournalReferenceTypeFilterSchema.optional(),
+  referenceId: UUIDSchema.optional(),
   journalDateFrom: DateSchema.optional(),
   journalDateTo: DateSchema.optional(),
   sortBy: z.enum(JOURNAL_ENTRY_SORT_FIELDS).optional(),

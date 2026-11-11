@@ -94,7 +94,10 @@ function CreateInventoryForm({
         </div>
       </SectionCard>
 
-      <SectionCard title="Stock levels">
+      <SectionCard
+        title="Initial stock"
+        description="Opening on-hand is set at create time. Later corrections use Adjust stock (ADJUSTMENT). After create, reserved/committed quantity is workflow-controlled."
+      >
         <div className="grid gap-4 md:grid-cols-2">
           <NumberField
             control={form.control}
@@ -102,6 +105,7 @@ function CreateInventoryForm({
             label="Quantity on hand"
             min={0}
             step={1}
+            description="Opening balance for this warehouse record."
           />
           <NumberField
             control={form.control}
@@ -109,6 +113,7 @@ function CreateInventoryForm({
             label="Reserved quantity"
             min={0}
             step={1}
+            description="Optional opening reserved. After create, reservation is controlled by rental/stock workflows."
           />
           <NumberField
             control={form.control}
@@ -159,6 +164,12 @@ function EditInventoryForm({
 
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
+      <div className="rounded-md border border-border bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+        On-hand and committed quantities are not editable here. Use{" "}
+        <span className="font-medium text-foreground">Adjust stock</span> for count
+        corrections.
+      </div>
+
       <SectionCard title="Thresholds & status">
         <div className="grid gap-4 md:grid-cols-2">
           <NumberField

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AppForm } from "@/components/forms";
 import {
+  ComboboxField,
   DatePickerField,
   SelectField,
   TextAreaField,
@@ -77,7 +78,7 @@ function CreateDispatchForm({
   onCancel,
   isSubmitting = false,
 }: CreateDispatchFormProps) {
-  const { rentalOrderOptions, productLabelById } = useDispatchFilterOptions();
+  const { eligibleRentalOrderOptions, productLabelById } = useDispatchFilterOptions();
   const form = useForm<CreateDispatchFormValues>({
     resolver: zodResolver(createDispatchFormSchema),
     defaultValues: { ...createDefaults, ...defaultValues },
@@ -113,14 +114,18 @@ function CreateDispatchForm({
           Dispatch number is assigned automatically on save.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
-          <SelectField
+          <ComboboxField
             control={form.control}
             name="rentalOrderId"
             label="Rental order"
             placeholder="Select rental order"
-            options={rentalOrderOptions.map((option) => ({
+            searchPlaceholder="Search customer or order number..."
+            emptyMessage="No eligible rental orders."
+            options={eligibleRentalOrderOptions.map((option) => ({
               value: option.id,
               label: option.label,
+              description: option.description,
+              keywords: option.keywords,
             }))}
           />
           <DatePickerField control={form.control} name="dispatchDate" label="Dispatch date" />

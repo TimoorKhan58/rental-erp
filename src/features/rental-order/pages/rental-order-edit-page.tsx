@@ -80,6 +80,7 @@ export function RentalOrderEditPage({ orderId }: RentalOrderEditPageProps) {
       <RentalOrderForm
         mode="edit"
         orderNumber={order.orderNumber}
+        excludeRentalOrderId={order.id}
         defaultValues={toRentalOrderFormValues(order)}
         onSubmit={handleSubmit}
         onCancel={() => router.push(ROUTES.rentalOrderDetail(orderId))}

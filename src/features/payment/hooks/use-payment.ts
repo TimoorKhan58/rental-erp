@@ -20,6 +20,7 @@ import {
 type LookupOption = {
   id: string;
   label: string;
+  keywords?: string;
 };
 
 const PAYABLE_INVOICE_STATUSES = ["ISSUED", "PARTIALLY_PAID"] as const;
@@ -60,6 +61,7 @@ export function usePaymentFilterOptions() {
   const customerOptions: LookupOption[] = (customers.data?.items ?? []).map((item) => ({
     id: item.id,
     label: `${item.customerCode} — ${item.name}`,
+    keywords: item.phone,
   }));
 
   const invoiceOptions = (rentalInvoices.data?.items ?? []).map((item) => ({
@@ -134,10 +136,15 @@ export function useCreatePayment() {
     mutationFn: createPayment,
     showSuccessToast: true,
     successMessage: "Payment recorded successfully.",
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.payments.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalInvoices.detail(data.rentalInvoiceId),
+        }),
       ]);
     },
   });
@@ -179,8 +186,13 @@ export function useUpdatePayment() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.payments.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalInvoices.detail(data.rentalInvoiceId),
+        }),
       ]);
     },
   });
@@ -196,8 +208,13 @@ export function usePostPayment() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.payments.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalInvoices.detail(data.rentalInvoiceId),
+        }),
       ]);
     },
   });
@@ -213,8 +230,13 @@ export function useVoidPayment() {
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.payments.summaries() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.payments.detail(data.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.rentalInvoices.summaries() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rentalInvoices.detail(data.rentalInvoiceId),
+        }),
       ]);
     },
   });

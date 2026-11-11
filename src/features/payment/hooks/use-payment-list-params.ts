@@ -28,15 +28,18 @@ export function usePaymentListParams() {
         (searchParams.get("sortOrder") as ListPaymentsParams["sortOrder"]) ?? "desc",
       search: searchParams.get("search") ?? undefined,
       status: (statusParam as PaymentStatus | null) ?? undefined,
+      paymentMethod:
+        (searchParams.get("paymentMethod") as PaymentMethod | null) ?? undefined,
       customerId: searchParams.get("customerId") ?? undefined,
       rentalInvoiceId: searchParams.get("rentalInvoiceId") ?? undefined,
+      paymentDateFrom: searchParams.get("paymentDateFrom") ?? undefined,
+      paymentDateTo: searchParams.get("paymentDateTo") ?? undefined,
     };
   }, [searchParams]);
 
-  const paymentDateFrom = searchParams.get("paymentDateFrom") ?? undefined;
-  const paymentDateTo = searchParams.get("paymentDateTo") ?? undefined;
-  const paymentMethod =
-    (searchParams.get("paymentMethod") as PaymentMethod | null) ?? undefined;
+  const paymentDateFrom = params.paymentDateFrom;
+  const paymentDateTo = params.paymentDateTo;
+  const paymentMethod = params.paymentMethod;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 
@@ -70,7 +73,7 @@ export function usePaymentListParams() {
       updateParams({ search, page: DEFAULT_PAGE });
     },
     setCustomerFilter: (customerId: string | undefined) =>
-      updateParams({ customerId, page: DEFAULT_PAGE }),
+      updateParams({ customerId, rentalInvoiceId: undefined, page: DEFAULT_PAGE }),
     setInvoiceFilter: (rentalInvoiceId: string | undefined) =>
       updateParams({ rentalInvoiceId, page: DEFAULT_PAGE }),
     setStatusFilter: (status: PaymentStatus | undefined) =>
@@ -83,6 +86,19 @@ export function usePaymentListParams() {
       sortBy: PaymentSortField,
       sortOrder: ListPaymentsParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        paymentMethod: undefined,
+        customerId: undefined,
+        rentalInvoiceId: undefined,
+        paymentDateFrom: undefined,
+        paymentDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

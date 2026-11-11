@@ -24,6 +24,12 @@ import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
+import {
+  buildWorkflowDetailBreadcrumbs,
+  rentalOrderBackHref,
+  rentalOrderBackLabel,
+  resolveRentalWorkflowParent,
+} from "@/features/rental-order/navigation/rental-workflow-breadcrumbs";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
@@ -35,7 +41,9 @@ import {
   canEditDispatch,
   canMarkDispatchReady,
   DELIVERY_METHOD_LABELS,
+  getDispatchOperatorGuidance,
   getDispatchTotalQuantity,
+  getOperatorDispatchWorkflowCaption,
 } from "../mappers";
 import {
   useDispatch,
@@ -181,6 +189,17 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
     [dispatch],
   );
 
+  const operatorGuidance = useMemo(
+    () =>
+      dispatch
+        ? getDispatchOperatorGuidance({
+            status: dispatch.status,
+            deliveryMethod: dispatch.deliveryMethod,
+          })
+        : null,
+    [dispatch],
+  );
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -220,25 +239,44 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
   const createdByLabel =
     createdByUser?.name ??
     (dispatch.createdById ? `User ${dispatch.createdById.slice(0, 8)}…` : "—");
+  const customerName = customer?.name;
+  const headerTitle = customerName ?? dispatch.dispatchNumber;
+  const headerDescription = customerName
+    ? [dispatch.dispatchNumber, rentalOrderLabel].filter(Boolean).join(" · ")
+    : (rentalOrderLabel ?? dispatch.rentalOrderId);
+
+  const rentalParent = resolveRentalWorkflowParent({
+    rentalOrderId: dispatch.rentalOrderId,
+    rentalOrderNumber: rentalOrderLabel,
+  });
+  const rentalBackHref = rentalOrderBackHref(rentalParent);
 
   return (
     <PageContainer className="space-y-6">
       <PageHeader
-        title={dispatch.dispatchNumber}
-        description={rentalOrderLabel ?? dispatch.rentalOrderId}
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Deliveries", href: ROUTES.dispatches },
-          { label: dispatch.dispatchNumber },
-        ]}
+        title={headerTitle}
+        description={headerDescription}
+        breadcrumbs={buildWorkflowDetailBreadcrumbs({
+          rentalParent,
+          module: { label: "Dispatches", href: ROUTES.dispatches },
+          currentLabel: dispatch.dispatchNumber,
+        })}
         actions={
           <>
+            {rentalBackHref && rentalParent ? (
+              <AppButton
+                leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
+                render={<Link href={rentalBackHref} />}
+              >
+                {rentalOrderBackLabel(rentalParent)}
+              </AppButton>
+            ) : null}
             <AppButton
               variant="outline"
               leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.dispatches} />}
             >
-              Back
+              All dispatches
             </AppButton>
             {canUpdate && canEditDispatch(dispatch.status) ? (
               <AppButton
@@ -250,7 +288,7 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
             ) : null}
             {canUpdate && canMarkDispatchReady(dispatch.status) ? (
               <AppButton
-                variant="outline"
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
                 leftIcon={<PlayIcon className="size-4" aria-hidden="true" />}
                 onClick={() => setMarkReadyOpen(true)}
               >
@@ -259,10 +297,11 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
             ) : null}
             {canComplete && canCompleteDispatch(dispatch.status) ? (
               <AppButton
+                className="bg-brand text-brand-foreground hover:bg-brand/90"
                 leftIcon={<CheckIcon className="size-4" aria-hidden="true" />}
                 onClick={() => setCompleteOpen(true)}
               >
-                Complete
+                Complete dispatch
               </AppButton>
             ) : null}
             {canCancel && canCancelDispatch(dispatch.status) ? (
@@ -278,7 +317,7 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
         }
       />
 
-      <Card className="overflow-hidden border-border/60 shadow-soft">
+      <Card className="overflow-hidden border-border bg-card shadow-none">
         <CardContent className="space-y-6 p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
@@ -330,20 +369,39 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
             />
           </div>
 
-          {dispatch.status !== "CANCELLED" ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Delivery workflow</span>
-                <span className="text-muted-foreground">Draft → Ready → Dispatched → Completed</span>
+          {dispatch.status !== "CANCELLED" && operatorGuidance ? (
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm">
+                <span className="font-medium">Operator workflow</span>
+                <span className="text-muted-foreground">
+                  {getOperatorDispatchWorkflowCaption()}
+                </span>
               </div>
               <DispatchWorkflowProgressBar status={dispatch.status} size="md" />
+              <div
+                className="rounded-md border border-border bg-muted/20 px-3 py-3 text-sm"
+                role="status"
+                aria-live="polite"
+              >
+                <p className="text-muted-foreground">{operatorGuidance.statusMeaning}</p>
+                {operatorGuidance.nextActionLabel ? (
+                  <p className="mt-2 font-medium">
+                    Next: {operatorGuidance.nextActionLabel}
+                    {operatorGuidance.nextActionHint ? (
+                      <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                        {operatorGuidance.nextActionHint}
+                      </span>
+                    ) : null}
+                  </p>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="app-grid">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-8">
           <SectionCard title="Line items">
             <DispatchLineItemsTable
               items={dispatch.items}
@@ -426,9 +484,9 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
           <DispatchAccountingSection />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
-            title="Delivery workflow"
+            title="Dispatch workflow"
             actions={<DispatchStatusBadge status={dispatch.status} />}
           >
             <DispatchStatusTimeline status={dispatch.status} />

@@ -81,6 +81,18 @@ export function useDispatchListParams() {
       sortBy: DispatchSortField,
       sortOrder: ListDispatchesParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        rentalOrderId: undefined,
+        warehouseId: undefined,
+        dispatchDateFrom: undefined,
+        dispatchDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
@@ -19,7 +19,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
+import { SERVICE_TYPE_LABELS, STATUS_LABELS } from "../mappers";
 import {
+  MaintenanceMobileList,
   MaintenanceServiceTypeFilterChips,
   MaintenanceStatusFilterChips,
 } from "../components";
@@ -61,10 +63,11 @@ export function MaintenanceListTable({
     setTechnicianFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useMaintenanceListParams();
   const { canCreate, canUpdate, canStart, canComplete, canCancel } =
     useMaintenancePermissions();
-  const { productOptions, warehouseOptions, productLabelById } =
+  const { productOptions, warehouseOptions, productLabelById, warehouseLabelById } =
     useMaintenanceFilterOptions();
   const { data, isLoading, isError, error, refetch, isFetching } = useMaintenances(params);
 
@@ -72,6 +75,11 @@ export function MaintenanceListTable({
   const [completeTarget, setCompleteTarget] = useState<MaintenanceResponse | null>(null);
   const [cancelTarget, setCancelTarget] = useState<MaintenanceResponse | null>(null);
   const [localTechnician, setLocalTechnician] = useState(technician ?? "");
+
+  const handleClearAll = () => {
+    setLocalTechnician("");
+    clearAllFilters();
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -127,6 +135,64 @@ export function MaintenanceListTable({
     Boolean(params.scheduledDateFrom) ||
     Boolean(params.scheduledDateTo);
 
+  const activeFilters = [
+    params.search
+      ? {
+          id: "search",
+          label: `Search: ${params.search}`,
+          onClear: () => {
+            setLocalSearch("");
+            setSearch("");
+          },
+        }
+      : null,
+    params.productId
+      ? {
+          id: "product",
+          label: `Product: ${productLabelById.get(params.productId) ?? params.productId}`,
+          onClear: () => setProductFilter(undefined),
+        }
+      : null,
+    params.warehouseId
+      ? {
+          id: "warehouse",
+          label: `Warehouse: ${warehouseLabelById.get(params.warehouseId) ?? params.warehouseId}`,
+          onClear: () => setWarehouseFilter(undefined),
+        }
+      : null,
+    params.status
+      ? {
+          id: "status",
+          label: `Status: ${STATUS_LABELS[params.status]}`,
+          onClear: () => setStatusFilter(undefined),
+        }
+      : null,
+    params.serviceType
+      ? {
+          id: "serviceType",
+          label: `Type: ${SERVICE_TYPE_LABELS[params.serviceType]}`,
+          onClear: () => setServiceTypeFilter(undefined),
+        }
+      : null,
+    params.technician
+      ? {
+          id: "technician",
+          label: `Technician: ${params.technician}`,
+          onClear: () => {
+            setLocalTechnician("");
+            setTechnicianFilter(undefined);
+          },
+        }
+      : null,
+    scheduledDateFrom || scheduledDateTo
+      ? {
+          id: "dates",
+          label: `Dates: ${scheduledDateFrom ?? "…"} → ${scheduledDateTo ?? "…"}`,
+          onClear: () => setDateRange(undefined, undefined),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
+
   if (isError) {
     return (
       <div
@@ -142,40 +208,52 @@ export function MaintenanceListTable({
     );
   }
 
+  const emptyState = (
+    <EmptyState
+      title="No maintenance records found"
+      description={
+        hasFilters
+          ? "Try adjusting your search or filters."
+          : "Maintenance jobs will appear here once scheduled against available inventory."
+      }
+      action={
+        hasFilters ? (
+          <AppButton variant="outline" onClick={handleClearAll}>
+            Clear filters
+          </AppButton>
+        ) : canCreate ? (
+          <Link href={ROUTES.maintenanceNew}>
+            <EmptyStateActionButton>Create maintenance</EmptyStateActionButton>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <>
-      <DataTableShell
-        columns={columns}
-        data={rows}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        toolbar={
-          <div className="space-y-3">
-            <MaintenanceStatusFilterChips
-              value={statusFilterValue}
-              onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
-              counts={statusCounts}
+      <div className="space-y-3">
+        <MaintenanceStatusFilterChips
+          value={statusFilterValue}
+          onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
+          counts={statusCounts}
+        />
+        <MaintenanceServiceTypeFilterChips
+          value={serviceTypeFilterValue}
+          onChange={(value) => setServiceTypeFilter(value === "all" ? undefined : value)}
+          counts={serviceTypeCounts}
+        />
+        <ActiveFilters filters={activeFilters} onClearAll={handleClearAll} />
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <SearchInput
+              value={localSearch}
+              onChange={setLocalSearch}
+              placeholder="Search number, notes, technician, or vendor..."
+              className="w-full sm:max-w-xs"
+              aria-label="Search maintenance by number, notes, technician, or vendor"
             />
-            <MaintenanceServiceTypeFilterChips
-              value={serviceTypeFilterValue}
-              onChange={(value) =>
-                setServiceTypeFilter(value === "all" ? undefined : value)
-              }
-              counts={serviceTypeCounts}
-            />
-          </div>
-        }
-        search={
-          <SearchInput
-            value={localSearch}
-            onChange={setLocalSearch}
-            placeholder="Search maintenance..."
-            className="w-full sm:max-w-xs"
-            aria-label="Search maintenance records"
-          />
-        }
-        filters={
-          <>
             <Select
               value={params.productId ?? "all"}
               onValueChange={(value) => {
@@ -250,9 +328,7 @@ export function MaintenanceListTable({
               className="w-full sm:w-40"
               aria-label="Scheduled date to"
             />
-          </>
-        }
-        actions={
+          </div>
           <AppButton
             variant="outline"
             size="sm"
@@ -263,29 +339,48 @@ export function MaintenanceListTable({
           >
             Refresh
           </AppButton>
-        }
-        emptyState={
-          <EmptyState
-            title="No maintenance records found"
-            description={
-              hasFilters
-                ? "Try adjusting your search or filters."
-                : "Get started by creating your first maintenance job."
-            }
-            action={
-              canCreate ? (
-                <Link href={ROUTES.maintenanceNew}>
-                  <EmptyStateActionButton>Create maintenance</EmptyStateActionButton>
-                </Link>
-              ) : undefined
-            }
+        </div>
+
+        <div className="hidden md:block">
+          <DataTableShell
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            density="compact"
+            emptyState={emptyState}
+            loadingState={<LoadingState label="Loading maintenance records..." />}
           />
-        }
-        loadingState={<LoadingState label="Loading maintenance records..." />}
-        pagination={
-          data?.meta ? <DataPagination meta={data.meta} onPageChange={setPage} /> : null
-        }
-      />
+        </div>
+
+        <div className="md:hidden">
+          {isLoading ? (
+            <LoadingState label="Loading maintenance records..." />
+          ) : rows.length === 0 ? (
+            emptyState
+          ) : (
+            <MaintenanceMobileList
+              rows={rows}
+              resolveProductLabel={(productId) =>
+                productLabelById.get(productId) ?? productId
+              }
+              canUpdate={canUpdate}
+              canStart={canStart}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              onStart={setStartTarget}
+              onComplete={setCompleteTarget}
+              onCancel={setCancelTarget}
+            />
+          )}
+        </div>
+
+        {data?.meta ? (
+          <div className="flex justify-end">
+            <DataPagination meta={data.meta} onPageChange={setPage} />
+          </div>
+        ) : null}
+      </div>
 
       <StartMaintenanceDialog
         maintenance={startTarget}

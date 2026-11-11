@@ -16,6 +16,7 @@ interface StoredWarehouse {
 
 export class InMemoryWarehouseRepository implements IWarehouseRepository {
   private readonly store = new Map<string, StoredWarehouse>();
+  private referenceCounts = new Map<string, number>();
 
   snapshot(): Map<string, StoredWarehouse> {
     return new Map(
@@ -111,6 +112,14 @@ export class InMemoryWarehouseRepository implements IWarehouseRepository {
 
   async exists(id: WarehouseId): Promise<boolean> {
     return this.store.has(id);
+  }
+
+  setReferenceCount(id: WarehouseId, count: number): void {
+    this.referenceCounts.set(id, count);
+  }
+
+  async countReferences(id: WarehouseId): Promise<number> {
+    return this.referenceCounts.get(id) ?? 0;
   }
 
   async create(data: CreateWarehouseData): Promise<Warehouse> {

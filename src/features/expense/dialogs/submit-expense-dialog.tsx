@@ -32,7 +32,7 @@ export function SubmitExpenseDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Submit expense"
-      description={`Submit "${expense.expenseNumber}" for ${formatCurrency(expense.amount)} for approval?`}
+      description={`Submit "${expense.expenseNumber}" for ${formatCurrency(expense.amount)} for approval? This does not post a journal or change inventory. The expense stays unpaid until it is approved and marked paid.`}
       confirmLabel="Submit"
       onConfirm={() => void handleConfirm()}
       isLoading={submitMutation.isPending}

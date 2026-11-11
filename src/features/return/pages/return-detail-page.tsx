@@ -26,6 +26,12 @@ import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
+import {
+  buildWorkflowDetailBreadcrumbs,
+  rentalOrderBackHref,
+  rentalOrderBackLabel,
+  resolveRentalWorkflowParent,
+} from "@/features/rental-order/navigation/rental-workflow-breadcrumbs";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
@@ -235,24 +241,38 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
     createdByUser?.name ??
     (returnRecord.createdById ? `User ${returnRecord.createdById.slice(0, 8)}…` : "—");
 
+  const rentalParent = resolveRentalWorkflowParent({
+    rentalOrderId: returnRecord.rentalOrderId,
+    rentalOrderNumber: rentalOrderLabel,
+  });
+  const rentalBackHref = rentalOrderBackHref(rentalParent);
+
   return (
     <PageContainer className="space-y-6">
       <PageHeader
         title={returnRecord.returnNumber}
         description={rentalOrderLabel ?? returnRecord.rentalOrderId}
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Returns", href: ROUTES.returns },
-          { label: returnRecord.returnNumber },
-        ]}
+        breadcrumbs={buildWorkflowDetailBreadcrumbs({
+          rentalParent,
+          module: { label: "Returns", href: ROUTES.returns },
+          currentLabel: returnRecord.returnNumber,
+        })}
         actions={
           <>
+            {rentalBackHref && rentalParent ? (
+              <AppButton
+                leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
+                render={<Link href={rentalBackHref} />}
+              >
+                {rentalOrderBackLabel(rentalParent)}
+              </AppButton>
+            ) : null}
             <AppButton
               variant="outline"
               leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.returns} />}
             >
-              Back
+              All returns
             </AppButton>
             {canUpdate && canEditReturn(returnRecord.status) ? (
               <AppButton
@@ -351,7 +371,7 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
               }
               hint={
                 metrics.showInspection
-                  ? `${metrics.damageTotals.good} good units`
+                  ? `${metrics.damageTotals.good} good · ${metrics.damageTotals.missing} missing`
                   : "Not yet inspected"
               }
             />
@@ -382,11 +402,15 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
           </SectionCard>
 
           {metrics.showInspection ? (
-            <SectionCard title="Damage assessment">
-              <dl className="grid gap-4 sm:grid-cols-3">
+            <SectionCard
+              title="Condition assessment"
+              description="Inspection quantities. Only owned GOOD restocks when this return is completed."
+            >
+              <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <DetailField label="Good condition" value={metrics.damageTotals.good} />
                 <DetailField label="Damaged" value={metrics.damageTotals.damaged} />
                 <DetailField label="Lost" value={metrics.damageTotals.lost} />
+                <DetailField label="Missing" value={metrics.damageTotals.missing} />
               </dl>
             </SectionCard>
           ) : null}

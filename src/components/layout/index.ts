@@ -1,4 +1,5 @@
 export { AppShell } from "./app-shell";
+export { AppGrid, AppGridItem, ReadableText, type AppGridSpan } from "./app-grid";
 export { ContentArea } from "./content-area";
 export { MobileSidebar } from "./mobile-sidebar";
 export { PageContainer } from "./page-container";

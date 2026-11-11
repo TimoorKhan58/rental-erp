@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { DataTableShell, DataPagination } from "@/components/shared";
+import type { ActiveFilterChip } from "@/components/shared";
+import { ActiveFilters, DataTableShell, DataPagination } from "@/components/shared";
 import { SearchInput } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyState, EmptyStateActionButton } from "@/components/feedback";
@@ -19,7 +20,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
-import { matchesReservationFilter, matchesStartDateRange } from "../mappers";
+import { formatDate } from "@/lib/utils";
+import { matchesReservationFilter, matchesStartDateRange, RESERVATION_LABELS, STATUS_LABELS } from "../mappers";
 import {
   RentalOrderReservationFilterChips,
   RentalOrderStatusFilterChips,
@@ -63,6 +65,7 @@ export function RentalOrderListTable({
     setReservationFilter,
     setDateRange,
     setSorting,
+    clearAllFilters,
   } = useRentalOrderListParams();
   const { canCreate, canUpdate, canConfirm, canReserve, canCancel } =
     useRentalOrderPermissions();
@@ -131,6 +134,98 @@ export function RentalOrderListTable({
     Boolean(startDateFrom) ||
     Boolean(startDateTo);
 
+  const activeFilters = useMemo<ActiveFilterChip[]>(() => {
+    const filters: ActiveFilterChip[] = [];
+
+    if (params.search) {
+      filters.push({
+        id: "search",
+        label: `Search: ${params.search}`,
+        onClear: () => {
+          setLocalSearch("");
+          setSearch("");
+        },
+      });
+    }
+
+    if (params.status) {
+      filters.push({
+        id: "status",
+        label: `Status: ${STATUS_LABELS[params.status]}`,
+        onClear: () => setStatusFilter(undefined),
+      });
+    }
+
+    if (reservationStatus !== "all") {
+      filters.push({
+        id: "reservationStatus",
+        label: `Reservation: ${RESERVATION_LABELS[reservationStatus]}`,
+        onClear: () => setReservationFilter("all"),
+      });
+    }
+
+    if (params.customerId) {
+      const customerName =
+        customerNameById.get(params.customerId) ??
+        customerLabelById.get(params.customerId) ??
+        params.customerId;
+      filters.push({
+        id: "customer",
+        label: `Customer: ${customerName}`,
+        onClear: () => setCustomerFilter(undefined),
+      });
+    }
+
+    if (params.warehouseId) {
+      const warehouseName =
+        warehouseNameById.get(params.warehouseId) ??
+        warehouseLabelById.get(params.warehouseId) ??
+        params.warehouseId;
+      filters.push({
+        id: "warehouse",
+        label: `Warehouse: ${warehouseName}`,
+        onClear: () => setWarehouseFilter(undefined),
+      });
+    }
+
+    if (startDateFrom) {
+      filters.push({
+        id: "startDateFrom",
+        label: `Start from: ${formatDate(startDateFrom)}`,
+        onClear: () => setDateRange(undefined, startDateTo),
+      });
+    }
+
+    if (startDateTo) {
+      filters.push({
+        id: "startDateTo",
+        label: `Start to: ${formatDate(startDateTo)}`,
+        onClear: () => setDateRange(startDateFrom, undefined),
+      });
+    }
+
+    return filters;
+  }, [
+    params.search,
+    params.status,
+    params.customerId,
+    params.warehouseId,
+    reservationStatus,
+    startDateFrom,
+    startDateTo,
+    customerNameById,
+    customerLabelById,
+    warehouseNameById,
+    warehouseLabelById,
+    setLocalSearch,
+    setSearch,
+    setStatusFilter,
+    setReservationFilter,
+    setCustomerFilter,
+    setWarehouseFilter,
+    setDateRange,
+  ]);
+
   if (isError) {
     return (
       <div
@@ -168,13 +263,14 @@ export function RentalOrderListTable({
               onChange={setReservationFilter}
               counts={reservationStatusCounts}
             />
+            <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
           </div>
         }
         search={
           <SearchInput
             value={localSearch}
             onChange={setLocalSearch}
-            placeholder="Search orders..."
+            placeholder="Search by order number or notes..."
             className="w-full sm:max-w-xs"
             aria-label="Search rental orders"
           />
@@ -270,7 +366,11 @@ export function RentalOrderListTable({
                 : "Get started by creating your first rental order."
             }
             action={
-              canCreate ? (
+              hasFilters ? (
+                <AppButton variant="outline" onClick={clearAllFilters}>
+                  Clear filters
+                </AppButton>
+              ) : canCreate ? (
                 <Link href={ROUTES.rentalOrdersNew}>
                   <EmptyStateActionButton>Create rental order</EmptyStateActionButton>
                 </Link>

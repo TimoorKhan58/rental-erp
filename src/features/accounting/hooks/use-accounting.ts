@@ -11,13 +11,14 @@ import type {
   ListJournalEntriesParams,
   TrialBalanceParams,
 } from "../types";
-import { getChartOfAccounts } from "../services/account.service";
+import { getChartOfAccounts, createAccount } from "../services/account.service";
 import {
   getAccountingSummary,
   getGeneralLedger,
   getTrialBalance,
 } from "../services/financial-report.service";
 import {
+  createJournalEntry,
   getJournalEntries,
   getJournalEntry,
   postJournalEntry,
@@ -144,4 +145,40 @@ export function useVoidJournalEntry() {
 /** Backend has no hard delete — void is the cancellation mechanism for draft/posted entries. */
 export function useDeleteJournalEntry() {
   return useVoidJournalEntry();
+}
+
+export function useCreateAccount() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: createAccount,
+    showSuccessToast: true,
+    successMessage: "Account created successfully.",
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounting.accounts.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounting.summary({}) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounting.trialBalance({}) }),
+      ]);
+    },
+  });
+}
+
+export function useCreateJournalEntry() {
+  const queryClient = useQueryClient();
+
+  return useAppMutation({
+    mutationFn: createJournalEntry,
+    showSuccessToast: true,
+    successMessage: "Journal entry created successfully.",
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounting.journalEntries.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.accounting.journalEntries.detail(data.id),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounting.summary({}) }),
+      ]);
+    },
+  });
 }

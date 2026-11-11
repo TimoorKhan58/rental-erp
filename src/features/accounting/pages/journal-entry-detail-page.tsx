@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, FileCheckIcon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { SectionCard, EmptyCard } from "@/components/design-system/card";
+import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
@@ -13,6 +13,8 @@ import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import {
   canPostJournalEntry,
   canVoidJournalEntry,
+  getJournalReferenceHref,
+  getJournalReferenceLabel,
   REFERENCE_TYPE_LABELS,
 } from "../mappers";
 import {
@@ -103,6 +105,8 @@ export function JournalEntryDetailPage({ journalId }: JournalEntryDetailPageProp
   }
 
   const sortedLines = [...journal.lines].sort((a, b) => a.sortOrder - b.sortOrder);
+  const referenceHref = getJournalReferenceHref(journal.referenceType, journal.referenceId);
+  const referenceLabel = getJournalReferenceLabel(journal.referenceType, journal.referenceId);
 
   return (
     <PageContainer>
@@ -152,15 +156,26 @@ export function JournalEntryDetailPage({ journalId }: JournalEntryDetailPageProp
               <DetailField label="Journal number" value={journal.journalNumber} />
               <DetailField label="Journal date" value={formatDate(journal.journalDate)} />
               <DetailField label="Description" value={journal.description} />
-              <DetailField
-                label="Reference type"
-                value={
-                  journal.referenceType
+              <div className="space-y-1">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Reference
+                </dt>
+                <dd className="text-sm">
+                  {journal.referenceType
                     ? REFERENCE_TYPE_LABELS[journal.referenceType]
-                    : null
-                }
-              />
-              <DetailField label="Reference ID" value={journal.referenceId} />
+                    : "—"}
+                  {referenceHref ? (
+                    <>
+                      {" · "}
+                      <Link href={referenceHref} className="text-primary hover:underline">
+                        View source
+                      </Link>
+                    </>
+                  ) : referenceLabel !== "—" ? (
+                    <> · {referenceLabel}</>
+                  ) : null}
+                </dd>
+              </div>
             </dl>
           </SectionCard>
 
@@ -211,25 +226,20 @@ export function JournalEntryDetailPage({ journalId }: JournalEntryDetailPageProp
                 label="Voided at"
                 value={journal.voidedAt ? formatDateTime(journal.voidedAt) : null}
               />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Account">
-            <dl className="space-y-4">
               <DetailField label="Created" value={formatDate(journal.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(journal.updatedAt)} />
             </dl>
           </SectionCard>
 
-          <EmptyCard
-            title="Accounting journal"
-            description="Linked accounting entries are reflected in financial reports after posting."
-          />
-
-          <EmptyCard
-            title="Audit timeline"
-            description="Audit trail details will appear here when available from the API."
-          />
+          <SectionCard title="Audit">
+            <p className="text-sm text-muted-foreground">
+              {journal.status === "POSTED"
+                ? "This entry is included in trial balance, general ledger, and financial reports."
+                : journal.status === "VOID"
+                  ? "This entry has been voided and is excluded from financial reports."
+                  : "Post this entry to include it in financial reports."}
+            </p>
+          </SectionCard>
         </div>
       </div>
 

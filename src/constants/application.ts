@@ -6,8 +6,8 @@ import packageJson from "../../package.json";
  * never hardcode a single market into formatters or marketing UI.
  */
 export const APPLICATION = {
-  name: "Rental ERP",
-  shortName: "MT ERP",
+  name: "RentCore",
+  shortName: "RentCore",
   tagline: "Rental operations, simplified.",
   version: packageJson.version,
   /** BCP 47 locale for Intl formatters (override per tenant via settings). */

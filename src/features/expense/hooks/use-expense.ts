@@ -226,9 +226,15 @@ export function usePayExpense() {
   return useAppMutation({
     mutationFn: payExpense,
     showSuccessToast: true,
-    successMessage: "Expense marked as paid.",
+    successMessage:
+      "Expense marked as paid. A journal is posted when expense and cash accounts are configured.",
     onSuccess: async (data) => {
-      await invalidateExpenseQueries(queryClient, data.id);
+      await Promise.all([
+        invalidateExpenseQueries(queryClient, data.id),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.accounting.journalEntries.lists(),
+        }),
+      ]);
     },
   });
 }

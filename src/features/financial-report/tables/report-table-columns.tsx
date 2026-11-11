@@ -148,14 +148,14 @@ export function getCustomerReportColumns(): Array<DataTableColumn<CustomerReport
     },
     {
       id: "revenue",
-      header: "Revenue",
+      header: "Booked total",
       cell: (row) => formatCurrency(row.revenue),
       className: "text-right",
       headerClassName: "text-right",
     },
     {
       id: "outstandingBalance",
-      header: "Outstanding",
+      header: "Open invoice balance",
       cell: (row) => formatCurrency(row.outstandingBalance),
       className: "text-right",
       headerClassName: "text-right",
@@ -205,7 +205,7 @@ export function getProductReportColumns(): Array<DataTableColumn<ProductReportLi
     },
     {
       id: "revenue",
-      header: "Revenue",
+      header: "Booked total",
       cell: (row) => formatCurrency(row.revenue),
       className: "text-right",
       headerClassName: "text-right",

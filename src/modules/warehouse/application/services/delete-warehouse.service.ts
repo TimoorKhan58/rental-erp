@@ -10,7 +10,7 @@ import {
 } from "./warehouse-service.constants";
 import type { IWarehouseTransactionRunner } from "./warehouse-transaction.runner";
 import { parseRequest } from "@/shared/application/validation";
-import { NotFoundError } from "@/shared/infrastructure/errors";
+import { ConflictError, NotFoundError } from "@/shared/infrastructure/errors";
 
 export class DeleteWarehouseService {
   constructor(private readonly transactionRunner: IWarehouseTransactionRunner) {}
@@ -26,6 +26,15 @@ export class DeleteWarehouseService {
         throw new NotFoundError({
           message: "Warehouse not found",
           details: { id },
+        });
+      }
+
+      const referenceCount = await repository.countReferences(warehouseId);
+
+      if (referenceCount > 0) {
+        throw new ConflictError({
+          message: "Warehouse is in use and cannot be deleted",
+          details: { id, referenceCount },
         });
       }
 

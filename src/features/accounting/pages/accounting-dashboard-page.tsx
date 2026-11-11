@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { MetricCard, SectionCard, EmptyCard } from "@/components/design-system/card";
+import { MetricCard, SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
@@ -114,18 +114,78 @@ export function AccountingDashboardPage() {
                 Trial balance
               </Link>
             </li>
+            <li>
+              <Link href={ROUTES.reportsProfitLoss} className="text-primary hover:underline">
+                Profit &amp; loss report
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.reportsBalanceSheet} className="text-primary hover:underline">
+                Balance sheet report
+              </Link>
+            </li>
           </ul>
         </SectionCard>
 
-        <EmptyCard
-          title="Financial reports"
-          description="Dedicated financial report views will be available in a future phase."
-        />
+        <SectionCard title="Financial reports">
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link href={ROUTES.reportsProfitLoss} className="text-primary hover:underline">
+                Profit &amp; loss
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.reportsBalanceSheet} className="text-primary hover:underline">
+                Balance sheet
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.reportsCashFlow} className="text-primary hover:underline">
+                Cash flow
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.reportsRevenue} className="text-primary hover:underline">
+                Revenue summary
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.reportsExpenses} className="text-primary hover:underline">
+                Expense summary
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.reportsAnalytics} className="text-primary hover:underline">
+                Executive analytics
+              </Link>
+            </li>
+          </ul>
+        </SectionCard>
 
-        <EmptyCard
-          title="Audit timeline"
-          description="Audit trail details will appear here when available from the API."
-        />
+        <SectionCard title="Operational posting">
+          <p className="text-sm text-muted-foreground">
+            Journal entries are created automatically when rental invoices are issued, payments are
+            posted, and expenses are paid. Ensure the default chart of accounts is seeded (codes
+            1000, 1100, 4000, 5000).
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            <li>
+              <Link href={ROUTES.rentalInvoices} className="text-primary hover:underline">
+                Rental invoices
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.payments} className="text-primary hover:underline">
+                Payments
+              </Link>
+            </li>
+            <li>
+              <Link href={ROUTES.expenses} className="text-primary hover:underline">
+                Expenses
+              </Link>
+            </li>
+          </ul>
+        </SectionCard>
       </div>
     </PageContainer>
   );

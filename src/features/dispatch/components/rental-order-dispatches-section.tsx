@@ -53,7 +53,7 @@ export function RentalOrderDispatchesSection({
 
   return (
     <SectionCard
-      title="Deliveries"
+      title="Dispatches"
       description="Dispatch records linked to this rental order."
       actions={
         <div className="flex flex-wrap gap-2">
@@ -64,7 +64,7 @@ export function RentalOrderDispatchesSection({
                 <Link href={`${ROUTES.dispatchesNew}?rentalOrderId=${rentalOrderId}`} />
               }
             >
-              Create delivery
+              Create dispatch
             </AppButton>
           ) : null}
           {totalCount > 0 ? (
@@ -75,30 +75,30 @@ export function RentalOrderDispatchesSection({
                 <Link href={`${ROUTES.dispatches}?rentalOrderId=${rentalOrderId}`} />
               }
             >
-              View all deliveries
+              View all dispatches
             </AppButton>
           ) : null}
         </div>
       }
     >
       {isLoading ? (
-        <LoadingState label="Loading deliveries..." />
+        <LoadingState label="Loading dispatches..." />
       ) : totalCount === 0 ? (
         <p className="text-sm text-muted-foreground">
           {canCreateDispatch
-            ? "No deliveries recorded for this order yet. Create one when stock is ready to ship."
-            : "No deliveries recorded for this order yet."}
+            ? "No dispatches recorded for this order yet. Create one when stock is ready to leave."
+            : "No dispatches recorded for this order yet."}
         </p>
       ) : (
         <>
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard label="Deliveries" value={totalCount} />
-            <MetricCard label="Open deliveries" value={openDispatches} />
+            <MetricCard label="Dispatches" value={totalCount} />
+            <MetricCard label="Open dispatches" value={openDispatches} />
             <MetricCard
-              label="Units dispatched"
+              label="Units on these records"
               value={totalUnits.toLocaleString()}
               hint={
-                totalCount > dispatches.length ? "Based on most recent 100 deliveries" : undefined
+                totalCount > dispatches.length ? "Based on the most recent 100 dispatches" : undefined
               }
             />
           </div>
@@ -147,8 +147,8 @@ export function RentalOrderDispatchesSection({
 
           {completedDispatches > 0 ? (
             <p className="mt-3 text-xs text-muted-foreground">
-              {completedDispatches} completed deliver{completedDispatches === 1 ? "y" : "ies"} on
-              this order.
+              {completedDispatches} completed dispatch
+              {completedDispatches === 1 ? "" : "es"} on this order.
             </p>
           ) : null}
         </>

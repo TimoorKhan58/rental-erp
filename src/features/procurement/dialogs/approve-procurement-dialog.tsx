@@ -31,7 +31,7 @@ export function ApproveProcurementDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Approve purchase order"
-      description={`Approve "${procurement.poNumber}"? It will be ready for receiving.`}
+      description={`Approve "${procurement.poNumber}"? This does not change inventory. After approval, operators can receive goods and record supplier payments. Server rules remain authoritative.`}
       confirmLabel="Approve"
       onConfirm={() => void handleConfirm()}
       isLoading={approveMutation.isPending}

@@ -34,7 +34,8 @@ export function CancelDispatchDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel dispatch"
-      description={`Cancel "${dispatch.dispatchNumber}"? This action cannot be undone.`}
+      destructive
+      description={`Cancel "${dispatch.dispatchNumber}"? Draft and ready dispatches can be cancelled. Inventory is not posted until a dispatch is completed.`}
       confirmLabel="Cancel dispatch"
       onConfirm={() => void handleConfirm()}
       isLoading={cancelMutation.isPending}

@@ -53,6 +53,29 @@ export type ListAccountsParams = {
   isActive?: boolean;
 };
 
+export type CreateAccountPayload = {
+  accountCode: string;
+  name: string;
+  accountType: AccountType;
+  description?: string | null;
+  isActive?: boolean;
+};
+
+export type CreateJournalEntryPayload = {
+  journalNumber: string;
+  journalDate: string;
+  description: string;
+  referenceType?: JournalReferenceType | null;
+  referenceId?: string | null;
+  lines: Array<{
+    accountId: string;
+    debit: number;
+    credit: number;
+    memo?: string | null;
+    sortOrder?: number;
+  }>;
+};
+
 export type JournalLineResponse = {
   id: string;
   accountId: string;
@@ -98,6 +121,7 @@ export type ListJournalEntriesParams = {
   search?: string;
   status?: JournalEntryStatus;
   referenceType?: JournalReferenceType;
+  referenceId?: string;
   journalDateFrom?: string;
   journalDateTo?: string;
 };

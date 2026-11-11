@@ -9,6 +9,7 @@ export interface JournalEntryListQuery {
   search?: string;
   status?: JournalEntryStatus;
   referenceType?: JournalReferenceType;
+  referenceId?: string;
   journalDateFrom?: Date;
   journalDateTo?: Date;
 }

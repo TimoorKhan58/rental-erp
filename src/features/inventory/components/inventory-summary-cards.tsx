@@ -29,33 +29,33 @@ type SummaryCardConfig = {
 const cardConfigs: SummaryCardConfig[] = [
   {
     id: "totalOnHand",
-    label: "Total on hand",
-    hint: "Units across all records",
+    label: "On hand",
+    hint: "Units across warehouses",
     icon: BoxesIcon,
-    iconClass: "bg-primary/12 text-primary",
+    iconClass: "bg-primary/10 text-primary",
   },
   {
     id: "totalAvailable",
     label: "Available",
-    hint: "Ready for allocation",
+    hint: "Ready to allocate",
     icon: PackageCheckIcon,
     iconClass: "bg-success-muted text-success",
   },
   {
     id: "lowStockCount",
-    label: "Low stock",
+    label: "Shortage",
     hint: "At or below reorder level",
     icon: AlertTriangleIcon,
     iconClass: "bg-warning-muted text-warning-foreground",
-    accentClass: "border-warning/30",
+    accentClass: "border-warning/35",
   },
   {
     id: "outOfStockCount",
-    label: "Out of stock",
+    label: "Out",
     hint: "Zero available units",
     icon: PackageXIcon,
-    iconClass: "bg-destructive/12 text-destructive",
-    accentClass: "border-destructive/30",
+    iconClass: "bg-destructive/10 text-destructive",
+    accentClass: "border-destructive/35",
   },
 ];
 
@@ -67,27 +67,28 @@ function SummaryCard({
   value: number;
 }) {
   const Icon = config.icon;
+  const needsAttention =
+    (config.id === "lowStockCount" || config.id === "outOfStockCount") && value > 0;
 
   return (
     <Card
       className={cn(
-        "group border-border/60 shadow-soft transition-all duration-200 hover:shadow-soft-md",
+        "border-border bg-card shadow-none",
         config.accentClass,
+        needsAttention && "bg-muted/15",
       )}
     >
-      <CardContent className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div
-            className={cn(
-              "flex size-9 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105",
-              config.iconClass,
-            )}
-          >
-            <Icon className="size-4.5" aria-hidden="true" />
-          </div>
+      <CardContent className="flex items-start gap-3 p-3.5">
+        <div
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-md",
+            config.iconClass,
+          )}
+        >
+          <Icon className="size-4" aria-hidden="true" />
         </div>
-        <div className="space-y-0.5">
-          <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">
+        <div className="min-w-0 space-y-0.5">
+          <p className="font-heading text-xl font-semibold tracking-tight tabular-nums">
             {value.toLocaleString()}
           </p>
           <p className="text-sm font-medium">{config.label}</p>
@@ -106,16 +107,18 @@ export function InventorySummaryCards({
   if (isLoading) {
     return (
       <div
-        className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-4", className)}
+        className={cn("grid gap-3 sm:grid-cols-2 xl:grid-cols-4", className)}
         aria-busy="true"
         aria-label="Loading inventory summary"
       >
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="border-border/60">
-            <CardContent className="space-y-3 p-4">
-              <Skeleton className="size-9 rounded-lg" />
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-4 w-24" />
+          <Card key={index} className="border-border shadow-none">
+            <CardContent className="flex items-start gap-3 p-3.5">
+              <Skeleton className="size-8 rounded-md" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-14" />
+                <Skeleton className="h-4 w-20" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -129,7 +132,7 @@ export function InventorySummaryCards({
 
   return (
     <section aria-label="Inventory summary" className={className}>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cardConfigs.map((config) => (
           <SummaryCard key={config.id} config={config} value={stats[config.id]} />
         ))}

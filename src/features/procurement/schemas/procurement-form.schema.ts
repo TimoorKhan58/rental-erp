@@ -58,7 +58,7 @@ export const receiveProcurementFormSchema = z.object({
         quantity: z
           .number({ message: "Enter a valid quantity" })
           .int("Must be a whole number")
-          .positive("Quantity must be greater than zero"),
+          .nonnegative("Quantity cannot be negative"),
         maxQuantity: z.number(),
       }),
     )

@@ -28,15 +28,18 @@ export function useRentalInvoiceListParams() {
         (searchParams.get("sortOrder") as ListRentalInvoicesParams["sortOrder"]) ?? "desc",
       search: searchParams.get("search") ?? undefined,
       status: (statusParam as RentalInvoiceStatus | null) ?? undefined,
+      paymentStatus:
+        (searchParams.get("paymentStatus") as PaymentStatusFilter | null) ?? undefined,
       customerId: searchParams.get("customerId") ?? undefined,
       rentalOrderId: searchParams.get("rentalOrderId") ?? undefined,
+      invoiceDateFrom: searchParams.get("invoiceDateFrom") ?? undefined,
+      invoiceDateTo: searchParams.get("invoiceDateTo") ?? undefined,
     };
   }, [searchParams]);
 
-  const invoiceDateFrom = searchParams.get("invoiceDateFrom") ?? undefined;
-  const invoiceDateTo = searchParams.get("invoiceDateTo") ?? undefined;
-  const paymentStatus =
-    (searchParams.get("paymentStatus") as PaymentStatusFilter | null) ?? undefined;
+  const invoiceDateFrom = params.invoiceDateFrom;
+  const invoiceDateTo = params.invoiceDateTo;
+  const paymentStatus = params.paymentStatus;
 
   const [localSearch, setLocalSearch] = useState(params.search ?? "");
 
@@ -83,6 +86,19 @@ export function useRentalInvoiceListParams() {
       sortBy: RentalInvoiceSortField,
       sortOrder: ListRentalInvoicesParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        paymentStatus: undefined,
+        customerId: undefined,
+        rentalOrderId: undefined,
+        invoiceDateFrom: undefined,
+        invoiceDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

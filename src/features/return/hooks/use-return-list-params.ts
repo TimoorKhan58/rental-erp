@@ -75,6 +75,18 @@ export function useReturnListParams() {
       sortBy: ReturnSortField,
       sortOrder: ListReturnsParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        status: undefined,
+        rentalOrderId: undefined,
+        dispatchId: undefined,
+        returnDateFrom: undefined,
+        returnDateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
     refreshKey: searchParams.toString(),
   };
 }

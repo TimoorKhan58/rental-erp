@@ -109,7 +109,9 @@ function CreateMaintenanceForm({
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Maintenance details">
         <p className="mb-4 text-sm text-muted-foreground">
-          Maintenance number is assigned automatically on save.
+          Quantity cannot exceed available inventory. Starting this job later posts stock OUT;
+          completing it posts stock IN. Estimated and actual cost stay on this record and are
+          not posted to expenses or journals.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <SelectField

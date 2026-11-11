@@ -83,6 +83,18 @@ export function useRentalReportParams() {
       sortBy: RentalReportSortField,
       sortOrder: RentalReportParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        customerId: undefined,
+        warehouseId: undefined,
+        status: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
   };
 }
 
@@ -103,6 +115,7 @@ export function useInventoryReportParams() {
       dateFrom: searchParams.get("dateFrom") ?? undefined,
       dateTo: searchParams.get("dateTo") ?? undefined,
       warehouseId: searchParams.get("warehouseId") ?? undefined,
+      inventoryId: searchParams.get("inventoryId") ?? undefined,
       lowStockOnly:
         lowStockOnly === "true" ? true : lowStockOnly === "false" ? false : undefined,
       overstockOnly:
@@ -128,12 +141,32 @@ export function useInventoryReportParams() {
     setLowStockOnly: (lowStockOnly?: boolean) =>
       updateParams({
         lowStockOnly: lowStockOnly === undefined ? undefined : lowStockOnly,
+        overstockOnly: undefined,
+        page: DEFAULT_PAGE,
+      }),
+    setOverstockOnly: (overstockOnly?: boolean) =>
+      updateParams({
+        overstockOnly: overstockOnly === undefined ? undefined : overstockOnly,
+        lowStockOnly: undefined,
         page: DEFAULT_PAGE,
       }),
     setSorting: (
       sortBy: InventoryReportSortField,
       sortOrder: InventoryReportParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        warehouseId: undefined,
+        inventoryId: undefined,
+        lowStockOnly: undefined,
+        overstockOnly: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
   };
 }
 
@@ -174,6 +207,16 @@ export function useCustomerReportParams() {
       sortBy: CustomerReportSortField,
       sortOrder: CustomerReportParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        customerId: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
   };
 }
 
@@ -211,6 +254,15 @@ export function useProductReportParams() {
       sortBy: ProductReportSortField,
       sortOrder: ProductReportParams["sortOrder"] = "asc",
     ) => updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
   };
 }
 
@@ -258,5 +310,17 @@ export function useOperationalListReportParams(options?: {
       updateParams({ supplierId, page: DEFAULT_PAGE }),
     setSorting: (sortBy: string, sortOrder: "asc" | "desc" = "asc") =>
       updateParams({ sortBy, sortOrder }),
+    clearAllFilters: () => {
+      setLocalSearch("");
+      updateParams({
+        search: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        status: undefined,
+        warehouseId: undefined,
+        supplierId: undefined,
+        page: DEFAULT_PAGE,
+      });
+    },
   };
 }
