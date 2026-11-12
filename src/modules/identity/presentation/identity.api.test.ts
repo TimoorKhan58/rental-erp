@@ -6,6 +6,7 @@ import {
   mockAuthenticatedInactiveUser,
   mockSession,
   mockUnauthenticatedUser,
+  activeUserRecord,
 } from "@/shared/infrastructure/auth/api-auth.test-helpers";
 import { TEST_ERP_USER_ID } from "@/shared/infrastructure/auth/test-session.factory";
 
@@ -56,7 +57,7 @@ function createMockServices() {
 describe("runIdentityApiRoute authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findUniqueUserMock.mockResolvedValue({ isActive: true });
+    findUniqueUserMock.mockResolvedValue(activeUserRecord(true));
   });
 
   it("returns 401 when session is missing", async () => {
@@ -118,7 +119,11 @@ describe("runIdentityApiRoute authorization", () => {
     expect(result.status).toBe(401);
     expect(findUniqueUserMock).toHaveBeenCalledWith({
       where: { id: TEST_ERP_USER_ID },
-      select: { isActive: true },
+      select: {
+        isActive: true,
+        organizationId: true,
+        organization: { select: { isActive: true } },
+      },
     });
   });
 
@@ -209,7 +214,7 @@ describe("runIdentityApiRoute authorization", () => {
 describe("identity API handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findUniqueUserMock.mockResolvedValue({ isActive: true });
+    findUniqueUserMock.mockResolvedValue(activeUserRecord(true));
   });
 
   it("handleListIdentityUsers returns paginated response", async () => {

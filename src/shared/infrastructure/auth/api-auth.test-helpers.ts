@@ -44,14 +44,14 @@ export function mockAuthenticatedActiveUser(
   role: UserRole = USER_ROLES.OWNER,
 ): void {
   getSessionMock.mockResolvedValue(createMockAuthSession(role));
-  findUniqueUserMock.mockResolvedValue({ isActive: true });
+  findUniqueUserMock.mockResolvedValue(activeUserRecord(true));
 }
 
 export function mockAuthenticatedInactiveUser(
   role: UserRole = USER_ROLES.MANAGER,
 ): void {
   getSessionMock.mockResolvedValue(createMockAuthSession(role));
-  findUniqueUserMock.mockResolvedValue({ isActive: false });
+  findUniqueUserMock.mockResolvedValue(activeUserRecord(false));
 }
 
 export function mockUnauthenticatedUser(): void {
@@ -75,3 +75,15 @@ export {
   TEST_AUTH_USER_ID,
   TEST_ERP_USER_ID,
 };
+
+/** Test organization every mocked API user belongs to. */
+export const TEST_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
+
+/** Shape returned by ensureActiveErpUser's user lookup. */
+export function activeUserRecord(isActive: boolean) {
+  return {
+    isActive,
+    organizationId: TEST_ORGANIZATION_ID,
+    organization: { isActive: true },
+  };
+}

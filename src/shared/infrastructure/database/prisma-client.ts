@@ -1,6 +1,7 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { getDatabasePoolConfig } from "@/shared/config/database.config";
+import { tenantGuardExtension } from "@/shared/infrastructure/tenancy/tenant-guard.extension";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -9,7 +10,11 @@ const globalForPrisma = globalThis as unknown as {
 export function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg(getDatabasePoolConfig());
 
-  return new PrismaClient({ adapter });
+  // Every model query (including inside $transaction) passes through the
+  // organization guard. The extended client keeps PrismaClient's API.
+  return new PrismaClient({ adapter }).$extends(
+    tenantGuardExtension,
+  ) as unknown as PrismaClient;
 }
 
 export function getPrismaClient(): PrismaClient {
