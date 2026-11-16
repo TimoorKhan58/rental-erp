@@ -8,7 +8,7 @@ import {
   type OrganizationScope,
 } from "./organization-scope";
 import { scopeQueryArgs } from "./scope-query-args";
-import { MODEL_RELATIONS, TENANT_MODELS } from "./tenant-model-map";
+import { MODEL_RELATIONS, OWNING_RELATIONS, TENANT_MODELS } from "./tenant-model-map";
 
 const ORG_A = "00000000-0000-4000-8000-00000000000a";
 const ORG_B = "00000000-0000-4000-8000-00000000000b";
@@ -69,6 +69,26 @@ describe("scopeQueryArgs — writes", () => {
 
     expect(result.data.organization).toEqual({ connect: { id: ORG_A } });
     expect(result.data.organizationId).toBeUndefined();
+  });
+
+  it("keeps the scalar style for a create with plain ids plus a nested child list (notification + recipients)", () => {
+    const result = scopeQueryArgs(
+      "Notification",
+      "create",
+      {
+        data: {
+          templateId: "t1",
+          title: "Order confirmed",
+          recipients: { create: [{ userId: "u1", recipientName: "Ali" }] },
+        },
+      },
+      A,
+    ) as { data: Record<string, unknown> & { recipients: { create: Array<Record<string, unknown>> } } };
+
+    // Mixing templateId (scalar) with organization: {connect} is rejected by Prisma.
+    expect(result.data.organizationId).toBe(ORG_A);
+    expect(result.data.organization).toBeUndefined();
+    expect(result.data.recipients.create[0]?.organizationId).toBe(ORG_A);
   });
 
   it("stamps nested child rows created with their parent", () => {
@@ -172,6 +192,7 @@ describe("tenant model map", () => {
 
     expect([...TENANT_MODELS].sort()).toEqual(fromSchema.tenantModels);
     expect(MODEL_RELATIONS).toEqual(fromSchema.relations);
+    expect(OWNING_RELATIONS).toEqual(fromSchema.owning);
   });
 
   it("covers the 49 per-business tables and not the platform ones", () => {

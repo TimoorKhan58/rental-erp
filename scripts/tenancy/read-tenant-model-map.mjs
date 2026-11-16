@@ -11,9 +11,11 @@ export function readTenantModelMap(schemaPath) {
 
   const tenantModels = [];
   const relations = {};
+  const owning = {};
 
   for (const [, model, body] of blocks) {
     const fields = {};
+    const owningFields = [];
     let isTenant = false;
 
     for (const rawLine of body.split("\n")) {
@@ -27,12 +29,15 @@ export function readTenantModelMap(schemaPath) {
       const baseType = type.replace(/[?[\]]/g, "");
       if (modelNames.has(baseType)) {
         fields[name] = baseType;
+        // Owning side: this model holds the foreign key (@relation(fields: [...])).
+        if (/@relation\([^)]*fields:/.test(line)) owningFields.push(name);
       }
     }
 
     if (isTenant) tenantModels.push(model);
     relations[model] = fields;
+    owning[model] = owningFields.sort();
   }
 
-  return { tenantModels: tenantModels.sort(), relations };
+  return { tenantModels: tenantModels.sort(), relations, owning };
 }

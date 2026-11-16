@@ -3,7 +3,7 @@ import {
   OrganizationScopeMissingError,
   type OrganizationScope,
 } from "./organization-scope";
-import { MODEL_RELATIONS, TENANT_MODELS } from "./tenant-model-map";
+import { MODEL_RELATIONS, OWNING_RELATIONS, TENANT_MODELS } from "./tenant-model-map";
 
 type Data = Record<string, unknown>;
 
@@ -132,9 +132,13 @@ export function scopeCreateData(model: string, data: Data, organizationId: strin
 
   // Prisma "checked" inputs (relations given as objects) cannot also take
   // the raw organizationId column, so connect the relation instead.
-  const relations = MODEL_RELATIONS[model] ?? {};
-  const usesRelationObjects = Object.keys(result).some(
-    (key) => key !== "organization" && key in relations && isObject(result[key]),
+  // Only relations this model owns (it holds the foreign key) force the
+  // "checked" style. A nested list of child rows (e.g. a notification's
+  // recipients) is allowed in the scalar ("unchecked") style too, and mixing
+  // the two styles is rejected by Prisma.
+  const owning = OWNING_RELATIONS[model] ?? [];
+  const usesRelationObjects = owning.some(
+    (key) => key !== "organization" && isObject(result[key]),
   );
 
   if (usesRelationObjects) {
