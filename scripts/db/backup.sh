@@ -30,8 +30,15 @@ TARGET="${BACKUP_DIR%/}/${FILENAME}"
 mkdir -p "$BACKUP_DIR"
 
 echo "[backup] Writing compressed dump to ${TARGET}"
-pg_dump --dbname="$DATABASE_URL" --format=plain --no-owner --no-acl \
-  | gzip -c > "$TARGET"
+# --enable-row-security: per-business tables force row-level security (SaaS
+# phase 2c). The backup connection is not the app, so the policies let it
+# read every row; without this flag pg_dump refuses to start.
+if ! pg_dump --dbname="$DATABASE_URL" --format=plain --no-owner --no-acl --enable-row-security \
+  | gzip -c > "$TARGET"; then
+  rm -f "$TARGET"
+  echo "[backup] ERROR: pg_dump failed; no backup was written" >&2
+  exit 1
+fi
 
 BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
 echo "[backup] Completed (${BYTES} bytes): ${TARGET}"

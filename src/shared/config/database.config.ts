@@ -24,6 +24,13 @@ export function isDatabaseConfigured(): boolean {
 }
 
 /**
+ * Startup setting that marks a connection as the application's. Row-level
+ * security only restricts connections carrying it, so migrations, backups
+ * and psql keep full access (see the phase-2c migration).
+ */
+export const APP_CONNECTION_OPTIONS = "-c rentcore.app=on";
+
+/**
  * pg.Pool configuration for the Prisma driver adapter.
  * Tune via DATABASE_POOL_* environment variables.
  */
@@ -32,11 +39,13 @@ export function getDatabasePoolConfig(): {
   max: number;
   idleTimeoutMillis: number;
   connectionTimeoutMillis: number;
+  options: string;
 } {
   return {
     connectionString: databaseConfig.url,
     max: databaseConfig.pool.max,
     idleTimeoutMillis: databaseConfig.pool.idleTimeoutMillis,
     connectionTimeoutMillis: databaseConfig.pool.connectionTimeoutMillis,
+    options: APP_CONNECTION_OPTIONS,
   };
 }

@@ -34,6 +34,19 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,6 +58,22 @@ jobs:
 
       - name: Prisma validate
         run: npx prisma validate
+
+      # Like production, the app owns its tables but is not a superuser
+      # (superusers skip row-level security).
+      - name: Create CI database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE ci LOGIN PASSWORD 'ci'" \
+            -c "CREATE DATABASE rental_erp_ci OWNER ci"
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Database isolation tests
+        run: npm run test:db
 
       - name: ESLint
         run: npm run lint

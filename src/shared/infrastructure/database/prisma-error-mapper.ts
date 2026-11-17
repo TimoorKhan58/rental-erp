@@ -80,7 +80,9 @@ function isCrossOrganizationReference(error: unknown): boolean {
   return (
     error instanceof CrossOrganizationWriteError ||
     (error instanceof Error &&
-      error.message.includes("RENTCORE_CROSS_ORGANIZATION_REFERENCE"))
+      (error.message.includes("RENTCORE_CROSS_ORGANIZATION_REFERENCE") ||
+        // PostgreSQL row-level security refused a row of another business.
+        error.message.includes("violates row-level security policy")))
   );
 }
 

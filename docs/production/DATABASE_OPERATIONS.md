@@ -91,6 +91,33 @@ Recommendations:
 - Always backup before `migrate deploy` and before major restores
 - Store backups outside the database volume (and outside the app container filesystem when possible)
 
+## Row-level security (SaaS phase 2c)
+
+Every per-business table (49) has PostgreSQL row-level security, forced also
+for the table owner (migration `20261118100000_saas_phase2c_row_level_security`).
+
+- **Who is restricted:** only the application's connections. The app connects
+  with the startup setting `rentcore.app=on` and, per transaction, sets
+  `rentcore.organization_id` (or `rentcore.system=on` for platform code). An
+  app connection with no business set sees no per-business rows.
+- **Who is not:** migrations, `pg_dump`, `psql` and the seed connect without
+  that setting and keep full access. Backups must use `pg_dump
+  --enable-row-security` (the backup scripts do).
+- **The app must not connect as a superuser** (or a role with `BYPASSRLS`):
+  those skip row-level security entirely. Use an ordinary role that owns the
+  tables. With `docker-compose.prod.yml`'s bundled database, create such a role
+  instead of using `POSTGRES_USER` for the app.
+- **New rows** get `organizationId` from the current business. An app write with
+  no business fails (NOT NULL) instead of landing in the first business.
+- **Code:** start transactions with `runTenantTransaction()` (the transaction
+  manager does). A transaction started with `prisma.$transaction()` that touches
+  business data is refused.
+- **Checks:** `npm run test:db` against a disposable, migrated database (runs in
+  PR Checks).
+- **Emergency rollback** (as the table owner), per table:
+  `ALTER TABLE <t> NO FORCE ROW LEVEL SECURITY; ALTER TABLE <t> DISABLE ROW LEVEL SECURITY;`
+  then deploy the previous app version. The policies can stay.
+
 ## Restore strategy
 
 Scripts:

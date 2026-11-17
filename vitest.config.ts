@@ -18,6 +18,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Real-database tests run separately with `npm run test:db`.
+    exclude: ["**/node_modules/**", "src/**/*.db.test.ts"],
     env: { ...TEST_ENV },
     coverage: {
       provider: "v8",

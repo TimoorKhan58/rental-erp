@@ -20,6 +20,17 @@ describe("mapPrismaError — references to another business (SaaS phase 2)", () 
     expect(mapped.message).not.toContain("organization");
   });
 
+  it("reports a row-level security refusal as not found (phase 2c)", () => {
+    const error = new Error(
+      'new row violates row-level security policy for table "customers"',
+    );
+
+    const mapped = mapPrismaError(error);
+
+    expect(mapped).toBeInstanceOf(NotFoundError);
+    expect(mapped.message).toBe("Requested resource was not found.");
+  });
+
   it("reports the guard's rejection as not found", () => {
     expect(mapPrismaError(new CrossOrganizationWriteError("Customer"))).toBeInstanceOf(
       NotFoundError,

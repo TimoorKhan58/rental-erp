@@ -1,6 +1,7 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { getDatabasePoolConfig } from "@/shared/config/database.config";
+import { rlsSessionExtension } from "@/shared/infrastructure/tenancy/rls-session.extension";
 import { tenantGuardExtension } from "@/shared/infrastructure/tenancy/tenant-guard.extension";
 
 const globalForPrisma = globalThis as unknown as {
@@ -11,10 +12,12 @@ export function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg(getDatabasePoolConfig());
 
   // Every model query (including inside $transaction) passes through the
-  // organization guard. The extended client keeps PrismaClient's API.
-  return new PrismaClient({ adapter }).$extends(
-    tenantGuardExtension,
-  ) as unknown as PrismaClient;
+  // organization guard, and every query (raw SQL too) tells PostgreSQL its
+  // business so row-level security can enforce it. Start transactions with
+  // runTenantTransaction(). The extended client keeps PrismaClient's API.
+  return new PrismaClient({ adapter })
+    .$extends(tenantGuardExtension)
+    .$extends(rlsSessionExtension) as unknown as PrismaClient;
 }
 
 export function getPrismaClient(): PrismaClient {

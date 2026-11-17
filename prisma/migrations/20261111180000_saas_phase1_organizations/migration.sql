@@ -232,8 +232,10 @@ ALTER TABLE "units_of_measure" ADD COLUMN     "organizationId" UUID NOT NULL DEF
 ALTER TABLE "user_dashboards" ADD COLUMN     "organizationId" UUID NOT NULL DEFAULT '00000000-0000-4000-8000-000000000001';
 
 -- AlterTable
-ALTER TABLE "users" DROP COLUMN "lastLoginAt",
-DROP COLUMN "loginCount",
+-- IF EXISTS: these two legacy columns exist only on databases created before
+-- the baseline; fresh databases never had them.
+ALTER TABLE "users" DROP COLUMN IF EXISTS "lastLoginAt",
+DROP COLUMN IF EXISTS "loginCount",
 ADD COLUMN     "organizationId" UUID NOT NULL DEFAULT '00000000-0000-4000-8000-000000000001';
 
 -- AlterTable
