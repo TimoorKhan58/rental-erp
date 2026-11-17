@@ -43,6 +43,7 @@
     "seed:malakand": "node ./scripts/seed-malakand-price-list.mjs",
     "create:admin": "tsx ./scripts/create-admin.ts",
     "business:provision": "tsx ./scripts/provision-business.ts",
+    "platform:create-owner": "tsx ./scripts/create-platform-owner.ts",
     "db:auth-generate": "better-auth generate --config src/lib/auth/config.ts -y",
     "config:check": "vitest run src/shared/config/env.validation.test.ts",
     "docker:dev": "docker compose up --build",

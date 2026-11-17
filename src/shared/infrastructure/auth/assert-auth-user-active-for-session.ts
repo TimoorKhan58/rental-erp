@@ -3,19 +3,46 @@ import { APIError } from "better-auth/api";
 import prisma from "@/lib/prisma";
 import { assertUserIsActive } from "@/modules/identity/domain/identity-user.rules";
 import { IdentityUserStateError } from "@/modules/identity/domain/identity-user.errors";
+import {
+  findActivePlatformOwner,
+  recordPlatformAudit,
+} from "@/modules/platform/infrastructure/platform-owner.repository";
 import { runAsSystem } from "@/shared/infrastructure/tenancy/organization-scope";
+
+export type SessionRequestInfo = {
+  readonly ipAddress?: string | null;
+  readonly userAgent?: string | null;
+};
 
 /**
  * Blocks Better Auth session creation when the linked ERP user is inactive.
  * Reuses assertUserIsActive — does not duplicate the inactive rule.
+ *
+ * A login with no ERP user may only sign in as an active platform owner
+ * (SaaS phase 3b); that sign-in is written to the platform audit log.
  */
 export async function assertAuthUserActiveForSession(
   authUserId: string,
+  requestInfo: SessionRequestInfo = {},
 ): Promise<void> {
   const authUser = await prisma.authUser.findUnique({
     where: { id: authUserId },
     select: { erpUserId: true },
   });
+
+  if (authUser !== null && authUser.erpUserId === null) {
+    const owner = await findActivePlatformOwner(prisma, authUserId);
+
+    if (owner !== null) {
+      await recordPlatformAudit(prisma, {
+        platformOwnerId: owner.id,
+        action: "platform.sign_in",
+        ipAddress: requestInfo.ipAddress,
+        userAgent: requestInfo.userAgent,
+      });
+      return;
+    }
+  }
 
   if (authUser?.erpUserId === null || authUser?.erpUserId === undefined) {
     throw new APIError("UNAUTHORIZED", {

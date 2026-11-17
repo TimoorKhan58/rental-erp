@@ -29,7 +29,10 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (session) => {
-          await assertAuthUserActiveForSession(session.userId);
+          await assertAuthUserActiveForSession(session.userId, {
+            ipAddress: session.ipAddress,
+            userAgent: session.userAgent,
+          });
         },
       },
     },
