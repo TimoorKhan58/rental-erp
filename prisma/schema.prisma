@@ -36,8 +36,47 @@ model AuthUser {
   updatedAt     DateTime      @updatedAt
   sessions      AuthSession[]
   accounts      AuthAccount[]
+  platformOwner PlatformOwner?
 
   @@map("user")
+}
+
+// ── Platform (SaaS phase 3b) ─────────────────────────────────
+// Platform tables belong to no business (no organizationId): they are not
+// limited by the tenant guard or row-level security, and only platform
+// code (platform owners, behind authenticatePlatformRequest) uses them.
+
+/// A login that manages businesses. It is never linked to an ERP user.
+model PlatformOwner {
+  id         String             @id @default(uuid()) @db.Uuid
+  authUserId String             @unique
+  authUser   AuthUser           @relation(fields: [authUserId], references: [id], onDelete: Cascade)
+  isActive   Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  auditLogs  PlatformAuditLog[]
+
+  @@map("platform_owners")
+}
+
+/// Every platform action (sign-in, create/deactivate a business, ...).
+model PlatformAuditLog {
+  id                   String        @id @default(uuid()) @db.Uuid
+  platformOwnerId      String        @db.Uuid
+  platformOwner        PlatformOwner @relation(fields: [platformOwnerId], references: [id], onDelete: Restrict)
+  action               String
+  /// The business acted on, if any (deliberately not "organizationId":
+  /// this is a platform table, not a per-business one).
+  targetOrganizationId String?       @db.Uuid
+  details              Json?
+  ipAddress            String?
+  userAgent            String?
+  createdAt            DateTime      @default(now())
+
+  @@index([createdAt])
+  @@index([targetOrganizationId])
+  @@index([platformOwnerId])
+  @@map("platform_audit_logs")
 }
 
 model AuthSession {

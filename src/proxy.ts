@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { findActivePlatformOwner } from "@/modules/platform/infrastructure/platform-owner.repository";
 import { resolveSessionUser } from "@/shared/infrastructure/auth/resolve-session-user";
 import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-erp-user";
-
-const PUBLIC_PATHS = new Set(["/", "/login", "/logout", "/unauthorized"]);
-
-function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.has(pathname)) {
-    return true;
-  }
-
-  // Dev-only layout QA harness (no session) — presentation verification.
-  if (
-    process.env.NODE_ENV === "development" &&
-    pathname === "/dev/fluid-grid-qa"
-  ) {
-    return true;
-  }
-
-  return false;
-}
+import {
+  decidePageAccess,
+  type SignedInKind,
+} from "@/shared/infrastructure/http/page-access";
 
 /**
  * API routes authenticate themselves (authenticateApiRequest) and answer
@@ -31,53 +19,54 @@ function isApiPath(pathname: string): boolean {
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
-async function hasActiveSession(): Promise<boolean> {
+/** Who is signed in: an active business user, an active platform owner, or nobody. */
+async function getSignedInKind(): Promise<SignedInKind> {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session) {
-    return false;
+    return null;
   }
 
   const resolved = resolveSessionUser(session);
 
   if (resolved === null) {
-    return false;
+    // No ERP user: only an active platform owner may be signed in.
+    const owner = await findActivePlatformOwner(prisma, session.user.id).catch(() => null);
+    return owner === null ? null : "platform";
   }
 
   try {
     await ensureActiveErpUser(resolved.erpUserId);
-    return true;
+    return "business";
   } catch {
-    return false;
+    return null;
   }
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isApiPath(pathname)) {
+  if (isApiPath(pathname) || pathname === "/logout") {
     return NextResponse.next();
   }
 
-  if (isPublicPath(pathname)) {
-    if (pathname === "/login") {
-      if (await hasActiveSession()) {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-    }
+  const decision = decidePageAccess(
+    pathname,
+    await getSignedInKind(),
+    process.env.NODE_ENV === "development",
+  );
 
+  if (decision.action === "next") {
     return NextResponse.next();
   }
 
-  if (!(await hasActiveSession())) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+  const target = new URL(decision.to, request.url);
+  if (decision.callbackUrl !== undefined) {
+    target.searchParams.set("callbackUrl", decision.callbackUrl);
   }
-
-  return NextResponse.next();
+  return NextResponse.redirect(target);
 }
 
 export const config = {

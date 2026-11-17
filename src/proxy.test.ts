@@ -31,6 +31,12 @@ vi.mock("@/shared/infrastructure/auth/ensure-active-erp-user", () => ({
   ensureActiveErpUser: (...args: unknown[]) => mockEnsureActiveErpUser(...args),
 }));
 
+const mockFindActivePlatformOwner = vi.fn();
+vi.mock("@/lib/prisma", () => ({ default: {} }));
+vi.mock("@/modules/platform/infrastructure/platform-owner.repository", () => ({
+  findActivePlatformOwner: (...args: unknown[]) => mockFindActivePlatformOwner(...args),
+}));
+
 import { proxy } from "./proxy";
 
 function createRequest(pathname: string): NextRequest {
@@ -117,6 +123,54 @@ describe("proxy session gate", () => {
     const response = await proxy(createRequest("/apiary"));
 
     expect(response.status).toBe(307);
+  });
+});
+
+describe("proxy and platform owners (SaaS phase 3b)", () => {
+  // A platform owner's session has no ERP user (the mock resolves it to null).
+  const platformSession = { user: {} };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockHeaders.mockResolvedValue(new Headers());
+  });
+
+  it("lets a platform owner open /platform", async () => {
+    mockGetSession.mockResolvedValue(platformSession);
+    mockFindActivePlatformOwner.mockResolvedValue({ id: "po-1" });
+
+    const response = await proxy(createRequest("/platform"));
+
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("sends a platform owner from the business app and login to /platform", async () => {
+    mockGetSession.mockResolvedValue(platformSession);
+    mockFindActivePlatformOwner.mockResolvedValue({ id: "po-1" });
+
+    for (const path of ["/dashboard", "/customers", "/login", "/"]) {
+      const response = await proxy(createRequest(path));
+      expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/platform");
+    }
+  });
+
+  it("treats a login with no ERP user and no platform owner as signed out", async () => {
+    mockGetSession.mockResolvedValue(platformSession);
+    mockFindActivePlatformOwner.mockResolvedValue(null);
+
+    const response = await proxy(createRequest("/platform"));
+
+    expect(response.headers.get("location")).toContain("/login");
+  });
+
+  it("lets business users reach /platform only to get the page's own not-found", async () => {
+    mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
+    mockEnsureActiveErpUser.mockResolvedValue(undefined);
+
+    const response = await proxy(createRequest("/platform"));
+
+    expect(response.headers.get("location")).toBeNull();
+    expect(mockFindActivePlatformOwner).not.toHaveBeenCalled();
   });
 });
 

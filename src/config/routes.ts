@@ -6,6 +6,8 @@ export const ROUTES = {
   login: "/login",
   logout: "/logout",
   unauthorized: "/unauthorized",
+  /** Platform owners only (SaaS phase 3b). */
+  platform: "/platform",
 
   // Module routes
   dashboard: "/dashboard",
