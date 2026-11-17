@@ -163,7 +163,7 @@ model Role {
 
 model User {
   id                              String                    @id @default(uuid()) @db.Uuid
-  organizationId                  String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId                  String                    @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization                    Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name                            String
   email                           String                    @unique
@@ -213,7 +213,7 @@ model User {
 
 model Customer {
   id             String          @id @default(uuid()) @db.Uuid
-  organizationId String          @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String          @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   customerCode   String
   name           String
@@ -243,7 +243,7 @@ model Customer {
 
 model Supplier {
   id                       String                    @id @default(uuid()) @db.Uuid
-  organizationId           String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId           String                    @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   supplierCode             String
   name                     String
@@ -275,7 +275,7 @@ model Supplier {
 
 model Warehouse {
   id                       String                    @id @default(uuid()) @db.Uuid
-  organizationId           String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId           String                    @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   warehouseCode            String
   name                     String
@@ -316,7 +316,7 @@ enum AttributeDataType {
 
 model Category {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name           String
   description    String?
@@ -333,7 +333,7 @@ model Category {
 
 model Brand {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name           String
   description    String?
@@ -350,7 +350,7 @@ model Brand {
 
 model UnitOfMeasure {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   code           String
   name           String
@@ -368,7 +368,7 @@ model UnitOfMeasure {
 
 model ProductAttribute {
   id             String                  @id @default(uuid()) @db.Uuid
-  organizationId String                  @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String                  @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name           String
   dataType       AttributeDataType       @default(TEXT)
@@ -385,7 +385,7 @@ model ProductAttribute {
 
 model ProductTag {
   id             String                 @id @default(uuid()) @db.Uuid
-  organizationId String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String                 @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name           String
   color          String?
@@ -401,7 +401,7 @@ model ProductTag {
 }
 
 model ProductTagAssignment {
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId      String       @db.Uuid
   tagId          String       @db.Uuid
@@ -417,7 +417,7 @@ model ProductTagAssignment {
 
 model ProductImage {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId      String       @db.Uuid
   product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -435,7 +435,7 @@ model ProductImage {
 
 model ProductSpecification {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId      String       @db.Uuid
   product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -453,7 +453,7 @@ model ProductSpecification {
 
 model ProductAttributeValue {
   id             String           @id @default(uuid()) @db.Uuid
-  organizationId String           @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String           @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId      String           @db.Uuid
   attributeId    String           @db.Uuid
@@ -471,7 +471,7 @@ model ProductAttributeValue {
 
 model ProductVariant {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId      String       @db.Uuid
   product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -489,7 +489,7 @@ model ProductVariant {
 
 model Product {
   id                           String                        @id @default(uuid()) @db.Uuid
-  organizationId               String                        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId               String                        @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization                 Organization                  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productCode                  String
   categoryId                   String?                       @db.Uuid
@@ -546,7 +546,7 @@ enum StockMovementType {
 
 model Inventory {
   id               String                 @id @default(uuid()) @db.Uuid
-  organizationId   String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId   String                 @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   productId        String                 @db.Uuid
   product          Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -572,7 +572,7 @@ model Inventory {
 
 model InventoryTransaction {
   id               String            @id @default(uuid()) @db.Uuid
-  organizationId   String            @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId   String            @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   inventoryId      String            @db.Uuid
   inventory        Inventory         @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
@@ -610,7 +610,7 @@ enum PurchaseOrderStatus {
 
 model PurchaseOrder {
   id               String              @id @default(uuid()) @db.Uuid
-  organizationId   String              @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId   String              @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   poNumber         String
   supplierId       String              @db.Uuid
@@ -637,7 +637,7 @@ model PurchaseOrder {
 
 model PurchaseOrderItem {
   id               String        @id @default(uuid()) @db.Uuid
-  organizationId   String        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId   String        @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   purchaseOrderId  String        @db.Uuid
   purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
@@ -669,7 +669,7 @@ enum RentalOrderStatus {
 
 model RentalOrder {
   id                       String                    @id @default(uuid()) @db.Uuid
-  organizationId           String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId           String                    @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   orderNumber              String
   customerId               String                    @db.Uuid
@@ -715,7 +715,7 @@ model RentalOrder {
 
 model RentalOrderItem {
   id                           String                        @id @default(uuid()) @db.Uuid
-  organizationId               String                        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId               String                        @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization                 Organization                  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   rentalOrderId                String                        @db.Uuid
   rentalOrder                  RentalOrder                   @relation(fields: [rentalOrderId], references: [id], onDelete: Restrict)
@@ -768,7 +768,7 @@ enum ExternalRentalSettlementStatus {
 
 model ExternalRentalAgreement {
   id                           String                         @id @default(uuid()) @db.Uuid
-  organizationId               String                         @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId               String                         @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization                 Organization                   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   agreementNumber              String
   supplierId                   String                         @db.Uuid
@@ -808,7 +808,7 @@ model ExternalRentalAgreement {
 
 model ExternalRentalAgreementItem {
   id                           String                  @id @default(uuid()) @db.Uuid
-  organizationId               String                  @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId               String                  @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization                 Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   agreementId                  String                  @db.Uuid
   agreement                    ExternalRentalAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
@@ -857,7 +857,7 @@ enum DispatchStatus {
 
 model Dispatch {
   id                String             @id @default(uuid()) @db.Uuid
-  organizationId    String             @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId    String             @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   dispatchNumber    String
   rentalOrderId     String             @db.Uuid
@@ -896,7 +896,7 @@ model Dispatch {
 
 model DispatchItem {
   id                String           @id @default(uuid()) @db.Uuid
-  organizationId    String           @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId    String           @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization      Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   dispatchId        String           @db.Uuid
   dispatch          Dispatch         @relation(fields: [dispatchId], references: [id], onDelete: Restrict)
@@ -928,7 +928,7 @@ enum ReturnStatus {
 
 model ReturnInspection {
   id             String                 @id @default(uuid()) @db.Uuid
-  organizationId String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String                 @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   returnNumber   String
   rentalOrderId  String                 @db.Uuid
@@ -959,7 +959,7 @@ model ReturnInspection {
 
 model ReturnInspectionItem {
   id                      String           @id @default(uuid()) @db.Uuid
-  organizationId          String           @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId          String           @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization            Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   returnInspectionId      String           @db.Uuid
   returnInspection        ReturnInspection @relation(fields: [returnInspectionId], references: [id], onDelete: Restrict)
@@ -1011,7 +1011,7 @@ enum RepairType {
 
 model Repair {
   id                     String               @id @default(uuid()) @db.Uuid
-  organizationId         String               @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId         String               @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization           Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   repairNumber           String
   returnInspectionId     String               @db.Uuid
@@ -1050,7 +1050,7 @@ model Repair {
 
 model RepairItem {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   repairId       String       @db.Uuid
   repair         Repair       @relation(fields: [repairId], references: [id], onDelete: Restrict)
@@ -1087,7 +1087,7 @@ enum MaintenanceServiceType {
 
 model Maintenance {
   id                String                 @id @default(uuid()) @db.Uuid
-  organizationId    String                 @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId    String                 @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   maintenanceNumber String
   productId         String                 @db.Uuid
@@ -1148,7 +1148,7 @@ enum RentalInvoiceLineType {
 
 model RentalInvoice {
   id             String              @id @default(uuid()) @db.Uuid
-  organizationId String              @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String              @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   invoiceNumber  String
   rentalOrderId  String              @db.Uuid
@@ -1187,7 +1187,7 @@ model RentalInvoice {
 
 model RentalInvoiceItem {
   id              String                @id @default(uuid()) @db.Uuid
-  organizationId  String                @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId  String                @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   rentalInvoiceId String                @db.Uuid
   rentalInvoice   RentalInvoice         @relation(fields: [rentalInvoiceId], references: [id], onDelete: Cascade)
@@ -1229,7 +1229,7 @@ enum PaymentMethod {
 
 model Payment {
   id              String        @id @default(uuid()) @db.Uuid
-  organizationId  String        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId  String        @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   paymentNumber   String
   rentalInvoiceId String        @db.Uuid
@@ -1263,7 +1263,7 @@ model Payment {
 
 model SupplierPayment {
   id              String        @id @default(uuid()) @db.Uuid
-  organizationId  String        @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId  String        @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   paymentNumber   String
   purchaseOrderId String        @db.Uuid
@@ -1319,7 +1319,7 @@ enum JournalReferenceType {
 
 model Account {
   id             String             @id @default(uuid()) @db.Uuid
-  organizationId String             @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String             @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   accountCode    String
   name           String
@@ -1340,7 +1340,7 @@ model Account {
 
 model JournalEntry {
   id             String                @id @default(uuid()) @db.Uuid
-  organizationId String                @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String                @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   journalNumber  String
   journalDate    DateTime              @db.Date
@@ -1370,7 +1370,7 @@ model JournalEntry {
 
 model JournalEntryLine {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   journalEntryId String       @db.Uuid
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
@@ -1404,7 +1404,7 @@ enum ExpenseType {
 
 model ExpenseCategory {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name           String
   description    String?
@@ -1421,7 +1421,7 @@ model ExpenseCategory {
 
 model Expense {
   id              String          @id @default(uuid()) @db.Uuid
-  organizationId  String          @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId  String          @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   expenseNumber   String
   expenseDate     DateTime
@@ -1488,7 +1488,7 @@ enum DocumentType {
 
 model CompanySetting {
   id                     String             @id @default(uuid()) @db.Uuid
-  organizationId         String             @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId         String             @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   companyName            String
   businessName           String
@@ -1531,7 +1531,7 @@ model CompanySetting {
 
 model DocumentSequence {
   id               String         @id @default(uuid()) @db.Uuid
-  organizationId   String         @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId   String         @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   companySettingId String         @db.Uuid
   companySetting   CompanySetting @relation(fields: [companySettingId], references: [id], onDelete: Restrict)
@@ -1654,7 +1654,7 @@ enum AuditStatus {
 
 model AuditLog {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   userId         String?      @db.Uuid
   user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -1732,7 +1732,7 @@ model NotificationTemplate {
 
 model Notification {
   id             String                  @id @default(uuid()) @db.Uuid
-  organizationId String                  @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String                  @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   templateId     String?                 @db.Uuid
   template       NotificationTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
@@ -1768,7 +1768,7 @@ model Notification {
 
 model NotificationRecipient {
   id                String       @id @default(uuid()) @db.Uuid
-  organizationId    String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId    String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   notificationId    String       @db.Uuid
   notification      Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
@@ -1801,7 +1801,7 @@ enum AssetStatus {
 
 model AssetCategory {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name           String
   description    String?
@@ -1818,7 +1818,7 @@ model AssetCategory {
 
 model Asset {
   id                 String                    @id @default(uuid()) @db.Uuid
-  organizationId     String                    @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId     String                    @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization       Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   assetCode          String
   name               String
@@ -1862,7 +1862,7 @@ model Asset {
 
 model AssetTransfer {
   id              String       @id @default(uuid()) @db.Uuid
-  organizationId  String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId  String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   assetId         String       @db.Uuid
   asset           Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
@@ -1884,7 +1884,7 @@ model AssetTransfer {
 
 model AssetMaintenanceHistory {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   assetId        String       @db.Uuid
   asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
@@ -1958,7 +1958,7 @@ model DashboardWidget {
 
 model UserDashboard {
   id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @default("00000000-0000-4000-8000-000000000001") @db.Uuid
+  organizationId String       @default(dbgenerated("rentcore_current_organization_id()")) @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   userId         String       @db.Uuid
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)

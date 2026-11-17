@@ -7,6 +7,7 @@ import {
   repositoryFindMany,
   repositoryUpdate,
 } from "@/shared/infrastructure/database";
+import { runTenantTransaction } from "@/shared/infrastructure/tenancy/rls-session";
 
 import {
   DEFAULT_SEQUENCE_STARTING_NUMBER,
@@ -129,7 +130,7 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
         this.generateNextNumberInTransaction(client, documentType);
 
       if (isPrismaClient(db)) {
-        return db.$transaction((tx) => execute(tx));
+        return runTenantTransaction<DbClient, GeneratedNumberResult>(db as never, execute);
       }
 
       return execute(db);

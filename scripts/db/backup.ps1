@@ -22,7 +22,8 @@ $GzFile = "$SqlFile.gz"
 New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
 
 Write-Host "[backup] Writing dump to $SqlFile"
-& pg_dump --dbname="$env:DATABASE_URL" --format=plain --no-owner --no-acl --file="$SqlFile"
+# --enable-row-security: see scripts/db/backup.sh (SaaS phase 2c).
+& pg_dump --dbname="$env:DATABASE_URL" --format=plain --no-owner --no-acl --enable-row-security --file="$SqlFile"
 if ($LASTEXITCODE -ne 0) { throw "[backup] pg_dump failed" }
 
 if (Get-Command gzip -ErrorAction SilentlyContinue) {
