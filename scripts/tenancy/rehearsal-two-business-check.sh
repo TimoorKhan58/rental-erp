@@ -27,7 +27,11 @@ PR=$(jb POST /api/products '{"name":"B Chair","unit":"pcs","rentalRate":50}' | i
 jb POST /api/inventory "{\"productId\":\"$PR\",\"warehouseId\":\"$WH\",\"quantityOnHand\":100}" > /dev/null
 PHONE=$(curl -s -m 60 -b "$JA" "$B/api/customers?pageSize=1" | grep -oE '"phone":"[^"]+"' | head -1 | cut -d'"' -f4)
 CU=$(jb POST /api/customers "{\"name\":\"B Customer\",\"phone\":\"$PHONE\",\"address\":\"B Road\"}" | id)
-check "B can reuse a phone number that business A also has" "yes" "$([ -n "$CU" ] && echo yes || echo no)"
+if [ -z "$CU" ]; then
+  # Re-run: B already created this customer (a duplicate inside B is refused).
+  CU=$(jb GET "/api/customers?search=$PHONE&pageSize=1" | id)
+fi
+check "B can use a phone number that business A also has" "yes" "$([ -n "$CU" ] && echo yes || echo no)"
 
 echo "== Business B runs a full rental"
 R=$(jb POST /api/rental-orders "{\"customerId\":\"$CU\",\"warehouseId\":\"$WH\",\"startDate\":\"2030-01-10\",\"endDate\":\"2030-01-12\",\"items\":[{\"productId\":\"$PR\",\"quantity\":10,\"dailyRate\":50}]}")
