@@ -4,12 +4,45 @@ import { DEFAULT_ACCOUNT_CODES } from "@/modules/accounting/domain/default-accou
 import type { JournalReferenceType } from "@/modules/accounting/domain/journal-entry.constants";
 import type { IJournalEntryRepository } from "@/modules/accounting/domain/journal-entry.repository.interface";
 import type { AccountId, JournalEntryId, UserId } from "@/shared/domain/ids";
+import { createAppLogger, type ILogger } from "@/shared/infrastructure/logging";
+import { getOrganizationScope } from "@/shared/infrastructure/tenancy/organization-scope";
 
 export type OperationalJournalPostingDeps = {
   accountRepository: IAccountRepository;
   journalEntryRepository: IJournalEntryRepository;
   userId: UserId;
+  /** Defaults to the application logger. */
+  logger?: ILogger;
 };
+
+/**
+ * Posting needs the business's default accounts. When one is missing or
+ * inactive the business document still goes through, but the gap is
+ * reported (SaaS phase 3a) instead of being skipped silently, so the books
+ * can be repaired — e.g. with scripts/provision-business.ts.
+ */
+function reportSkippedPosting(
+  deps: OperationalJournalPostingDeps,
+  referenceType: JournalReferenceType,
+  referenceId: string,
+  missingAccountCodes: string[],
+): null {
+  const scope = getOrganizationScope();
+  (deps.logger ?? createAppLogger()).warn("Accounting posting skipped: default accounts missing", {
+    event: "accounting.posting_skipped",
+    organizationId: scope?.kind === "organization" ? scope.organizationId : undefined,
+    referenceType,
+    referenceId,
+    missingAccountCodes,
+  });
+  return null;
+}
+
+function missingCodes(accounts: Record<string, unknown | null>): string[] {
+  return Object.entries(accounts)
+    .filter(([, account]) => account === null)
+    .map(([code]) => code);
+}
 
 async function resolveAccount(
   accountRepository: IAccountRepository,
@@ -125,7 +158,15 @@ export async function postRentalInvoiceIssuedJournal(
   );
 
   if (accountsReceivable === null || rentalRevenue === null) {
-    return null;
+    return reportSkippedPosting(
+      deps,
+      "RENTAL_INVOICE",
+      input.invoiceId,
+      missingCodes({
+        [DEFAULT_ACCOUNT_CODES.ACCOUNTS_RECEIVABLE]: accountsReceivable,
+        [DEFAULT_ACCOUNT_CODES.RENTAL_REVENUE]: rentalRevenue,
+      }),
+    );
   }
 
   return createAndPostOperationalJournal(deps, {
@@ -170,7 +211,15 @@ export async function postPaymentReceivedJournal(
   );
 
   if (cash === null || accountsReceivable === null) {
-    return null;
+    return reportSkippedPosting(
+      deps,
+      "PAYMENT",
+      input.paymentId,
+      missingCodes({
+        [DEFAULT_ACCOUNT_CODES.CASH]: cash,
+        [DEFAULT_ACCOUNT_CODES.ACCOUNTS_RECEIVABLE]: accountsReceivable,
+      }),
+    );
   }
 
   return createAndPostOperationalJournal(deps, {
@@ -215,7 +264,15 @@ export async function postExpensePaidJournal(
   const cash = await resolveAccount(deps.accountRepository, DEFAULT_ACCOUNT_CODES.CASH);
 
   if (expenseAccount === null || cash === null) {
-    return null;
+    return reportSkippedPosting(
+      deps,
+      "OTHER",
+      input.expenseId,
+      missingCodes({
+        [DEFAULT_ACCOUNT_CODES.GENERAL_EXPENSE]: expenseAccount,
+        [DEFAULT_ACCOUNT_CODES.CASH]: cash,
+      }),
+    );
   }
 
   return createAndPostOperationalJournal(deps, {

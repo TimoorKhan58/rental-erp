@@ -9,8 +9,9 @@
 // - paddingLength > 0, currentNumber >= startingNumber (DocumentSequence)
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -795,6 +796,9 @@ model ExternalRentalAgreement {
   items                        ExternalRentalAgreementItem[]
 
   @@unique([organizationId, agreementNumber])
+  // Existing since 2026-08-12 (migration external_rental_active_only_uniqueness);
+  // declared here so Prisma does not propose dropping it.
+  @@unique([rentalOrderId], where: raw("(status <> 'CANCELLED'::\"ExternalRentalAgreementStatus\")"), map: "external_rental_agreements_rentalOrderId_active_key")
   @@index([rentalOrderId])
   @@index([supplierId])
   @@index([warehouseId])
@@ -1526,6 +1530,8 @@ model CompanySetting {
   documentSequences      DocumentSequence[]
 
   @@index([organizationId])
+  // One active company profile per business (SaaS phase 3a).
+  @@unique([organizationId], where: { isActive: true }, map: "company_settings_one_active_per_organization")
   @@map("company_settings")
 }
 
