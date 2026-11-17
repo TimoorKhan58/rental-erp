@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rentcore-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3000"],
+      "env": {
+        "APP_URL": "http://localhost:3000",
+        "BETTER_AUTH_URL": "http://localhost:3000",
+        "NEXT_PUBLIC_APP_URL": "http://localhost:3000"
+      },
+      "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "rentcore-rehearsal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3100"],
+      "env": {
+        "APP_URL": "http://localhost:3100",
+        "BETTER_AUTH_URL": "http://localhost:3100",
+        "NEXT_PUBLIC_APP_URL": "http://localhost:3100",
+        "DATABASE_URL": "postgresql://postgres@127.0.0.1:55432/rental_erp_rehearsal"
+      },
+      "port": 3100,
+      "autoPort": false
+    }
+  ]
+}

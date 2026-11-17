@@ -3,6 +3,7 @@ import { APIError } from "better-auth/api";
 import prisma from "@/lib/prisma";
 import { assertUserIsActive } from "@/modules/identity/domain/identity-user.rules";
 import { IdentityUserStateError } from "@/modules/identity/domain/identity-user.errors";
+import { runAsSystem } from "@/shared/infrastructure/tenancy/organization-scope";
 
 /**
  * Blocks Better Auth session creation when the linked ERP user is inactive.
@@ -22,10 +23,14 @@ export async function assertAuthUserActiveForSession(
     });
   }
 
-  const erpUser = await prisma.user.findUnique({
-    where: { id: authUser.erpUserId },
-    select: { isActive: true },
-  });
+  // Runs during sign-in, before any business is known.
+  const erpUserId = authUser.erpUserId;
+  const erpUser = await runAsSystem("sign-in: check user is active", () =>
+    prisma.user.findUnique({
+      where: { id: erpUserId },
+      select: { isActive: true, organization: { select: { isActive: true } } },
+    }),
+  );
 
   if (erpUser === null) {
     throw new APIError("UNAUTHORIZED", {
@@ -43,5 +48,11 @@ export async function assertAuthUserActiveForSession(
     }
 
     throw error;
+  }
+
+  if (erpUser.organization && !erpUser.organization.isActive) {
+    throw new APIError("FORBIDDEN", {
+      message: "This business account is inactive",
+    });
   }
 }

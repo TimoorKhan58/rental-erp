@@ -10,6 +10,7 @@ import {
 } from "@/shared/infrastructure/errors";
 import {
   authenticateApiRequest,
+  runInRequestOrganization,
   toUnauthorizedRouteResult,
 } from "@/shared/infrastructure/http/authenticate-api-request";
 import {
@@ -44,7 +45,7 @@ export async function runExternalRentalApiRoute<T>(
     assertPermission(ctx.request, permission);
 
     const services = resolveServices(ctx);
-    const data = await handler(ctx, services);
+    const data = await runInRequestOrganization(ctx, () => handler(ctx, services));
 
     return {
       status: 200,

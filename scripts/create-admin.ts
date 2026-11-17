@@ -9,6 +9,9 @@
  *
  * Production mode (non-interactive):
  *   Set ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_ROLE.
+ *
+ * Business: set ADMIN_ORGANIZATION to the business slug (e.g. "mt-service").
+ * It may be omitted while only one business exists.
  */
 import "dotenv/config";
 import { stdin as input, stdout as output } from "node:process";
@@ -18,6 +21,7 @@ import { USER_ROLE_LIST, USER_ROLE_LABELS, type UserRole } from "../src/constant
 import { createIdentityApplicationServices } from "../src/modules/identity/infrastructure/factories/create-identity.services";
 import { createSharedDeps } from "../src/shared/infrastructure/di/shared-deps";
 import { ConflictError, NotFoundError } from "../src/shared/infrastructure/errors";
+import { runInOrganization } from "../src/shared/infrastructure/tenancy/organization-scope";
 
 interface AdminCredentials {
   name: string;
@@ -129,12 +133,53 @@ async function resolveInteractiveCredentials(
   return { name, email, password, role };
 }
 
+/**
+ * Which business the new administrator belongs to: ADMIN_ORGANIZATION (slug)
+ * when set, otherwise the only business when there is exactly one.
+ */
+async function resolveOrganization(
+  deps: ReturnType<typeof createSharedDeps>,
+): Promise<{ id: string; name: string }> {
+  const slug = process.env.ADMIN_ORGANIZATION?.trim();
+  const organizations = await deps.prisma.organization.findMany({
+    where: slug ? { slug } : undefined,
+    select: { id: true, name: true, slug: true },
+    take: 2,
+  });
+
+  if (slug && organizations.length === 0) {
+    throw new Error(`No business with slug "${slug}" (ADMIN_ORGANIZATION).`);
+  }
+
+  if (organizations.length !== 1) {
+    throw new Error(
+      "Several businesses exist; set ADMIN_ORGANIZATION to the business slug for this administrator.",
+    );
+  }
+
+  return organizations[0]!;
+}
+
 async function bootstrapAdministrator(
   credentials: AdminCredentials,
 ): Promise<void> {
   const deps = createSharedDeps();
 
   try {
+    const organization = await resolveOrganization(deps);
+    console.log(`\nBusiness: ${organization.name}`);
+
+    await runInOrganization(organization.id, () => createAdministrator(deps, credentials));
+  } finally {
+    await deps.prisma.$disconnect();
+  }
+}
+
+async function createAdministrator(
+  deps: ReturnType<typeof createSharedDeps>,
+  credentials: AdminCredentials,
+): Promise<void> {
+  {
     const services = createIdentityApplicationServices(deps);
     const { name, email, password, role } = credentials;
 
@@ -160,8 +205,6 @@ async function bootstrapAdministrator(
     console.log(`  ERP user id: ${user.id}`);
     console.log(`  Email: ${user.email}`);
     console.log(`  Role: ${user.role}`);
-  } finally {
-    await deps.prisma.$disconnect();
   }
 }
 

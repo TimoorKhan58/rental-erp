@@ -7,6 +7,7 @@ import {
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
+import { CrossOrganizationWriteError } from "@/shared/infrastructure/tenancy/organization-scope";
 
 function isPrismaKnownRequestError(
   error: unknown,
@@ -70,9 +71,29 @@ function mapKnownRequestError(
   }
 }
 
+/**
+ * A write that points at another business's record (rejected by the
+ * database trigger or the organization guard) is reported exactly like a
+ * missing record, so it reveals nothing about other businesses.
+ */
+function isCrossOrganizationReference(error: unknown): boolean {
+  return (
+    error instanceof CrossOrganizationWriteError ||
+    (error instanceof Error &&
+      error.message.includes("RENTCORE_CROSS_ORGANIZATION_REFERENCE"))
+  );
+}
+
 export function mapPrismaError(error: unknown): Error {
   if (isAppError(error)) {
     return error;
+  }
+
+  if (isCrossOrganizationReference(error)) {
+    return new NotFoundError({
+      message: "Requested resource was not found.",
+      cause: error as Error,
+    });
   }
 
   if (isPrismaKnownRequestError(error)) {

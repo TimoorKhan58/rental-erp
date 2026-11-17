@@ -15,7 +15,6 @@ import { errorResponse } from "@/shared/infrastructure/http/api-response";
 import {
   getCorrelationId,
   getRequestId,
-  getTenantId,
 } from "@/shared/infrastructure/http/headers";
 import { resolveClientIp } from "@/shared/infrastructure/http/client-ip";
 import {
@@ -25,6 +24,7 @@ import {
 import { resolveSessionUser } from "@/shared/infrastructure/auth/resolve-session-user";
 import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-erp-user";
 import { enterRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
+import { runInOrganization } from "@/shared/infrastructure/tenancy/organization-scope";
 
 export interface AuthenticatedApiRequestResult {
   requestId: string;
@@ -39,7 +39,6 @@ export async function authenticateApiRequest(
 ): Promise<AuthenticatedApiRequestResult> {
   const requestId = getRequestId(request.headers);
   const correlationId = getCorrelationId(request.headers, requestId);
-  const tenantId = getTenantId(request.headers);
 
   const session = await auth.api.getSession({
     headers: request.headers,
@@ -57,7 +56,12 @@ export async function authenticateApiRequest(
     });
   }
 
-  await ensureActiveErpUser(resolvedUser.erpUserId);
+  const { organizationId } = await ensureActiveErpUser(resolvedUser.erpUserId);
+
+  // The business always comes from the signed-in user's record, never from
+  // the request (the x-tenant-id header is ignored). Route runners execute
+  // the request's work inside it via runInRequestOrganization.
+  const tenantId = organizationId;
 
   const requestContext = createRequestContext({
     requestId,
@@ -99,6 +103,24 @@ export async function authenticateApiRequest(
       logger,
     }),
   };
+}
+
+/**
+ * Runs a request's work limited to the signed-in user's business, so every
+ * per-business query inside it (repositories, transactions, audit,
+ * notifications) is scoped by the organization guard.
+ */
+export function runInRequestOrganization<T>(
+  ctx: ExecutionContext,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const organizationId = ctx.request.tenantId;
+
+  if (!organizationId) {
+    throw new UnauthorizedError({ message: "No business is linked to this request" });
+  }
+
+  return runInOrganization(organizationId, operation);
 }
 
 export function toUnauthorizedRouteResult(
