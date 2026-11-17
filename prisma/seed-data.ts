@@ -1,5 +1,9 @@
 import { USER_ROLES } from "../src/constants/roles";
 import { DEFAULT_EXPENSE_CATEGORIES } from "../src/modules/expense/domain/default-expense-categories";
+import {
+  STARTER_ACCOUNTS,
+  STARTER_UNITS_OF_MEASURE,
+} from "../src/modules/platform/domain/business-starter-kit";
 
 export const SEED_ROLES = [
   { id: "00000000-0000-4000-8000-000000000001", name: USER_ROLES.OWNER },
@@ -9,26 +13,18 @@ export const SEED_ROLES = [
   { id: "00000000-0000-4000-8000-000000000005", name: USER_ROLES.VIEWER },
 ] as const;
 
-export const SEED_UNITS_OF_MEASURE = [
-  {
-    id: "00000000-0000-4000-8000-000000000301",
-    code: "PCS",
-    name: "Pieces",
-    description: "Individual items",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000302",
-    code: "SET",
-    name: "Set",
-    description: "Grouped item set",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000303",
-    code: "DAY",
-    name: "Day",
-    description: "Rental day unit",
-  },
+// Same lists a new business gets (src/modules/platform/domain/business-starter-kit.ts);
+// MT Service keeps its original fixed ids so re-seeding stays idempotent.
+const SEED_UNIT_IDS = [
+  "00000000-0000-4000-8000-000000000301",
+  "00000000-0000-4000-8000-000000000302",
+  "00000000-0000-4000-8000-000000000303",
 ] as const;
+
+export const SEED_UNITS_OF_MEASURE = STARTER_UNITS_OF_MEASURE.map((unit, index) => ({
+  id: SEED_UNIT_IDS[index] as string,
+  ...unit,
+}));
 
 export const SEED_EXPENSE_CATEGORIES = DEFAULT_EXPENSE_CATEGORIES;
 
@@ -99,33 +95,14 @@ export const SEED_NOTIFICATION_TEMPLATES = [
   },
 ] as const;
 
-export const SEED_ACCOUNTS = [
-  {
-    id: "cc0e8400-e29b-41d4-a716-446655440001",
-    accountCode: "1000",
-    name: "Cash",
-    accountType: "ASSET" as const,
-    description: "Primary cash / bank account",
-  },
-  {
-    id: "cc0e8400-e29b-41d4-a716-446655440002",
-    accountCode: "1100",
-    name: "Accounts Receivable",
-    accountType: "ASSET" as const,
-    description: "Customer rental invoice balances",
-  },
-  {
-    id: "cc0e8400-e29b-41d4-a716-446655440003",
-    accountCode: "4000",
-    name: "Rental Revenue",
-    accountType: "INCOME" as const,
-    description: "Rental income from issued invoices",
-  },
-  {
-    id: "cc0e8400-e29b-41d4-a716-446655440004",
-    accountCode: "5000",
-    name: "General Expense",
-    accountType: "EXPENSE" as const,
-    description: "Operating expenses paid through the expense module",
-  },
+const SEED_ACCOUNT_IDS = [
+  "cc0e8400-e29b-41d4-a716-446655440001",
+  "cc0e8400-e29b-41d4-a716-446655440002",
+  "cc0e8400-e29b-41d4-a716-446655440003",
+  "cc0e8400-e29b-41d4-a716-446655440004",
 ] as const;
+
+export const SEED_ACCOUNTS = STARTER_ACCOUNTS.map((account, index) => ({
+  id: SEED_ACCOUNT_IDS[index] as string,
+  ...account,
+}));
