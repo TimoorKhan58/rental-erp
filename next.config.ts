@@ -51,6 +51,9 @@ const nextConfig: NextConfig = {
   // (`COPY .next/standalone` + `node server.js`). Native hosts such as Render
   // use `npm run start` (`next start`), which is incompatible with standalone.
   ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" as const } : {}),
+  // Lets a review/rehearsal build live beside the running app's `.next`
+  // (e.g. NEXT_DIST_DIR=.next-review). Unset = the normal `.next`.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   poweredByHeader: false,
   reactStrictMode: true,
   // Prefer Next/Node compression when not terminating TLS at a reverse proxy

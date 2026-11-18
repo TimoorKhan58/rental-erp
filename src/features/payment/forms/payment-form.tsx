@@ -162,7 +162,7 @@ function CreatePaymentForm({
             description={
               selectedInvoice
                 ? `Enter amount up to ${formatCurrency(selectedInvoice.balance)} (validated by backend).`
-                : "Amount is validated against invoice balance by the backend."
+                : "The amount can't be more than what is still owed on the invoice."
             }
           />
           <TextField
@@ -255,7 +255,7 @@ function EditPaymentForm({
             label="Amount"
             min={0.01}
             step={0.01}
-            description="Amount is validated against invoice balance by the backend."
+            description="The amount can't be more than what is still owed on the invoice."
           />
           <TextField
             control={form.control}

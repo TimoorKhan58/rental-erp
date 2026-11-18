@@ -17,7 +17,9 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      // Light by default (usability revamp R1): easier to read in daylight
+      // and on a shop counter. Dark (or "system") stays a choice in the menu.
+      defaultTheme="light"
       enableSystem
       storageKey={THEME_STORAGE_KEY}
       disableTransitionOnChange

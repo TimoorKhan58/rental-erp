@@ -142,10 +142,10 @@ export function NotificationDetailPage({
             </div>
           </SectionCard>
 
-          <SectionCard title="Related entity">
+          <SectionCard title="Related record">
             <dl className="grid gap-4 sm:grid-cols-2">
               <DetailField label="Module" value={notification.module} />
-              <DetailField label="Entity" value={notification.entityName} />
+              <DetailField label="Record" value={notification.entityName} />
               <DetailField label="Record ID" value={notification.recordId} />
               <DetailField label="Subject" value={notification.subject} />
             </dl>

@@ -34,7 +34,7 @@ export function AuditListPage() {
     <PageContainer>
       <PageHeader
         title="Audit trail"
-        description="Read-only system activity log recorded by the backend audit engine."
+        description="Every change made in RentCore: who did it, what changed and when. Read only."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Audit" },

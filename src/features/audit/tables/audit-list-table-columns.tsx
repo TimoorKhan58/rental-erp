@@ -112,7 +112,7 @@ export function getAuditTableColumns({
       id: "entityName",
       header: (
         <SortableColumnHeader
-          label="Entity"
+          label="Record"
           field="entityName"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -135,7 +135,7 @@ export function getAuditTableColumns({
       id: "recordId",
       header: (
         <SortableColumnHeader
-          label="Entity ID"
+          label="Record ID"
           field="recordId"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
