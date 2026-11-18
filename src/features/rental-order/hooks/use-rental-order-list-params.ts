@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ListRentalOrdersParams,
   RentalOrderSortField,
+  RentalOrderStage,
   RentalOrderStatus,
   RentalReservationFilter,
 } from "../types";
@@ -28,6 +29,7 @@ export function useRentalOrderListParams() {
         (searchParams.get("sortOrder") as ListRentalOrdersParams["sortOrder"]) ?? "desc",
       search: searchParams.get("search") ?? undefined,
       status: (statusParam as RentalOrderStatus | null) ?? undefined,
+      stage: (searchParams.get("stage") as RentalOrderStage | null) ?? undefined,
       customerId: searchParams.get("customerId") ?? undefined,
       warehouseId: searchParams.get("warehouseId") ?? undefined,
     };
@@ -61,6 +63,7 @@ export function useRentalOrderListParams() {
     updateParams({
       search: undefined,
       status: undefined,
+      stage: undefined,
       customerId: undefined,
       warehouseId: undefined,
       reservationStatus: undefined,
@@ -89,6 +92,14 @@ export function useRentalOrderListParams() {
       updateParams({ warehouseId, page: DEFAULT_PAGE }),
     setStatusFilter: (status: RentalOrderStatus | undefined) =>
       updateParams({ status, page: DEFAULT_PAGE }),
+    /** Picking a tab clears any exact status, and booking chips outside Upcoming. */
+    setStage: (stage: RentalOrderStage | undefined) =>
+      updateParams({
+        stage,
+        status: undefined,
+        reservationStatus: stage === "upcoming" ? searchParams.get("reservationStatus") ?? undefined : undefined,
+        page: DEFAULT_PAGE,
+      }),
     setReservationFilter: (value: RentalReservationFilter | "all") =>
       updateParams({
         reservationStatus: value === "all" ? undefined : value,

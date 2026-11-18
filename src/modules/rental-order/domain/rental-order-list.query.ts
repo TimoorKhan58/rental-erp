@@ -1,3 +1,5 @@
+import type { RentalOrderStage } from "./rental-order-stage";
+
 export interface RentalOrderListQuery {
   page: number;
   pageSize: number;
@@ -5,6 +7,10 @@ export interface RentalOrderListQuery {
   sortOrder?: "asc" | "desc";
   search?: string;
   status?: string;
+  /** A simple stage (usability revamp R3); `status` wins when both are given. */
+  stage?: RentalOrderStage;
+  /** For the late stage: keep orders due back before this business day. */
+  returnBefore?: Date;
   customerId?: string;
   warehouseId?: string;
   /** Inclusive — keep orders with eventEndDate >= eventFrom. */

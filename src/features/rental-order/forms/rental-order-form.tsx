@@ -1,5 +1,6 @@
 "use client";
 
+import { calendarDayToIso } from "@/lib/utils/local-date";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,25 +50,22 @@ type EditRentalOrderFormProps = RentalOrderFormBaseProps & {
 
 export type RentalOrderFormProps = CreateRentalOrderFormProps | EditRentalOrderFormProps;
 
-const createDefaults: CreateRentalOrderFormValues = {
-  orderNumber: "",
-  customerId: "",
-  warehouseId: "",
-  startDate: new Date().toISOString(),
-  endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-  bookInAdvance: false,
-  remarks: "",
-  items: [
-    {
-      productId: "",
-      quantity: 1,
-      dailyRate: 1,
-      useCustomDates: false,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-};
+/** Today to tomorrow as whole calendar days, made when the form opens (R3). */
+function createDefaults(): CreateRentalOrderFormValues {
+  const now = new Date();
+  const startDate = calendarDayToIso(now);
+  const endDate = calendarDayToIso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  return {
+    orderNumber: "",
+    customerId: "",
+    warehouseId: "",
+    startDate,
+    endDate,
+    bookInAdvance: false,
+    remarks: "",
+    items: [{ productId: "", quantity: 1, dailyRate: 0, useCustomDates: false, startDate, endDate }],
+  };
+}
 
 type CustomerOption = { id: string; label: string; keywords?: string };
 
@@ -132,7 +130,7 @@ function CreateRentalOrderForm({
   const [extraCustomerOptions, setExtraCustomerOptions] = useState<CustomerOption[]>([]);
   const form = useForm<CreateRentalOrderFormValues>({
     resolver: zodResolver(createRentalOrderFormSchema),
-    defaultValues: { ...createDefaults, ...defaultValues },
+    defaultValues: { ...createDefaults(), ...defaultValues },
   });
 
   const startDate = form.watch("startDate");
@@ -279,8 +277,8 @@ function CreateRentalOrderForm({
               placeholder="Delivery notes, event details, special instructions…"
             />
             <p className="mt-3 text-[length:var(--text-caption)] text-muted-foreground">
-              Order number is assigned automatically on save. Pricing preview uses line qty × daily
-              rate × rental days; reservation and billing remain server-enforced.
+              The order number is given when you save. The total here is quantity × daily rate ×
+              days; the saved order and invoice use the same rule.
             </p>
             </CardContent>
           </Card>

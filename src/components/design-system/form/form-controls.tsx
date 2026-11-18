@@ -28,6 +28,7 @@ import { AppButton } from "@/components/design-system/button";
 import { SearchBox } from "@/components/shared/search-box";
 import { parseCurrencyInput, formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { calendarDayToIso, isoToCalendarDay } from "@/lib/utils/local-date";
 
 type BaseFieldProps<T extends FieldValues> = {
   control: Control<T>;
@@ -611,7 +612,7 @@ export function DatePickerField<T extends FieldValues>({
       description={description}
       className={className}
       render={(field) => {
-        const dateValue = field.value ? new Date(field.value) : undefined;
+        const dateValue = field.value ? isoToCalendarDay(String(field.value)) : undefined;
 
         return (
           <Popover>
@@ -631,7 +632,7 @@ export function DatePickerField<T extends FieldValues>({
               <Calendar
                 mode="single"
                 selected={dateValue}
-                onSelect={(date) => field.onChange(date?.toISOString())}
+                onSelect={(date) => field.onChange(date ? calendarDayToIso(date) : undefined)}
               />
             </PopoverContent>
           </Popover>

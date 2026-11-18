@@ -14,6 +14,9 @@ export const RENTAL_ORDER_STATUSES = [
 
 export type RentalOrderStatus = (typeof RENTAL_ORDER_STATUSES)[number];
 
+/** Simple stages shown as tabs on the order list (usability revamp R3). */
+export type RentalOrderStage = "drafts" | "upcoming" | "out" | "late" | "finished" | "cancelled";
+
 export type RentalReservationFilter =
   | "not-started"
   | "partial"
@@ -124,6 +127,7 @@ export type ListRentalOrdersParams = {
   sortOrder?: "asc" | "desc";
   search?: string;
   status?: RentalOrderStatus;
+  stage?: RentalOrderStage;
   customerId?: string;
   warehouseId?: string;
   /** ISO date — include orders overlapping this range start. */

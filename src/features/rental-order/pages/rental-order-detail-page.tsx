@@ -7,10 +7,8 @@ import {
   ArrowUpRightIcon,
   Building2Icon,
   CalendarRangeIcon,
-  CheckIcon,
   ClockIcon,
   DollarSignIcon,
-  PackageIcon,
   PencilIcon,
   UsersIcon,
   XIcon,
@@ -46,6 +44,7 @@ import { RentalOrderStatusTimeline } from "../components/rental-order-status-tim
 import { RentalReservationBadge } from "../components/rental-reservation-badge";
 import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
 import { RentalOrderLifecycleStrip } from "../components/rental-order-lifecycle-strip";
+import { RentalOrderNextStep, getRentalOrderNextStep } from "../components/rental-order-next-step";
 import { RentalOrderLineItemsTable } from "../components/rental-order-line-items-table";
 import { RentalOrderShortfallSection } from "../components/rental-order-shortfall-section";
 import { RentalOrderDispatchesSection } from "@/features/dispatch/components";
@@ -218,6 +217,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
     );
   }
 
+  const nextStep = getRentalOrderNextStep(order);
   const customerName = customer?.name ?? customerLabelById.get(order.customerId) ?? order.customerId;
   const warehouseName =
     warehouse?.name ?? warehouseLabelById.get(order.warehouseId) ?? order.warehouseId;
@@ -243,28 +243,11 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             </AppButton>
             {canUpdate && canEditRentalOrder(order.status) ? (
               <AppButton
+                variant="outline"
                 leftIcon={<PencilIcon className="size-4" aria-hidden="true" />}
                 render={<Link href={ROUTES.rentalOrderEdit(order.id)} />}
               >
                 Edit
-              </AppButton>
-            ) : null}
-            {canConfirm && canConfirmRentalOrder(order.status) ? (
-              <AppButton
-                variant="outline"
-                leftIcon={<CheckIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setConfirmOpen(true)}
-              >
-                Confirm
-              </AppButton>
-            ) : null}
-            {canReserve && canReserveRentalOrder(order.status) ? (
-              <AppButton
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-                leftIcon={<PackageIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setReserveOpen(true)}
-              >
-                Reserve inventory
               </AppButton>
             ) : null}
             {canCancel && canCancelRentalOrder(order.status, order.items) ? (
@@ -304,6 +287,19 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
           </div>
 
           <RentalOrderLifecycleStrip status={order.status} />
+
+          <RentalOrderNextStep
+            step={nextStep}
+            allowed={
+              nextStep.action?.kind === "confirm"
+                ? canConfirm && canConfirmRentalOrder(order.status)
+                : nextStep.action?.kind === "reserve"
+                  ? canReserve && canReserveRentalOrder(order.status)
+                  : true
+            }
+            onConfirm={() => setConfirmOpen(true)}
+            onReserve={() => setReserveOpen(true)}
+          />
 
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <MetricTile
