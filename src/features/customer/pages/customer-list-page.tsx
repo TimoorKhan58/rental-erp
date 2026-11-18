@@ -15,7 +15,7 @@ export function CustomerListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Customers"
-        description="Find customers quickly by name, code, or phone — manage status and open their workspace."
+        description="Find a customer by name, code or phone, then see their orders and what they owe."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Customers" },

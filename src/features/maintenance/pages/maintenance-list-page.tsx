@@ -17,7 +17,7 @@ export function MaintenanceListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Maintenance"
-        description="Schedule service against available inventory. Starting a job posts stock OUT; completing it posts stock IN. Costs stay on the job and are not posted to expenses."
+        description="Regular servicing of your items. Items are out of stock while the job runs and come back when it is finished."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Maintenance" },

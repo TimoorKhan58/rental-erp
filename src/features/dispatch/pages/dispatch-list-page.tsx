@@ -17,7 +17,7 @@ export function DispatchListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Dispatches"
-        description="Fulfill rental orders by delivery or customer pickup. Completing a ready dispatch posts stock OUT and can move the order On rent."
+        description="Items going out to customers, by delivery or pickup. Marking a dispatch as sent takes the items out of stock."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Dispatches" },

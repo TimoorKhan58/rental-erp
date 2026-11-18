@@ -144,7 +144,7 @@ function ProductReportContent() {
           isLoading={isLoading}
         />
         <AmountBarChart
-          title="Most rented (quantity-days)"
+          title="Most rented (item-days)"
           description="Highest rental volume in the filtered set"
           data={mostRentedChartData}
           isLoading={isLoading}
@@ -254,7 +254,7 @@ export function ProductReportPage() {
     <PageContainer>
       <PageHeader
         title="Product Report"
-        description="Product rental volume and booked line totals by booking date. Summary cards for money and quantity-days are this page only."
+        description="Which items are rented most and what they earned, for the chosen dates."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

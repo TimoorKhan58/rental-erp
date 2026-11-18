@@ -118,7 +118,7 @@ export function DateAwareAvailabilityHint({
         </span>
       ) : (
         <span className="text-[length:var(--text-caption)] text-muted-foreground">
-          For selected rental dates (authoritative)
+          For the chosen rental dates
         </span>
       )}
       {heldForOtherDates > 0 ? (

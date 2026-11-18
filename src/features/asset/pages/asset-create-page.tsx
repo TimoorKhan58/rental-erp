@@ -21,7 +21,7 @@ export function AssetCreatePage() {
     <PageContainer>
       <PageHeader
         title="Register asset"
-        description="Create a new fixed asset record."
+        description="Add something the business owns, like a vehicle or generator."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Assets", href: ROUTES.assets },

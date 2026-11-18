@@ -34,7 +34,7 @@ export function NotificationListPage() {
     <PageContainer>
       <PageHeader
         title="Notifications"
-        description="Inbox of system notifications delivered by the notification service."
+        description="Messages from RentCore about things that need your attention."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Notifications" },

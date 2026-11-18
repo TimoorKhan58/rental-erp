@@ -15,7 +15,7 @@ export function SupplierListPage() {
     <PageContainer>
       <PageHeader
         title="Suppliers"
-        description="Manage supplier profiles, contact details, and account status."
+        description="The businesses you buy from or hire items from."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Suppliers" },

@@ -21,7 +21,7 @@ export function ExpenseCreatePage() {
     <PageContainer>
       <PageHeader
         title="Record expense"
-        description="Creates a draft expense. No journal, payment, or inventory change occurs until the expense is approved and marked paid."
+        description="Record a cost. It is saved as a draft until it is approved and marked paid."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Expenses", href: ROUTES.expenses },

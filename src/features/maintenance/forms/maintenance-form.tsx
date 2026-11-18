@@ -109,9 +109,8 @@ function CreateMaintenanceForm({
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Maintenance details">
         <p className="mb-4 text-sm text-muted-foreground">
-          Quantity cannot exceed available inventory. Starting this job later posts stock OUT;
-          completing it posts stock IN. Estimated and actual cost stay on this record and are
-          not posted to expenses or journals.
+          You can only service items that are free to rent. They leave stock when the job
+          starts and come back when it is finished.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <SelectField

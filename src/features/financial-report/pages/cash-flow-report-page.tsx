@@ -109,9 +109,7 @@ function CashFlowContent() {
 
           <SectionCard title="Notes">
             <p className="text-sm text-muted-foreground">
-              Values come from the posted-journal cash-flow summary. Investing and financing
-              breakdowns are not exposed as separate sections. This is not a bank-statement
-              cash report.
+              These figures come from your accounts. They may differ from your bank statement.
             </p>
           </SectionCard>
         </>
@@ -125,7 +123,7 @@ export function CashFlowReportPage() {
     <PageContainer>
       <PageHeader
         title="Cash Flow"
-        description="Posted journal cash-flow summary for the selected journal dates."
+        description="Money in and out for the chosen dates."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

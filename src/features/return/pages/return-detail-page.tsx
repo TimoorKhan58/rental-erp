@@ -393,7 +393,7 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
           {metrics.showInspection ? (
             <SectionCard
               title="Condition assessment"
-              description="Inspection quantities. Only owned GOOD restocks when this return is completed."
+              description="How many came back good, damaged or missing. Only good items go back into stock."
             >
               <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <DetailField label="Good condition" value={metrics.damageTotals.good} />

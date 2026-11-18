@@ -17,7 +17,7 @@ export function AssetListPage() {
     <PageContainer className="space-y-6">
       <PageHeader
         title="Assets"
-        description="Register and manage fixed assets across warehouses."
+        description="Things the business owns and uses, like vehicles and generators, with their value."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Assets" },

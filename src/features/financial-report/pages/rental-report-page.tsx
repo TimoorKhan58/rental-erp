@@ -345,7 +345,7 @@ export function RentalReportPage() {
     <PageContainer>
       <PageHeader
         title="Rental Performance"
-        description="Rental orders by booking date. Booked totals are order grand totals, not collected cash."
+        description="Orders booked in the chosen dates and their value. This is booked value, not money collected."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

@@ -32,8 +32,8 @@ export function VoidPaymentDialog({
 
   const description =
     payment.status === "POSTED"
-      ? `Void "${payment.paymentNumber}" (${formatCurrency(payment.amount)})? This reverses the posted payment on the linked invoice. Accounting settlement remains server-enforced.`
-      : `Void "${payment.paymentNumber}" (${formatCurrency(payment.amount)})? This cancels the pending payment. The invoice is not settled until a payment is posted.`;
+      ? `Void "${payment.paymentNumber}" (${formatCurrency(payment.amount)})? The invoice will show this amount as unpaid again.`
+      : `Void "${payment.paymentNumber}" (${formatCurrency(payment.amount)})? This cancels the payment before it was counted. The invoice is not changed.`;
 
   return (
     <ConfirmModal

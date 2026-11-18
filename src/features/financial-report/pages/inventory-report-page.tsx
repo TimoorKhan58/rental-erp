@@ -300,7 +300,7 @@ export function InventoryReportPage() {
     <PageContainer>
       <PageHeader
         title="Inventory Report"
-        description="Current stock snapshot using on-hand, reserved, and available quantities."
+        description="Your stock right now: in stock, booked and free to rent."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

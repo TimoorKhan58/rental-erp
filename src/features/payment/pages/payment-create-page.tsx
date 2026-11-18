@@ -33,7 +33,7 @@ export function PaymentCreatePage() {
     <PageContainer>
       <PageHeader
         title="Record payment"
-        description="Create a new payment against a rental invoice."
+        description="Enter money received from a customer against one of their invoices."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Payments", href: ROUTES.payments },

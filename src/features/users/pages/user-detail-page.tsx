@@ -119,7 +119,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
         <div className="space-y-6 lg:col-span-2">
           <SectionCard
             title="User details"
-            description="Identity profile for this enterprise account."
+            description="This person's name, email and role."
           >
             <dl className="grid gap-3 sm:grid-cols-2">
               <DetailField

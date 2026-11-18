@@ -21,7 +21,7 @@ export function ProcurementCreatePage() {
     <PageContainer>
       <PageHeader
         title="New purchase order"
-        description="Creates a draft purchase order. Inventory does not change until goods are received after approval."
+        description="Start a purchase order as a draft. Stock does not change until the goods are received."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Procurement", href: ROUTES.procurements },

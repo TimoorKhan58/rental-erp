@@ -107,7 +107,7 @@ export function SettingsPreferencesPage() {
     <PageContainer>
       <PageHeader
         title="Preferences"
-        description="Browser theme plus locale codes used for on-screen formatting. Dashboard preference fields are stored only."
+        description="Light or dark look, and how dates and numbers are shown."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

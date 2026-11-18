@@ -17,7 +17,7 @@ export function ReturnListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Returns"
-        description="Receive assets from a completed dispatch, inspect condition, then complete to restock owned good units and update the rental order. Server quantity rules remain authoritative."
+        description="Items coming back from customers. Receive them, check their condition, then finish the return to put good items back in stock."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Returns" },

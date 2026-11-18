@@ -25,7 +25,7 @@ export function MaintenanceCreatePage() {
     <PageContainer>
       <PageHeader
         title="New maintenance"
-        description="Schedule service against available inventory. Stock is removed when the job starts and returned when it completes. Costs are not posted automatically."
+        description="Plan servicing for some items. They leave stock when the job starts and come back when it is finished."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Maintenance", href: ROUTES.maintenance },

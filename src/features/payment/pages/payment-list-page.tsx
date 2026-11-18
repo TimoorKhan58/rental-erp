@@ -17,7 +17,7 @@ export function PaymentListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Payments"
-        description="Record, post, and review payments against rental invoices — amounts and statuses stay server-authoritative."
+        description="Money received from customers against their invoices."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Payments" },

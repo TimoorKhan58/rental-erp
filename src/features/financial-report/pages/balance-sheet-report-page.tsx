@@ -143,7 +143,7 @@ export function BalanceSheetReportPage() {
     <PageContainer>
       <PageHeader
         title="Balance Sheet"
-        description="Posted journal assets, liabilities, and equity as of the selected journal date."
+        description="What the business owns and owes on the chosen date."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

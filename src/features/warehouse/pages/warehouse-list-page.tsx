@@ -15,7 +15,7 @@ export function WarehouseListPage() {
     <PageContainer>
       <PageHeader
         title="Warehouses"
-        description="Manage warehouse locations, contacts, and operational status."
+        description="The places where you keep your stock."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Warehouses" },

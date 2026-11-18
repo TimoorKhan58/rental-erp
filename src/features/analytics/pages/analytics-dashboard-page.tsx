@@ -53,7 +53,7 @@ function AnalyticsDashboardContent() {
     return (
       <EmptyState
         title="Analytics unavailable"
-        description="You need reports read permission to view executive analytics."
+        description="Ask your business owner for access to reports."
       />
     );
   }
@@ -116,7 +116,7 @@ function AnalyticsDashboardContent() {
         <>
           <AnalyticsSection
             title="Financial overview"
-            description="Qualified money metrics for the selected period, plus current outstanding AR."
+            description="Money for the chosen dates, plus what customers owe today."
           >
             <AnalyticsMetricCard
               label={ANALYTICS_METRIC_LABELS.bookedRentalValue}
@@ -150,7 +150,7 @@ function AnalyticsDashboardContent() {
 
           <AnalyticsSection
             title="Rental operations"
-            description="Booking/operational rental counts. Active does not mean physically on rent."
+            description="How many orders were booked and where they are now."
           >
             <AnalyticsMetricCard
               label={ANALYTICS_METRIC_LABELS.activeRentals}
@@ -177,7 +177,7 @@ function AnalyticsDashboardContent() {
 
           <AnalyticsSection
             title="Inventory"
-            description="Reliable stock concepts only. Physically rented quantity is not exposed."
+            description="Your stock: how much you have, what is booked and what is free."
           >
             <AnalyticsMetricCard
               label={ANALYTICS_METRIC_LABELS.availableQuantity}
@@ -193,7 +193,7 @@ function AnalyticsDashboardContent() {
 
           <AnalyticsSection
             title="Customers & procurement"
-            description="Period-scoped acquisition and ordered purchase value."
+            description="New customers and purchases for the chosen dates."
           >
             <AnalyticsMetricCard
               label={ANALYTICS_METRIC_LABELS.newCustomers}
@@ -209,7 +209,7 @@ function AnalyticsDashboardContent() {
 
           <AnalyticsSection
             title="Operational health"
-            description="Keep asset maintenance and rental repair jobs separate."
+            description="Repair and servicing jobs still open."
           >
             <AnalyticsMetricCard
               label={ANALYTICS_METRIC_LABELS.assetsUnderMaintenance}
@@ -247,7 +247,7 @@ export function AnalyticsDashboardPage() {
     <PageContainer>
       <PageHeader
         title="Analytics"
-        description="Executive overview of booked value, billed revenue, collected cash, recognized revenue, rentals, inventory, and operations."
+        description="How the business is doing: bookings, money billed and collected, rentals, stock and jobs."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

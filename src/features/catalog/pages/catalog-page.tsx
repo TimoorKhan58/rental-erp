@@ -39,7 +39,7 @@ export function CatalogPage() {
     <PageContainer className="space-y-6">
       <PageHeader
         title="Catalog"
-        description="Manage categories, brands, units, attributes, and tags used by products."
+        description="The lists used to describe products: categories, brands, units and tags."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Catalog" },

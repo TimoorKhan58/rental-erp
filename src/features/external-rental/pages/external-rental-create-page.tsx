@@ -213,7 +213,7 @@ export function ExternalRentalCreatePage() {
     <PageContainer>
       <PageHeader
         title="New external rental"
-        description="Pick a rental order, then enter supplier hire-in quantities and unit cost. No UUIDs needed."
+        description="Pick the rental order that is short, then enter how many you are hiring and what each costs."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "External Rentals", href: ROUTES.externalRentals },

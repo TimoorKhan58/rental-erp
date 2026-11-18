@@ -46,7 +46,7 @@ export function ExternalRentalListPage() {
     <PageContainer>
       <PageHeader
         title="External Rentals"
-        description="Hire-in agreements for shortfall sourcing from suppliers."
+        description="Items you hire from other suppliers when you do not have enough of your own."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "External Rentals" },
@@ -90,7 +90,7 @@ export function ExternalRentalListPage() {
       ) : (data?.items.length ?? 0) === 0 ? (
         <EmptyState
           title="No external rentals"
-          description="Create an agreement to hire inventory from a supplier."
+          description="Hire items from a supplier when your own stock is not enough."
         />
       ) : (
         <>

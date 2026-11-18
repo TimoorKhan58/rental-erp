@@ -33,7 +33,7 @@ export function AuditListPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Audit trail"
+        title="Activity Log"
         description="Every change made in RentCore: who did it, what changed and when. Read only."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
