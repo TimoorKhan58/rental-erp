@@ -38,4 +38,18 @@ describe("decidePageAccess (SaaS phase 3b)", () => {
     expect(decidePageAccess("/dev/fluid-grid-qa", null, true)).toEqual({ action: "next" });
     expect(decidePageAccess("/dev/fluid-grid-qa", null, false)).toMatchObject({ to: "/login" });
   });
+
+  it("keeps users with a temporary password on /change-password (SaaS phase 3c)", () => {
+    expect(decidePageAccess("/change-password", "business_password_change")).toEqual({ action: "next" });
+    for (const path of ["/", "/dashboard", "/customers", "/login", "/platform"]) {
+      expect(decidePageAccess(path, "business_password_change")).toEqual({
+        action: "redirect",
+        to: "/change-password",
+      });
+    }
+    // Normal users may still change their password voluntarily.
+    expect(decidePageAccess("/change-password", "business")).toEqual({ action: "next" });
+    expect(decidePageAccess("/change-password", null)).toMatchObject({ to: "/login" });
+    expect(decidePageAccess("/change-password", "platform")).toEqual({ action: "redirect", to: "/platform" });
+  });
 });

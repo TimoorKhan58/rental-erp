@@ -121,6 +121,7 @@ describe("runIdentityApiRoute authorization", () => {
       where: { id: TEST_ERP_USER_ID },
       select: {
         isActive: true,
+        mustChangePassword: true,
         organizationId: true,
         organization: { select: { isActive: true } },
       },

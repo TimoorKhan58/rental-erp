@@ -60,7 +60,7 @@ describe("proxy session gate", () => {
 
   it("redirects authenticated users away from login", async () => {
     mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
-    mockEnsureActiveErpUser.mockResolvedValue(undefined);
+    mockEnsureActiveErpUser.mockResolvedValue({ organizationId: "org-1", mustChangePassword: false });
 
     const response = await proxy(createRequest("/login"));
 
@@ -81,7 +81,7 @@ describe("proxy session gate", () => {
 
   it("allows authenticated users on protected routes", async () => {
     mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
-    mockEnsureActiveErpUser.mockResolvedValue(undefined);
+    mockEnsureActiveErpUser.mockResolvedValue({ organizationId: "org-1", mustChangePassword: false });
 
     const response = await proxy(createRequest("/dashboard"));
 
@@ -165,12 +165,30 @@ describe("proxy and platform owners (SaaS phase 3b)", () => {
 
   it("lets business users reach /platform only to get the page's own not-found", async () => {
     mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
-    mockEnsureActiveErpUser.mockResolvedValue(undefined);
+    mockEnsureActiveErpUser.mockResolvedValue({ organizationId: "org-1", mustChangePassword: false });
 
     const response = await proxy(createRequest("/platform"));
 
     expect(response.headers.get("location")).toBeNull();
     expect(mockFindActivePlatformOwner).not.toHaveBeenCalled();
+  });
+});
+
+describe("proxy and temporary passwords (SaaS phase 3c)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockHeaders.mockResolvedValue(new Headers());
+  });
+
+  it("sends a user with a temporary password to /change-password", async () => {
+    mockGetSession.mockResolvedValue({ user: { id: "user-1" } });
+    mockEnsureActiveErpUser.mockResolvedValue({ organizationId: "org-1", mustChangePassword: true });
+
+    const response = await proxy(createRequest("/dashboard"));
+    expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/change-password");
+
+    const onPage = await proxy(createRequest("/change-password"));
+    expect(onPage.headers.get("location")).toBeNull();
   });
 });
 

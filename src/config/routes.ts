@@ -8,6 +8,8 @@ export const ROUTES = {
   unauthorized: "/unauthorized",
   /** Platform owners only (SaaS phase 3b). */
   platform: "/platform",
+  /** Choose your own password (SaaS phase 3c). */
+  changePassword: "/change-password",
 
   // Module routes
   dashboard: "/dashboard",
