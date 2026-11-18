@@ -1,35 +1,25 @@
 "use client";
 
-import { PageContainer, AppGrid, AppGridItem } from "@/components/layout";
 import { DashboardSkeleton } from "@/components/design-system/loading";
-import {
-  useBusinessPulse,
-  useDashboardNotifications,
-  useQuickActions,
-} from "../hooks";
+import { PageContainer } from "@/components/layout";
 import { useOrganizationName } from "@/features/settings/hooks";
-import { AttentionNeeded } from "./attention-needed";
-import { BusinessPulseRow } from "./business-pulse-row";
-import { CatalogSnapshot } from "./catalog-snapshot";
-import { DashboardHero } from "./dashboard-hero";
-import { NotificationsPanel } from "./notifications-panel";
-import { OpsHealthGrid } from "./ops-health-grid";
-import { QuickActionsPanel } from "./quick-actions-panel";
-import { RentalInsightsSection } from "./rental-insights-section";
+
+import { useLiveDashboardSummary } from "../hooks";
+import { DashboardGreeting } from "./today/dashboard-greeting";
+import { MonthSoFar, StockNow } from "./today/stock-and-month";
+import { TodayWorklist } from "./today/today-worklist";
+import { WeekSchedule } from "./today/week-schedule";
 
 /**
- * Operations Control Center — fluid 12-column workspace:
- * command → today → attention → business → inventory → upcoming → secondary.
+ * Dashboard (usability revamp R2): today's work first, then the next 7
+ * days, what stock is free, and this month's money. Charts and deeper
+ * analysis live in Reports → Analytics.
  */
 export function DashboardPage() {
-  const pulse = useBusinessPulse();
+  const summary = useLiveDashboardSummary();
   const { organizationName } = useOrganizationName();
-  const quickActions = useQuickActions();
-  const notifications = useDashboardNotifications();
 
-  const isInitialLoading = pulse.isLoading && !pulse.data;
-
-  if (isInitialLoading) {
+  if (summary.isLoading && !summary.data) {
     return (
       <PageContainer>
         <DashboardSkeleton />
@@ -37,104 +27,37 @@ export function DashboardPage() {
     );
   }
 
-  const data = pulse.data;
-  const hasError = pulse.isError && !data;
-  const staleRefreshFailed = pulse.isError && Boolean(data);
-  const refreshing = pulse.isFetching && !data;
+  const data = summary.data;
 
   return (
-    <PageContainer className="space-y-4">
-      <DashboardHero
-        organizationName={organizationName}
-        attentionCount={data?.attentionCount ?? 0}
-      />
+    <PageContainer className="space-y-6">
+      <DashboardGreeting organizationName={organizationName} />
 
-      {hasError ? (
+      {summary.isError && !data ? (
         <div
           role="alert"
           className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
-          Could not load live business numbers. Check your reports permission or try
-          refreshing.
+          The dashboard numbers could not be loaded. Refresh the page to try again.
         </div>
       ) : null}
 
-      {staleRefreshFailed ? (
-        <div
-          role="status"
-          className="rounded-md border border-warning/30 bg-warning-muted/40 px-3 py-2 text-xs text-warning-foreground"
-        >
-          Live refresh failed — showing the last successful snapshot.
+      {summary.isError && data ? (
+        <div role="status" className="rounded-md bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
+          Couldn&apos;t refresh just now; showing the numbers from a moment ago.
         </div>
       ) : null}
 
-      <OpsHealthGrid
-        title="Today"
-        description="Dispatches, returns, and assets offline"
-        columns="today"
-        items={data?.todayOps ?? data?.opsHealth?.slice(0, 4) ?? []}
-        isLoading={refreshing}
-        emptyLabel="No dispatches, returns, or asset jobs today."
-      />
-
-      <AppGrid>
-        <AppGridItem span={8} smSpan={6}>
-          <AttentionNeeded
-            items={data?.attention ?? []}
-            headline={data?.headline ?? ""}
-            isLoading={refreshing}
-          />
-        </AppGridItem>
-        <AppGridItem span={4} smSpan={6} as="aside">
-          <QuickActionsPanel
-            actions={quickActions.data ?? []}
-            isLoading={quickActions.isLoading}
-            compact
-          />
-        </AppGridItem>
-      </AppGrid>
-
-      <BusinessPulseRow
-        metrics={data?.pulseMetrics ?? []}
-        isLoading={refreshing}
-      />
-
-      <OpsHealthGrid
-        title="Inventory health"
-        description="On hand, committed, and available to rent"
-        columns="inventory"
-        items={data?.inventoryHealth ?? []}
-        isLoading={refreshing}
-        emptyLabel="No inventory recorded yet."
-      />
-
-      <OpsHealthGrid
-        title="Upcoming"
-        description="Orders and supply already in the pipeline"
-        columns="upcoming"
-        items={data?.upcoming ?? []}
-        isLoading={refreshing}
-        emptyLabel="No upcoming orders or purchase orders."
-      />
-
-      <AppGrid className="border-t border-border pt-4">
-        <AppGridItem span={8} smSpan={6} className="space-y-4">
-          <RentalInsightsSection />
-          <CatalogSnapshot
-            customers={data?.catalog.customers ?? 0}
-            products={data?.catalog.products ?? 0}
-            suppliers={data?.catalog.suppliers ?? 0}
-            warehouses={data?.catalog.warehouses ?? 0}
-            isLoading={refreshing}
-          />
-        </AppGridItem>
-        <AppGridItem span={4} smSpan={6} as="aside">
-          <NotificationsPanel
-            notifications={notifications.data ?? []}
-            isLoading={notifications.isLoading}
-          />
-        </AppGridItem>
-      </AppGrid>
+      {data ? (
+        <>
+          <TodayWorklist summary={data} />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <WeekSchedule today={data.worklist.today} entries={data.worklist.schedule} />
+            <StockNow summary={data} />
+          </div>
+          <MonthSoFar summary={data} />
+        </>
+      ) : null}
     </PageContainer>
   );
 }

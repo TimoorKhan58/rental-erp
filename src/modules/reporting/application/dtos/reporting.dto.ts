@@ -1,3 +1,5 @@
+import type { DashboardWorklist } from "@/modules/reporting/domain/dashboard-worklist";
+
 export interface DashboardSummaryDto {
   totalCustomers: number;
   totalSuppliers: number;
@@ -25,6 +27,7 @@ export interface DashboardSummaryDto {
   revenueThisMonth: number;
   paymentsThisMonth: number;
   averageRentalDuration: number;
+  worklist: DashboardWorklist;
 }
 
 export interface InventoryReportLineDto {

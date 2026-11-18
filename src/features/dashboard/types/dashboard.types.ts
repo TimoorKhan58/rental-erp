@@ -39,6 +39,28 @@ export type LiveDashboardSummary = {
   revenueThisMonth: number;
   paymentsThisMonth: number;
   averageRentalDuration: number;
+  /** Today's work and the next 7 days (usability revamp R2). */
+  worklist: DashboardWorklist;
+};
+
+export type DashboardScheduleEntry = {
+  date: string;
+  direction: "out" | "back";
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+};
+
+export type DashboardWorklist = {
+  today: string;
+  ordersGoingOutToday: number;
+  ordersOutWithCustomers: number;
+  lateReturns: number;
+  unpaidInvoices: number;
+  overdueInvoices: number;
+  oldestOverdueDays: number | null;
+  amountToCollect: number;
+  schedule: DashboardScheduleEntry[];
 };
 
 export type AttentionSeverity = "critical" | "warning" | "info";
