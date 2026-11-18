@@ -36,7 +36,8 @@ export const NAV_ITEM_REQUIRED_ANY: Record<string, readonly Permission[]> = {
   [ROUTES.users]: [PERMISSIONS.identity.read],
   [ROUTES.audit]: [PERMISSIONS.audit.read],
   [ROUTES.notifications]: [PERMISSIONS.notifications.read],
-  [ROUTES.settings]: [PERMISSIONS.settings.read, PERMISSIONS.identity.read],
+  // Everyone signed in has Settings: at least their own profile.
+  [ROUTES.settings]: [],
 };
 
 export const QUICK_ACTION_REQUIRED_ANY: Record<string, readonly Permission[]> = {
