@@ -41,6 +41,7 @@ export function SettingsOverviewPage() {
     isLoading,
     canReadProfile,
     canReadSettings,
+    canUpdateSettings,
   } = useSettingsPermissions();
 
   if (isLoading) {
@@ -109,6 +110,24 @@ export function SettingsOverviewPage() {
           );
         })}
       </div>
+
+      {canUpdateSettings && (
+        <SectionCard
+          className="mt-4"
+          title="Export your data"
+          description="Download everything your business has in RentCore as one zip file: customers, products, stock, orders, invoices, payments, accounts and more."
+          actions={
+            <AppButton variant="outline" size="sm" render={<a href="/api/settings/export" download />}>
+              Download export
+            </AppButton>
+          }
+        >
+          <p className="text-sm text-muted-foreground">
+            One spreadsheet (CSV) file per kind of record, which opens in Excel or Google Sheets. Passwords are not
+            included. Each download is recorded in the audit log.
+          </p>
+        </SectionCard>
+      )}
     </PageContainer>
   );
 }

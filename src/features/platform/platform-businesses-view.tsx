@@ -62,6 +62,13 @@ export function PlatformBusinessesView() {
       header: <span className="sr-only">Actions</span>,
       cell: (row) => (
         <div className="flex flex-wrap justify-end gap-2">
+          <AppButton
+            size="sm"
+            variant="outline"
+            render={<a href={`/api/platform/businesses/${row.id}/export`} download />}
+          >
+            Export
+          </AppButton>
           <AppButton size="sm" variant="outline" disabled={!row.owner} onClick={() => setResetting(row)}>
             Reset owner password
           </AppButton>
