@@ -31,64 +31,59 @@ import {
 export type { NavigationGroup, NavigationItem } from "./navigation.types";
 
 /**
- * Grouped application navigation — ops-first IA for daily rental work.
- * Labels/routes unchanged; order only.
+ * Grouped by daily work, in plain words (usability revamp R5): rentals,
+ * then money, then customers and stock, then buying and upkeep, then admin.
  */
 export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
-    label: "Overview",
-    items: [
-      { label: "Dashboard", href: ROUTES.dashboard, icon: LayoutDashboard },
-    ],
+    label: "Today",
+    items: [{ label: "Dashboard", href: ROUTES.dashboard, icon: LayoutDashboard }],
   },
   {
-    label: "Operations",
+    label: "Rentals",
     items: [
       { label: "Rental Orders", href: ROUTES.rentalOrders, icon: ClipboardList },
-      {
-        label: "Reservation Calendar",
-        href: ROUTES.rentalOrdersCalendar,
-        icon: CalendarDays,
-      },
+      { label: "Booking Calendar", href: ROUTES.rentalOrdersCalendar, icon: CalendarDays },
       { label: "Dispatches", href: ROUTES.dispatches, icon: Truck },
       { label: "Returns", href: ROUTES.returns, icon: Undo2 },
-      {
-        label: "External Rentals",
-        href: ROUTES.externalRentals,
-        icon: PackageOpen,
-      },
-      { label: "Procurement", href: ROUTES.procurements, icon: ShoppingCart },
-      { label: "Repairs", href: ROUTES.repairs, icon: Wrench },
-      { label: "Maintenance", href: ROUTES.maintenance, icon: Settings2 },
     ],
   },
   {
-    label: "Master Data",
+    label: "Money",
+    items: [
+      { label: "Invoices", href: ROUTES.rentalInvoices, icon: FileText },
+      { label: "Payments", href: ROUTES.payments, icon: CreditCard },
+      { label: "Expenses", href: ROUTES.expenses, icon: Receipt },
+      { label: "Reports", href: ROUTES.reports, icon: BarChart3 },
+      { label: "Accounting", href: ROUTES.accounting, icon: BookOpen },
+    ],
+  },
+  {
+    label: "Customers & stock",
     items: [
       { label: "Customers", href: ROUTES.customers, icon: Users },
       { label: "Inventory", href: ROUTES.inventory, icon: Package },
       { label: "Products", href: ROUTES.products, icon: Box },
       { label: "Catalog", href: ROUTES.catalog, icon: Tags },
-      { label: "Assets", href: ROUTES.assets, icon: Boxes },
       { label: "Warehouses", href: ROUTES.warehouses, icon: Warehouse },
-      { label: "Suppliers", href: ROUTES.suppliers, icon: Building2 },
     ],
   },
   {
-    label: "Finance",
+    label: "Buying & upkeep",
     items: [
-      { label: "Rental Invoices", href: ROUTES.rentalInvoices, icon: FileText },
-      { label: "Payments", href: ROUTES.payments, icon: CreditCard },
-      { label: "Expenses", href: ROUTES.expenses, icon: Receipt },
-      { label: "Accounting", href: ROUTES.accounting, icon: BookOpen },
-      { label: "Reports", href: ROUTES.reports, icon: BarChart3 },
+      { label: "Purchases", href: ROUTES.procurements, icon: ShoppingCart },
+      { label: "Suppliers", href: ROUTES.suppliers, icon: Building2 },
+      { label: "External Rentals", href: ROUTES.externalRentals, icon: PackageOpen },
+      { label: "Repairs", href: ROUTES.repairs, icon: Wrench },
+      { label: "Maintenance", href: ROUTES.maintenance, icon: Settings2 },
+      { label: "Assets", href: ROUTES.assets, icon: Boxes },
     ],
   },
   {
-    label: "Platform",
+    label: "Admin",
     items: [
       { label: "Users", href: ROUTES.users, icon: UserCog },
-      { label: "Audit", href: ROUTES.audit, icon: ScrollText },
+      { label: "Activity Log", href: ROUTES.audit, icon: ScrollText },
       { label: "Notifications", href: ROUTES.notifications, icon: Bell },
       { label: "Settings", href: ROUTES.settings, icon: Settings },
     ],

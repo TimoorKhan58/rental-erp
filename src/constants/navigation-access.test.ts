@@ -49,7 +49,7 @@ describe("navigation access", () => {
     ]);
 
     expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.label).toBe("Overview");
+    expect(filtered[0]?.label).toBe("Today");
     expect(filtered[0]?.items.map((item) => item.href)).toEqual([
       ROUTES.dashboard,
     ]);
