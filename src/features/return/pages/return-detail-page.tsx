@@ -1,16 +1,17 @@
 "use client";
 
+import { NextStepCard } from "@/components/shared";
+
+import { getReturnNextStep } from "../mappers/return-next-step";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
   CalendarIcon,
-  CheckIcon,
-  ClipboardCheckIcon,
   ClipboardListIcon,
   ClockIcon,
-  PackageIcon,
   PencilIcon,
   TruckIcon,
   UsersIcon,
@@ -282,32 +283,6 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
                 Edit
               </AppButton>
             ) : null}
-            {canReceive && canReceiveReturn(returnRecord.status) ? (
-              <AppButton
-                variant="outline"
-                leftIcon={<PackageIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setReceiveOpen(true)}
-              >
-                Mark received
-              </AppButton>
-            ) : null}
-            {canInspect && canInspectReturn(returnRecord.status) ? (
-              <AppButton
-                variant="outline"
-                leftIcon={<ClipboardCheckIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setInspectOpen(true)}
-              >
-                Inspect
-              </AppButton>
-            ) : null}
-            {canComplete && canCompleteReturn(returnRecord.status) ? (
-              <AppButton
-                leftIcon={<CheckIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setCompleteOpen(true)}
-              >
-                Complete
-              </AppButton>
-            ) : null}
             {canCancel && canCancelReturn(returnRecord.status) ? (
               <AppButton
                 variant="destructive"
@@ -318,6 +293,20 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
               </AppButton>
             ) : null}
           </>
+        }
+      />
+
+      <NextStepCard
+        step={getReturnNextStep(returnRecord)}
+        allowed={(() => {
+          const kind = getReturnNextStep(returnRecord).action?.kind;
+          if (kind === "receive") return canReceive && canReceiveReturn(returnRecord.status);
+          if (kind === "inspect") return canInspect && canInspectReturn(returnRecord.status);
+          if (kind === "complete") return canComplete && canCompleteReturn(returnRecord.status);
+          return true;
+        })()}
+        onAction={(kind) =>
+          kind === "receive" ? setReceiveOpen(true) : kind === "inspect" ? setInspectOpen(true) : setCompleteOpen(true)
         }
       />
 

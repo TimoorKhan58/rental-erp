@@ -20,7 +20,6 @@ import { queryKeys } from "@/lib/query";
 import { STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../mappers";
 import {
   RentalInvoiceMobileList,
-  RentalInvoicePaymentStatusFilterChips,
   RentalInvoiceStatusFilterChips,
 } from "../components";
 import {
@@ -41,7 +40,6 @@ type RentalInvoiceListTableProps = {
 
 export function RentalInvoiceListTable({
   statusCounts,
-  paymentStatusCounts,
 }: RentalInvoiceListTableProps = {}) {
   const queryClient = useQueryClient();
   const {
@@ -82,7 +80,6 @@ export function RentalInvoiceListTable({
   const rows = data?.items ?? [];
 
   const statusFilterValue = params.status ?? "all";
-  const paymentStatusFilterValue = paymentStatus ?? "all";
 
   const columns = getRentalInvoiceTableColumns({
     params,
@@ -198,13 +195,7 @@ export function RentalInvoiceListTable({
           onChange={(value) => setStatusFilter(value === "all" ? undefined : value)}
           counts={statusCounts}
         />
-        <RentalInvoicePaymentStatusFilterChips
-          value={paymentStatusFilterValue}
-          onChange={(value) =>
-            setPaymentStatusFilter(value === "all" ? undefined : value)
-          }
-          counts={paymentStatusCounts}
-        />
+        {/* One row of chips (R3b): payment chips repeated these; ?paymentStatus links still work. */}
         <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
