@@ -14,3 +14,4 @@ export { SearchBox } from "./search-box";
 export { SectionHeader } from "./section-header";
 export { StatCard } from "./stat-card";
 export { StatusBadge, type StatusTone } from "./status-badge";
+export { NextStepCard, type NextStep } from "./next-step-card";

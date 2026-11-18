@@ -1,5 +1,11 @@
 "use client";
 
+import { NextStepCard } from "@/components/shared";
+
+import { localDateInputValue } from "@/lib/utils/local-date";
+
+import { getRentalInvoiceNextStep } from "../mappers/rental-invoice-next-step";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +14,6 @@ import {
   CalendarIcon,
   ClipboardListIcon,
   ClockIcon,
-  FileCheckIcon,
   PencilIcon,
   PrinterIcon,
   ReceiptIcon,
@@ -262,19 +267,6 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             >
               Print preview
             </AppButton>
-            {canRecordPayment ? (
-              <AppButton
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-                leftIcon={<WalletIcon className="size-4" aria-hidden="true" />}
-                render={
-                  <Link
-                    href={ROUTES.paymentNewForInvoice(invoice.id, invoice.customerId)}
-                  />
-                }
-              >
-                Record payment
-              </AppButton>
-            ) : null}
             {canUpdate && invoice.status === "DRAFT" ? (
               <AppButton
                 variant="outline"
@@ -294,14 +286,6 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
                 Convert missing to loss
               </AppButton>
             ) : null}
-            {canIssue && canIssueRentalInvoice(invoice.status) ? (
-              <AppButton
-                leftIcon={<FileCheckIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setIssueOpen(true)}
-              >
-                Issue
-              </AppButton>
-            ) : null}
             {canVoid && canVoidRentalInvoice(invoice.status) ? (
               <AppButton
                 variant="destructive"
@@ -313,6 +297,17 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             ) : null}
           </>
         }
+      />
+
+      <NextStepCard
+        step={getRentalInvoiceNextStep(invoice, localDateInputValue())}
+        allowed={(() => {
+          const kind = getRentalInvoiceNextStep(invoice, localDateInputValue()).action?.kind;
+          if (kind === "issue") return canIssue && canIssueRentalInvoice(invoice.status);
+          if (kind === "link") return canRecordPayment;
+          return true;
+        })()}
+        onAction={() => setIssueOpen(true)}
       />
       </div>
 

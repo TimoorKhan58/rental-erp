@@ -16,9 +16,9 @@ export function canIssueRentalInvoice(status: RentalInvoiceStatus): boolean {
 export const STATUS_LABELS: Record<RentalInvoiceStatus, string> = {
   DRAFT: "Draft",
   ISSUED: "Issued",
-  PARTIALLY_PAID: "Partially paid",
+  PARTIALLY_PAID: "Part paid",
   PAID: "Paid",
-  VOID: "Void",
+  VOID: "Voided",
 };
 
 export const LINE_TYPE_LABELS: Record<RentalInvoiceLineType, string> = {

@@ -41,7 +41,7 @@ describe("PaymentMobileList", () => {
     expect(html).toContain("/payments/00000000-0000-4000-8000-000000000001");
     expect(html).toContain("CUS-01 — Example Customer");
     expect(html).toContain("INV-2001");
-    expect(html).toContain("Pending");
+    expect(html).toContain("Not posted yet");
     expect(html).toContain("Actions for PAY-1001");
   });
 

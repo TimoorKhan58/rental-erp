@@ -23,7 +23,7 @@ export function canCancelReturn(status: ReturnStatus): boolean {
 export const STATUS_LABELS: Record<ReturnStatus, string> = {
   DRAFT: "Draft",
   RECEIVED: "Received",
-  INSPECTED: "Inspected",
+  INSPECTED: "Checked",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
 };

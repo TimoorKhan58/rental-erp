@@ -1,5 +1,9 @@
 "use client";
 
+import { NextStepCard } from "@/components/shared";
+
+import { getPaymentNextStep } from "../mappers/payment-next-step";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,7 +13,6 @@ import {
   ClockIcon,
   CreditCardIcon,
   ClipboardListIcon,
-  FileCheckIcon,
   FileTextIcon,
   HashIcon,
   PencilIcon,
@@ -273,15 +276,6 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
                 Edit
               </AppButton>
             ) : null}
-            {canPost && canPostPayment(payment.status) ? (
-              <AppButton
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-                leftIcon={<FileCheckIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setPostOpen(true)}
-              >
-                Post payment
-              </AppButton>
-            ) : null}
             {canVoid && canVoidPayment(payment.status) ? (
               <AppButton
                 variant="destructive"
@@ -293,6 +287,12 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
             ) : null}
           </>
         }
+      />
+
+      <NextStepCard
+        step={getPaymentNextStep(payment)}
+        allowed={canPost && canPostPayment(payment.status)}
+        onAction={() => setPostOpen(true)}
       />
 
       <Card className="overflow-hidden border-border bg-card shadow-none">

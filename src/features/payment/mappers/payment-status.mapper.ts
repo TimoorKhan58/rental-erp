@@ -13,9 +13,9 @@ export function canVoidPayment(status: PaymentStatus): boolean {
 }
 
 export const STATUS_LABELS: Record<PaymentStatus, string> = {
-  PENDING: "Pending",
+  PENDING: "Not posted yet",
   POSTED: "Posted",
-  VOID: "Void",
+  VOID: "Voided",
 };
 
 export const METHOD_LABELS: Record<PaymentMethod, string> = {

@@ -1,26 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRightIcon } from "lucide-react";
-
-import { AppButton } from "@/components/design-system/button";
+import { NextStepCard, type NextStep as SharedNextStep } from "@/components/shared";
 import { ROUTES } from "@/config/routes";
-import { cn, pluralWord } from "@/lib/utils";
+import { pluralWord } from "@/lib/utils";
 import { localDateInputValue } from "@/lib/utils/local-date";
 
 import type { RentalOrderStatus } from "../types";
 
-export type NextStepAction =
-  | { kind: "confirm"; label: string }
-  | { kind: "reserve"; label: string }
-  | { kind: "link"; label: string; href: string };
-
-export type NextStep = {
-  title: string;
-  text: string;
-  tone: "normal" | "urgent" | "done";
-  action?: NextStepAction;
-};
+export type NextStep = SharedNextStep<"confirm" | "reserve">;
 
 function daysLate(endDate: string, today: string): number {
   const end = Date.parse(endDate.slice(0, 10));
@@ -109,32 +96,11 @@ type RentalOrderNextStepProps = {
 };
 
 export function RentalOrderNextStep({ step, allowed, onConfirm, onReserve }: RentalOrderNextStepProps) {
-  const action = allowed ? step.action : undefined;
-  const icon = <ArrowRightIcon className="size-4" aria-hidden="true" />;
   return (
-    <section
-      aria-label="Next step"
-      className={cn(
-        "flex flex-col gap-3 rounded-md border px-4 py-3 sm:flex-row sm:items-center sm:justify-between",
-        step.tone === "urgent" ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5",
-      )}
-    >
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Next step</p>
-        <p className={cn("text-base font-semibold", step.tone === "urgent" ? "text-destructive" : "text-foreground")}>
-          {step.title}
-        </p>
-        <p className="text-sm text-muted-foreground">{step.text}</p>
-      </div>
-      {action?.kind === "link" ? (
-        <AppButton className="shrink-0" rightIcon={icon} render={<Link href={action.href} />}>
-          {action.label}
-        </AppButton>
-      ) : action ? (
-        <AppButton className="shrink-0" rightIcon={icon} onClick={action.kind === "confirm" ? onConfirm : onReserve}>
-          {action.label}
-        </AppButton>
-      ) : null}
-    </section>
+    <NextStepCard
+      step={step}
+      allowed={allowed}
+      onAction={(kind) => (kind === "confirm" ? onConfirm() : onReserve())}
+    />
   );
 }

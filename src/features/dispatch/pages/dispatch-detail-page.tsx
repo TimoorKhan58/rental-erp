@@ -1,5 +1,9 @@
 "use client";
 
+import { NextStepCard } from "@/components/shared";
+
+import { getDispatchNextStep } from "../mappers/dispatch-next-step";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -7,12 +11,10 @@ import {
   ArrowUpRightIcon,
   Building2Icon,
   CalendarIcon,
-  CheckIcon,
   ClipboardListIcon,
   ClockIcon,
   MapPinIcon,
   PencilIcon,
-  PlayIcon,
   TruckIcon,
   UsersIcon,
   XIcon,
@@ -286,24 +288,6 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
                 Edit
               </AppButton>
             ) : null}
-            {canUpdate && canMarkDispatchReady(dispatch.status) ? (
-              <AppButton
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-                leftIcon={<PlayIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setMarkReadyOpen(true)}
-              >
-                Mark ready
-              </AppButton>
-            ) : null}
-            {canComplete && canCompleteDispatch(dispatch.status) ? (
-              <AppButton
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-                leftIcon={<CheckIcon className="size-4" aria-hidden="true" />}
-                onClick={() => setCompleteOpen(true)}
-              >
-                Complete dispatch
-              </AppButton>
-            ) : null}
             {canCancel && canCancelDispatch(dispatch.status) ? (
               <AppButton
                 variant="destructive"
@@ -315,6 +299,17 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
             ) : null}
           </>
         }
+      />
+
+      <NextStepCard
+        step={getDispatchNextStep(dispatch)}
+        allowed={(() => {
+          const kind = getDispatchNextStep(dispatch).action?.kind;
+          if (kind === "ready") return canUpdate && canMarkDispatchReady(dispatch.status);
+          if (kind === "complete") return canComplete && canCompleteDispatch(dispatch.status);
+          return true;
+        })()}
+        onAction={(kind) => (kind === "ready" ? setMarkReadyOpen(true) : setCompleteOpen(true))}
       />
 
       <Card className="overflow-hidden border-border bg-card shadow-none">
