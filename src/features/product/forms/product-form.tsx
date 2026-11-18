@@ -120,7 +120,7 @@ function CreateProductForm({
           <NumberField
             control={form.control}
             name="rentalRate"
-            label="Rental rate"
+            label="Daily rent"
             min={0}
             step={0.01}
             description="Daily rental rate."
@@ -128,7 +128,7 @@ function CreateProductForm({
           <NumberField
             control={form.control}
             name="replacementCost"
-            label="Replacement cost"
+            label="Cost to replace"
             min={0}
             step={0.01}
             description="Optional replacement value."
@@ -168,7 +168,7 @@ function CreateProductForm({
           <SelectField
             control={form.control}
             name="unitId"
-            label="Catalog unit"
+            label="Unit (from list)"
             placeholder="Select unit"
             description="Optional catalog unit reference."
             options={[noneOption, ...unitOptions]}
@@ -242,7 +242,7 @@ function EditProductForm({
           <NumberField
             control={form.control}
             name="rentalRate"
-            label="Rental rate"
+            label="Daily rent"
             min={0}
             step={0.01}
             description="Daily rental rate."
@@ -250,7 +250,7 @@ function EditProductForm({
           <NumberField
             control={form.control}
             name="replacementCost"
-            label="Replacement cost"
+            label="Cost to replace"
             min={0}
             step={0.01}
             description="Optional replacement value."
@@ -290,7 +290,7 @@ function EditProductForm({
           <SelectField
             control={form.control}
             name="unitId"
-            label="Catalog unit"
+            label="Unit (from list)"
             placeholder="Select unit"
             description="Optional catalog unit reference."
             options={[noneOption, ...unitOptions]}

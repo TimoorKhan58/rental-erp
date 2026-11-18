@@ -93,7 +93,7 @@ export function ProductDetailSections({
         <dl className="grid gap-4 sm:grid-cols-2">
           <DetailField label="Category" value={categoryName} />
           <DetailField label="Brand" value={brandName} />
-          <DetailField label="Catalog unit" value={unitName} />
+          <DetailField label="Unit (from list)" value={unitName} />
           <DetailField
             label="Tags"
             value={tagNames.length > 0 ? tagNames.join(", ") : null}
@@ -349,7 +349,7 @@ function ProductProcurementSection({
   if (!canRead) {
     return (
       <EmptyCard
-        title="Procurement history"
+        title="Purchase history"
         description="You do not have permission to view purchase orders."
       />
     );
@@ -357,7 +357,7 @@ function ProductProcurementSection({
 
   if (isLoading) {
     return (
-      <SectionCard title="Procurement history">
+      <SectionCard title="Purchase history">
         <LoadingState label="Loading purchase orders..." />
       </SectionCard>
     );
@@ -366,7 +366,7 @@ function ProductProcurementSection({
   if (procurementRows.length === 0) {
     return (
       <SectionCard
-        title="Procurement history"
+        title="Purchase history"
         actions={
           <AppButton variant="outline" size="sm" render={<Link href={ROUTES.procurements} />}>
             View POs
@@ -382,7 +382,7 @@ function ProductProcurementSection({
 
   return (
     <SectionCard
-      title="Procurement history"
+      title="Purchase history"
       actions={
         <AppButton variant="outline" size="sm" render={<Link href={ROUTES.procurements} />}>
           View all
@@ -486,8 +486,8 @@ function ProductRentalStatsSection({
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Rental orders" value={String(rentalStats.rentalCount)} />
-        <MetricCard label="Rented qty" value={String(rentalStats.rentedQuantity)} />
-        <MetricCard label="Quantity-days" value={String(rentalStats.quantityDays)} />
+        <MetricCard label="Items rented" value={String(rentalStats.rentedQuantity)} />
+        <MetricCard label="Item-days rented" value={String(rentalStats.quantityDays)} />
         <MetricCard label="Revenue" value={formatCurrency(rentalStats.revenue)} />
       </div>
     </SectionCard>

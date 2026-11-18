@@ -197,7 +197,7 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
               <DetailField label="Product code" value={product.productCode} />
               <DetailField label="Name" value={product.name} />
               <DetailField label="Unit" value={product.unit} />
-              <DetailField label="Variant count" value={product.variantCount} />
+              <DetailField label="Variants" value={product.variantCount} />
               <DetailField label="Description" value={product.description} />
             </dl>
           </SectionCard>
@@ -205,11 +205,11 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
           <SectionCard title="Pricing">
             <dl className="grid gap-4 sm:grid-cols-2">
               <DetailField
-                label="Rental rate"
+                label="Daily rent"
                 value={formatCurrency(Number(product.rentalRate))}
               />
               <DetailField
-                label="Replacement cost"
+                label="Cost to replace"
                 value={
                   product.replacementCost === null
                     ? null

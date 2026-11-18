@@ -6,6 +6,7 @@ import {
   MapPinIcon,
   PencilIcon,
   PhoneIcon,
+  PlusIcon,
   Trash2Icon,
   UserCheckIcon,
   UserXIcon,
@@ -20,6 +21,8 @@ type CustomerProfileCardProps = {
   customer: CustomerResponse;
   canUpdate: boolean;
   canDelete: boolean;
+  /** Shows "New order" for this customer (usability revamp R4). */
+  canCreateOrder?: boolean;
   onEdit?: () => void;
   onToggleStatus?: () => void;
   onDelete?: () => void;
@@ -29,6 +32,7 @@ export function CustomerProfileCard({
   customer,
   canUpdate,
   canDelete,
+  canCreateOrder = false,
   onToggleStatus,
   onDelete,
 }: CustomerProfileCardProps) {
@@ -48,10 +52,13 @@ export function CustomerProfileCard({
           </div>
           <p className="text-sm text-muted-foreground">{customer.customerCode}</p>
           <div className="flex flex-col gap-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-4">
-            <span className="inline-flex items-center gap-1.5">
+            <a
+              href={`tel:${customer.phone}`}
+              className="inline-flex items-center gap-1.5 hover:text-foreground hover:underline"
+            >
               <PhoneIcon className="size-3.5 shrink-0" aria-hidden="true" />
               {customer.phone}
-            </span>
+            </a>
             {customer.address?.trim() ? (
               <span className="inline-flex min-w-0 items-start gap-1.5">
                 <MapPinIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
@@ -87,10 +94,20 @@ export function CustomerProfileCard({
             {customer.isActive ? "Deactivate" : "Activate"}
           </AppButton>
         ) : null}
-        {canUpdate ? (
+        {canCreateOrder && customer.isActive ? (
           <AppButton
             size="sm"
             className="bg-brand text-brand-foreground hover:bg-brand/90"
+            leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+            render={<Link href={`${ROUTES.rentalOrdersNew}?customerId=${customer.id}`} />}
+          >
+            New order
+          </AppButton>
+        ) : null}
+        {canUpdate ? (
+          <AppButton
+            size="sm"
+            variant="outline"
             leftIcon={<PencilIcon className="size-4" aria-hidden="true" />}
             render={<Link href={ROUTES.customerEdit(customer.id)} />}
           >

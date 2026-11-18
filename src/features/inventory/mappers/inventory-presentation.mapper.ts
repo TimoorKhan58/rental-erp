@@ -21,10 +21,10 @@ export type InventoryPresentationChip = {
 
 const STOCK_STATUS_LABELS: Record<StockStatus, { label: string; tone: InventoryPresentationTone }> =
   {
-    "in-stock": { label: "Available", tone: "success" },
-    "low-stock": { label: "Shortage", tone: "warning" },
-    "out-of-stock": { label: "Out", tone: "error" },
-    overstock: { label: "Overstock", tone: "info" },
+    "in-stock": { label: "Free to rent", tone: "success" },
+    "low-stock": { label: "Running low", tone: "warning" },
+    "out-of-stock": { label: "None free", tone: "error" },
+    overstock: { label: "More than needed", tone: "info" },
   };
 
 export function stockStatusPresentationLabel(status: StockStatus): string {
@@ -55,7 +55,7 @@ export function deriveInventoryPresentationChips(
   if (item.reservedQuantity > 0) {
     chips.push({
       id: "committed",
-      label: "Committed",
+      label: "Booked",
       tone: "neutral",
     });
   }

@@ -19,7 +19,7 @@ export function InventoryListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Inventory"
-        description="Scan on-hand, committed, and available stock — act on shortage and adjustments."
+        description="How much of each item you have, how much is booked, and what is free to rent."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Inventory" },

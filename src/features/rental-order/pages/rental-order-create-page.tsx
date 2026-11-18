@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { ROUTES } from "@/config/routes";
 import {
@@ -14,6 +14,8 @@ import type { CreateRentalOrderFormValues } from "../schemas";
 
 export function RentalOrderCreatePage() {
   const router = useRouter();
+  // "New order" on a customer page starts with that customer (R4).
+  const customerId = useSearchParams().get("customerId") ?? undefined;
   const createMutation = useCreateRentalOrder();
   const confirmMutation = useConfirmRentalOrder();
   const { canConfirm } = useRentalOrderPermissions();
@@ -44,6 +46,7 @@ export function RentalOrderCreatePage() {
 
       <RentalOrderForm
         mode="create"
+        defaultValues={customerId ? { customerId } : undefined}
         onSubmit={handleSubmit}
         onCancel={() => router.push(ROUTES.rentalOrders)}
         isSubmitting={isSubmitting}

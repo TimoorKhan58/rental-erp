@@ -14,10 +14,10 @@ type InventoryStockFilterChipsProps = {
 
 const filterOptions: Array<{ value: StockFilterValue; label: string }> = [
   { value: "all", label: "All" },
-  { value: "in-stock", label: "Available" },
-  { value: "low-stock", label: "Shortage" },
-  { value: "out-of-stock", label: "Out" },
-  { value: "overstock", label: "Overstock" },
+  { value: "in-stock", label: "Free to rent" },
+  { value: "low-stock", label: "Running low" },
+  { value: "out-of-stock", label: "None free" },
+  { value: "overstock", label: "More than needed" },
 ];
 
 export function InventoryStockFilterChips({

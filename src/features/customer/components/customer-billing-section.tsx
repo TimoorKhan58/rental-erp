@@ -54,7 +54,7 @@ export function CustomerBillingSection({ customerId }: CustomerBillingSectionPro
     <>
       <SectionCard
         title="Billing summary"
-        description="Outstanding amounts use each invoice’s API balance from recent invoices loaded here — not a separate customer ledger balance."
+        description="What this customer still owes, and their latest payments."
         actions={
           canCreate && payableInvoice ? (
             <AppButton
