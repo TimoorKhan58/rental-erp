@@ -30,8 +30,8 @@ describe("inventory presentation mapper", () => {
       inventory({ reservedQuantity: 3, availableQuantity: 7, quantityOnHand: 10 }),
     );
 
-    expect(chips.map((chip) => chip.label)).toEqual(["Available", "Committed"]);
-    expect(stockStatusPresentationLabel("in-stock")).toBe("Available");
+    expect(chips.map((chip) => chip.label)).toEqual(["Free to rent", "Booked"]);
+    expect(stockStatusPresentationLabel("in-stock")).toBe("Free to rent");
   });
 
   it("labels low available as Shortage and out as Out", () => {
@@ -39,13 +39,13 @@ describe("inventory presentation mapper", () => {
       deriveInventoryPresentationChips(
         inventory({ availableQuantity: 1, minimumStock: 5, quantityOnHand: 1 }),
       ).map((chip) => chip.label),
-    ).toEqual(["Shortage"]);
+    ).toEqual(["Running low"]);
 
     expect(
       deriveInventoryPresentationChips(
         inventory({ availableQuantity: 0, quantityOnHand: 0 }),
       ).map((chip) => chip.label),
-    ).toEqual(["Out"]);
+    ).toEqual(["None free"]);
   });
 
   it("flags attention for shortage, out, and inactive records", () => {

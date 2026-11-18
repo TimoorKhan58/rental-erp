@@ -189,10 +189,10 @@ export function InventoryListTable({
 
     if (stockStatus !== "all") {
       const stockLabels: Record<string, string> = {
-        "in-stock": "Available",
-        "low-stock": "Shortage",
-        "out-of-stock": "Out",
-        overstock: "Overstock",
+        "in-stock": "Free to rent",
+        "low-stock": "Running low",
+        "out-of-stock": "None free",
+        overstock: "More than needed",
       };
       filters.push({
         id: "stockStatus",

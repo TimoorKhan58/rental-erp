@@ -29,21 +29,21 @@ export function InventoryQuantityBreakdown({
         )}
       >
         <QuantityTile
-          label="On hand"
+          label="In stock"
           value={quantityOnHand}
           hint="Units physically in warehouse"
           emphasize="primary"
         />
         <QuantityTile
-          label="Committed"
+          label="Booked"
           value={reservedQuantity}
           hint="Reserved by active workflows"
           emphasize="muted"
         />
         <QuantityTile
-          label="Available"
+          label="Free to rent"
           value={availableQuantity}
-          hint="Ready to allocate"
+          hint="Can go on a new order"
           emphasize={availableQuantity <= 0 ? "danger" : "success"}
         />
       </dl>
@@ -58,14 +58,14 @@ export function InventoryQuantityBreakdown({
       )}
       aria-label={`On hand ${quantityOnHand}, committed ${reservedQuantity}, available ${availableQuantity}`}
     >
-      <QuantityCell label="On hand" value={quantityOnHand} />
+      <QuantityCell label="In stock" value={quantityOnHand} />
       <QuantityCell
-        label="Committed"
+        label="Booked"
         value={reservedQuantity}
         muted={reservedQuantity === 0}
       />
       <QuantityCell
-        label="Available"
+        label="Free to rent"
         value={availableQuantity}
         emphasize={availableQuantity <= 0}
       />

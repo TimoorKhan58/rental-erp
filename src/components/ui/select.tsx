@@ -6,7 +6,38 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+type SelectItemEntry = { value: unknown; label: React.ReactNode }
+
+/** Finds every <SelectItem> under these children, however deeply nested. */
+function collectSelectItems(node: React.ReactNode, out: SelectItemEntry[]) {
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return
+    const props = child.props as { value?: unknown; children?: React.ReactNode }
+    if (child.type === SelectItem) {
+      out.push({ value: props.value, label: props.children })
+      return
+    }
+    if (props.children !== undefined) collectSelectItems(props.children, out)
+  })
+}
+
+/**
+ * Select that shows the chosen option's label (usability revamp R4).
+ * Base UI's trigger shows the raw value ("all", an id) unless it is given
+ * `items`, so we build them from the <SelectItem>s when none are passed.
+ */
+function Select<Value, Multiple extends boolean | undefined = false>(
+  props: SelectPrimitive.Root.Props<Value, Multiple>,
+) {
+  const { items, children } = props
+  const derived = React.useMemo(() => {
+    if (items !== undefined) return items
+    const found: SelectItemEntry[] = []
+    collectSelectItems(children, found)
+    return found.length > 0 ? found : undefined
+  }, [items, children])
+  return <SelectPrimitive.Root {...props} items={derived} />
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

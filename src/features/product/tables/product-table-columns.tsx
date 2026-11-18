@@ -122,7 +122,7 @@ export function getProductTableColumns({
       id: "rentalRate",
       header: (
         <SortableColumnHeader
-          label="Rental rate"
+          label="Daily rent"
           field="rentalRate"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
@@ -135,7 +135,7 @@ export function getProductTableColumns({
       id: "replacementCost",
       header: (
         <SortableColumnHeader
-          label="Replacement cost"
+          label="Cost to replace"
           field="replacementCost"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}

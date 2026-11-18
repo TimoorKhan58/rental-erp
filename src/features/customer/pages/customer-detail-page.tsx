@@ -11,6 +11,7 @@ import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { useRentalOrderPermissions } from "@/features/rental-order/hooks";
 import { useCustomer, useCustomerPermissions } from "../hooks";
 import { CustomerProfileCard } from "../components/customer-profile-card";
 import { CustomerBillingSection } from "../components/customer-billing-section";
@@ -42,6 +43,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
   const router = useRouter();
   const { data: customer, isLoading, isError, error, refetch } = useCustomer(customerId);
   const { canUpdate, canDelete } = useCustomerPermissions();
+  const { canCreate: canCreateOrder } = useRentalOrderPermissions();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
@@ -91,6 +93,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
         customer={customer}
         canUpdate={canUpdate}
         canDelete={canDelete}
+        canCreateOrder={canCreateOrder}
         onToggleStatus={() => setStatusOpen(true)}
         onDelete={() => setDeleteOpen(true)}
       />
