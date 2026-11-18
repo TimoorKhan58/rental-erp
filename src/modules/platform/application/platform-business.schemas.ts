@@ -59,3 +59,9 @@ export const SetBusinessPlanSchema = z.object({
   maxUsers: LimitSchema,
   maxWarehouses: LimitSchema,
 });
+
+/** Permanently remove a business (SaaS phase 4d). */
+export const RemoveBusinessSchema = z.object({
+  confirmSlug: z.string().trim().min(1, "Type the short name to confirm"),
+  backupConfirmed: z.literal(true, { message: "Confirm that a database backup was taken first" }),
+});

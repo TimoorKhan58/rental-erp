@@ -133,6 +133,8 @@ model Organization {
   name                         String
   slug                         String                        @unique
   isActive                     Boolean                       @default(true)
+  /// When it was last deactivated (SaaS phase 4d); cleared on reactivation.
+  deactivatedAt                DateTime?
   /// Plan and limits set by the platform owner (SaaS phase 4c); null = no limit.
   planName                     String?
   maxUsers                     Int?
