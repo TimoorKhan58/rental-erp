@@ -4,6 +4,7 @@ export { RentalOrderLifecycleStrip } from "./rental-order-lifecycle-strip";
 export { RentalReservationBadge } from "./rental-reservation-badge";
 export { RentalOrderSummaryCards } from "./rental-order-summary-cards";
 export { RentalOrderStatusFilterChips } from "./rental-order-status-filter-chips";
+export { RentalOrderStageTabs, stageCounts, type StageTabValue } from "./rental-order-stage-tabs";
 export { RentalOrderReservationFilterChips } from "./rental-order-reservation-filter-chips";
 export { RentalOrderReservationProgressBar } from "./rental-order-reservation-progress-bar";
 export { RentalOrderLineItemsTable } from "./rental-order-line-items-table";

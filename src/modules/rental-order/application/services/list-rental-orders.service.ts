@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import type { PaginatedResult } from "@/shared/domain/pagination";
 import { parseRequest } from "@/shared/application/validation";
 
@@ -20,6 +21,10 @@ export class ListRentalOrdersService {
     const query = toRentalOrderListQuery(
       parseRequest(ListRentalOrdersSchema, input),
     );
+    // "Late" is relative to the business's own today (SaaS phase 4a).
+    if (query.stage === "late") {
+      query.returnBefore = await getBusinessToday();
+    }
     const result = await this.repository.findPaged(query);
 
     return {

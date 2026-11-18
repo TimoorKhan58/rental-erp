@@ -12,6 +12,7 @@ export type {
   RentalOrderItemShortfallResponse,
   RentalOrderShortfallResponse,
   RentalOrderSummaryResponse,
+  RentalOrderStage,
   RentalOrderStatus,
   RentalReservationFilter,
   ReserveRentalOrderPayload,

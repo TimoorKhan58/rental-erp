@@ -1,3 +1,4 @@
+import { RENTAL_ORDER_STAGE_STATUSES } from "@/modules/rental-order/domain/rental-order-stage";
 import type { Prisma } from "@/generated/prisma/client";
 import type { RentalOrderListQuery } from "@/modules/rental-order/domain/rental-order-list.query";
 import type { RentalOrderSummaryQuery } from "@/modules/rental-order/domain/rental-order-summary.query";
@@ -179,6 +180,12 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
 
     if (query.status !== undefined) {
       filter.status = query.status;
+    } else if (query.stage !== undefined) {
+      filter.statusIn = RENTAL_ORDER_STAGE_STATUSES[query.stage];
+    }
+
+    if (query.returnBefore !== undefined) {
+      filter.returnBefore = query.returnBefore;
     }
 
     if (query.customerId !== undefined) {

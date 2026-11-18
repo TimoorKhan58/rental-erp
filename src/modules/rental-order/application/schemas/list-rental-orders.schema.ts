@@ -1,3 +1,4 @@
+import { RENTAL_ORDER_STAGES } from "@/modules/rental-order/domain/rental-order-stage";
 import {
   OptionalDateSchema,
   PaginationSchema,
@@ -11,6 +12,7 @@ import { RentalOrderStatusFilterSchema } from "./rental-order.schemas";
 
 export const ListRentalOrdersSchema = PaginationSchema.extend({
   status: RentalOrderStatusFilterSchema.optional(),
+  stage: z.enum(RENTAL_ORDER_STAGES).optional(),
   customerId: UUIDSchema.optional(),
   warehouseId: UUIDSchema.optional(),
   sortBy: z.enum(RENTAL_ORDER_SORT_FIELDS).optional(),

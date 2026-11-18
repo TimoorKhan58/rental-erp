@@ -41,7 +41,7 @@ export function RentalOrderFormSummary({
     values.startDate && values.endDate
       ? calculateRentalDays(values.startDate, values.endDate)
       : 0;
-  const orderTotal = calculateOrderTotal(items);
+  const orderTotal = calculateOrderTotal(filledItems);
   const itemCount = filledItems.length;
   const unitCount = filledItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
@@ -131,7 +131,7 @@ export function RentalOrderFormSummary({
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">Lines</dt>
               <dd className="font-medium tabular-nums">
-                {itemCount} · {unitCount} units
+                {itemCount} · {unitCount} {unitCount === 1 ? "unit" : "units"}
               </dd>
             </div>
             <div className="flex justify-between gap-2 border-t border-border pt-2">
@@ -141,7 +141,7 @@ export function RentalOrderFormSummary({
               </dd>
             </div>
             <p className="text-[length:var(--text-caption)] text-muted-foreground">
-              From line qty × daily rate × rental days (form preview).
+              Quantity × daily rate × days, before tax and discounts.
             </p>
           </dl>
 
@@ -165,7 +165,7 @@ export function RentalOrderFormSummary({
         <div className="mx-auto flex w-full max-w-none items-center gap-3 px-1">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[length:var(--text-caption)] text-muted-foreground">
-              {itemCount} lines · {rentalDays || "—"} days
+              {itemCount} {itemCount === 1 ? "line" : "lines"} · {rentalDays ? `${rentalDays} ${rentalDays === 1 ? "day" : "days"}` : "no dates"}
             </p>
             <p className="font-heading text-base font-semibold tabular-nums">
               {formatCurrency(orderTotal)}

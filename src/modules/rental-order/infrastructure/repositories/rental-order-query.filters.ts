@@ -13,6 +13,12 @@ export function mapRentalOrderFilter(
 
   if (filter.status !== undefined) {
     where.status = filter.status as RentalOrder["status"];
+  } else if (Array.isArray(filter.statusIn)) {
+    where.status = { in: filter.statusIn as Array<RentalOrder["status"]> };
+  }
+
+  if (filter.returnBefore !== undefined) {
+    where.expectedReturnDate = { lt: filter.returnBefore as Date };
   }
 
   if (filter.customerId !== undefined) {

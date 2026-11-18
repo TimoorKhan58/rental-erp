@@ -22,10 +22,7 @@ import { ROUTES } from "@/config/routes";
 import { queryKeys } from "@/lib/query";
 import { formatDate } from "@/lib/utils";
 import { matchesReservationFilter, matchesStartDateRange, RESERVATION_LABELS, STATUS_LABELS } from "../mappers";
-import {
-  RentalOrderReservationFilterChips,
-  RentalOrderStatusFilterChips,
-} from "../components";
+import { RentalOrderReservationFilterChips, RentalOrderStageTabs, stageCounts } from "../components";
 import {
   useRentalOrderFilterOptions,
   useRentalOrderListParams,
@@ -62,6 +59,7 @@ export function RentalOrderListTable({
     setCustomerFilter,
     setWarehouseFilter,
     setStatusFilter,
+    setStage,
     setReservationFilter,
     setDateRange,
     setSorting,
@@ -78,6 +76,12 @@ export function RentalOrderListTable({
     warehouseNameById,
   } = useRentalOrderFilterOptions();
   const { data, isLoading, isError, error, refetch, isFetching } = useRentalOrders(params);
+  // Late depends on each business's today, so the server counts it.
+  const lateQuery = useRentalOrders({ stage: "late", page: 1, pageSize: 1 });
+  const tabCounts = useMemo(
+    () => stageCounts(orderStatusCounts, lateQuery.data?.meta?.total),
+    [orderStatusCounts, lateQuery.data?.meta?.total],
+  );
 
   const [confirmTarget, setConfirmTarget] = useState<RentalOrderResponse | null>(null);
   const [reserveTarget, setReserveTarget] = useState<RentalOrderResponse | null>(null);
@@ -101,8 +105,6 @@ export function RentalOrderListTable({
         matchesStartDateRange(item.startDate, startDateFrom, startDateTo),
     );
   }, [data?.items, reservationStatus, startDateFrom, startDateTo]);
-
-  const statusFilterValue = params.status ?? "all";
 
   const columns = getRentalOrderTableColumns({
     params,
@@ -130,6 +132,7 @@ export function RentalOrderListTable({
     Boolean(params.customerId) ||
     Boolean(params.warehouseId) ||
     Boolean(params.status) ||
+    Boolean(params.stage) ||
     reservationStatus !== "all" ||
     Boolean(startDateFrom) ||
     Boolean(startDateTo);
@@ -251,18 +254,18 @@ export function RentalOrderListTable({
         density="compact"
         toolbar={
           <div className="space-y-3">
-            <RentalOrderStatusFilterChips
-              value={statusFilterValue}
-              onChange={(value) =>
-                setStatusFilter(value === "all" ? undefined : value)
-              }
-              counts={orderStatusCounts}
+            <RentalOrderStageTabs
+              value={params.stage ?? "all"}
+              onChange={(value) => setStage(value === "all" ? undefined : value)}
+              counts={tabCounts}
             />
-            <RentalOrderReservationFilterChips
-              value={reservationStatus}
-              onChange={setReservationFilter}
-              counts={reservationStatusCounts}
-            />
+            {params.stage === "upcoming" ? (
+              <RentalOrderReservationFilterChips
+                value={reservationStatus}
+                onChange={setReservationFilter}
+                counts={reservationStatusCounts}
+              />
+            ) : null}
             <ActiveFilters filters={activeFilters} onClearAll={clearAllFilters} />
           </div>
         }
@@ -359,7 +362,7 @@ export function RentalOrderListTable({
         }
         emptyState={
           <EmptyState
-            title="No rental orders found"
+            title={params.stage === "late" && !params.search ? "No late orders. Everything out is on time." : "No rental orders found"}
             description={
               hasFilters
                 ? "Try adjusting your search or filters."

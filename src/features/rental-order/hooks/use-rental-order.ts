@@ -31,6 +31,8 @@ type LookupOption = {
   id: string;
   label: string;
   keywords?: string;
+  /** Product daily price, used to fill the rate on a new line. */
+  rate?: number;
 };
 
 export function useRentalOrderPermissions() {
@@ -90,6 +92,7 @@ export function useRentalOrderFilterOptions() {
     id: item.id,
     label: item.name,
     keywords: item.productCode,
+    rate: Number(item.rentalRate) || undefined,
   }));
 
   const customerLabelById = new Map(customerOptions.map((item) => [item.id, item.label]));

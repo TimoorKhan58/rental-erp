@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import {
@@ -20,7 +20,7 @@ import type { CreateRentalOrderFormValues } from "../schemas";
 import { DateAwareAvailabilityHint } from "../components/date-aware-availability-hint";
 
 type RentalOrderLineItemsFieldProps = {
-  productOptions: Array<{ id: string; label: string; keywords?: string }>;
+  productOptions: Array<{ id: string; label: string; keywords?: string; rate?: number }>;
   startDate?: string;
   endDate?: string;
   readOnly?: boolean;
@@ -31,7 +31,7 @@ function createEmptyLineItem(startDate: string, endDate: string) {
   return {
     productId: "",
     quantity: 1,
-    dailyRate: 1,
+    dailyRate: 0,
     useCustomDates: false,
     startDate,
     endDate,
@@ -100,7 +100,31 @@ export function RentalOrderLineItemsField({
     }
   }, [form, orderEndDate, orderStartDate, readOnly]);
 
-  const orderTotal = useMemo(() => calculateOrderTotal(items ?? []), [items]);
+  const orderTotal = useMemo(
+    () => calculateOrderTotal((items ?? []).filter((item) => Boolean(item.productId))),
+    [items],
+  );
+
+  // Picking a product fills its daily price (still editable). Lines loaded
+  // with the form keep their saved rate.
+  const rateByProduct = useMemo(
+    () => new Map(productOptions.map((option) => [option.id, option.rate])),
+    [productOptions],
+  );
+  const seenProducts = useRef<Array<string | undefined> | null>(null);
+  useEffect(() => {
+    const current = (items ?? []).map((item) => item?.productId || undefined);
+    const previous = seenProducts.current;
+    seenProducts.current = current;
+    if (previous === null || readOnly) return;
+    current.forEach((productId, index) => {
+      if (!productId || productId === previous[index]) return;
+      const rate = rateByProduct.get(productId);
+      if (rate !== undefined && rate > 0) {
+        form.setValue(`items.${index}.dailyRate`, rate, { shouldDirty: true, shouldValidate: true });
+      }
+    });
+  }, [items, rateByProduct, form, readOnly]);
 
   const selectOptions = productOptions.map((option) => ({
     value: option.id,
@@ -131,7 +155,7 @@ export function RentalOrderLineItemsField({
             line?.startDate && line?.endDate
               ? calculateRentalDays(line.startDate, line.endDate)
               : defaultRentalDays;
-          const subtotal = line ? calculateLineSubtotal(line) : 0;
+          const subtotal = line?.productId ? calculateLineSubtotal(line) : null;
 
           return (
             <div
@@ -144,7 +168,7 @@ export function RentalOrderLineItemsField({
                 </p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold tabular-nums">
-                    {formatCurrency(subtotal)}
+                    {subtotal === null ? "—" : formatCurrency(subtotal)}
                   </p>
                   {!readOnly ? (
                     <AppButton
