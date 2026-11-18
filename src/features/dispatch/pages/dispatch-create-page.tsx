@@ -23,7 +23,7 @@ export function DispatchCreatePage() {
     <PageContainer>
       <PageHeader
         title="New dispatch"
-        description="Create a dispatch for a confirmed, reserved, or on-rent rental order."
+        description="Choose the order and the items that are going out."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Dispatches", href: ROUTES.dispatches },

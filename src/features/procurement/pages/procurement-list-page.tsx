@@ -14,8 +14,8 @@ export function ProcurementListPage() {
   return (
     <PageContainer className="space-y-5">
       <PageHeader
-        title="Procurement"
-        description="Draft, approve, then receive goods. Inventory increases only when goods are received. Order totals are stored on the purchase order; receiving does not post expenses or journals."
+        title="Purchases"
+        description="Stock you buy from suppliers. Draft an order, approve it, then receive the goods; stock goes up only when goods are received."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Procurement" },

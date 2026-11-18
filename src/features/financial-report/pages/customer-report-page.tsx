@@ -265,7 +265,7 @@ export function CustomerReportPage() {
     <PageContainer>
       <PageHeader
         title="Customer Report"
-        description="Booked order totals by booking date. Outstanding invoice balances are current open amounts, not period-filtered."
+        description="What each customer booked in the chosen dates, and what they owe today."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

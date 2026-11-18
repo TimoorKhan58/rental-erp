@@ -18,7 +18,7 @@ export function RentalOrderListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Rental Orders"
-        description="Scan bookings by customer, period, status, and reservation progress."
+        description="Every booking, grouped by where it is: drafts, upcoming, out with customers, late and finished."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Orders" },

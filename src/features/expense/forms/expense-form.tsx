@@ -114,11 +114,8 @@ function ExpenseFormFields({
           </>
         ) : (
           <p className="mb-4 text-sm text-muted-foreground">
-            Expense number is assigned automatically on save (or enter your own).
-            The record stays Draft until submitted. Amount must be greater than
-            zero. A journal is posted only when the expense is later marked paid,
-            and only if expense and cash accounts exist. This form does not create
-            a supplier payment or change inventory.
+            The expense number is given when you save, or enter your own. It stays a
+            draft until you submit it for approval.
           </p>
         )}
 

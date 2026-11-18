@@ -151,7 +151,7 @@ export function ProfitLossReportPage() {
     <PageContainer>
       <PageHeader
         title="Profit & Loss"
-        description="Posted journal income and expense accounts. Draft journals are excluded."
+        description="Income minus costs for the chosen dates, from your accounts."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

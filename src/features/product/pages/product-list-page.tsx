@@ -15,7 +15,7 @@ export function ProductListPage() {
     <PageContainer>
       <PageHeader
         title="Products"
-        description="Manage rental products, pricing, and availability."
+        description="The items you rent out, with their daily rent and how many are free."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Products" },

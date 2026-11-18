@@ -66,7 +66,7 @@ describe("DateAwareAvailabilityHint", () => {
 
     expect(html).toContain("Available 5");
     expect(html).not.toContain("Short by");
-    expect(html).toContain("For selected rental dates (authoritative)");
+    expect(html).toContain("For the chosen rental dates");
     expect(html).not.toContain("held by bookings on other dates");
   });
 

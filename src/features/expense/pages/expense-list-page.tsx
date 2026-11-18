@@ -17,7 +17,7 @@ export function ExpenseListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Expenses"
-        description="Record a draft, submit for approval, then mark paid. A journal is posted only when marked paid, and only if expense and cash accounts are configured. Paying does not create a supplier payment or change inventory."
+        description="Business costs like fuel, wages and rent. Record one, get it approved, then mark it paid."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Expenses" },

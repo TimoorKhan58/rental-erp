@@ -61,7 +61,7 @@ export function SettingsProfilePage() {
     <PageContainer>
       <PageHeader
         title="Profile"
-        description="Your identity account details from the user API."
+        description="Your name, email and sign-in details."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

@@ -329,7 +329,7 @@ export function ExpenseDetailPage({ expenseId }: ExpenseDetailPageProps) {
 
           <SectionCard
             title="Milestones"
-            description="Mark paid is the accounting step. Create, submit, approve, and reject do not post journals."
+            description="The expense reaches your accounts only when it is marked paid."
           >
             <dl className="space-y-4">
               <DetailField

@@ -31,7 +31,7 @@ export function CompleteDispatchDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Complete dispatch"
-      description={`Complete "${dispatch.dispatchNumber}"? This posts inventory OUT for this dispatch and marks it completed. The rental order may move to On rent. Server rules remain authoritative.`}
+      description={`Complete "${dispatch.dispatchNumber}"? The items leave your stock and the order shows as out with the customer.`}
       confirmLabel="Complete dispatch"
       onConfirm={() => void handleConfirm()}
       isLoading={completeMutation.isPending}

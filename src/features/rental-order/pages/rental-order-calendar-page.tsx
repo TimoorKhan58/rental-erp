@@ -19,8 +19,8 @@ export function RentalOrderCalendarPage() {
   return (
     <PageContainer className="space-y-6">
       <PageHeader
-        title="Reservation Calendar"
-        description="Rental-order event windows (start–end). Pickup, dispatch, and return are not separate calendar event types."
+        title="Booking Calendar"
+        description="Each order shown across its rental dates, so you can see busy days at a glance."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Orders", href: ROUTES.rentalOrders },

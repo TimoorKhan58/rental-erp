@@ -13,8 +13,8 @@ export function RentalInvoiceListPage() {
   return (
     <PageContainer className="space-y-5">
       <PageHeader
-        title="Rental Invoices"
-        description="Scan invoice number, customer, status, totals, and collection state from authoritative billing data."
+        title="Invoices"
+        description="Bills sent to customers, what each one is worth and how much is still to collect."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Invoices" },

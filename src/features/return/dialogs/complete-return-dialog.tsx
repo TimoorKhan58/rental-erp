@@ -31,7 +31,7 @@ export function CompleteReturnDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Complete return"
-      description={`Complete "${returnRecord.returnNumber}"? Owned GOOD quantity is restocked and owned returned quantity releases reservation. Damaged, lost, missing, and external quantities are not added back to owned available stock. The rental order may move to Partially returned, Returned, or Completed. Server rules remain authoritative.`}
+      description={`Complete "${returnRecord.returnNumber}"? Good items go back into stock. Damaged, lost and hired-in items do not. The order is updated to show what has come back.`}
       confirmLabel="Complete return"
       onConfirm={() => void handleConfirm()}
       isLoading={completeMutation.isPending}

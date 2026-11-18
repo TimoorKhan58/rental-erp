@@ -24,7 +24,7 @@ export function ReturnCreatePage() {
     <PageContainer>
       <PageHeader
         title="New return"
-        description="Create a return against a completed dispatch. Quantities cannot exceed remaining dispatched units. Inventory changes only after inspection and Complete."
+        description="Choose the order and how many of each item came back. Stock is updated when the return is finished."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Returns", href: ROUTES.returns },

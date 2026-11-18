@@ -31,7 +31,7 @@ export function StartMaintenanceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Start maintenance"
-      description={`Start maintenance "${maintenance.maintenanceNumber}"? This posts inventory OUT for the maintenance quantity. Available stock decreases. This is not a reservation. Server rules remain authoritative.`}
+      description={`Start maintenance "${maintenance.maintenanceNumber}"? These items leave your stock until the job is finished, so they cannot be rented meanwhile.`}
       confirmLabel="Start maintenance"
       onConfirm={() => void handleConfirm()}
       isLoading={startMutation.isPending}

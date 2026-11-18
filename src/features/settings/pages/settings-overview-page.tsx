@@ -64,7 +64,7 @@ export function SettingsOverviewPage() {
     <PageContainer>
       <PageHeader
         title="Settings"
-        description="Application configuration and account preferences."
+        description="Your business details, your profile and how RentCore looks."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings" },

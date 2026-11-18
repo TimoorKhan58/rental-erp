@@ -24,7 +24,7 @@ export function RepairCreatePage() {
     <PageContainer>
       <PageHeader
         title="New repair"
-        description="Create a repair from damaged quantity on a completed return. Inventory does not change until Complete. Cost is recorded on the job only."
+        description="Pick the damaged items from a finished return. They go back into stock when the repair is finished."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Repairs", href: ROUTES.repairs },

@@ -120,7 +120,7 @@ function InventoryStockMovementSection({
   return (
     <StockMovementHistorySection
       title="Stock movement history"
-      description="Authoritative movements from procurement, rentals, dispatch, returns, maintenance, and ADJUSTMENT corrections."
+      description="Every time this stock went up or down: purchases, rentals, returns, servicing and corrections."
       actions={
         stockMovementTotal > 0 ? (
           <AppButton

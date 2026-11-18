@@ -121,7 +121,7 @@ export function ExpenseReportPage() {
     <PageContainer>
       <PageHeader
         title="Expense Report"
-        description="Posted journal expense accounts for the selected journal dates. This is not the operational Expenses module."
+        description="Costs recorded in your accounts for the chosen dates."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

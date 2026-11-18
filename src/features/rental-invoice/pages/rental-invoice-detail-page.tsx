@@ -404,7 +404,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
         <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-8">
           <SectionCard
             title="Charges"
-            description="Line amounts are authoritative invoice values — totals are not recalculated in the UI."
+            description="Everything this invoice charges for."
           >
             <RentalInvoiceLineItemsTable
               items={invoice.items}
@@ -426,8 +426,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             </dl>
             {canVoid && canVoidRentalInvoice(invoice.status) ? (
               <p className="mt-4 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                Void is blocked when POSTED payments exist for this invoice. The void dialog
-                checks linked payments; the server remains authoritative.
+                An invoice that already has payments counted against it cannot be voided.
               </p>
             ) : null}
           </SectionCard>
@@ -538,7 +537,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
         open={convertMissingOpen}
         onOpenChange={setConvertMissingOpen}
         title="Convert missing to loss"
-        description="Charge missing items at replacement / actual price on this draft invoice? The server remains authoritative for the resulting loss lines."
+        description="Add a charge to this draft invoice for each item that never came back, at its replacement price?"
         confirmLabel="Convert to loss"
         onConfirm={() => {
           void convertMissingToLoss.mutateAsync(invoice.id).then(() => {

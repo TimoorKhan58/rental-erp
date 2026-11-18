@@ -62,7 +62,7 @@ export function SettingsCompanyPage() {
     <PageContainer>
       <PageHeader
         title="Company"
-        description="Organization record from the settings API. Company name and locale codes apply after save; other defaults are stored until a later feature uses them."
+        description="Your business name, contact details, currency and time zone."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

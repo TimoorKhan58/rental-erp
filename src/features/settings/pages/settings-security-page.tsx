@@ -74,7 +74,7 @@ export function SettingsSecurityPage() {
     <PageContainer>
       <PageHeader
         title="Security"
-        description="Stored security policy record. Live password, lockout, and session rules use Better Auth environment configuration."
+        description="Password and sign-in rules for your team."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

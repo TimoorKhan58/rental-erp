@@ -360,7 +360,7 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
 
           <SectionCard
             title="Thresholds & limits"
-            description="Edited via Edit thresholds. Does not change on-hand or committed quantities."
+            description="When to warn that this item is running low. Changing these does not change your stock."
           >
             <dl className="grid gap-4 sm:grid-cols-3">
               <DetailField label="Reorder level" value={inventory.minimumStock} />
