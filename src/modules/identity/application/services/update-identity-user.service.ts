@@ -1,3 +1,4 @@
+import { assertWithinPlanLimit } from "@/modules/platform/infrastructure/plan-limits";
 import type { IdentityUserDto } from "../dtos/identity-user.dto";
 import { toIdentityUserDto } from "../mappers/identity-user.mapper";
 import {
@@ -96,6 +97,11 @@ export class UpdateIdentityUserService {
 
         roleId = role.id;
         roleName = role.name;
+      }
+
+      // Reactivating counts against the plan's user limit (SaaS phase 4c).
+      if (data.isActive === true && !existing.isActive) {
+        await assertWithinPlanLimit("users");
       }
 
       if (data.isActive === false && existing.isActive) {

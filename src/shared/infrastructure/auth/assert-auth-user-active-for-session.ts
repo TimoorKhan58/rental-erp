@@ -82,4 +82,14 @@ export async function assertAuthUserActiveForSession(
       message: "This business account is inactive",
     });
   }
+
+  // Last sign-in, shown to the platform owner (SaaS phase 4c). Never blocks
+  // signing in.
+  await runAsSystem("sign-in: record last sign-in", () =>
+    prisma.user.update({
+      where: { id: erpUserId },
+      data: { lastSignInAt: new Date() },
+      select: { id: true },
+    }),
+  ).catch(() => undefined);
 }

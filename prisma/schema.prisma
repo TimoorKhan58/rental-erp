@@ -133,6 +133,10 @@ model Organization {
   name                         String
   slug                         String                        @unique
   isActive                     Boolean                       @default(true)
+  /// Plan and limits set by the platform owner (SaaS phase 4c); null = no limit.
+  planName                     String?
+  maxUsers                     Int?
+  maxWarehouses                Int?
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   users                        User[]
@@ -217,6 +221,8 @@ model User {
   /// Set when someone else chose the password (new business owner, reset);
   /// cleared once the user picks their own (SaaS phase 3c).
   mustChangePassword              Boolean                   @default(false)
+  /// Updated at every sign-in (SaaS phase 4c).
+  lastSignInAt                    DateTime?
   createdAt                       DateTime                  @default(now())
   updatedAt                       DateTime                  @updatedAt
   inventoryTransactions           InventoryTransaction[]

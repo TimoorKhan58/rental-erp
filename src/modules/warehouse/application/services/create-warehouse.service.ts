@@ -1,3 +1,4 @@
+import { assertWithinPlanLimit } from "@/modules/platform/infrastructure/plan-limits";
 import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import type { WarehouseDto } from "../dtos/warehouse.dto";
@@ -26,6 +27,10 @@ export class CreateWarehouseService {
 
   async execute(input: CreateWarehouseInput): Promise<WarehouseDto> {
     const data = parseRequest(CreateWarehouseSchema, input);
+    // Checked before a warehouse number is used up (SaaS phase 4c).
+    if (data.isActive !== false) {
+      await assertWithinPlanLimit("warehouses");
+    }
     const warehouseCode = await resolveDocumentCode(
       this.numberSequences,
       "WAREHOUSE",
