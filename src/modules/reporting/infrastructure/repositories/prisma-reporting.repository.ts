@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import type { Prisma } from "@/generated/prisma/client";
 import type {
   AnalyticsOverviewQuery,
@@ -33,7 +34,6 @@ import {
   resolveReportPeriod,
   roundMoney,
   startOfMonth,
-  startOfUtcDay,
   totalPages,
 } from "@/modules/reporting/domain/reporting.rules";
 import type {
@@ -363,8 +363,8 @@ export class PrismaReportingRepository implements IReportingRepository {
   async getAnalyticsOverview(
     query: AnalyticsOverviewQuery,
   ): Promise<AnalyticsOperationalSnapshot> {
-    const period = resolveReportPeriod(query);
-    const today = startOfUtcDay();
+    const today = await getBusinessToday();
+    const period = resolveReportPeriod(query, new Date(), today);
     const upcomingHorizonEnd = addUtcDays(today, ANALYTICS_UPCOMING_HORIZON_DAYS);
     const dateFilter = {
       gte: period.dateFrom,
@@ -1537,7 +1537,7 @@ export class PrismaReportingRepository implements IReportingRepository {
   }
 
   async getRentalInsights(query: RentalInsightsQuery): Promise<RentalInsightsReport> {
-    const period = resolveReportPeriod(query);
+    const period = resolveReportPeriod(query, new Date(), await getBusinessToday());
     const reference = new Date();
 
     const [products, orderItems, inventories, invoices] = await this.runner.run(

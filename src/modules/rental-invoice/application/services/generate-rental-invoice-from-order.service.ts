@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { createCustomerRepositoryFromUnitOfWork } from "@/modules/customer/infrastructure/factories/create-customer.repository";
 import { createDispatchRepositoryFromUnitOfWork } from "@/modules/dispatch/infrastructure/factories/create-dispatch.repository";
 import { assertRentalOrderEligibleForInvoice } from "@/modules/rental-invoice/domain";
@@ -136,9 +137,11 @@ export class GenerateRentalInvoiceFromOrderService {
         });
       }
 
-      const invoiceDate = new Date();
+      // Dated with the business's own calendar day (SaaS phase 4a), stored
+      // like other date-only values (midnight UTC of that date).
+      const invoiceDate = await getBusinessToday();
       const dueDate = new Date(invoiceDate);
-      dueDate.setDate(dueDate.getDate() + 7);
+      dueDate.setUTCDate(dueDate.getUTCDate() + 7);
 
       for (
         let attempt = 0;

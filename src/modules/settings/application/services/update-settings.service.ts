@@ -1,3 +1,5 @@
+import { forgetBusinessTimeZone } from "@/shared/infrastructure/time";
+import { getOrganizationScope } from "@/shared/infrastructure/tenancy/organization-scope";
 import { SettingsInvariantError } from "@/modules/settings/domain/settings.errors";
 import { BOOTSTRAP_COMPANY_SETTINGS } from "@/modules/settings/domain/settings.constants";
 import { parseRequest } from "@/shared/application/validation";
@@ -110,6 +112,12 @@ export class UpdateSettingsService {
             oldValues: previousValues,
             newValues: toSystemSettingsAuditValues(updatedSystem),
           });
+        }
+
+        // The business's time zone may have changed (SaaS phase 4a).
+        const scope = getOrganizationScope();
+        if (scope?.kind === "organization") {
+          forgetBusinessTimeZone(scope.organizationId);
         }
 
         return toSettingsProfileDto(updatedCompany, updatedSystem);

@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import {
   RentalOrderInvalidStatusError,
   RentalOrderInvariantError,
@@ -55,7 +56,8 @@ export class UpdateRentalOrderService {
     ];
 
     try {
-      assertStartNotInPast(newStartDates, this.now());
+      // "Today" in the business's own time zone (SaaS phase 4a).
+      assertStartNotInPast(newStartDates, await getBusinessToday(this.now()));
     } catch (error) {
       if (error instanceof RentalOrderInvariantError) {
         throw new UnprocessableError({

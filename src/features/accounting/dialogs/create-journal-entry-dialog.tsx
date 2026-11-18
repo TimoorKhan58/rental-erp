@@ -21,6 +21,7 @@ import {
   type CreateJournalEntryFormValues,
 } from "../schemas";
 import { useChartOfAccounts, useCreateJournalEntry } from "../hooks";
+import { localDateInputValue } from "@/lib/utils/local-date";
 
 type CreateJournalEntryDialogProps = {
   open: boolean;
@@ -52,7 +53,7 @@ export function CreateJournalEntryDialog({
     resolver: zodResolver(createJournalEntryFormSchema),
     defaultValues: {
       journalNumber: buildManualJournalNumber(),
-      journalDate: new Date().toISOString().slice(0, 10),
+      journalDate: localDateInputValue(),
       description: "",
       debitAccountId: "",
       creditAccountId: "",
@@ -65,7 +66,7 @@ export function CreateJournalEntryDialog({
     if (open) {
       form.reset({
         journalNumber: buildManualJournalNumber(),
-        journalDate: new Date().toISOString().slice(0, 10),
+        journalDate: localDateInputValue(),
         description: "",
         debitAccountId: "",
         creditAccountId: "",
