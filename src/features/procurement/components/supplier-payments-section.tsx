@@ -22,6 +22,7 @@ import {
   useSupplierPaymentPermissions,
   useVoidSupplierPayment,
 } from "../hooks/use-supplier-payment";
+import { localDateInputValue } from "@/lib/utils/local-date";
 
 type SupplierPaymentsSectionProps = {
   procurement: ProcurementResponse;
@@ -252,7 +253,7 @@ function RecordSupplierPaymentDialog({
   onSubmit,
 }: RecordSupplierPaymentDialogProps) {
   const [paymentDate, setPaymentDate] = useState(
-    () => new Date().toISOString().slice(0, 10),
+    () => localDateInputValue(),
   );
   const [paymentMethod, setPaymentMethod] =
     useState<(typeof PAYMENT_METHODS)[number]>("BANK_TRANSFER");

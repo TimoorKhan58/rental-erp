@@ -13,6 +13,7 @@ import type {
   TransferAssetPayload,
   UpdateAssetPayload,
 } from "../types";
+import { localDateInputValue } from "@/lib/utils/local-date";
 
 function normalizeOptionalString(value: string | null | undefined): string | null {
   if (value === undefined || value === null || value.trim() === "") {
@@ -35,7 +36,7 @@ export function formatMoneyInput(value: string | number | null | undefined): num
 
 export function generateAssetCode(): string {
   const date = new Date();
-  const ymd = date.toISOString().slice(0, 10).replaceAll("-", "");
+  const ymd = localDateInputValue(date).replaceAll("-", "");
   const suffix = String(date.getTime()).slice(-4);
   return `AST-${ymd}-${suffix}`;
 }

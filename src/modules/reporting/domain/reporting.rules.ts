@@ -134,12 +134,19 @@ export function calculateDaysPastDue(
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
+/**
+ * The report period: as requested, or "this month so far".
+ * `businessToday` (midnight UTC of the business's local date, SaaS phase
+ * 4a) decides which month it is; `reference` (now) stays the upper bound so
+ * today's records are included.
+ */
 export function resolveReportPeriod(
   query: { dateFrom?: Date; dateTo?: Date },
   reference: Date = new Date(),
+  businessToday: Date = reference,
 ): { dateFrom: Date; dateTo: Date } {
   return {
-    dateFrom: query.dateFrom ?? startOfMonth(reference),
+    dateFrom: query.dateFrom ?? startOfMonth(businessToday),
     dateTo: query.dateTo ?? reference,
   };
 }

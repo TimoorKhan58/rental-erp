@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import type { IFinancialReportRepository } from "@/modules/financial-report/domain/financial-report.repository.interface";
 import type { IReportingRepository } from "@/modules/reporting/domain/reporting.repository.interface";
 import { resolveReportPeriod } from "@/modules/reporting/domain/reporting.rules";
@@ -28,7 +29,11 @@ export class GetAnalyticsOverviewService {
     input: AnalyticsOverviewQueryInput,
   ): Promise<AnalyticsOverviewDto> {
     const query = parseRequest(AnalyticsOverviewQuerySchema, input);
-    const period = resolveReportPeriod(toAnalyticsOverviewQuery(query));
+    const period = resolveReportPeriod(
+      toAnalyticsOverviewQuery(query),
+      new Date(),
+      await getBusinessToday(),
+    );
     const boundedQuery = {
       dateFrom: period.dateFrom,
       dateTo: period.dateTo,

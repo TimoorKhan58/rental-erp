@@ -1,5 +1,6 @@
 export function buildInvoiceNumberPrefix(referenceDate: Date): string {
-  return `INV-${referenceDate.getFullYear()}-`;
+  // Calendar-day values are midnight UTC of the business date (SaaS phase 4a).
+  return `INV-${referenceDate.getUTCFullYear()}-`;
 }
 
 export function parseInvoiceNumberSequence(

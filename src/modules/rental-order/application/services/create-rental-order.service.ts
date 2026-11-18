@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { resolveDocumentCode } from "@/modules/settings/application/services/resolve-document-code";
 import type { INumberSequenceRepository } from "@/modules/settings/domain/number-sequence.repository.interface";
 import { RentalOrder } from "@/modules/rental-order/domain/rental-order.entity";
@@ -42,7 +43,8 @@ export class CreateRentalOrderService {
     try {
       assertStartNotInPast(
         [data.startDate, ...data.items.map((item) => item.startDate ?? data.startDate)],
-        this.now(),
+        // "Today" in the business's own time zone (SaaS phase 4a).
+        await getBusinessToday(this.now()),
       );
     } catch (error) {
       if (error instanceof RentalOrderInvariantError) {

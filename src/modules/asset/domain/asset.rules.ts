@@ -48,10 +48,20 @@ export function validatePurchaseDate(purchaseDate: Date): void {
     throw new AssetInvariantError("Invalid purchase date", "purchaseDate");
   }
 
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
+  // Not later than today anywhere: the latest time zone is UTC+14. Using
+  // the server's own clock refused today's date for businesses ahead of the
+  // server (e.g. Pakistan just after midnight on a UTC server).
+  const latestToday = new Date(Date.now() + 14 * 60 * 60 * 1000);
+  const latestTodayKey = Date.UTC(
+    latestToday.getUTCFullYear(),
+    latestToday.getUTCMonth(),
+    latestToday.getUTCDate(),
+  );
 
-  if (purchaseDate.getTime() > today.getTime()) {
+  if (
+    Date.UTC(purchaseDate.getUTCFullYear(), purchaseDate.getUTCMonth(), purchaseDate.getUTCDate()) >
+    latestTodayKey
+  ) {
     throw new AssetInvariantError(
       "Purchase date cannot be in the future",
       "purchaseDate",
