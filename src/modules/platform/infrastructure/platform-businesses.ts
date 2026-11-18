@@ -11,6 +11,7 @@ import { runTenantTransaction } from "@/shared/infrastructure/tenancy/rls-sessio
 
 import type { CreateBusinessInput } from "../application/platform-business.schemas";
 import { applyBusinessStarterKit, type StarterKitResult } from "./provision-business";
+import { evaluateRemoval, type RemovalEligibility } from "./remove-business";
 
 type Tx = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
 
@@ -29,11 +30,21 @@ export type PlatformBusinessSummary = {
   readonly activeUsers: number;
   readonly activeWarehouses: number;
   readonly lastSignInAt: string | null;
+  /** SaaS phase 4d: when it was deactivated and whether it may be removed. */
+  readonly deactivatedAt: string | null;
+  readonly lastExportAt: string | null;
+  readonly removal: RemovalEligibility;
 };
 
 /** Every business with its owner and activity (platform code only). */
 export function listBusinesses(prisma: PrismaClient): Promise<PlatformBusinessSummary[]> {
   return runAsSystem("platform: list businesses", async () => {
+    const exports = await prisma.platformAuditLog.groupBy({
+      by: ["targetOrganizationId"],
+      where: { action: "business.exported" },
+      _max: { createdAt: true },
+    });
+    const now = new Date();
     const [organizations, users, activeUsers, activeWarehouses, orders, owners] = await Promise.all([
       prisma.organization.findMany({
         orderBy: { createdAt: "asc" },
@@ -46,6 +57,7 @@ export function listBusinesses(prisma: PrismaClient): Promise<PlatformBusinessSu
           planName: true,
           maxUsers: true,
           maxWarehouses: true,
+          deactivatedAt: true,
         },
       }),
       prisma.user.groupBy({ by: ["organizationId"], _count: { _all: true }, _max: { lastSignInAt: true } }),
@@ -67,6 +79,7 @@ export function listBusinesses(prisma: PrismaClient): Promise<PlatformBusinessSu
       const userRow = users.find((row) => row.organizationId === organization.id);
       const orderRow = orders.find((row) => row.organizationId === organization.id);
       const owner = owners.find((row) => row.organizationId === organization.id);
+      const lastExport = exports.find((row) => row.targetOrganizationId === organization.id)?._max.createdAt;
       return {
         id: organization.id,
         name: organization.name,
@@ -86,6 +99,14 @@ export function listBusinesses(prisma: PrismaClient): Promise<PlatformBusinessSu
         activeWarehouses:
           activeWarehouses.find((row) => row.organizationId === organization.id)?._count._all ?? 0,
         lastSignInAt: userRow?._max.lastSignInAt?.toISOString() ?? null,
+        deactivatedAt: organization.deactivatedAt?.toISOString() ?? null,
+        lastExportAt: lastExport?.toISOString() ?? null,
+        removal: evaluateRemoval({
+          isActive: organization.isActive,
+          deactivatedAt: organization.deactivatedAt,
+          lastExportAt: lastExport ?? null,
+          now,
+        }),
       };
     });
   });
@@ -183,7 +204,11 @@ export function setBusinessActive(
       throw new NotFoundError({ message: "Business not found." });
     }
 
-    await prisma.organization.update({ where: { id: organizationId }, data: { isActive } });
+    await prisma.organization.update({
+      where: { id: organizationId },
+      // When it stopped (SaaS phase 4d: removal is allowed 30 days later).
+      data: { isActive, deactivatedAt: isActive ? null : new Date() },
+    });
 
     const sessions = isActive
       ? { count: 0 }

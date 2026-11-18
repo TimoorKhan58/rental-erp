@@ -15,6 +15,9 @@ export type PlatformBusiness = {
   activeUsers: number;
   activeWarehouses: number;
   lastSignInAt: string | null;
+  deactivatedAt: string | null;
+  lastExportAt: string | null;
+  removal: { allowed: boolean; reasons: string[]; allowedFrom: string | null };
 };
 
 /** null limits mean "no limit". */
@@ -65,3 +68,9 @@ export const setBusinessPlan = (id: string, plan: { planName: string | null; max
     `/platform/businesses/${id}/plan`,
     plan,
   );
+
+export const removeBusiness = (id: string, confirmSlug: string) =>
+  apiPost<{ removedRecords: number; removedLogins: number }>(`/platform/businesses/${id}/remove`, {
+    confirmSlug,
+    backupConfirmed: true,
+  });

@@ -18,6 +18,7 @@ import {
 import { ResetOwnerPasswordDialog, ToggleBusinessDialog } from "./business-action-dialogs";
 import { CreateBusinessDialog } from "./create-business-dialog";
 import { EditPlanDialog } from "./edit-plan-dialog";
+import { RemoveBusinessDialog } from "./remove-business-dialog";
 import { getBusinesses, platformBusinessesKey, type PlatformBusiness } from "./platform-api";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
@@ -31,6 +32,7 @@ export function PlatformBusinessesView() {
   const [toggling, setToggling] = useState<PlatformBusiness | null>(null);
   const [resetting, setResetting] = useState<PlatformBusiness | null>(null);
   const [planning, setPlanning] = useState<PlatformBusiness | null>(null);
+  const [removing, setRemoving] = useState<PlatformBusiness | null>(null);
   const query = useQuery({ queryKey: platformBusinessesKey, queryFn: getBusinesses });
 
   const columns: Array<DataTableColumn<PlatformBusiness>> = [
@@ -106,6 +108,11 @@ export function PlatformBusinessesView() {
             <DropdownMenuItem variant={row.isActive ? "destructive" : "default"} onClick={() => setToggling(row)}>
               {row.isActive ? "Deactivate" : "Reactivate"}
             </DropdownMenuItem>
+            {!row.isActive && (
+              <DropdownMenuItem variant="destructive" onClick={() => setRemoving(row)}>
+                Remove permanently…
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -132,6 +139,9 @@ export function PlatformBusinessesView() {
       {creating && <CreateBusinessDialog onClose={() => setCreating(false)} />}
       {toggling !== null && (
         <ToggleBusinessDialog key={toggling.id} business={toggling} onClose={() => setToggling(null)} />
+      )}
+      {removing !== null && (
+        <RemoveBusinessDialog key={removing.id} business={removing} onClose={() => setRemoving(null)} />
       )}
       {planning !== null && <EditPlanDialog key={planning.id} business={planning} onClose={() => setPlanning(null)} />}
       {resetting !== null && (
