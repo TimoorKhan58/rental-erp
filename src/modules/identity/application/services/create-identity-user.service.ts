@@ -65,7 +65,13 @@ export class CreateIdentityUserService {
         });
       }
 
-      const createData = toCreateIdentityUserData(data, role);
+      // A password chosen by another user (an owner adding staff) must be
+      // replaced by the user at first sign-in. The bootstrap script has no
+      // acting user: that person chose their own password.
+      const createData = {
+        ...toCreateIdentityUserData(data, role),
+        mustChangePassword: scope.actorRole !== undefined,
+      };
 
       let user;
 

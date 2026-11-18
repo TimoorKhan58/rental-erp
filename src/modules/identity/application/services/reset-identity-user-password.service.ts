@@ -50,6 +50,8 @@ export class ResetIdentityUserPasswordService {
         password: data.password,
       });
 
+      // Someone else chose this password: the user picks their own at next sign-in.
+      await scope.userRepository.update(existing.id, { mustChangePassword: true });
       await scope.authGateway.revokeSessions(existing.authUserId);
 
       await scope.auditLogger.log({

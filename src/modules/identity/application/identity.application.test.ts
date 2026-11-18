@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { CreateIdentityUserService } from "@/modules/identity/application/services/create-identity-user.service";
 import { DeactivateIdentityUserService } from "@/modules/identity/application/services/deactivate-identity-user.service";
@@ -112,6 +112,47 @@ describe("CreateIdentityUserService", () => {
         role: USER_ROLES.OWNER,
       }),
     ).rejects.toBeInstanceOf(UnprocessableError);
+  });
+});
+
+describe("passwords chosen by someone else (SaaS phase 3d)", () => {
+  it("makes a user created by another user choose their own password", async () => {
+    const scope = createWriteScope();
+    const create = vi.spyOn(scope.userRepository, "create");
+
+    await new CreateIdentityUserService(scope.transactionRunner).execute(VALID_CREATE_INPUT);
+
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ mustChangePassword: true });
+  });
+
+  it("does not force a change for the bootstrap script (no acting user)", async () => {
+    const userRepository = new InMemoryIdentityUserRepository();
+    const create = vi.spyOn(userRepository, "create");
+    const runner = createPassThroughIdentityTransactionRunner({
+      userRepository,
+      roleRepository: new InMemoryRoleRepository(),
+      authGateway: new MockIdentityAuthGateway(),
+      auditLogger: new MockAuditLogger(),
+      actorUserId: undefined,
+      actorRole: undefined,
+    } as never);
+
+    await new CreateIdentityUserService(runner).execute(VALID_CREATE_INPUT);
+
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ mustChangePassword: false });
+  });
+
+  it("makes a user whose password was reset choose a new one", async () => {
+    const scope = createWriteScope();
+    scope.userRepository.seed([buildIdentityUserEntity()]);
+    const update = vi.spyOn(scope.userRepository, "update");
+
+    await new ResetIdentityUserPasswordService(scope.transactionRunner).execute(
+      { id: USER_ID },
+      { password: "newpassword123" },
+    );
+
+    expect(update).toHaveBeenCalledWith(USER_ID, { mustChangePassword: true });
   });
 });
 
