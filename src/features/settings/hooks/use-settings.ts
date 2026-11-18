@@ -31,7 +31,8 @@ export function useSettingsPermissions() {
     isLoading,
     canReadSettings: permissions.includes(PERMISSIONS.settings.read),
     canUpdateSettings: permissions.includes(PERMISSIONS.settings.update),
-    canReadProfile: permissions.includes(PERMISSIONS.identity.read),
+    // Everyone may see their own profile (it is not the staff list).
+    canReadProfile: data !== undefined,
     canUpdateProfile: permissions.includes(PERMISSIONS.identity.update),
   };
 }

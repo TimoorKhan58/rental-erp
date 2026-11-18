@@ -7,8 +7,10 @@ import {
   type Permission,
 } from "./permissions";
 
+// The staff list (identity:read) is for Owners only (decided 2026-11-19);
+// Owners get it through ALL_PERMISSIONS. Everyone still sees their own
+// profile through /api/users/me, which needs no permission.
 const READ_PERMISSIONS: Permission[] = [
-  PERMISSIONS.identity.read,
   PERMISSIONS.customers.read,
   PERMISSIONS.suppliers.read,
   PERMISSIONS.warehouses.read,
@@ -41,8 +43,17 @@ const READ_PERMISSIONS: Permission[] = [
   PERMISSIONS.dashboard.update,
 ];
 
+// Managers can do everything except change company settings and manage
+// staff: the staff list and staff changes are Owner-only (2026-11-19).
+const OWNER_ONLY: readonly Permission[] = [
+  PERMISSIONS.settings.update,
+  PERMISSIONS.identity.read,
+  PERMISSIONS.identity.create,
+  PERMISSIONS.identity.update,
+  PERMISSIONS.identity.delete,
+];
 const MANAGER_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter(
-  (permission) => permission !== PERMISSIONS.settings.update,
+  (permission) => !OWNER_ONLY.includes(permission),
 );
 
 const WORKER_PERMISSIONS: Permission[] = [

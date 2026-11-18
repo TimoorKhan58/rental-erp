@@ -48,10 +48,9 @@ describe("navigation access", () => {
       PERMISSIONS.dashboard.read,
     ]);
 
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.label).toBe("Today");
-    expect(filtered[0]?.items.map((item) => item.href)).toEqual([
-      ROUTES.dashboard,
-    ]);
+    // Settings is always there: everyone can open their own profile.
+    expect(filtered.map((group) => group.label)).toEqual(["Today", "Admin"]);
+    expect(filtered[0]?.items.map((item) => item.href)).toEqual([ROUTES.dashboard]);
+    expect(filtered[1]?.items.map((item) => item.href)).toEqual([ROUTES.settings]);
   });
 });
