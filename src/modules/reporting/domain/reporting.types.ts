@@ -1,3 +1,5 @@
+import type { DashboardWorklist } from "./dashboard-worklist";
+
 export interface DashboardSummary {
   totalCustomers: number;
   totalSuppliers: number;
@@ -25,6 +27,8 @@ export interface DashboardSummary {
   revenueThisMonth: number;
   paymentsThisMonth: number;
   averageRentalDuration: number;
+  /** Today's work and the next 7 days (usability revamp R2). */
+  worklist: DashboardWorklist;
 }
 
 export interface InventoryReportLine {

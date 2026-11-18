@@ -1,3 +1,4 @@
+import { buildDashboardWorklist } from "@/modules/reporting/domain/dashboard-worklist";
 import { getBusinessToday } from "@/shared/infrastructure/time";
 import type { Prisma } from "@/generated/prisma/client";
 import type {
@@ -180,8 +181,11 @@ export class PrismaReportingRepository implements IReportingRepository {
 
   async getDashboard(query: DashboardQuery): Promise<DashboardSummary> {
     void query;
-    const monthStart = startOfMonth();
-    const monthEnd = endOfMonth();
+    // The business's own calendar (SaaS phase 4a): "this month" starts on
+    // its local 1st, and the worklist uses its local "today".
+    const today = await getBusinessToday();
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
 
     const [
       totalCustomers,
@@ -230,9 +234,13 @@ export class PrismaReportingRepository implements IReportingRepository {
           }),
           db.rentalOrder.findMany({
             select: {
+              id: true,
+              orderNumber: true,
               status: true,
               eventStartDate: true,
               eventEndDate: true,
+              expectedReturnDate: true,
+              customer: { select: { name: true } },
             },
           }),
           db.dispatch.findMany({ select: { status: true } }),
@@ -240,7 +248,7 @@ export class PrismaReportingRepository implements IReportingRepository {
           db.repair.findMany({ select: { status: true } }),
           db.maintenance.findMany({ select: { status: true } }),
           db.purchaseOrder.findMany({ select: { status: true } }),
-          db.rentalInvoice.findMany({ select: { status: true } }),
+          db.rentalInvoice.findMany({ select: { status: true, balance: true, dueDate: true } }),
           db.rentalInvoice.aggregate({
             where: {
               status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] },
@@ -357,6 +365,22 @@ export class PrismaReportingRepository implements IReportingRepository {
         decimalToNumber(paymentsThisMonth._sum.amount),
       ),
       averageRentalDuration: average(durationValues),
+      worklist: buildDashboardWorklist({
+        today,
+        orders: rentalOrders.map((order) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          customerName: order.customer.name,
+          eventStartDate: order.eventStartDate,
+          expectedReturnDate: order.expectedReturnDate,
+        })),
+        invoices: invoices.map((invoice) => ({
+          status: invoice.status,
+          balance: decimalToNumber(invoice.balance),
+          dueDate: invoice.dueDate,
+        })),
+      }),
     };
   }
 

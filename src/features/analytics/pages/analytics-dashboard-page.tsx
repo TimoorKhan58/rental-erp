@@ -1,5 +1,7 @@
 "use client";
 
+import { RentalInsightsSection } from "@/features/dashboard/components/rental-insights-section";
+
 import { Suspense, useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
@@ -256,6 +258,10 @@ export function AnalyticsDashboardPage() {
       <Suspense fallback={<LoadingState label="Loading analytics..." />}>
         <AnalyticsDashboardContent />
       </Suspense>
+      {/* Moved here from the dashboard (usability revamp R2). */}
+      <div className="mt-6">
+        <RentalInsightsSection />
+      </div>
     </PageContainer>
   );
 }
