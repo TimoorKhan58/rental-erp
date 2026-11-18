@@ -52,6 +52,7 @@ export function toIdentityUserCreateInput(
     name: data.name,
     email: data.email,
     isActive: data.isActive ?? true,
+    mustChangePassword: data.mustChangePassword ?? false,
     role: {
       connect: { id: data.roleId },
     },
@@ -73,6 +74,10 @@ export function toIdentityUserUpdateInput(
 
   if (data.isActive !== undefined) {
     input.isActive = data.isActive;
+  }
+
+  if (data.mustChangePassword !== undefined) {
+    input.mustChangePassword = data.mustChangePassword;
   }
 
   if (data.authUserId !== undefined) {

@@ -7,6 +7,8 @@ export interface CreateIdentityUserData {
   roleId: RoleId;
   roleName: UserRole;
   isActive?: boolean;
+  /** Password chosen by someone else; must be changed at sign-in (SaaS phase 3d). */
+  mustChangePassword?: boolean;
 }
 
 export interface UpdateIdentityUserData {
@@ -16,6 +18,7 @@ export interface UpdateIdentityUserData {
   roleName?: UserRole;
   authUserId?: string | null;
   isActive?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface LinkAuthUserData {
