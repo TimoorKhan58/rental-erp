@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROUTES } from "@/config/routes";
+import { PlatformBusinessesView } from "@/features/platform/platform-businesses-view";
 import { APPLICATION } from "@/constants/application";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -12,12 +12,12 @@ import { findActivePlatformOwner } from "@/modules/platform/infrastructure/platf
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `Platform · ${APPLICATION.name}`,
+  title: "Platform",
   robots: { index: false, follow: false },
 };
 
 /**
- * Platform home (SaaS phase 3b). Only active platform owners see it;
+ * Platform home (SaaS phases 3b/3c): the list of businesses. Only active platform owners see it;
  * everyone else, including business owners, gets "not found".
  */
 export default async function PlatformHomePage() {
@@ -29,25 +29,27 @@ export default async function PlatformHomePage() {
   }
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardDescription>{APPLICATION.name} platform</CardDescription>
-          <CardTitle className="text-2xl">Businesses</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 text-sm">
-          <p>
-            Signed in as <span className="font-medium">{owner.name}</span> ({owner.email}).
-            This login manages businesses and cannot open any business&apos;s data.
-          </p>
-          <p className="text-muted-foreground">
-            Creating, listing and deactivating businesses arrive in the next update.
-          </p>
-          <a className="self-start font-medium text-primary underline-offset-4 hover:underline" href={ROUTES.logout}>
-            Sign out
-          </a>
-        </CardContent>
-      </Card>
+    <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <p className="text-sm text-muted-foreground">{APPLICATION.name} platform</p>
+            <h1 className="text-2xl font-semibold tracking-tight">Manage businesses</h1>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-muted-foreground">
+              {owner.name} · {owner.email}
+            </span>
+            <a className="font-medium text-primary underline-offset-4 hover:underline" href={ROUTES.logout}>
+              Sign out
+            </a>
+          </div>
+        </header>
+        <PlatformBusinessesView />
+        <p className="text-xs text-muted-foreground">
+          This login manages businesses only and cannot open any business&apos;s data. Every action here is recorded.
+        </p>
+      </div>
     </main>
   );
 }

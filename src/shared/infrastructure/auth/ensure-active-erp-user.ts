@@ -7,6 +7,8 @@ import { runAsSystem } from "@/shared/infrastructure/tenancy/organization-scope"
 export interface ActiveErpUser {
   /** The business (organization) this user works for. */
   readonly organizationId: string;
+  /** Must choose a new password before using the app (SaaS phase 3c). */
+  readonly mustChangePassword: boolean;
 }
 
 /**
@@ -21,6 +23,7 @@ export async function ensureActiveErpUser(erpUserId: string): Promise<ActiveErpU
       where: { id: erpUserId },
       select: {
         isActive: true,
+        mustChangePassword: true,
         organizationId: true,
         organization: { select: { isActive: true } },
       },
@@ -57,5 +60,8 @@ export async function ensureActiveErpUser(erpUserId: string): Promise<ActiveErpU
     });
   }
 
-  return { organizationId: user.organizationId };
+  return {
+    organizationId: user.organizationId,
+    mustChangePassword: user.mustChangePassword === true,
+  };
 }

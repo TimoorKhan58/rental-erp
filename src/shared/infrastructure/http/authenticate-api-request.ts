@@ -7,6 +7,8 @@ import {
   type ExecutionContext,
 } from "@/shared/application/context";
 import {
+  ERROR_CODES,
+  ForbiddenError,
   normalizeError,
   serializeAppError,
   UnauthorizedError,
@@ -25,6 +27,9 @@ import { resolveSessionUser } from "@/shared/infrastructure/auth/resolve-session
 import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-erp-user";
 import { enterRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
 import { runInOrganization } from "@/shared/infrastructure/tenancy/organization-scope";
+
+/** API paths a user with a temporary password may still call. */
+export const PASSWORD_CHANGE_ALLOWED_PATHS = new Set(["/api/account/password"]);
 
 export interface AuthenticatedApiRequestResult {
   requestId: string;
@@ -56,7 +61,18 @@ export async function authenticateApiRequest(
     });
   }
 
-  const { organizationId } = await ensureActiveErpUser(resolvedUser.erpUserId);
+  const { organizationId, mustChangePassword } = await ensureActiveErpUser(
+    resolvedUser.erpUserId,
+  );
+
+  // A temporary password (new business owner, or reset by someone else)
+  // only opens the password-change endpoint (SaaS phase 3c).
+  if (mustChangePassword && !PASSWORD_CHANGE_ALLOWED_PATHS.has(request.nextUrl.pathname)) {
+    throw new ForbiddenError({
+      code: ERROR_CODES.PASSWORD_CHANGE_REQUIRED,
+      message: "Please choose a new password before continuing.",
+    });
+  }
 
   // The business always comes from the signed-in user's record, never from
   // the request (the x-tenant-id header is ignored). Route runners execute

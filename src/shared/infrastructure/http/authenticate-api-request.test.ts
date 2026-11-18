@@ -97,3 +97,37 @@ describe("authenticateApiRequest organization scope (SaaS phase 2)", () => {
     expect(seen.sort()).toEqual([TEST_ORGANIZATION_ID, OTHER_ORGANIZATION_ID].sort());
   });
 });
+
+describe("authenticateApiRequest with a temporary password (SaaS phase 3c)", () => {
+  beforeEach(() => {
+    resetApiAuthMocks();
+  });
+
+  function withTemporaryPassword(): void {
+    mockAuthenticatedActiveUser();
+    findUniqueUserMock.mockResolvedValue({
+      isActive: true,
+      mustChangePassword: true,
+      organizationId: TEST_ORGANIZATION_ID,
+      organization: { isActive: true },
+    });
+  }
+
+  it("refuses business APIs until the password is changed", async () => {
+    withTemporaryPassword();
+
+    await expect(authenticateApiRequest(request(), "/api/customers", "GET")).rejects.toMatchObject({
+      code: "PASSWORD_CHANGE_REQUIRED",
+      httpStatus: 403,
+    });
+  });
+
+  it("still allows the password-change endpoint", async () => {
+    withTemporaryPassword();
+    const passwordRequest = new NextRequest(new URL("http://localhost/api/account/password"), { method: "POST" });
+
+    const { ctx } = await authenticateApiRequest(passwordRequest, "/api/account/password", "POST");
+
+    expect(ctx.request.tenantId).toBe(TEST_ORGANIZATION_ID);
+  });
+});

@@ -38,8 +38,8 @@ async function getSignedInKind(): Promise<SignedInKind> {
   }
 
   try {
-    await ensureActiveErpUser(resolved.erpUserId);
-    return "business";
+    const { mustChangePassword } = await ensureActiveErpUser(resolved.erpUserId);
+    return mustChangePassword ? "business_password_change" : "business";
   } catch {
     return null;
   }
