@@ -5,7 +5,7 @@
   --surface: var(--card);
   --surface-foreground: var(--card-foreground);
 
-  --success: #0d7c5f;
+  --success: #0b6b52;
   --success-foreground: #ffffff;
   --success-muted: #d8f3e8;
 
@@ -40,7 +40,9 @@
   --success-muted: #064e3b;
 
   --warning: #fbbf24;
-  --warning-foreground: #422006;
+  /* Text on --warning-muted badges and cards: must stay light on the dark
+     background (was #422006, dark brown on dark brown, invisible). */
+  --warning-foreground: #fcd34d;
   --warning-muted: #451a03;
 
   --info: #93b4d4;

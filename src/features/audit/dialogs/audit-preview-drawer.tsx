@@ -67,8 +67,8 @@ export function AuditPreviewDrawer({
             </dd>
           </div>
           <PreviewField label="Module" value={audit.module} />
-          <PreviewField label="Entity" value={audit.entityName} />
-          <PreviewField label="Entity ID" value={audit.recordId} />
+          <PreviewField label="Record" value={audit.entityName} />
+          <PreviewField label="Record ID" value={audit.recordId} />
           <PreviewField label="User ID" value={audit.userId} />
           <PreviewField label="Request ID" value={audit.requestId} />
         </dl>

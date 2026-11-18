@@ -17,6 +17,7 @@
 
 # Next.js — build cache and static export output
 /.next/
+/.next-*/
 /out/
 
 # Production — compiled output directories

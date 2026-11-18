@@ -49,8 +49,8 @@ const COLUMN_LABELS: Record<AuditColumnId, string> = {
   action: "Action",
   status: "Status",
   module: "Module",
-  entityName: "Entity",
-  recordId: "Entity ID",
+  entityName: "Record",
+  recordId: "Record ID",
   userId: "Actor",
   requestId: "Request ID",
   actions: "Actions",
@@ -138,7 +138,7 @@ export function AuditListTable() {
             <SearchInput
               value={localSearch}
               onChange={setLocalSearch}
-              placeholder="Search module, entity, route, request ID..."
+              placeholder="Search by area, record or request ID..."
               className="w-full sm:max-w-sm"
               aria-label="Search audit logs"
             />
@@ -150,16 +150,16 @@ export function AuditListTable() {
                 onChange={(event) =>
                   setEntityTypeFilter(event.target.value || undefined)
                 }
-                placeholder="Entity type"
+                placeholder="Record type"
                 className="w-full sm:w-36"
-                aria-label="Filter by entity type"
+                aria-label="Filter by record type"
               />
               <Input
                 value={params.entityId ?? ""}
                 onChange={(event) => setEntityIdFilter(event.target.value || undefined)}
-                placeholder="Entity ID"
+                placeholder="Record ID"
                 className="w-full sm:w-40"
-                aria-label="Filter by entity ID"
+                aria-label="Filter by record ID"
               />
               <Input
                 value={params.userId ?? ""}

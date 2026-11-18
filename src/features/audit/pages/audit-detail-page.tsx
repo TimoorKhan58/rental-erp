@@ -115,8 +115,8 @@ export function AuditDetailPage({ auditId }: AuditDetailPageProps) {
             <dl className="grid gap-4 sm:grid-cols-2">
               <DetailField label="Audit ID" value={audit.id} />
               <DetailField label="Timestamp" value={formatDateTime(audit.createdAt)} />
-              <DetailField label="Entity" value={audit.entityName} />
-              <DetailField label="Entity ID" value={audit.recordId} />
+              <DetailField label="Record" value={audit.entityName} />
+              <DetailField label="Record ID" value={audit.recordId} />
               <DetailField label="User" value={audit.userId} />
               <DetailField label="Request ID" value={audit.requestId} />
               <DetailField label="Module" value={audit.module} />
@@ -165,7 +165,7 @@ export function AuditDetailPage({ auditId }: AuditDetailPageProps) {
             </dl>
           </SectionCard>
 
-          <SectionCard title="Raw payload">
+          <SectionCard title="Technical details">
             <LazyJsonViewer
               value={audit}
               title="Full audit record"

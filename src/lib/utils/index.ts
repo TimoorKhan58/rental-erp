@@ -15,3 +15,4 @@ export {
   normalizePaginationParams,
 } from "./pagination";
 export { buildQueryString, parseQueryString } from "./query-string";
+export { countLabel, pluralWord } from "./plural";

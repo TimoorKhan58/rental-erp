@@ -15,7 +15,7 @@ export function TrialBalancePage() {
     <PageContainer>
       <PageHeader
         title="Trial balance"
-        description="Backend-generated trial balance for posted journal activity."
+        description="The balance of every account, from posted journal entries."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Accounting", href: ROUTES.accounting },

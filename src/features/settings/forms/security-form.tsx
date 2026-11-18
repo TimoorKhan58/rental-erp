@@ -85,7 +85,7 @@ export function SecurityForm({
       <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
         <SectionCard
           title="Security policy"
-          description="These values are saved on the system settings record. Sign-in, password length, lockout, and sessions are enforced by Better Auth and server environment configuration — not by these fields."
+          description="These settings are saved for reference. Sign-in rules (password length, lockouts and how long people stay signed in) are set on the server and are not changed here."
           actions={
             canUpdate ? (
               <AppButton

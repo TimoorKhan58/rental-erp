@@ -716,7 +716,7 @@ export function DispatchReportPage() {
   return (
     <OperationalListReportShell<DispatchReportLine>
       title="Dispatches Report"
-      description="Dispatch records by dispatch date and domain status."
+      description="Dispatches by date and status."
       breadcrumb="Dispatches"
       searchPlaceholder="Search dispatch number, order, status, or method..."
       emptyTitle="No dispatch data"

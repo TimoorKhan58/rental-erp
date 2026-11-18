@@ -50,7 +50,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
         href: ROUTES.rentalOrdersCalendar,
         icon: CalendarDays,
       },
-      { label: "Deliveries", href: ROUTES.dispatches, icon: Truck },
+      { label: "Dispatches", href: ROUTES.dispatches, icon: Truck },
       { label: "Returns", href: ROUTES.returns, icon: Undo2 },
       {
         label: "External Rentals",

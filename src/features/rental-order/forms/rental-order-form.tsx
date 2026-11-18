@@ -255,7 +255,7 @@ function CreateRentalOrderForm({
             <SectionHeading
               step={3}
               title="Inventory"
-              description="Add products, quantities, and rates. Availability uses date-aware API data."
+              description="Add the items, how many and the daily rate. RentCore shows how many are free for your dates."
             />
             <RentalOrderLineItemsField
               productOptions={productOptions}
