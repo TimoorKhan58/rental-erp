@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "@/lib/api";
+import { apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 
 /** Mirrors PlatformBusinessSummary (src/modules/platform). */
 export type PlatformBusiness = {
@@ -11,7 +11,14 @@ export type PlatformBusiness = {
   users: number;
   rentalOrders: number;
   lastOrderAt: string | null;
+  plan: BusinessPlan;
+  activeUsers: number;
+  activeWarehouses: number;
+  lastSignInAt: string | null;
 };
+
+/** null limits mean "no limit". */
+export type BusinessPlan = { name: string | null; maxUsers: number | null; maxWarehouses: number | null };
 
 export type CreateBusinessPayload = {
   name: string;
@@ -52,3 +59,9 @@ export function toSlug(name: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
 }
+
+export const setBusinessPlan = (id: string, plan: { planName: string | null; maxUsers: number | null; maxWarehouses: number | null }) =>
+  apiPut<{ planName: string | null; maxUsers: number | null; maxWarehouses: number | null }>(
+    `/platform/businesses/${id}/plan`,
+    plan,
+  );

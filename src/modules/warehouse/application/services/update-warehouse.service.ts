@@ -1,3 +1,4 @@
+import { assertWithinPlanLimit } from "@/modules/platform/infrastructure/plan-limits";
 import type { WarehouseDto } from "../dtos/warehouse.dto";
 import {
   toWarehouseDto,
@@ -39,6 +40,11 @@ export class UpdateWarehouseService {
           message: "Warehouse not found",
           details: { id },
         });
+      }
+
+      // Reactivating counts against the plan's warehouse limit (SaaS phase 4c).
+      if (data.isActive === true && !existing.isActive) {
+        await assertWithinPlanLimit("warehouses");
       }
 
       const updated = await repository.update(warehouseId, updateData);

@@ -45,3 +45,17 @@ export type CreateBusinessInput = z.infer<typeof CreateBusinessSchema>;
 export const SetBusinessActiveSchema = z.object({ isActive: z.boolean() });
 
 export const ResetOwnerPasswordSchema = z.object({ temporaryPassword: PasswordSchema });
+
+/** A limit: a whole number from 1 to 10,000, or null for "no limit" (SaaS phase 4c). */
+const LimitSchema = z.number().int("Use a whole number").min(1, "Use at least 1").max(10_000).nullable();
+
+export const SetBusinessPlanSchema = z.object({
+  planName: z
+    .string()
+    .trim()
+    .max(60)
+    .nullable()
+    .transform((value) => (value === null || value === "" ? null : value)),
+  maxUsers: LimitSchema,
+  maxWarehouses: LimitSchema,
+});

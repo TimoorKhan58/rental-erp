@@ -24,17 +24,33 @@ export type PlatformBusinessSummary = {
   readonly users: number;
   readonly rentalOrders: number;
   readonly lastOrderAt: string | null;
+  /** Plan and usage (SaaS phase 4c); null limits mean "no limit". */
+  readonly plan: { readonly name: string | null; readonly maxUsers: number | null; readonly maxWarehouses: number | null };
+  readonly activeUsers: number;
+  readonly activeWarehouses: number;
+  readonly lastSignInAt: string | null;
 };
 
 /** Every business with its owner and activity (platform code only). */
 export function listBusinesses(prisma: PrismaClient): Promise<PlatformBusinessSummary[]> {
   return runAsSystem("platform: list businesses", async () => {
-    const [organizations, users, orders, owners] = await Promise.all([
+    const [organizations, users, activeUsers, activeWarehouses, orders, owners] = await Promise.all([
       prisma.organization.findMany({
         orderBy: { createdAt: "asc" },
-        select: { id: true, name: true, slug: true, isActive: true, createdAt: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          isActive: true,
+          createdAt: true,
+          planName: true,
+          maxUsers: true,
+          maxWarehouses: true,
+        },
       }),
-      prisma.user.groupBy({ by: ["organizationId"], _count: { _all: true } }),
+      prisma.user.groupBy({ by: ["organizationId"], _count: { _all: true }, _max: { lastSignInAt: true } }),
+      prisma.user.groupBy({ by: ["organizationId"], where: { isActive: true }, _count: { _all: true } }),
+      prisma.warehouse.groupBy({ by: ["organizationId"], where: { isActive: true }, _count: { _all: true } }),
       prisma.rentalOrder.groupBy({
         by: ["organizationId"],
         _count: { _all: true },
@@ -61,6 +77,15 @@ export function listBusinesses(prisma: PrismaClient): Promise<PlatformBusinessSu
         users: userRow?._count._all ?? 0,
         rentalOrders: orderRow?._count._all ?? 0,
         lastOrderAt: orderRow?._max.createdAt?.toISOString() ?? null,
+        plan: {
+          name: organization.planName,
+          maxUsers: organization.maxUsers,
+          maxWarehouses: organization.maxWarehouses,
+        },
+        activeUsers: activeUsers.find((row) => row.organizationId === organization.id)?._count._all ?? 0,
+        activeWarehouses:
+          activeWarehouses.find((row) => row.organizationId === organization.id)?._count._all ?? 0,
+        lastSignInAt: userRow?._max.lastSignInAt?.toISOString() ?? null,
       };
     });
   });
@@ -195,5 +220,33 @@ export function resetOwnerPassword(
     await gateway.revokeSessions(authUserId);
 
     return { ownerEmail: owner.email };
+  });
+}
+
+export type BusinessPlanInput = {
+  readonly planName: string | null;
+  readonly maxUsers: number | null;
+  readonly maxWarehouses: number | null;
+};
+
+/**
+ * Sets a business's plan and limits (SaaS phase 4c). Lowering a limit below
+ * current usage keeps everything that exists; it only stops adding more.
+ */
+export function setBusinessPlan(
+  prisma: PrismaClient,
+  organizationId: string,
+  plan: BusinessPlanInput,
+): Promise<BusinessPlanInput> {
+  return runAsSystem("platform: set business plan", async () => {
+    const existing = await prisma.organization.findUnique({ where: { id: organizationId }, select: { id: true } });
+    if (existing === null) {
+      throw new NotFoundError({ message: "Business not found." });
+    }
+    return prisma.organization.update({
+      where: { id: organizationId },
+      data: { planName: plan.planName, maxUsers: plan.maxUsers, maxWarehouses: plan.maxWarehouses },
+      select: { planName: true, maxUsers: true, maxWarehouses: true },
+    });
   });
 }

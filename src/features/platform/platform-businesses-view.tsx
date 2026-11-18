@@ -7,19 +7,30 @@ import { SemanticBadge } from "@/components/design-system/badge";
 import { AppButton } from "@/components/design-system/button";
 import { EmptyResults, InlineError } from "@/components/design-system/feedback";
 import { DataTable, type DataTableColumn } from "@/components/design-system/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { ResetOwnerPasswordDialog, ToggleBusinessDialog } from "./business-action-dialogs";
 import { CreateBusinessDialog } from "./create-business-dialog";
+import { EditPlanDialog } from "./edit-plan-dialog";
 import { getBusinesses, platformBusinessesKey, type PlatformBusiness } from "./platform-api";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 const formatDate = (value: string | null) => (value === null ? "—" : dateFormat.format(new Date(value)));
+const usage = (used: number, limit: number | null) => (limit === null ? `${used}` : `${used} / ${limit}`);
+const atLimit = (used: number, limit: number | null) => limit !== null && used >= limit;
 
 /** The platform owner's list of businesses (SaaS phase 3c). */
 export function PlatformBusinessesView() {
   const [creating, setCreating] = useState(false);
   const [toggling, setToggling] = useState<PlatformBusiness | null>(null);
   const [resetting, setResetting] = useState<PlatformBusiness | null>(null);
+  const [planning, setPlanning] = useState<PlatformBusiness | null>(null);
   const query = useQuery({ queryKey: platformBusinessesKey, queryFn: getBusinesses });
 
   const columns: Array<DataTableColumn<PlatformBusiness>> = [
@@ -53,29 +64,50 @@ export function PlatformBusinessesView() {
         <SemanticBadge semantic={row.isActive ? "active" : "inactive"}>{row.isActive ? "Active" : "Inactive"}</SemanticBadge>
       ),
     },
-    { id: "users", header: "Users", cell: (row) => row.users, className: "tabular-nums" },
+    {
+      id: "plan",
+      header: "Plan and usage",
+      cell: (row) => (
+        <div className="min-w-0 text-sm">
+          <div className="font-medium">{row.plan.name ?? "No plan"}</div>
+          <div className="text-xs text-muted-foreground tabular-nums">
+            <span className={atLimit(row.activeUsers, row.plan.maxUsers) ? "font-medium text-amber-600" : undefined}>
+              Users {usage(row.activeUsers, row.plan.maxUsers)}
+            </span>
+            {" · "}
+            <span className={atLimit(row.activeWarehouses, row.plan.maxWarehouses) ? "font-medium text-amber-600" : undefined}>
+              Warehouses {usage(row.activeWarehouses, row.plan.maxWarehouses)}
+            </span>
+          </div>
+        </div>
+      ),
+    },
     { id: "orders", header: "Orders", cell: (row) => row.rentalOrders, className: "tabular-nums" },
     { id: "last", header: "Last order", cell: (row) => formatDate(row.lastOrderAt) },
-    { id: "created", header: "Created", cell: (row) => formatDate(row.createdAt) },
+    { id: "signin", header: "Last sign-in", cell: (row) => formatDate(row.lastSignInAt) },
     {
       id: "actions",
       header: <span className="sr-only">Actions</span>,
+      className: "w-24 text-right",
       cell: (row) => (
-        <div className="flex flex-wrap justify-end gap-2">
-          <AppButton
-            size="sm"
-            variant="outline"
-            render={<a href={`/api/platform/businesses/${row.id}/export`} download />}
-          >
-            Export
-          </AppButton>
-          <AppButton size="sm" variant="outline" disabled={!row.owner} onClick={() => setResetting(row)}>
-            Reset owner password
-          </AppButton>
-          <AppButton size="sm" variant={row.isActive ? "ghost" : "outline"} onClick={() => setToggling(row)}>
-            {row.isActive ? "Deactivate" : "Reactivate"}
-          </AppButton>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<AppButton size="sm" variant="outline" aria-label={`Manage ${row.name}`} />}>
+            Manage
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setPlanning(row)}>Edit plan</DropdownMenuItem>
+            <DropdownMenuItem render={<a href={`/api/platform/businesses/${row.id}/export`} download />}>
+              Export data
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!row.owner} onClick={() => setResetting(row)}>
+              Reset owner password
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant={row.isActive ? "destructive" : "default"} onClick={() => setToggling(row)}>
+              {row.isActive ? "Deactivate" : "Reactivate"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
@@ -101,6 +133,7 @@ export function PlatformBusinessesView() {
       {toggling !== null && (
         <ToggleBusinessDialog key={toggling.id} business={toggling} onClose={() => setToggling(null)} />
       )}
+      {planning !== null && <EditPlanDialog key={planning.id} business={planning} onClose={() => setPlanning(null)} />}
       {resetting !== null && (
         <ResetOwnerPasswordDialog key={resetting.id} business={resetting} onClose={() => setResetting(null)} />
       )}

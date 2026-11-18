@@ -1,3 +1,4 @@
+import { assertWithinPlanLimit } from "@/modules/platform/infrastructure/plan-limits";
 import type { IdentityUserDto } from "../dtos/identity-user.dto";
 import {
   toCreateIdentityUserData,
@@ -32,6 +33,11 @@ export class CreateIdentityUserService {
 
   async execute(input: CreateIdentityUserInput): Promise<IdentityUserDto> {
     const data = parseRequest(CreateIdentityUserSchema, input);
+
+    // The plan's user limit (SaaS phase 4c).
+    if (data.isActive !== false) {
+      await assertWithinPlanLimit("users");
+    }
 
     return this.transactionRunner.run(async (scope) => {
       try {
