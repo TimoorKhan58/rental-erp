@@ -25,6 +25,7 @@ import type { ReportingApplicationServices } from "@/modules/reporting/applicati
 import { runReportingApiRoute } from "@/modules/reporting/presentation/http/reporting-api.route-runner";
 import {
   handleGetAnalyticsOverview,
+  handleGetBusinessInsights,
   handleGetCustomerReport,
   handleGetDashboard,
   handleGetDispatchReport,
@@ -328,6 +329,39 @@ describe("dashboard access for workers (QA-014)", () => {
     );
 
     expect(response.status).toBe(200);
+  });
+
+  it("keeps business insights (money) from workers but not from owners", async () => {
+    const services = {
+      ...servicesWithInsights(),
+      getBusinessInsights: { execute: vi.fn().mockResolvedValue({ monthly: [] }) },
+    };
+    const request = () =>
+      createMockNextRequest({ url: "http://localhost/api/reports/business-insights?months=6" });
+
+    mockSession(USER_ROLES.WORKER);
+    const refused = await handleGetBusinessInsights(
+      request(),
+      () => services as unknown as ReportingApplicationServices,
+    );
+    expect(refused.status).toBe(403);
+
+    mockSession(USER_ROLES.OWNER);
+    const allowed = await handleGetBusinessInsights(
+      request(),
+      () => services as unknown as ReportingApplicationServices,
+    );
+    expect(allowed.status).toBe(200);
+    expect(services.getBusinessInsights.execute).toHaveBeenCalledWith({ months: "6" });
+  });
+
+  it("refuses a business insights period that is not offered", async () => {
+    mockSession(USER_ROLES.OWNER);
+    const response = await handleGetBusinessInsights(
+      createMockNextRequest({ url: "http://localhost/api/reports/business-insights?months=7" }),
+      () => servicesWithInsights() as unknown as ReportingApplicationServices,
+    );
+    expect(response.status).toBe(400);
   });
 
   it("still keeps full reports from workers", async () => {

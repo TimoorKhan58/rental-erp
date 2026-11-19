@@ -12,5 +12,6 @@ export const REPORTING_ROUTES = {
   suppliers: "/api/reports/suppliers",
   warehouses: "/api/reports/warehouses",
   rentalInsights: "/api/reports/rental-insights",
+  businessInsights: "/api/reports/business-insights",
   products: "/api/reports/products",
 } as const;

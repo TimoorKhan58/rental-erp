@@ -97,6 +97,15 @@
     --chart-3: #c8860a;
     --chart-4: #5b6abf;
     --chart-5: #6b7280;
+    /* Business insights charts: validated colour-blind-safe series + heat ramp. */
+    --viz-1: #2a78d6;
+    --viz-2: #eb6834;
+    --viz-3: #1baf7a;
+    --viz-heat-0: #eef4fb;
+    --viz-heat-1: #b7d3f6;
+    --viz-heat-2: #6da7ec;
+    --viz-heat-3: #2a78d6;
+    --viz-heat-4: #184f95;
     --radius: 0.375rem;
     --navbar: #1b3a4b;
     --sidebar: #ffffff;
@@ -138,6 +147,14 @@
     --chart-3: #f0b429;
     --chart-4: #818cf8;
     --chart-5: #9ca3af;
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-3: #199e70;
+    --viz-heat-0: #1c2633;
+    --viz-heat-1: #184f95;
+    --viz-heat-2: #256abf;
+    --viz-heat-3: #5598e7;
+    --viz-heat-4: #9ec5f4;
     --navbar: #152a36;
     --sidebar: #121920;
     --sidebar-foreground: #c5ced6;

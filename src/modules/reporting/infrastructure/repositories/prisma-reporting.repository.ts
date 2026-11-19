@@ -18,6 +18,8 @@ import type {
   WarehouseReportQuery,
 } from "@/modules/reporting/domain/reporting.queries";
 import type { IReportingRepository } from "@/modules/reporting/domain/reporting.repository.interface";
+import type { BusinessInsightsSource } from "@/modules/reporting/domain/business-insights.types";
+import { calculateCommitmentQuantity } from "@/modules/rental-order/domain/rental-order.availability.rules";
 import {
   ANALYTICS_UPCOMING_HORIZON_DAYS,
   addUtcDays,
@@ -1854,5 +1856,255 @@ export class PrismaReportingRepository implements IReportingRepository {
       total: page.total,
       totalPages: page.totalPages,
     };
+  }
+
+  /**
+   * Everything the business insights need, read once: orders since `since`
+   * (by booking or event), each customer's first booking, rentable stock with
+   * units out on rent, invoices, posted payments, approved expenses, supplier
+   * hire-ins and returns.
+   */
+  async getBusinessInsightsSource(since: Date): Promise<BusinessInsightsSource> {
+    return this.runner.run(
+      async (db) => {
+        const [
+          orderRows,
+          firstBookings,
+          customerRows,
+          productRows,
+          inventoryRows,
+          activeLines,
+          invoiceRows,
+          paymentRows,
+          expenseRows,
+          hireInRows,
+          returnRows,
+        ] = await Promise.all([
+          db.rentalOrder.findMany({
+            where: {
+              OR: [{ bookingDate: { gte: since } }, { eventEndDate: { gte: since } }],
+            },
+            select: {
+              id: true,
+              customerId: true,
+              status: true,
+              bookingDate: true,
+              eventStartDate: true,
+              eventEndDate: true,
+              createdAt: true,
+              grandTotal: true,
+              items: {
+                select: {
+                  productId: true,
+                  quantity: true,
+                  numberOfDays: true,
+                  lineTotal: true,
+                },
+              },
+            },
+          }),
+          db.rentalOrder.groupBy({
+            by: ["customerId"],
+            where: { status: { notIn: ["DRAFT", "CANCELLED"] } },
+            _min: { bookingDate: true },
+          }),
+          db.customer.findMany({
+            select: { id: true, customerCode: true, name: true },
+          }),
+          db.product.findMany({
+            where: { isActive: true },
+            select: {
+              id: true,
+              productCode: true,
+              name: true,
+              purchaseCost: true,
+              isRentable: true,
+              category: { select: { name: true } },
+            },
+          }),
+          db.inventory.findMany({
+            where: { isActive: true },
+            select: { productId: true, quantityOnHand: true },
+          }),
+          db.rentalOrderItem.findMany({
+            where: {
+              rentalOrder: {
+                status: { in: ["DISPATCHED", "ON_RENT", "PARTIALLY_RETURNED"] },
+              },
+            },
+            select: {
+              productId: true,
+              reservedQuantity: true,
+              dispatchItems: {
+                select: {
+                  quantity: true,
+                  ownedQuantity: true,
+                  dispatch: { select: { status: true } },
+                },
+              },
+              returnInspectionItems: {
+                select: {
+                  returnedQuantity: true,
+                  ownedQuantity: true,
+                  returnInspection: { select: { status: true } },
+                },
+              },
+            },
+          }),
+          db.rentalInvoice.findMany({
+            where: { status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] } },
+            select: {
+              grandTotal: true,
+              balance: true,
+              status: true,
+              invoiceDate: true,
+              dueDate: true,
+            },
+          }),
+          db.payment.findMany({
+            where: { status: "POSTED", paymentDate: { gte: since } },
+            select: {
+              amount: true,
+              paymentDate: true,
+              paymentMethod: true,
+              rentalInvoice: { select: { invoiceDate: true } },
+            },
+          }),
+          db.expense.findMany({
+            where: {
+              status: { in: ["APPROVED", "PAID"] },
+              expenseDate: { gte: since },
+            },
+            select: { amount: true, expenseDate: true },
+          }),
+          db.externalRentalAgreementItem.findMany({
+            where: { agreement: { hireStartDate: { gte: since } } },
+            select: {
+              productId: true,
+              quantityConfirmed: true,
+              quantityRequested: true,
+              lineHireInCost: true,
+              agreement: {
+                select: { rentalOrderId: true, hireStartDate: true, status: true },
+              },
+            },
+          }),
+          db.returnInspectionItem.findMany({
+            where: {
+              returnInspection: {
+                status: { notIn: ["DRAFT", "CANCELLED"] },
+                inspectionDate: { gte: since },
+              },
+            },
+            select: {
+              returnedQuantity: true,
+              brokenQuantity: true,
+              repairQuantity: true,
+              lostQuantity: true,
+              missingQuantity: true,
+              damageCharge: true,
+              rentalOrderItem: { select: { productId: true } },
+              returnInspection: { select: { inspectionDate: true } },
+            },
+          }),
+        ]);
+
+        const owned = new Map<string, number>();
+        for (const row of inventoryRows) {
+          owned.set(row.productId, (owned.get(row.productId) ?? 0) + row.quantityOnHand);
+        }
+        // Units out with customers are still owned (not on hand).
+        for (const line of activeLines) {
+          const { outstandingOut } = calculateCommitmentQuantity({
+            reservedQuantity: line.reservedQuantity,
+            dispatches: line.dispatchItems.map((item) => ({
+              status: item.dispatch.status,
+              quantity: item.quantity,
+              ownedQuantity: item.ownedQuantity ?? item.quantity,
+            })),
+            returns: line.returnInspectionItems.map((item) => ({
+              status: item.returnInspection.status,
+              returnedQuantity: item.returnedQuantity,
+              ownedReturnedQuantity: item.ownedQuantity ?? item.returnedQuantity,
+            })),
+          });
+          owned.set(line.productId, (owned.get(line.productId) ?? 0) + outstandingOut);
+        }
+
+        const firstByCustomer = new Map(
+          firstBookings.map((row) => [row.customerId, row._min.bookingDate]),
+        );
+
+        return {
+          orders: orderRows.map((order) => ({
+            id: order.id,
+            customerId: order.customerId,
+            status: order.status,
+            bookingDate: order.bookingDate,
+            eventStartDate: order.eventStartDate,
+            eventEndDate: order.eventEndDate,
+            createdAt: order.createdAt,
+            grandTotal: decimalToNumber(order.grandTotal),
+            items: order.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              numberOfDays: item.numberOfDays,
+              lineTotal: decimalToNumber(item.lineTotal),
+            })),
+          })),
+          customers: customerRows.map((customer) => ({
+            id: customer.id,
+            code: customer.customerCode,
+            name: customer.name,
+            firstBookingDate: firstByCustomer.get(customer.id) ?? null,
+          })),
+          products: productRows.map((product) => ({
+            id: product.id,
+            code: product.productCode,
+            name: product.name,
+            categoryName: product.category?.name ?? null,
+            purchaseCost: decimalToNumber(product.purchaseCost),
+            isRentable: product.isRentable,
+            unitsOwned: Math.max(0, owned.get(product.id) ?? 0),
+          })),
+          invoices: invoiceRows.map((invoice) => ({
+            grandTotal: decimalToNumber(invoice.grandTotal),
+            balance: decimalToNumber(invoice.balance),
+            status: invoice.status,
+            invoiceDate: invoice.invoiceDate,
+            dueDate: invoice.dueDate,
+          })),
+          payments: paymentRows.map((payment) => ({
+            amount: decimalToNumber(payment.amount),
+            paymentDate: payment.paymentDate,
+            method: payment.paymentMethod,
+            invoiceDate: payment.rentalInvoice?.invoiceDate ?? null,
+          })),
+          expenses: expenseRows.map((expense) => ({
+            amount: decimalToNumber(expense.amount),
+            expenseDate: expense.expenseDate,
+          })),
+          hireIns: hireInRows
+            .filter((row) => row.agreement.status !== "CANCELLED")
+            .map((row) => ({
+              rentalOrderId: row.agreement.rentalOrderId,
+              productId: row.productId,
+              quantity:
+                row.quantityConfirmed > 0 ? row.quantityConfirmed : row.quantityRequested,
+              cost: decimalToNumber(row.lineHireInCost),
+              hireStartDate: row.agreement.hireStartDate,
+            })),
+          returns: returnRows.map((row) => ({
+            productId: row.rentalOrderItem.productId,
+            returned: row.returnedQuantity,
+            damaged: row.brokenQuantity + row.repairQuantity,
+            lost: row.lostQuantity + row.missingQuantity,
+            damageCharge: decimalToNumber(row.damageCharge),
+            date: row.returnInspection.inspectionDate,
+          })),
+        };
+      },
+      { model: MODEL, operation: "getBusinessInsightsSource" },
+    );
   }
 }

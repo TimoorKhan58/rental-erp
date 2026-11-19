@@ -5,6 +5,7 @@ import { PageContainer } from "@/components/layout";
 import { useOrganizationName } from "@/features/settings/hooks";
 
 import { useLiveDashboardSummary } from "../hooks";
+import { BusinessInsightsSection } from "../insights/business-insights-section";
 import { DashboardGreeting } from "./today/dashboard-greeting";
 import { MonthSoFar, StockNow } from "./today/stock-and-month";
 import { TodayWorklist } from "./today/today-worklist";
@@ -12,8 +13,8 @@ import { WeekSchedule } from "./today/week-schedule";
 
 /**
  * Dashboard (usability revamp R2): today's work first, then the next 7
- * days, what stock is free, and this month's money. Charts and deeper
- * analysis live in Reports → Analytics.
+ * days, what stock is free, and this month's money. Below that, business
+ * insights (seasons, stock, customers, money) for people who read reports.
  */
 export function DashboardPage() {
   const summary = useLiveDashboardSummary();
@@ -56,6 +57,7 @@ export function DashboardPage() {
             <StockNow summary={data} />
           </div>
           <MonthSoFar summary={data} />
+          <BusinessInsightsSection />
         </>
       ) : null}
     </PageContainer>
