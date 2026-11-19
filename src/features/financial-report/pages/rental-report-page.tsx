@@ -38,6 +38,7 @@ import {
 import { RENTAL_REPORT_STATUS_OPTIONS } from "../constants/report-filter-options";
 import { useRentalReport, useRentalReportParams } from "../hooks";
 import type { RentalReportSortField } from "../types";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 function RentalReportContent() {
   const {
@@ -57,13 +58,13 @@ function RentalReportContent() {
 
   const customers = useQuery({
     queryKey: queryKeys.customers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getCustomers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getCustomers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

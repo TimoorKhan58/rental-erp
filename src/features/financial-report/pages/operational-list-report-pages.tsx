@@ -65,6 +65,7 @@ import type {
   SupplierReportLine,
   WarehouseReportLine,
 } from "../types";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type Metric = { label: string; value: string };
 
@@ -296,7 +297,7 @@ function WarehouseFilter({
 }) {
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
@@ -329,7 +330,7 @@ function SupplierFilter({
 }) {
   const suppliers = useQuery({
     queryKey: queryKeys.suppliers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getSuppliers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getSuppliers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

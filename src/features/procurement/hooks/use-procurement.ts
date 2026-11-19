@@ -18,6 +18,7 @@ import {
   receiveProcurement,
   updateProcurement,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -61,19 +62,19 @@ export function useProcurementPermissions() {
 export function useProcurementFilterOptions() {
   const suppliers = useQuery({
     queryKey: queryKeys.suppliers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getSuppliers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getSuppliers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const products = useQuery({
     queryKey: queryKeys.products.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getProducts({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getProducts, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

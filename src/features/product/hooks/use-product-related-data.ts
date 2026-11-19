@@ -10,17 +10,18 @@ import { getInventoryList } from "@/features/inventory/services";
 import { getProcurements } from "@/features/procurement/services";
 import { getWarehouses } from "@/features/warehouse/services";
 import type { ProductResponse } from "../types";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 export function useProductExtendedCatalogOptions() {
   const tags = useQuery({
     queryKey: queryKeys.catalog.tags.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getTags({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getTags, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const attributes = useQuery({
     queryKey: queryKeys.catalog.attributes.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getAttributes({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getAttributes, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
@@ -76,7 +77,7 @@ export function useProductRelatedData(product: ProductResponse | undefined) {
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     enabled: Boolean(product?.id) && canReadInventory,
     staleTime: 5 * 60_000,
   });

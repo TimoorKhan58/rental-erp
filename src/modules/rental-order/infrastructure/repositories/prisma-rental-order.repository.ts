@@ -488,40 +488,49 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
 
     return this.runner.run(
       async (db) => {
-        const [totalOrders, statusGroups, ordersForCompute] = await Promise.all([
-          db.rentalOrder.count({ where }),
+        // Sums are done by the database, one row per order (QA huge-data run:
+        // loading every order with every line took 47 s and then failed on
+        // 10,000 orders). Each order becomes one summed line; a line is never
+        // reserved past its quantity, so "every line fully reserved" equals
+        // "reserved total >= ordered total", and the money is the same.
+        const [orders, statusGroups, lineSums] = await Promise.all([
+          db.rentalOrder.findMany({ where, select: { id: true, status: true } }),
           db.rentalOrder.groupBy({
             by: ["status"],
             where,
             _count: { _all: true },
           }),
-          db.rentalOrder.findMany({
-            where,
-            select: {
-              status: true,
-              items: {
-                select: {
-                  quantity: true,
-                  rentalPricePerDay: true,
-                  numberOfDays: true,
-                  reservedQuantity: true,
-                },
-              },
-            },
+          db.rentalOrderItem.groupBy({
+            by: ["rentalOrderId"],
+            where: { rentalOrder: where },
+            _sum: { quantity: true, reservedQuantity: true, lineTotal: true },
           }),
         ]);
+        const totalOrders = orders.length;
+        const sumsByOrder = new Map(lineSums.map((row) => [row.rentalOrderId, row._sum]));
 
         const computed = computeRentalOrderSummaryResult(
-          ordersForCompute.map((order) => ({
-            status: order.status,
-            items: order.items.map((item) => ({
-              quantity: item.quantity,
-              dailyRate: Number(item.rentalPricePerDay.toString()),
-              numberOfDays: item.numberOfDays,
-              reservedQuantity: item.reservedQuantity,
-            })),
-          })),
+          orders.map((order) => {
+            const sums = sumsByOrder.get(order.id);
+            const quantity = sums?.quantity ?? 0;
+            if (sums === undefined || quantity <= 0) {
+              return { status: order.status, items: [] };
+            }
+            const lineTotal = Number(sums.lineTotal?.toString() ?? 0);
+            return {
+              status: order.status,
+              items: [
+                {
+                  quantity,
+                  dailyRate: lineTotal / quantity,
+                  numberOfDays: 1,
+                  reservedQuantity: sums.reservedQuantity ?? 0,
+                },
+              ],
+            };
+          }),
         );
+        computed.stats.totalRevenue = Math.round(computed.stats.totalRevenue * 100) / 100;
 
         const statusCounts: RentalOrderSummaryResult["statusCounts"] = {
           all: totalOrders,

@@ -11,6 +11,8 @@ import {
   type InsightCountValue,
   type InsightOrderRow,
 } from "./business-insights.types";
+import { businessDay } from "@/shared/infrastructure/time/business-day";
+
 import { buildArAgingBuckets, roundMoney } from "./reporting.rules";
 
 const DAY_MS = 86_400_000;
@@ -106,16 +108,23 @@ function median(values: number[]): number | null {
 }
 
 /** Weekday (0 = Sunday) and hour (0-23) of an instant in a time zone. */
+const hourFormatters = new Map<string, Intl.DateTimeFormat>();
+
 export function localWeekdayAndHour(
   instant: Date,
   timeZone: string,
 ): { weekday: number; hour: number } {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    weekday: "short",
-    hour: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(instant);
+  let formatter = hourFormatters.get(timeZone);
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      weekday: "short",
+      hour: "2-digit",
+      hourCycle: "h23",
+    });
+    hourFormatters.set(timeZone, formatter);
+  }
+  const parts = formatter.formatToParts(instant);
   const weekdayName = parts.find((part) => part.type === "weekday")?.value ?? "Sun";
   const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24;
   const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekdayName);
@@ -174,6 +183,41 @@ function overlapDays(
   return Math.round((last - first) / DAY_MS) + 1;
 }
 
+/**
+ * Puts every date on the business's own calendar day (midnight UTC of the
+ * local date), so a payment saved at 1 pm today counts as today and an order
+ * entered late at night counts on the right day (QA on-screen run).
+ */
+function onBusinessDays(source: BusinessInsightsSource, timeZone: string): BusinessInsightsSource {
+  // A date saved as a calendar day is midnight UTC already: keep it as it is
+  // (converting it would move it a day back west of UTC). Only real
+  // timestamps, like an order entered at 17:47, need the time zone.
+  const day = (date: Date) =>
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0
+      ? date
+      : businessDay(timeZone, date);
+  return {
+    ...source,
+    orders: source.orders.map((order) => ({ ...order, bookingDate: day(order.bookingDate) })),
+    customers: source.customers.map((customer) => ({
+      ...customer,
+      firstBookingDate: customer.firstBookingDate ? day(customer.firstBookingDate) : null,
+    })),
+    invoices: source.invoices.map((invoice) => ({ ...invoice, invoiceDate: day(invoice.invoiceDate) })),
+    payments: source.payments.map((payment) => ({
+      ...payment,
+      paymentDate: day(payment.paymentDate),
+      invoiceDate: payment.invoiceDate ? day(payment.invoiceDate) : null,
+    })),
+    expenses: source.expenses.map((expense) => ({ ...expense, expenseDate: day(expense.expenseDate) })),
+    hireIns: source.hireIns.map((row) => ({ ...row, hireStartDate: day(row.hireStartDate) })),
+    returns: source.returns.map((row) => ({ ...row, date: day(row.date) })),
+  };
+}
+
 export function buildBusinessInsights(input: {
   source: BusinessInsightsSource;
   months: BusinessInsightsPeriodMonths;
@@ -181,7 +225,8 @@ export function buildBusinessInsights(input: {
   now: Date;
   timeZone: string;
 }): BusinessInsights {
-  const { source, months, businessToday, timeZone } = input;
+  const { months, businessToday, timeZone } = input;
+  const source = onBusinessDays(input.source, timeZone);
   const window = resolveBusinessInsightsWindow(months, businessToday);
   const counted = source.orders.filter((order) => !NOT_COUNTED.has(order.status));
   const inPeriod = counted.filter((order) =>
@@ -233,8 +278,9 @@ export function buildBusinessInsights(input: {
   const leadDays = inPeriod.map((order) =>
     Math.max(0, daysBetween(order.bookingDate, order.eventStartDate)),
   );
-  const rentalDays = inPeriod.map(
-    (order) => Math.max(0, daysBetween(order.eventStartDate, order.eventEndDate)) + 1,
+  // Same day count as the order itself: 19 → 20 Nov is 1 day (minimum 1).
+  const rentalDays = inPeriod.map((order) =>
+    Math.max(1, daysBetween(order.eventStartDate, order.eventEndDate)),
   );
   const hireInOrderIds = new Set(source.hireIns.map((row) => row.rentalOrderId));
   const periodOrderIds = new Set(inPeriod.map((order) => order.id));

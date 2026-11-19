@@ -20,6 +20,7 @@ import {
   updateExpense,
   updateExpenseCategory,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -49,13 +50,13 @@ export function useExpensePermissions() {
 export function useExpenseFilterOptions() {
   const categories = useQuery({
     queryKey: queryKeys.expenseCategories.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getExpenseCategories({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getExpenseCategories, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const suppliers = useQuery({
     queryKey: queryKeys.suppliers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getSuppliers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getSuppliers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

@@ -33,6 +33,10 @@ export type InsightOrderRow = {
   id: string;
   customerId: string;
   status: string;
+  /**
+   * When the order was taken (its creation time). Not RentalOrder.bookingDate,
+   * which the app sets to the event start date.
+   */
   bookingDate: Date;
   eventStartDate: Date;
   eventEndDate: Date;
@@ -45,7 +49,7 @@ export type InsightCustomerRow = {
   id: string;
   code: string;
   name: string;
-  /** First booking date of any non-draft, non-cancelled order, ever. */
+  /** When the customer's first non-draft, non-cancelled order was taken. */
   firstBookingDate: Date | null;
 };
 

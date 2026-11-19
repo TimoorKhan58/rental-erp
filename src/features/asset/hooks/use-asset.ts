@@ -19,6 +19,7 @@ import {
   transferAsset,
   updateAsset,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = { id: string; label: string };
 
@@ -46,19 +47,19 @@ export function useAssetPermissions() {
 export function useAssetFilterOptions() {
   const categories = useQuery({
     queryKey: queryKeys.assetCategories.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getAssetCategories({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getAssetCategories, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const suppliers = useQuery({
     queryKey: queryKeys.suppliers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getSuppliers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getSuppliers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

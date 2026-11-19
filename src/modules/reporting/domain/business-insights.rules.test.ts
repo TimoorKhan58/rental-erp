@@ -140,7 +140,8 @@ describe("buildBusinessInsights", () => {
     });
 
     expect(insights.leadTime.map((bucket) => bucket.orders)).toEqual([1, 0, 1, 0, 0, 1]);
-    expect(insights.rentalLength.map((bucket) => bucket.orders)).toEqual([1, 0, 1, 0, 1, 0]);
+    // 0 days → 1 day (minimum), 6→8 Nov = 2 days, 10→20 Nov = 10 days.
+    expect(insights.rentalLength.map((bucket) => bucket.orders)).toEqual([1, 1, 0, 0, 1, 0]);
     expect(insights.headline.medianLeadDays).toBe(5);
   });
 
@@ -238,6 +239,31 @@ describe("buildBusinessInsights", () => {
     });
     expect(insights.money.paymentMethods[0]).toEqual({ method: "CASH", amount: 4000, count: 1 });
     expect(insights.money.aging.find((bucket) => bucket.amount > 0)?.label).toBe("61–90 days");
+  });
+
+  it("counts an order and a payment made today, at any time of day (on-screen run)", () => {
+    const insights = build(
+      {
+        // Entered today 17:47 Karachi for an event on the 28th.
+        orders: [
+          order("a", {
+            bookingDate: new Date("2026-11-19T12:47:50Z"),
+            eventStartDate: d(2026, 11, 28),
+            eventEndDate: d(2026, 11, 29),
+            grandTotal: 7500,
+          }),
+        ],
+        payments: [
+          { amount: 5000, paymentDate: new Date("2026-11-19T13:02:17Z"), method: "BANK_TRANSFER", invoiceDate: d(2026, 11, 19) },
+          { amount: 3400, paymentDate: d(2026, 11, 19), method: "CASH", invoiceDate: d(2026, 11, 19) },
+        ],
+      },
+      3,
+    );
+
+    expect(insights.headline.bookedValue.current).toBe(7500);
+    expect(insights.headline.collected.current).toBe(8400);
+    expect(insights.headline.medianLeadDays).toBe(9);
   });
 
   it("returns empty but well-formed results for a new business", () => {

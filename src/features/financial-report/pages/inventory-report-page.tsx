@@ -30,6 +30,7 @@ import { withReportSorting } from "../tables/report-sortable-columns";
 import { compactActiveFilters, toPaginationMeta } from "../mappers";
 import { useInventoryReport, useInventoryReportParams } from "../hooks";
 import type { InventoryReportSortField } from "../types";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 function InventoryReportContent() {
   const {
@@ -49,7 +50,7 @@ function InventoryReportContent() {
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

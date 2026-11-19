@@ -105,7 +105,9 @@ export function computeRentalOrderSummaryResult(
   };
 
   for (const order of orders) {
-    for (const item of order.items) {
+    // Cancelled orders are not pipeline (QA on-screen run: the "Pipeline
+    // value" card counted a cancelled order beside "Active orders").
+    for (const item of order.status === "CANCELLED" ? [] : order.items) {
       totalRevenue += computeLineTotal(
         item.quantity,
         item.dailyRate,

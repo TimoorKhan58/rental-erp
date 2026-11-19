@@ -36,6 +36,7 @@ import {
 } from "../mappers";
 import { useCustomerReport, useCustomerReportParams } from "../hooks";
 import type { CustomerReportSortField } from "../types";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 function CustomerReportContent() {
   const {
@@ -54,7 +55,7 @@ function CustomerReportContent() {
 
   const customers = useQuery({
     queryKey: queryKeys.customers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getCustomers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getCustomers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

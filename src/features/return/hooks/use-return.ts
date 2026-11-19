@@ -19,6 +19,7 @@ import {
   receiveReturn,
   updateReturn,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -67,7 +68,7 @@ export function useReturnFilterOptions() {
 
   const products = useQuery({
     queryKey: queryKeys.products.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getProducts({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getProducts, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

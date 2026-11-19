@@ -1,7 +1,7 @@
 "use client";
 
 import { calendarDayToIso } from "@/lib/utils/local-date";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
@@ -51,6 +51,19 @@ type EditRentalOrderFormProps = RentalOrderFormBaseProps & {
 export type RentalOrderFormProps = CreateRentalOrderFormProps | EditRentalOrderFormProps;
 
 /** Today to tomorrow as whole calendar days, made when the form opens (R3). */
+const DAY_MS = 86_400_000;
+
+/**
+ * When the start date moves past the end date, move the end to the day after
+ * the start (QA: start 28 Nov with end still 20 Nov read "Nov 28 – Nov 20").
+ */
+export function endDateAfterStart(startDate?: string, endDate?: string): string | null {
+  if (!startDate || !endDate) return null;
+  const start = new Date(startDate).getTime();
+  if (Number.isNaN(start) || new Date(endDate).getTime() >= start) return null;
+  return new Date(start + DAY_MS).toISOString();
+}
+
 function createDefaults(): CreateRentalOrderFormValues {
   const now = new Date();
   const startDate = calendarDayToIso(now);
@@ -136,6 +149,11 @@ function CreateRentalOrderForm({
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
   const bookInAdvance = form.watch("bookInAdvance");
+
+  useEffect(() => {
+    const next = endDateAfterStart(startDate, endDate);
+    if (next) form.setValue("endDate", next, { shouldDirty: true, shouldValidate: true });
+  }, [endDate, form, startDate]);
   const customerId = form.watch("customerId");
   const warehouseId = form.watch("warehouseId");
   const formError = form.formState.errors.root?.message;
@@ -243,6 +261,7 @@ function CreateRentalOrderForm({
                 control={form.control}
                 name="endDate"
                 label={bookInAdvance ? "Reservation end date" : "Rental end date"}
+                minDate={startDate}
               />
             </div>
             </CardContent>
@@ -326,6 +345,11 @@ function EditRentalOrderForm({
   const endDate = form.watch("endDate");
   const customerId = form.watch("customerId");
   const warehouseId = form.watch("warehouseId");
+
+  useEffect(() => {
+    const next = endDateAfterStart(startDate, endDate);
+    if (next) form.setValue("endDate", next, { shouldDirty: true, shouldValidate: true });
+  }, [endDate, form, startDate]);
 
   const mergedCustomerOptions = useMemo(
     () => mergeCustomerOptions(customerOptions, extraCustomerOptions),
@@ -413,7 +437,7 @@ function EditRentalOrderForm({
             />
             <div className="grid gap-4 md:grid-cols-2">
               <DatePickerField control={form.control} name="startDate" label="Rental start date" />
-              <DatePickerField control={form.control} name="endDate" label="Rental end date" />
+              <DatePickerField control={form.control} name="endDate" label="Rental end date" minDate={startDate} />
             </div>
             </CardContent>
           </Card>
