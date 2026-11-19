@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createPrismaClient } from "@/shared/infrastructure/database/prisma-client";
 import { runInOrganization } from "@/shared/infrastructure/tenancy/organization-scope";
 
-import { STARTER_DOCUMENT_TYPES, STARTER_EXPENSE_CATEGORIES } from "../domain/business-starter-kit";
+import { STARTER_ACCOUNTS, STARTER_DOCUMENT_TYPES, STARTER_EXPENSE_CATEGORIES } from "../domain/business-starter-kit";
 import { getBusinessSetupStatus, provisionBusinessStarterKit } from "./provision-business";
 
 const prisma = createPrismaClient();
@@ -48,7 +48,7 @@ describe("business starter kit", () => {
     const status = await getBusinessSetupStatus(prisma, ORG);
     expect(status.ready).toBe(false);
     expect(status.hasActiveCompanyProfile).toBe(false);
-    expect(status.missingDefaultAccounts).toHaveLength(4);
+    expect(status.missingDefaultAccounts).toHaveLength(STARTER_ACCOUNTS.length);
   });
 
   it("makes the business ready", async () => {
@@ -60,7 +60,7 @@ describe("business starter kit", () => {
     expect(result).toEqual({
       companyProfileCreated: true,
       documentSequencesCreated: STARTER_DOCUMENT_TYPES.length,
-      accountsCreated: 4,
+      accountsCreated: STARTER_ACCOUNTS.length,
       unitsOfMeasureCreated: 3,
       expenseCategoriesCreated: STARTER_EXPENSE_CATEGORIES.length,
     });
@@ -106,7 +106,7 @@ describe("business starter kit", () => {
 
   it("keeps each business's starter data to itself", async () => {
     const accounts = await runInOrganization(ORG, () => prisma.account.count());
-    expect(accounts).toBe(4);
+    expect(accounts).toBe(STARTER_ACCOUNTS.length);
   });
 
   it("allows only one active company profile per business", async () => {
