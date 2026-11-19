@@ -115,9 +115,15 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
             reservedQuantity: true,
             eventStartDate: true,
             eventEndDate: true,
+            product: {
+              select: {
+                name: true,
+              },
+            },
             rentalOrder: {
               select: {
                 id: true,
+                orderNumber: true,
                 warehouseId: true,
                 status: true,
               },
@@ -153,7 +159,9 @@ export class PrismaRentalOrderRepository implements IRentalOrderRepository {
       rows.map((row) => ({
         rentalOrderItemId: row.id,
         rentalOrderId: row.rentalOrder.id,
+        orderNumber: row.rentalOrder.orderNumber,
         productId: row.productId as ProductId,
+        productName: row.product.name,
         warehouseId: row.rentalOrder.warehouseId as WarehouseId,
         status: row.rentalOrder.status as RentalOrderStatus,
         reservedQuantity: row.reservedQuantity,

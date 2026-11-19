@@ -248,10 +248,16 @@ describe("ReserveRentalOrderService date-aware availability (Phase 25.4.3)", () 
           { items: [{ productId: PRODUCT_ID, quantity: 195 }] },
         ),
       ).rejects.toMatchObject({
-        message: expect.stringContaining("held by bookings on other dates"),
+        message: expect.stringContaining("Only 190 of the 195 units can be reserved now"),
         details: expect.objectContaining({
           bookableQuantity: 190,
           heldForOtherDatesQuantity: 10,
+          holdingOrders: [
+            expect.objectContaining({
+              quantity: 10,
+              heldUntil: d(2026, 12, 3).toISOString(),
+            }),
+          ],
         }),
       });
 

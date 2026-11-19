@@ -5,6 +5,10 @@ import {
   RentalOrderInvariantError,
 } from "@/modules/rental-order/domain/rental-order.errors";
 import { assertValidAvailabilityPeriod } from "@/modules/rental-order/domain/rental-order.availability.rules";
+import {
+  describeHoldsOnOtherDates,
+  findHoldsOnOtherDates,
+} from "@/modules/rental-order/domain/reserve-hold-message";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
 import { parseRequest } from "@/shared/application/validation";
 import type { InventoryId, ProductId } from "@/shared/domain/ids";
@@ -200,11 +204,43 @@ export class ReserveRentalOrderService {
             const heldElsewhere =
               deltaQuantity <= availability.dateAwareAvailableQuantity;
 
+            let message =
+              "Insufficient date-aware availability for the requested rental period";
+            let holdingOrders: Array<{
+              orderNumber: string | undefined;
+              quantity: number;
+              heldUntil: string;
+            }> = [];
+
+            if (heldElsewhere) {
+              const lines =
+                await rentalOrderRepository.findAvailabilityCommitmentLines({
+                  productId: toProductId(productId),
+                  warehouseId: fresh.warehouseId,
+                  excludeRentalOrderId: fresh.id,
+                });
+              const holds = findHoldsOnOtherDates(
+                { startDate: orderItem.startDate, endDate: orderItem.endDate },
+                lines,
+              );
+
+              message = describeHoldsOnOtherDates({
+                productName: lines.find((line) => line.productName)?.productName,
+                requestedQuantity: deltaQuantity,
+                bookableQuantity: availability.bookableQuantity,
+                holds,
+              });
+              holdingOrders = holds.map((hold) => ({
+                orderNumber: hold.orderNumber,
+                quantity: hold.quantity,
+                heldUntil: hold.heldUntil.toISOString(),
+              }));
+            }
+
             throw new UnprocessableError({
-              message: heldElsewhere
-                ? "Not enough stock to reserve: some units are held by bookings on other dates"
-                : "Insufficient date-aware availability for the requested rental period",
+              message,
               details: {
+                ...(heldElsewhere ? { holdingOrders } : {}),
                 productId,
                 warehouseId: fresh.warehouseId,
                 requestedQuantity: deltaQuantity,

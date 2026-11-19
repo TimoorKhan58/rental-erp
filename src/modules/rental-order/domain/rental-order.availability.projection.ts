@@ -17,7 +17,11 @@ import type { RentalOrderStatus } from "./rental-order.constants";
 export type AvailabilityCommitmentLineProjection = {
   rentalOrderItemId: string;
   rentalOrderId: string;
+  /** Order number (e.g. RO-00012), used to explain holds in messages. */
+  orderNumber?: string;
   productId: ProductId;
+  /** Product name, used to explain holds in messages. */
+  productName?: string;
   warehouseId: WarehouseId;
   status: RentalOrderStatus;
   reservedQuantity: number;
