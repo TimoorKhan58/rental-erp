@@ -44,7 +44,8 @@ describe("authenticateApiRequest organization scope (SaaS phase 2)", () => {
       await new Promise((resolve) => setTimeout(resolve, 1));
       return getOrganizationScope();
     });
-    expect(inside).toEqual({ kind: "organization", organizationId: TEST_ORGANIZATION_ID });
+    // The signed-in user rides along for the activity log (A-to-Z test 2026-11-19).
+    expect(inside).toEqual({ kind: "organization", organizationId: TEST_ORGANIZATION_ID, userId: ctx.request.userId });
     // Outside the request's work there is no business at all (fail closed).
     expect(getOrganizationScope()).toBeUndefined();
   });

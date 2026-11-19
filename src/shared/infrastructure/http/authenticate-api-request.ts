@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { appConfig } from "@/shared/config/app.config";
+import { authConfig } from "@/shared/config/auth.config";
 import {
   createExecutionContext,
   createRequestContext,
@@ -28,6 +30,41 @@ import { ensureActiveErpUser } from "@/shared/infrastructure/auth/ensure-active-
 import { enterRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
 import { runInOrganization } from "@/shared/infrastructure/tenancy/organization-scope";
 
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+function originOf(value: string): string | undefined {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+/** RentCore's own addresses: the app URL, the auth URL and any extra trusted ones. */
+export function trustedApiOrigins(): Set<string> {
+  return new Set(
+    [appConfig.url, authConfig.baseURL, ...authConfig.trustedOrigins]
+      .map((value) => originOf(value.trim()))
+      .filter((value): value is string => value !== undefined),
+  );
+}
+
+/**
+ * Extra protection against cross-site requests (A-to-Z test 2026-11-19): a
+ * change (not GET) sent by a browser from another website is refused. The
+ * session cookie is already SameSite=Lax; requests without an Origin header
+ * (scripts, server-to-server) are not affected.
+ */
+export function assertTrustedOrigin(origin: string | null, httpMethod: string): void {
+  if (origin === null || SAFE_METHODS.has(httpMethod.toUpperCase())) {
+    return;
+  }
+  const normalized = originOf(origin);
+  if (normalized === undefined || !trustedApiOrigins().has(normalized)) {
+    throw new ForbiddenError({ message: "This request came from another website and was refused." });
+  }
+}
+
 /** API paths a user with a temporary password may still call. */
 export const PASSWORD_CHANGE_ALLOWED_PATHS = new Set(["/api/account/password"]);
 
@@ -45,8 +82,14 @@ export async function authenticateApiRequest(
   const requestId = getRequestId(request.headers);
   const correlationId = getCorrelationId(request.headers, requestId);
 
+  assertTrustedOrigin(request.headers.get("origin"), httpMethod);
+
+  // Always check the session in the database, not the signed cookie cache:
+  // otherwise a copied cookie kept working for up to 5 minutes after sign-out
+  // (A-to-Z test, 2026-11-19). One indexed lookup per API request.
   const session = await auth.api.getSession({
     headers: request.headers,
+    query: { disableCookieCache: true },
   });
 
   if (session === null) {
@@ -136,7 +179,7 @@ export function runInRequestOrganization<T>(
     throw new UnauthorizedError({ message: "No business is linked to this request" });
   }
 
-  return runInOrganization(organizationId, operation);
+  return runInOrganization(organizationId, operation, { userId: ctx.request.userId });
 }
 
 export function toUnauthorizedRouteResult(

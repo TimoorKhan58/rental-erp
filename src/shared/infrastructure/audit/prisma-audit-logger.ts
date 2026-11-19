@@ -9,6 +9,9 @@ import {
   mapAuditEntryToCreateInput,
   mapAuditFailureEntryToCreateInput,
 } from "./audit-entry.mapper";
+import { getRequestTrace } from "@/shared/infrastructure/observability/request-trace-als";
+import { getScopeUserId } from "@/shared/infrastructure/tenancy/organization-scope";
+
 import { mergeAuditContext } from "./audit-context";
 import type {
   AuditContext,
@@ -37,9 +40,30 @@ export class PrismaAuditLogger implements IAuditLogger {
     this.tx = options.tx;
   }
 
+  /**
+   * Who did it: the logger's own context first, otherwise the signed-in user
+   * of the current request (most modules build the logger without it, so the
+   * activity log had no user; A-to-Z test 2026-11-19).
+   */
+  private resolveContext(): AuditContext {
+    const trace = getRequestTrace();
+    const scopeUserId = getScopeUserId();
+    const own = Object.fromEntries(
+      Object.entries(this.defaultContext).filter(([, value]) => value !== undefined),
+    ) as AuditContext;
+    return {
+      ...(trace?.userId ? { userId: trace.userId } : {}),
+      ...(scopeUserId ? { userId: scopeUserId } : {}),
+      ...(trace?.requestId ? { requestId: trace.requestId } : {}),
+      ...(trace?.route ? { route: trace.route } : {}),
+      ...(trace?.httpMethod ? { httpMethod: trace.httpMethod } : {}),
+      ...own,
+    };
+  }
+
   async log(entry: AuditEntry): Promise<void> {
     const db = resolveDbClient(this.tx);
-    const data = mapAuditEntryToCreateInput(entry, this.defaultContext);
+    const data = mapAuditEntryToCreateInput(entry, this.resolveContext());
 
     try {
       await withPrismaError(async () => {
@@ -70,7 +94,7 @@ export class PrismaAuditLogger implements IAuditLogger {
 
   async logFailure(entry: AuditFailureEntry): Promise<void> {
     const db = resolveDbClient(this.tx);
-    const data = mapAuditFailureEntryToCreateInput(entry, this.defaultContext);
+    const data = mapAuditFailureEntryToCreateInput(entry, this.resolveContext());
 
     try {
       await withPrismaError(async () => {
