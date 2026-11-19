@@ -114,6 +114,7 @@ export class InMemoryRentalOrderRepository implements IRentalOrderRepository {
         fromStore.push({
           rentalOrderItemId: item.id,
           rentalOrderId: order.id,
+          orderNumber: order.orderNumber,
           productId: item.productId,
           warehouseId: order.warehouseId,
           status: order.status,
