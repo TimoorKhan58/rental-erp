@@ -1,3 +1,5 @@
+import { InMemoryAccountRepository } from "@/modules/accounting/tests/helpers/in-memory-account.repository";
+import { InMemoryJournalEntryRepository } from "@/modules/accounting/tests/helpers/in-memory-journal-entry.repository";
 import type { PurchaseOrderWriteScope } from "@/modules/procurement/application/services/purchase-order-transaction.runner";
 import type { IPurchaseOrderTransactionRunner } from "@/modules/procurement/application/services/purchase-order-transaction.runner";
 import type { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
@@ -6,11 +8,18 @@ import type { InMemoryStockMovementRepository } from "@/modules/stock-movement/t
 import type { InMemoryPurchaseOrderRepository } from "./in-memory-purchase-order.repository";
 import type { MockAuditLogger } from "./mock-audit-logger";
 
+/** Accounting books are optional in tests; empty in-memory ones are used when absent. */
 export function createPassThroughTransactionRunner(
-  scope: PurchaseOrderWriteScope,
+  scope: Omit<PurchaseOrderWriteScope, "accountRepository" | "journalEntryRepository"> &
+    Partial<Pick<PurchaseOrderWriteScope, "accountRepository" | "journalEntryRepository">>,
 ): IPurchaseOrderTransactionRunner {
+  const fullScope: PurchaseOrderWriteScope = {
+    ...scope,
+    accountRepository: scope.accountRepository ?? new InMemoryAccountRepository(),
+    journalEntryRepository: scope.journalEntryRepository ?? new InMemoryJournalEntryRepository(),
+  };
   return {
-    run: (operation) => operation(scope),
+    run: (operation) => operation(fullScope),
   };
 }
 
@@ -33,6 +42,8 @@ export function createRollbackTransactionRunner(
           purchaseOrderRepository,
           inventoryRepository,
           stockMovementRepository,
+          accountRepository: new InMemoryAccountRepository(),
+          journalEntryRepository: new InMemoryJournalEntryRepository(),
           auditLogger,
           userId,
         });

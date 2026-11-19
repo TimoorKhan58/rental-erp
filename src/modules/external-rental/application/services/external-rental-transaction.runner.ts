@@ -1,3 +1,5 @@
+import type { IAccountRepository } from "@/modules/accounting/domain/account.repository.interface";
+import type { IJournalEntryRepository } from "@/modules/accounting/domain/journal-entry.repository.interface";
 import type { IExternalRentalRepository } from "@/modules/external-rental/domain";
 import type { IInventoryRepository } from "@/modules/inventory/domain/inventory.repository.interface";
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
@@ -7,6 +9,8 @@ export interface ExternalRentalWriteScope {
   readonly externalRentalRepository: IExternalRentalRepository;
   readonly rentalOrderRepository: IRentalOrderRepository;
   readonly inventoryRepository: IInventoryRepository;
+  readonly accountRepository: IAccountRepository;
+  readonly journalEntryRepository: IJournalEntryRepository;
   readonly auditLogger: IAuditLogger;
   readonly userId: string | undefined;
 }

@@ -1,3 +1,4 @@
+import { voidOperationalJournals } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { RentalInvoiceInvalidStatusError } from "@/modules/rental-invoice/domain";
 import { parseRequest } from "@/shared/application/validation";
 import {
@@ -32,7 +33,7 @@ export class VoidRentalInvoiceService {
     const { id } = parseRequest(RentalInvoiceIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ rentalInvoiceRepository, paymentRepository, auditLogger }) => {
+      async ({ rentalInvoiceRepository, paymentRepository, journalEntryRepository, auditLogger }) => {
         const invoiceId = toRentalInvoiceId(id);
         const existing = await rentalInvoiceRepository.findById(invoiceId);
 
@@ -85,6 +86,9 @@ export class VoidRentalInvoiceService {
             action: "void",
           });
         }
+
+        // A voided invoice is no longer owed or earned (2026-11-19 audit).
+        await voidOperationalJournals(journalEntryRepository, "RENTAL_INVOICE", claimed.id);
 
         await auditLogger.log({
           module: RENTAL_INVOICE_MODULE,

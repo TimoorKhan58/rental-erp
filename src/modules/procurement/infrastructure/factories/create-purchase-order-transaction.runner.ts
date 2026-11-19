@@ -1,3 +1,5 @@
+import { createAccountRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-account.repository";
+import { createJournalEntryRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-journal-entry.repository";
 import type { IPurchaseOrderTransactionRunner } from "@/modules/procurement/application/services/purchase-order-transaction.runner";
 import { createInventoryRepositoryFromUnitOfWork } from "@/modules/inventory/infrastructure/factories/create-inventory.repository";
 import { createStockMovementRepositoryFromUnitOfWork } from "@/modules/stock-movement/infrastructure/factories/create-stock-movement.repository";
@@ -25,6 +27,8 @@ export function createPurchaseOrderTransactionRunner(
           stockMovementRepository: createStockMovementRepositoryFromUnitOfWork(
             context,
           ),
+          accountRepository: createAccountRepositoryFromUnitOfWork(context),
+          journalEntryRepository: createJournalEntryRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           userId: options.userId,
         }),

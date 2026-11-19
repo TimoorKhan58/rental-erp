@@ -1,3 +1,5 @@
+import { createAccountRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-account.repository";
+import { createJournalEntryRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-journal-entry.repository";
 import type { ISupplierPaymentTransactionRunner } from "@/modules/supplier-payment/application/services/supplier-payment-transaction.runner";
 import { createPurchaseOrderRepositoryFromUnitOfWork } from "@/modules/procurement/infrastructure/factories/create-purchase-order.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -21,6 +23,8 @@ export function createSupplierPaymentTransactionRunner(
             createSupplierPaymentRepositoryFromUnitOfWork(context),
           purchaseOrderRepository:
             createPurchaseOrderRepositoryFromUnitOfWork(context),
+          accountRepository: createAccountRepositoryFromUnitOfWork(context),
+          journalEntryRepository: createJournalEntryRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           userId: options.userId,
         }),

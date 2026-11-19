@@ -1,3 +1,4 @@
+import { voidOperationalJournals } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toPurchaseOrderAuditValues } from "@/modules/procurement/application/services/purchase-order-audit.mapper";
 import {
   PURCHASE_ORDER_ENTITY_NAME,
@@ -43,6 +44,7 @@ export class VoidSupplierPaymentService {
       async ({
         supplierPaymentRepository,
         purchaseOrderRepository,
+        journalEntryRepository,
         auditLogger,
       }) => {
         const existing = await supplierPaymentRepository.findById(
@@ -97,6 +99,8 @@ export class VoidSupplierPaymentService {
             existing,
             "reverse",
           );
+
+          await voidOperationalJournals(journalEntryRepository, "SUPPLIER_PAYMENT", existing.id);
 
           await auditLogger.log({
             module: PURCHASE_ORDER_MODULE,

@@ -45,11 +45,9 @@ describe("evaluateBusinessSetup", () => {
       activeAccountCodes: [DEFAULT_ACCOUNT_CODES.CASH],
     });
     expect(status.ready).toBe(false);
-    expect(status.missingDefaultAccounts).toEqual([
-      DEFAULT_ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
-      DEFAULT_ACCOUNT_CODES.RENTAL_REVENUE,
-      DEFAULT_ACCOUNT_CODES.GENERAL_EXPENSE,
-    ]);
+    expect(status.missingDefaultAccounts).toEqual(
+      Object.values(DEFAULT_ACCOUNT_CODES).filter((code) => code !== DEFAULT_ACCOUNT_CODES.CASH),
+    );
     expect(status.missingDocumentTypes).not.toContain("RENTAL_ORDER");
     expect(status.missingDocumentTypes.length).toBe(STARTER_DOCUMENT_TYPES.length - 1);
   });

@@ -1,3 +1,5 @@
+import { postSupplierPaymentJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import { toPurchaseOrderAuditValues } from "@/modules/procurement/application/services/purchase-order-audit.mapper";
 import {
   PURCHASE_ORDER_ENTITY_NAME,
@@ -46,7 +48,10 @@ export class PostSupplierPaymentService {
       async ({
         supplierPaymentRepository,
         purchaseOrderRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
+        userId,
       }) => {
         const existing = await supplierPaymentRepository.findById(
           toSupplierPaymentId(id),
@@ -124,6 +129,20 @@ export class PostSupplierPaymentService {
         );
 
         const updated = claimed;
+
+        // Books: less owed to the supplier, less cash/bank (2026-11-19 audit).
+        if (userId !== undefined) {
+          await postSupplierPaymentJournal(
+            { accountRepository, journalEntryRepository, userId: toUserId(userId) },
+            {
+              supplierPaymentId: updated.id,
+              paymentNumber: updated.paymentNumber,
+              paymentDate: updated.paymentDate,
+              amount: updated.amount,
+              paymentMethod: updated.paymentMethod,
+            },
+          );
+        }
 
         await auditLogger.log({
           module: SUPPLIER_PAYMENT_MODULE,

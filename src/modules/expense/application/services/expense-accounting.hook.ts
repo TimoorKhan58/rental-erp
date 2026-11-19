@@ -41,6 +41,7 @@ export class ExpenseAccountingHook implements IExpenseAccountingHook {
         expenseNumber: expense.expenseNumber,
         expenseDate: expense.expenseDate,
         amount: expense.amount,
+        paymentMethod: expense.paymentMethod,
       },
     );
 

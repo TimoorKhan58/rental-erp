@@ -197,6 +197,7 @@ export class PostPaymentService {
               paymentNumber: updated.paymentNumber,
               paymentDate: updated.paymentDate,
               amount: updated.amount,
+              paymentMethod: updated.paymentMethod,
             },
           );
         }
