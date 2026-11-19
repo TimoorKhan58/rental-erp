@@ -20,6 +20,7 @@ import {
   type GenerateInvoiceChargesFormValues,
 } from "../schemas/generate-invoice-charges-form.schema";
 import { useGenerateRentalInvoiceFromOrder } from "../hooks";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type GenerateRentalInvoiceDialogProps = {
   rentalOrderId: string;
@@ -50,7 +51,7 @@ export function GenerateRentalInvoiceDialog({
   });
   const productsQuery = useQuery({
     queryKey: queryKeys.products.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getProducts({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getProducts, { isActive: true }),
     enabled: open,
     staleTime: 5 * 60_000,
   });

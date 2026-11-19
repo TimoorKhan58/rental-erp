@@ -85,6 +85,11 @@ export const auth = betterAuth({
     window: authConfig.rateLimit.windowSeconds,
     max: authConfig.rateLimit.maxRequests,
     customRules: {
+      // Reading your own session is harmless and every page asks for it
+      // several times. Limiting it signed busy users out (QA on-screen run:
+      // 429 on get-session sent the owner back to sign-in). It is also the
+      // path most exposed to a shared bucket when the client IP is unknown.
+      "/get-session": false,
       "/sign-in/email": {
         window: authConfig.rateLimit.signInWindowSeconds,
         max: authConfig.rateLimit.signInMaxRequests,

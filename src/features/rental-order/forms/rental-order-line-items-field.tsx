@@ -100,9 +100,10 @@ export function RentalOrderLineItemsField({
     }
   }, [form, orderEndDate, orderStartDate, readOnly]);
 
-  const orderTotal = useMemo(
-    () => calculateOrderTotal((items ?? []).filter((item) => Boolean(item.productId))),
-    [items],
+  // Not memoised: the form edits the items array in place, so a memo keyed
+  // on it would keep showing the first total (QA: "Line items total PKR 0").
+  const orderTotal = calculateOrderTotal(
+    (items ?? []).filter((item) => Boolean(item.productId)),
   );
 
   // Picking a product fills its daily price (still editable). Lines loaded

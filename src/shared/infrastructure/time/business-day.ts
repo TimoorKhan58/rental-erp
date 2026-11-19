@@ -19,14 +19,27 @@ export function isValidTimeZone(timeZone: string): boolean {
   }
 }
 
+// Creating an Intl.DateTimeFormat is costly (~0.3 ms); reuse one per zone.
+// Business insights convert tens of thousands of dates (QA huge-data run).
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function dateFormatterFor(timeZone: string): Intl.DateTimeFormat {
+  let formatter = dateFormatters.get(timeZone);
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: isValidTimeZone(timeZone) ? timeZone : "UTC",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    dateFormatters.set(timeZone, formatter);
+  }
+  return formatter;
+}
+
 /** The calendar date (year, month 1-12, day) of `instant` in `timeZone`. */
 export function calendarDateIn(timeZone: string, instant: Date): { year: number; month: number; day: number } {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: isValidTimeZone(timeZone) ? timeZone : "UTC",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(instant);
+  const parts = dateFormatterFor(timeZone).formatToParts(instant);
   const value = (type: string) => Number(parts.find((part) => part.type === type)?.value);
   return { year: value("year"), month: value("month"), day: value("day") };
 }

@@ -18,6 +18,7 @@ import {
   startMaintenance,
   updateMaintenance,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -47,19 +48,19 @@ export function useMaintenancePermissions() {
 export function useMaintenanceFilterOptions() {
   const products = useQuery({
     queryKey: queryKeys.products.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getProducts({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getProducts, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const inventory = useQuery({
     queryKey: queryKeys.inventory.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getInventoryList({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getInventoryList, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

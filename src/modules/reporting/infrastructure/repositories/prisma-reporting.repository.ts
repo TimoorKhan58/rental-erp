@@ -1867,8 +1867,11 @@ export class PrismaReportingRepository implements IReportingRepository {
   async getBusinessInsightsSource(since: Date): Promise<BusinessInsightsSource> {
     return this.runner.run(
       async (db) => {
+        // Flat reads, linked in memory: nested relation reads were ~2x slower
+        // on 2 years of data (QA huge-data run).
         const [
           orderRows,
+          orderLineRows,
           firstBookings,
           customerRows,
           productRows,
@@ -1879,34 +1882,41 @@ export class PrismaReportingRepository implements IReportingRepository {
           expenseRows,
           hireInRows,
           returnRows,
+          returnDateRows,
         ] = await Promise.all([
           db.rentalOrder.findMany({
             where: {
-              OR: [{ bookingDate: { gte: since } }, { eventEndDate: { gte: since } }],
+              OR: [{ createdAt: { gte: since } }, { eventEndDate: { gte: since } }],
             },
             select: {
               id: true,
               customerId: true,
               status: true,
-              bookingDate: true,
               eventStartDate: true,
               eventEndDate: true,
               createdAt: true,
               grandTotal: true,
-              items: {
-                select: {
-                  productId: true,
-                  quantity: true,
-                  numberOfDays: true,
-                  lineTotal: true,
-                },
+            },
+          }),
+          db.rentalOrderItem.findMany({
+            where: {
+              rentalOrder: {
+                OR: [{ createdAt: { gte: since } }, { eventEndDate: { gte: since } }],
               },
+            },
+            select: {
+              id: true,
+              rentalOrderId: true,
+              productId: true,
+              quantity: true,
+              numberOfDays: true,
+              lineTotal: true,
             },
           }),
           db.rentalOrder.groupBy({
             by: ["customerId"],
             where: { status: { notIn: ["DRAFT", "CANCELLED"] } },
-            _min: { bookingDate: true },
+            _min: { createdAt: true },
           }),
           db.customer.findMany({
             select: { id: true, customerCode: true, name: true },
@@ -1952,8 +1962,15 @@ export class PrismaReportingRepository implements IReportingRepository {
             },
           }),
           db.rentalInvoice.findMany({
-            where: { status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] } },
+            // Invoices in the window, plus older ones still owed (for ageing).
+            where: {
+              OR: [
+                { status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] }, invoiceDate: { gte: since } },
+                { status: { in: ["ISSUED", "PARTIALLY_PAID"] } },
+              ],
+            },
             select: {
+              id: true,
               grandTotal: true,
               balance: true,
               status: true,
@@ -1967,7 +1984,7 @@ export class PrismaReportingRepository implements IReportingRepository {
               amount: true,
               paymentDate: true,
               paymentMethod: true,
-              rentalInvoice: { select: { invoiceDate: true } },
+              rentalInvoiceId: true,
             },
           }),
           db.expense.findMany({
@@ -1997,17 +2014,35 @@ export class PrismaReportingRepository implements IReportingRepository {
               },
             },
             select: {
+              returnInspectionId: true,
+              rentalOrderItemId: true,
               returnedQuantity: true,
               brokenQuantity: true,
               repairQuantity: true,
               lostQuantity: true,
               missingQuantity: true,
               damageCharge: true,
-              rentalOrderItem: { select: { productId: true } },
-              returnInspection: { select: { inspectionDate: true } },
             },
           }),
+          db.returnInspection.findMany({
+            where: {
+              status: { notIn: ["DRAFT", "CANCELLED"] },
+              inspectionDate: { gte: since },
+            },
+            select: { id: true, inspectionDate: true },
+          }),
         ]);
+
+        const linesByOrder = new Map<string, typeof orderLineRows>();
+        const productByLine = new Map<string, string>();
+        for (const line of orderLineRows) {
+          const list = linesByOrder.get(line.rentalOrderId) ?? [];
+          list.push(line);
+          linesByOrder.set(line.rentalOrderId, list);
+          productByLine.set(line.id, line.productId);
+        }
+        const invoiceDateById = new Map(invoiceRows.map((row) => [row.id, row.invoiceDate]));
+        const returnDateById = new Map(returnDateRows.map((row) => [row.id, row.inspectionDate]));
 
         const owned = new Map<string, number>();
         for (const row of inventoryRows) {
@@ -2032,7 +2067,7 @@ export class PrismaReportingRepository implements IReportingRepository {
         }
 
         const firstByCustomer = new Map(
-          firstBookings.map((row) => [row.customerId, row._min.bookingDate]),
+          firstBookings.map((row) => [row.customerId, row._min.createdAt]),
         );
 
         return {
@@ -2040,12 +2075,14 @@ export class PrismaReportingRepository implements IReportingRepository {
             id: order.id,
             customerId: order.customerId,
             status: order.status,
-            bookingDate: order.bookingDate,
+            // The app stores bookingDate as the event start; "booked" means
+            // the day the order was taken.
+            bookingDate: order.createdAt,
             eventStartDate: order.eventStartDate,
             eventEndDate: order.eventEndDate,
             createdAt: order.createdAt,
             grandTotal: decimalToNumber(order.grandTotal),
-            items: order.items.map((item) => ({
+            items: (linesByOrder.get(order.id) ?? []).map((item) => ({
               productId: item.productId,
               quantity: item.quantity,
               numberOfDays: item.numberOfDays,
@@ -2078,7 +2115,7 @@ export class PrismaReportingRepository implements IReportingRepository {
             amount: decimalToNumber(payment.amount),
             paymentDate: payment.paymentDate,
             method: payment.paymentMethod,
-            invoiceDate: payment.rentalInvoice?.invoiceDate ?? null,
+            invoiceDate: invoiceDateById.get(payment.rentalInvoiceId) ?? null,
           })),
           expenses: expenseRows.map((expense) => ({
             amount: decimalToNumber(expense.amount),
@@ -2094,14 +2131,23 @@ export class PrismaReportingRepository implements IReportingRepository {
               cost: decimalToNumber(row.lineHireInCost),
               hireStartDate: row.agreement.hireStartDate,
             })),
-          returns: returnRows.map((row) => ({
-            productId: row.rentalOrderItem.productId,
-            returned: row.returnedQuantity,
-            damaged: row.brokenQuantity + row.repairQuantity,
-            lost: row.lostQuantity + row.missingQuantity,
-            damageCharge: decimalToNumber(row.damageCharge),
-            date: row.returnInspection.inspectionDate,
-          })),
+          returns: returnRows.flatMap((row) => {
+            // Lines of older orders are not loaded; their returns fall
+            // outside the window anyway.
+            const productId = productByLine.get(row.rentalOrderItemId);
+            const date = returnDateById.get(row.returnInspectionId);
+            if (productId === undefined || date === undefined) return [];
+            return [
+              {
+                productId,
+                returned: row.returnedQuantity,
+                damaged: row.brokenQuantity + row.repairQuantity,
+                lost: row.lostQuantity + row.missingQuantity,
+                damageCharge: decimalToNumber(row.damageCharge),
+                date,
+              },
+            ];
+          }),
         };
       },
       { model: MODEL, operation: "getBusinessInsightsSource" },

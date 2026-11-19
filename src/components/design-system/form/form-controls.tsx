@@ -603,7 +603,14 @@ export function DatePickerField<T extends FieldValues>({
   description,
   disabled,
   className,
-}: BaseFieldProps<T>) {
+  minDate,
+}: BaseFieldProps<T> & {
+  /** Earliest day that can be picked (a saved ISO date), e.g. an end date's start. */
+  minDate?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const earliest = minDate ? isoToCalendarDay(minDate) : undefined;
+
   return (
     <FormField
       control={control}
@@ -615,7 +622,7 @@ export function DatePickerField<T extends FieldValues>({
         const dateValue = field.value ? isoToCalendarDay(String(field.value)) : undefined;
 
         return (
-          <Popover>
+          <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger
               render={
                 <AppButton
@@ -632,7 +639,13 @@ export function DatePickerField<T extends FieldValues>({
               <Calendar
                 mode="single"
                 selected={dateValue}
-                onSelect={(date) => field.onChange(date ? calendarDayToIso(date) : undefined)}
+                defaultMonth={dateValue ?? earliest}
+                disabled={earliest ? { before: earliest } : undefined}
+                onSelect={(date) => {
+                  field.onChange(date ? calendarDayToIso(date) : undefined);
+                  // Close once a day is picked (QA: the calendar stayed open).
+                  if (date) setOpen(false);
+                }}
               />
             </PopoverContent>
           </Popover>

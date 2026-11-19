@@ -2,8 +2,8 @@
 
 import {
   createContext,
+  Fragment,
   useContext,
-  useEffect,
   useMemo,
   type ReactNode,
 } from "react";
@@ -41,11 +41,19 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     };
   }, [company]);
 
-  useEffect(() => {
-    setActiveLocaleConfig(config);
-  }, [config]);
+  // Set during render (not in an effect) so everything drawn below already
+  // uses the company's currency. The key redraws the screen once when the
+  // currency, language or time zone changes: parts drawn before settings
+  // arrived otherwise kept the default, e.g. "$8,400" for a PKR business
+  // (QA on-screen run).
+  setActiveLocaleConfig(config);
+  const localeKey = `${config.currency}|${config.locale}|${config.timezone}`;
 
-  return <LocaleContext.Provider value={config}>{children}</LocaleContext.Provider>;
+  return (
+    <LocaleContext.Provider value={config}>
+      <Fragment key={localeKey}>{children}</Fragment>
+    </LocaleContext.Provider>
+  );
 }
 
 export function useLocaleConfig(): LocaleConfig {

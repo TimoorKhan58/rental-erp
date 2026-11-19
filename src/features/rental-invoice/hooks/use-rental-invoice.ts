@@ -23,6 +23,7 @@ import {
 } from "../services";
 import type { GenerateInvoiceChargesFormValues } from "../schemas/generate-invoice-charges-form.schema";
 import type { RentalInvoiceResponse } from "../types";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -51,7 +52,7 @@ export function useRentalInvoicePermissions() {
 export function useRentalInvoiceFilterOptions() {
   const customers = useQuery({
     queryKey: queryKeys.customers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getCustomers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getCustomers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

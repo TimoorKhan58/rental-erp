@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useMemo } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { NumberField, SelectField } from "@/components/design-system/form";
@@ -41,7 +40,8 @@ export function ProcurementLineItemsField({
   const [productRate, setProductRate] = useState("0");
 
   const items = form.watch("items");
-  const orderTotal = useMemo(() => calculateOrderTotal(items ?? []), [items]);
+  // Not memoised: the form edits the items array in place (QA: total stayed PKR 0).
+  const orderTotal = calculateOrderTotal(items ?? []);
 
   const selectOptions = productOptions.map((option) => ({
     value: option.id,

@@ -16,6 +16,7 @@ import {
   updatePayment,
   voidPayment,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -48,7 +49,7 @@ export function usePaymentPermissions() {
 export function usePaymentFilterOptions() {
   const customers = useQuery({
     queryKey: queryKeys.customers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getCustomers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getCustomers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 

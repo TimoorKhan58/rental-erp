@@ -18,6 +18,7 @@ import {
   getDispatches,
   updateDispatch,
 } from "../services";
+import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -56,19 +57,19 @@ export function useDispatchFilterOptions() {
 
   const customers = useQuery({
     queryKey: queryKeys.customers.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getCustomers({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getCustomers, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const warehouses = useQuery({
     queryKey: queryKeys.warehouses.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getWarehouses({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getWarehouses, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
   const products = useQuery({
     queryKey: queryKeys.products.list({ pageSize: 100, isActive: true }),
-    queryFn: () => getProducts({ pageSize: 100, isActive: true }),
+    queryFn: () => fetchAllPages(getProducts, { isActive: true }),
     staleTime: 5 * 60_000,
   });
 
