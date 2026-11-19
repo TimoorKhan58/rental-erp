@@ -43,6 +43,8 @@ import {
 import { REPORTING_ROUTES } from "./reporting.routes";
 import { runCatchingApiHandler } from "@/shared/infrastructure/http/run-catching-api-handler";
 
+import { BusinessInsightsQuerySchema } from "@/modules/reporting/application/services/get-business-insights.service";
+
 function parseQuery(request: NextRequest): Record<string, string> {
   return Object.fromEntries(request.nextUrl.searchParams.entries());
 }
@@ -450,6 +452,30 @@ export async function handleGetRentalInsights(
         },
       });
     }
+
+    return toJsonResponse(result);
+  });
+}
+
+/**
+ * Dashboard business insights: seasons and peaks, stock earning power,
+ * customers and money. Money is involved, so it needs report access.
+ */
+export async function handleGetBusinessInsights(
+  request: NextRequest,
+  resolveServices: ReportingServiceResolver,
+): Promise<Response> {
+  return runCatchingApiHandler(request, async () => {
+    const input = parseRequest(BusinessInsightsQuerySchema, parseQuery(request));
+
+    const result = await runReportingApiRoute({
+      request,
+      route: REPORTING_ROUTES.businessInsights,
+      httpMethod: "GET",
+      permission: PERMISSIONS.reports.read,
+      resolveServices,
+      handler: async (_ctx, services) => services.getBusinessInsights.execute(input),
+    });
 
     return toJsonResponse(result);
   });

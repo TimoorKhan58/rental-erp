@@ -1,3 +1,4 @@
+import type { BusinessInsightsSource } from "@/modules/reporting/domain/business-insights.types";
 import type {
   AnalyticsOverviewQuery,
   CustomerReportQuery,
@@ -198,6 +199,25 @@ export interface ReportingSeedOptions {
 }
 
 export class InMemoryReportingRepository implements IReportingRepository {
+  private businessInsightsSource: BusinessInsightsSource = {
+    orders: [],
+    customers: [],
+    products: [],
+    invoices: [],
+    payments: [],
+    expenses: [],
+    hireIns: [],
+    returns: [],
+  };
+
+  seedBusinessInsightsSource(source: Partial<BusinessInsightsSource>): void {
+    this.businessInsightsSource = { ...this.businessInsightsSource, ...source };
+  }
+
+  async getBusinessInsightsSource(): Promise<BusinessInsightsSource> {
+    return this.businessInsightsSource;
+  }
+
   private customers: FixtureCustomer[] = [];
   private suppliers: FixtureSupplier[] = [];
   private warehouses: FixtureWarehouse[] = [];

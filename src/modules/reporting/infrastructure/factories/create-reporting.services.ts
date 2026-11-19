@@ -10,6 +10,7 @@ import { GetMaintenanceReportService } from "@/modules/reporting/application/ser
 import { GetProcurementReportService } from "@/modules/reporting/application/services/get-procurement-report.service";
 import { GetProductReportService } from "@/modules/reporting/application/services/get-product-report.service";
 import { GetRentalInsightsService } from "@/modules/reporting/application/services/get-rental-insights.service";
+import { GetBusinessInsightsService } from "@/modules/reporting/application/services/get-business-insights.service";
 import { GetRentalReportService } from "@/modules/reporting/application/services/get-rental-report.service";
 import { GetRepairReportService } from "@/modules/reporting/application/services/get-repair-report.service";
 import { GetReturnReportService } from "@/modules/reporting/application/services/get-return-report.service";
@@ -40,6 +41,7 @@ export function createReportingApplicationServices(
     financialReportRepository,
   );
   const getRentalInsights = new GetRentalInsightsService(reportingRepository);
+  const getBusinessInsights = new GetBusinessInsightsService(reportingRepository);
   const getInventoryReport = new GetInventoryReportService(reportingRepository);
   const getRentalReport = new GetRentalReportService(reportingRepository);
   const getDispatchReport = new GetDispatchReportService(reportingRepository);
@@ -60,6 +62,7 @@ export function createReportingApplicationServices(
     getDashboard,
     getAnalyticsOverview,
     getRentalInsights,
+    getBusinessInsights,
     getInventoryReport,
     getRentalReport,
     getDispatchReport,

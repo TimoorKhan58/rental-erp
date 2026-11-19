@@ -30,6 +30,7 @@ import type {
   SupplierReport,
   WarehouseReport,
 } from "./reporting.types";
+import type { BusinessInsightsSource } from "./business-insights.types";
 
 export interface IReportingRepository {
   getDashboard(query: DashboardQuery): Promise<DashboardSummary>;
@@ -37,6 +38,8 @@ export interface IReportingRepository {
     query: AnalyticsOverviewQuery,
   ): Promise<AnalyticsOperationalSnapshot>;
   getRentalInsights(query: RentalInsightsQuery): Promise<RentalInsightsReport>;
+  /** Raw records for the dashboard business insights, from `since` onward. */
+  getBusinessInsightsSource(since: Date): Promise<BusinessInsightsSource>;
   getInventoryReport(query: InventoryReportQuery): Promise<InventoryReport>;
   getRentalReport(query: RentalReportQuery): Promise<RentalReport>;
   getDispatchReport(query: DispatchReportQuery): Promise<DispatchReport>;

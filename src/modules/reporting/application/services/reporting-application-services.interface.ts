@@ -39,6 +39,7 @@ import type { GetMaintenanceReportService } from "./get-maintenance-report.servi
 import type { GetProcurementReportService } from "./get-procurement-report.service";
 import type { GetProductReportService } from "./get-product-report.service";
 import type { GetRentalInsightsService } from "./get-rental-insights.service";
+import type { GetBusinessInsightsService } from "./get-business-insights.service";
 import type { GetRentalReportService } from "./get-rental-report.service";
 import type { GetRepairReportService } from "./get-repair-report.service";
 import type { GetReturnReportService } from "./get-return-report.service";
@@ -49,6 +50,7 @@ export interface ReportingApplicationServices {
   getDashboard: GetDashboardService;
   getAnalyticsOverview: GetAnalyticsOverviewService;
   getRentalInsights: GetRentalInsightsService;
+  getBusinessInsights: GetBusinessInsightsService;
   getInventoryReport: GetInventoryReportService;
   getRentalReport: GetRentalReportService;
   getDispatchReport: GetDispatchReportService;
