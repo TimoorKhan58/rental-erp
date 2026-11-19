@@ -110,6 +110,8 @@ function buildInvoiceVoidRunner(
     rentalOrderRepository,
     rentalOrderInvoiceLookup: createCompletedRentalOrderLookup(),
     customerRepository,
+    accountRepository: new InMemoryAccountRepository(),
+    journalEntryRepository: new InMemoryJournalEntryRepository(),
     auditLogger,
     ...mockNotificationWriteScopeDeps,
     userId: USER_ID,

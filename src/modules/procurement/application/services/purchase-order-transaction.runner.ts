@@ -1,3 +1,5 @@
+import type { IAccountRepository } from "@/modules/accounting/domain/account.repository.interface";
+import type { IJournalEntryRepository } from "@/modules/accounting/domain/journal-entry.repository.interface";
 import type { IInventoryRepository } from "@/modules/inventory/domain/inventory.repository.interface";
 import type { IPurchaseOrderRepository } from "@/modules/procurement/domain/purchase-order.repository.interface";
 import type { IStockMovementRepository } from "@/modules/stock-movement/domain/stock-movement.repository.interface";
@@ -7,6 +9,8 @@ export interface PurchaseOrderWriteScope {
   readonly purchaseOrderRepository: IPurchaseOrderRepository;
   readonly inventoryRepository: IInventoryRepository;
   readonly stockMovementRepository: IStockMovementRepository;
+  readonly accountRepository: IAccountRepository;
+  readonly journalEntryRepository: IJournalEntryRepository;
   readonly auditLogger: IAuditLogger;
   readonly userId: string | undefined;
 }

@@ -1,4 +1,4 @@
-import { DEFAULT_ACCOUNT_CODES } from "@/modules/accounting/domain/default-account-codes.constants";
+import { DEFAULT_ACCOUNT_CODES, STANDARD_ACCOUNTS } from "@/modules/accounting/domain/default-account-codes.constants";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/modules/expense/domain/default-expense-categories";
 import { DOCUMENT_TYPE_PREFIXES } from "@/modules/settings/domain/number-sequence.constants";
 
@@ -7,32 +7,12 @@ import { DOCUMENT_TYPE_PREFIXES } from "@/modules/settings/domain/number-sequenc
  * (prisma/seed-data.ts) gives MT Service the same lists with fixed ids.
  */
 
-export const STARTER_ACCOUNTS = [
-  {
-    accountCode: DEFAULT_ACCOUNT_CODES.CASH,
-    name: "Cash",
-    accountType: "ASSET",
-    description: "Primary cash / bank account",
-  },
-  {
-    accountCode: DEFAULT_ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
-    name: "Accounts Receivable",
-    accountType: "ASSET",
-    description: "Customer rental invoice balances",
-  },
-  {
-    accountCode: DEFAULT_ACCOUNT_CODES.RENTAL_REVENUE,
-    name: "Rental Revenue",
-    accountType: "INCOME",
-    description: "Rental income from issued invoices",
-  },
-  {
-    accountCode: DEFAULT_ACCOUNT_CODES.GENERAL_EXPENSE,
-    name: "General Expense",
-    accountType: "EXPENSE",
-    description: "Operating expenses paid through the expense module",
-  },
-] as const;
+/** Every standard account, so posting never has to create one later. */
+export const STARTER_ACCOUNTS = (
+  Object.entries(STANDARD_ACCOUNTS) as Array<
+    [keyof typeof STANDARD_ACCOUNTS, (typeof STANDARD_ACCOUNTS)[keyof typeof STANDARD_ACCOUNTS]]
+  >
+).map(([accountCode, account]) => ({ accountCode, ...account }));
 
 export const STARTER_UNITS_OF_MEASURE = [
   { code: "PCS", name: "Pieces", description: "Individual items" },

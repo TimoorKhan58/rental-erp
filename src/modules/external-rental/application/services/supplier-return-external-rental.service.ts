@@ -1,3 +1,5 @@
+import { postHireInCostJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import {
   EXTERNAL_RENTAL_ENTITY_NAME,
   EXTERNAL_RENTAL_MODULE,
@@ -46,7 +48,7 @@ export class SupplierReturnExternalRentalService {
     const data = parseRequest(SupplierReturnExternalRentalSchema, input);
 
     return this.transactionRunner.run(
-      async ({ externalRentalRepository, auditLogger }) => {
+      async ({ externalRentalRepository, accountRepository, journalEntryRepository, auditLogger, userId }) => {
         const existing = await externalRentalRepository.findById(
           toExternalRentalAgreementId(id),
         );
@@ -121,6 +123,21 @@ export class SupplierReturnExternalRentalService {
             expectedStatus: allowedStatuses.join("|"),
             action: "supplier-return",
           });
+        }
+
+        // Books: when the hired items are back with the supplier the final
+        // hire-in cost is known — record it as a cost owed to the supplier
+        // (once per agreement; 2026-11-19 audit).
+        if (updated.status === "RETURNED" && userId !== undefined) {
+          await postHireInCostJournal(
+            { accountRepository, journalEntryRepository, userId: toUserId(userId) },
+            {
+              agreementId: updated.id,
+              agreementNumber: updated.agreementNumber,
+              date: new Date(),
+              amount: updated.totalHireInCost,
+            },
+          );
         }
 
         await auditLogger.log({

@@ -1,3 +1,5 @@
+import { postPurchaseReceivedJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import { PURCHASE_ORDER_REFERENCE_TYPE } from "@/modules/procurement/domain/purchase-order.constants";
 import {
   PurchaseOrderInvalidReceiveError,
@@ -47,6 +49,8 @@ export class ReceivePurchaseOrderService {
         purchaseOrderRepository,
         inventoryRepository,
         stockMovementRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
         userId,
       }) => {
@@ -144,6 +148,23 @@ export class ReceivePurchaseOrderService {
             },
           );
         }
+
+        // Books: the delivered items are equipment we now own, owed to the
+        // supplier until paid (2026-11-19 audit; purchases were not posted).
+        const costByProduct = new Map(existing.items.map((item) => [String(item.productId), item.unitCost]));
+        const receivedValue = data.items.reduce(
+          (total, item) => total + item.quantity * (costByProduct.get(item.productId) ?? 0),
+          0,
+        );
+        await postPurchaseReceivedJournal(
+          { accountRepository, journalEntryRepository, userId: toUserId(userId) },
+          {
+            purchaseOrderId: existing.id,
+            poNumber: existing.poNumber,
+            receivedDate: new Date(),
+            amount: Math.round(receivedValue * 100) / 100,
+          },
+        );
 
         await auditLogger.log({
           module: PURCHASE_ORDER_MODULE,

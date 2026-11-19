@@ -10,6 +10,9 @@ export const JOURNAL_REFERENCE_TYPES = [
   "PAYMENT",
   "MANUAL",
   "OTHER",
+  "PURCHASE_ORDER",
+  "SUPPLIER_PAYMENT",
+  "EXTERNAL_RENTAL",
 ] as const;
 
 export type JournalReferenceType = (typeof JOURNAL_REFERENCE_TYPES)[number];

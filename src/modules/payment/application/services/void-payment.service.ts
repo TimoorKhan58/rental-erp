@@ -1,3 +1,4 @@
+import { voidOperationalJournals } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toRentalInvoiceAuditValues } from "@/modules/rental-invoice/application/services/rental-invoice-audit.mapper";
 import {
   RENTAL_INVOICE_ENTITY_NAME,
@@ -38,7 +39,7 @@ export class VoidPaymentService {
     const { id } = parseRequest(PaymentIdParamSchema, params);
 
     return this.transactionRunner.run(
-      async ({ paymentRepository, rentalInvoiceRepository, auditLogger }) => {
+      async ({ paymentRepository, rentalInvoiceRepository, journalEntryRepository, auditLogger }) => {
         const existing = await paymentRepository.findById(toPaymentId(id));
 
         if (existing === null) {
@@ -88,6 +89,9 @@ export class VoidPaymentService {
             existing,
             "reverse",
           );
+
+          // Take the cancelled money out of the books too (2026-11-19 audit).
+          await voidOperationalJournals(journalEntryRepository, "PAYMENT", existing.id);
 
           await auditLogger.log({
             module: RENTAL_INVOICE_MODULE,

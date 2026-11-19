@@ -1,3 +1,5 @@
+import { postHireInPaymentJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import {
   EXTERNAL_RENTAL_ENTITY_NAME,
   EXTERNAL_RENTAL_MODULE,
@@ -43,7 +45,7 @@ export class SettleExternalRentalService {
     const data = parseRequest(SettleExternalRentalSchema, input);
 
     return this.transactionRunner.run(
-      async ({ externalRentalRepository, auditLogger }) => {
+      async ({ externalRentalRepository, accountRepository, journalEntryRepository, auditLogger, userId }) => {
         const existing = await externalRentalRepository.findById(
           toExternalRentalAgreementId(id),
         );
@@ -109,6 +111,19 @@ export class SettleExternalRentalService {
         }
 
         void settled;
+
+        // Books: paying the hire-in supplier (2026-11-19 audit).
+        if (userId !== undefined) {
+          await postHireInPaymentJournal(
+            { accountRepository, journalEntryRepository, userId: toUserId(userId) },
+            {
+              agreementId: updated.id,
+              agreementNumber: updated.agreementNumber,
+              date: new Date(),
+              amount: data.paymentAmount,
+            },
+          );
+        }
 
         await auditLogger.log({
           module: EXTERNAL_RENTAL_MODULE,

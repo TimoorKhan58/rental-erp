@@ -1,3 +1,5 @@
+import { InMemoryAccountRepository } from "@/modules/accounting/tests/helpers/in-memory-account.repository";
+import { InMemoryJournalEntryRepository } from "@/modules/accounting/tests/helpers/in-memory-journal-entry.repository";
 import type { ExternalRentalWriteScope } from "@/modules/external-rental/application/services/external-rental-transaction.runner";
 import { buildInventoryEntity } from "@/modules/inventory/tests/helpers/inventory.fixtures";
 import { InMemoryInventoryRepository } from "@/modules/inventory/tests/helpers/in-memory-inventory.repository";
@@ -25,6 +27,8 @@ export function createExternalRentalWriteScope(
       scope.rentalOrderRepository ?? new InMemoryRentalOrderRepository(),
     inventoryRepository:
       scope.inventoryRepository ?? new InMemoryInventoryRepository(),
+    accountRepository: scope.accountRepository ?? new InMemoryAccountRepository(),
+    journalEntryRepository: scope.journalEntryRepository ?? new InMemoryJournalEntryRepository(),
     userId: scope.userId,
     externalRentalRepository: scope.externalRentalRepository,
     auditLogger: scope.auditLogger,
