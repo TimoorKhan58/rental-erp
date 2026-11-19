@@ -6,6 +6,13 @@ export const mockNotificationDb = {
   user: {
     findMany: async () => [],
   },
+  // Order services check the customer and products are active (assertBookable).
+  customer: {
+    findUnique: async () => null,
+  },
+  product: {
+    findMany: async () => [],
+  },
 } as unknown as DbClient;
 
 export const mockNotificationWriteScopeDeps = {

@@ -6,6 +6,7 @@ import {
   NotFoundError,
   UnprocessableError,
 } from "@/shared/infrastructure/errors";
+import { mapDriverAdapterError } from "@/shared/infrastructure/errors/driver-adapter-error";
 import { ERROR_CODES } from "@/shared/infrastructure/errors/error-codes";
 import { CrossOrganizationWriteError } from "@/shared/infrastructure/tenancy/organization-scope";
 
@@ -100,6 +101,11 @@ export function mapPrismaError(error: unknown): Error {
 
   if (isPrismaKnownRequestError(error)) {
     return mapKnownRequestError(error);
+  }
+
+  const adapterError = mapDriverAdapterError(error);
+  if (adapterError !== undefined) {
+    return adapterError;
   }
 
   if (isPrismaClientError(error)) {

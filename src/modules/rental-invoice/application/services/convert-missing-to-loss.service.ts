@@ -20,6 +20,7 @@ import { RentalInvoiceIdParamSchema } from "../schemas/rental-invoice.schemas";
 import {
   appendOptionalInvoiceCharges,
   buildRentalInvoiceLinesFromOrder,
+  conditionPricesFromInvoice,
 } from "./build-rental-invoice-lines";
 import { loadReturnsForRentalOrder } from "./load-rental-order-returns";
 import { createRentalInvoiceRepositoryFromUnitOfWork } from "../../infrastructure/factories/create-rental-invoice.repository";
@@ -160,6 +161,13 @@ export class ConvertMissingToLossService {
         returns: refreshedReturns,
         productNameById,
         actualPriceByProductId,
+        // Keep the damage/loss prices the user set on this invoice (A-to-Z
+        // test 2026-11-19: they were dropped and re-priced at replacement cost).
+        conditionChargeOverrides: conditionPricesFromInvoice({
+          rentalOrder,
+          invoiceItems: invoice.items,
+          productNameById,
+        }),
       });
 
       const deliveryCharges = invoice.items

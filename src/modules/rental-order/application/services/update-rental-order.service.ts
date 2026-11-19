@@ -30,6 +30,7 @@ import {
   RENTAL_ORDER_ENTITY_NAME,
   RENTAL_ORDER_MODULE,
 } from "./rental-order-service.constants";
+import { assertBookable } from "./assert-bookable";
 import type { IRentalOrderTransactionRunner } from "./rental-order-transaction.runner";
 
 export class UpdateRentalOrderService {
@@ -69,7 +70,7 @@ export class UpdateRentalOrderService {
       throw error;
     }
 
-    return this.transactionRunner.run(async ({ rentalOrderRepository, auditLogger }) => {
+    return this.transactionRunner.run(async ({ rentalOrderRepository, auditLogger, db }) => {
       const existing = await rentalOrderRepository.findById(toRentalOrderId(id));
 
       if (existing === null) {
@@ -78,6 +79,14 @@ export class UpdateRentalOrderService {
           details: { id },
         });
       }
+
+      // Only a newly chosen customer or newly added products must be active.
+      const before = existing.toProps();
+      const knownProducts = new Set<string>(before.items.map((item) => String(item.productId)));
+      await assertBookable(db, {
+        customerId: data.customerId !== undefined && data.customerId !== before.customerId ? data.customerId : undefined,
+        productIds: (data.items ?? []).map((item) => item.productId).filter((productId) => !knownProducts.has(productId)),
+      });
 
       if (updateData.items !== undefined) {
         const existingProps = existing.toProps();

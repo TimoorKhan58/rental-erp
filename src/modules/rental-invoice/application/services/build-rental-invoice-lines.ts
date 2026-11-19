@@ -89,6 +89,31 @@ function priceSourceLabel(params: {
   return "price to confirm";
 }
 
+/**
+ * The damage and loss prices already on an invoice, as overrides, so that
+ * rebuilding the invoice (e.g. converting missing items to loss) keeps the
+ * prices the user chose instead of falling back to replacement cost.
+ * Lines are matched to order items by product name, as the builder writes it.
+ */
+export function conditionPricesFromInvoice(params: {
+  rentalOrder: RentalOrder;
+  invoiceItems: ReadonlyArray<{ lineType: string; productName?: string | null; unitPrice: number }>;
+  productNameById?: InvoiceProductNameById;
+}): ConditionChargeOverride[] {
+  const priceFor = (lineType: string, name: string) =>
+    params.invoiceItems.find((line) => line.lineType === lineType && (line.productName ?? "").trim() === name)?.unitPrice;
+
+  return params.rentalOrder.items.map((item) => {
+    const name =
+      params.productNameById?.get(item.productId)?.trim() || `Product ${item.productId.slice(0, 8)}`;
+    return {
+      rentalOrderItemId: item.id,
+      damageUnitPrice: priceFor("DAMAGE_CHARGE", name),
+      lossUnitPrice: priceFor("LOST_ITEM_CHARGE", name),
+    };
+  });
+}
+
 export function buildRentalInvoiceLinesFromOrder(params: {
   rentalOrder: RentalOrder;
   returns: Return[];

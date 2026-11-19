@@ -9,7 +9,12 @@ import { AsyncLocalStorage } from "node:async_hooks";
  *   known (sign-in checks, health checks). Not limited — use sparingly.
  */
 export type OrganizationScope =
-  | { readonly kind: "organization"; readonly organizationId: string }
+  | {
+      readonly kind: "organization";
+      readonly organizationId: string;
+      /** The signed-in user doing the work, for the activity log. */
+      readonly userId?: string;
+    }
   | { readonly kind: "system"; readonly reason: string };
 
 // One store per process. Next.js bundles route handlers separately, so a
@@ -56,8 +61,18 @@ export function enterOrganizationScope(organizationId: string): void {
 export function runInOrganization<T>(
   organizationId: string,
   operation: () => T | PromiseLike<T>,
+  options: { userId?: string } = {},
 ): Promise<T> {
-  return organizationScopeAls.run({ kind: "organization", organizationId }, async () => await operation());
+  return organizationScopeAls.run(
+    { kind: "organization", organizationId, ...(options.userId ? { userId: options.userId } : {}) },
+    async () => await operation(),
+  );
+}
+
+/** The signed-in user of the current request, when known (activity log). */
+export function getScopeUserId(): string | undefined {
+  const scope = organizationScopeAls.getStore();
+  return scope?.kind === "organization" ? scope.userId : undefined;
 }
 
 /** Runs platform code that may touch per-business tables without a business. */

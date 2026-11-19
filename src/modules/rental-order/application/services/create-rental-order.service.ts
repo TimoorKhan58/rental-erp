@@ -27,6 +27,7 @@ import {
   RENTAL_ORDER_MODULE,
 } from "./rental-order-service.constants";
 import type { IRentalOrderTransactionRunner } from "./rental-order-transaction.runner";
+import { assertBookable } from "./assert-bookable";
 
 export class CreateRentalOrderService {
   constructor(
@@ -64,12 +65,17 @@ export class CreateRentalOrderService {
     );
 
     return this.transactionRunner.run(
-      async ({ rentalOrderRepository, auditLogger, userId }) => {
+      async ({ rentalOrderRepository, auditLogger, userId, db }) => {
         if (userId === undefined) {
           throw new UnauthorizedError({
             message: "User context is required to create rental order",
           });
         }
+
+        await assertBookable(db, {
+          customerId: data.customerId,
+          productIds: data.items.map((item) => item.productId),
+        });
 
         const createData = toCreateRentalOrderData(
           { ...data, orderNumber },
