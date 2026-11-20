@@ -1,3 +1,6 @@
+import { postMaintenanceCostJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId as toAccountingUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { MAINTENANCE_REFERENCE_TYPE } from "@/modules/maintenance/domain";
 import { MaintenanceInvalidStatusError } from "@/modules/maintenance/domain";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
@@ -41,6 +44,8 @@ export class CompleteMaintenanceService {
         maintenanceRepository,
         inventoryRepository,
         stockMovementRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
         userId,
       }) => {
@@ -123,6 +128,19 @@ export class CompleteMaintenanceService {
             remarks: `Maintenance completed for ${existing.maintenanceNumber}`,
           },
         );
+
+        // Books: the actual cost is money spent (2026-11-20 decision).
+        if (accountRepository !== undefined && journalEntryRepository !== undefined) {
+          await postMaintenanceCostJournal(
+            { accountRepository, journalEntryRepository, userId: toAccountingUserId(userId) },
+            {
+              maintenanceId: claimed.id,
+              maintenanceNumber: claimed.maintenanceNumber,
+              date: await getBusinessToday(),
+              amount: claimed.actualCost,
+            },
+          );
+        }
 
         await auditLogger.log({
           module: MAINTENANCE_MODULE,

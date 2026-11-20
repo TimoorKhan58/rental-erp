@@ -1,3 +1,5 @@
+import { postAssetPurchaseJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId as toAccountingUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import {
   Asset,
   AssetInvariantError,
@@ -40,6 +42,8 @@ export class CreateAssetService {
         assetRepository,
         categoryRepository,
         warehouseRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
         userId,
       }) => {
@@ -98,6 +102,14 @@ export class CreateAssetService {
         }
 
         const asset = await assetRepository.create(createData);
+
+        // Books: buying equipment for the business (2026-11-20 decision).
+        if (accountRepository !== undefined && journalEntryRepository !== undefined) {
+          await postAssetPurchaseJournal(
+            { accountRepository, journalEntryRepository, userId: toAccountingUserId(userId) },
+            { assetId: asset.id, assetCode: asset.assetCode, date: asset.purchaseDate, amount: asset.purchaseCost },
+          );
+        }
 
         await auditLogger.log({
           module: ASSET_MODULE,

@@ -5,11 +5,13 @@ export const DEFAULT_ACCOUNT_CODES = {
   CASH: "1000",
   ACCOUNTS_RECEIVABLE: "1100",
   RENTAL_EQUIPMENT: "1500",
+  EQUIPMENT_AND_VEHICLES: "1600",
   ACCOUNTS_PAYABLE: "2000",
   OWNERS_CAPITAL: "3000",
   RENTAL_REVENUE: "4000",
   GENERAL_EXPENSE: "5000",
   HIRE_IN_COST: "5200",
+  REPAIRS_AND_MAINTENANCE: "5300",
 } as const;
 
 export type DefaultAccountCodeKey = keyof typeof DEFAULT_ACCOUNT_CODES;
@@ -32,9 +34,11 @@ export const STANDARD_ACCOUNTS: Record<
   "1000": { name: "Cash", accountType: "ASSET", description: "Primary cash / bank account" },
   "1100": { name: "Accounts Receivable", accountType: "ASSET", description: "Customer rental invoice balances" },
   "1500": { name: "Rental Equipment", accountType: "ASSET", description: "Items bought to rent out, at cost" },
+  "1600": { name: "Equipment & Vehicles", accountType: "ASSET", description: "Generators, vehicles and tools the business owns and uses, at cost" },
   "2000": { name: "Accounts Payable", accountType: "LIABILITY", description: "Owed to suppliers for purchases and hire-ins" },
   "3000": { name: "Owner's Capital", accountType: "EQUITY", description: "Money and equipment the owner put into the business (opening balance)" },
   "4000": { name: "Rental Revenue", accountType: "INCOME", description: "Rental income from issued invoices" },
   "5000": { name: "General Expense", accountType: "EXPENSE", description: "Operating expenses paid through the expense module" },
   "5200": { name: "Hire-in Cost", accountType: "EXPENSE", description: "Items hired from other suppliers for customer orders" },
+  "5300": { name: "Repairs & Maintenance", accountType: "EXPENSE", description: "Cost of repair jobs and maintenance work" },
 };

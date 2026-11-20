@@ -1,3 +1,6 @@
+import { postRepairCostJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId as toAccountingUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { REPAIR_REFERENCE_TYPE } from "@/modules/repair/domain";
 import { RepairInvalidStatusError } from "@/modules/repair/domain";
 import { executeCreateStockMovementInScope } from "@/modules/stock-movement/application/services/create-stock-movement-in-scope";
@@ -35,6 +38,8 @@ export class CompleteRepairService {
         repairRepository,
         inventoryRepository,
         stockMovementRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
         userId,
       }) => {
@@ -122,6 +127,19 @@ export class CompleteRepairService {
             remarks: `Repaired ${existing.quantity} unit(s) for repair ${existing.repairNumber}`,
           },
         );
+
+        // Books: the repair cost is money spent (2026-11-20 decision).
+        if (accountRepository !== undefined && journalEntryRepository !== undefined) {
+          await postRepairCostJournal(
+            { accountRepository, journalEntryRepository, userId: toAccountingUserId(userId) },
+            {
+              repairId: claimed.id,
+              repairNumber: claimed.repairNumber,
+              date: await getBusinessToday(),
+              amount: claimed.repairCost,
+            },
+          );
+        }
 
         await auditLogger.log({
           module: REPAIR_MODULE,

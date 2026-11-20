@@ -6,7 +6,10 @@ import { runInOrganization } from "@/shared/infrastructure/tenancy/organization-
 import { InMemoryAccountRepository } from "../../tests/helpers/in-memory-account.repository";
 import { InMemoryJournalEntryRepository } from "../../tests/helpers/in-memory-journal-entry.repository";
 import {
+  postAssetPurchaseJournal,
   postExpensePaidJournal,
+  postMaintenanceCostJournal,
+  postRepairCostJournal,
   postHireInCostJournal,
   postHireInPaymentJournal,
   postPaymentReceivedJournal,
@@ -142,5 +145,27 @@ describe("automatic accounting (2026-11-19 audit)", () => {
     const { deps, run, balances } = setup();
     expect(await run(() => postExpensePaidJournal(deps, { expenseId: "e0", expenseNumber: "EXP-0", expenseDate: day, amount: 0 }))).toBeNull();
     expect(await balances()).toEqual({});
+  });
+
+  it("records repair and maintenance costs and equipment bought (2026-11-20)", async () => {
+    const { deps, run, balances, accountRepository, createAccounts } = setup([["1010", "Cash in hand"]]);
+    await createAccounts();
+    await run(() =>
+      postRepairCostJournal(deps, { repairId: "r-1", repairNumber: "RPR-00004", date: day, amount: 1200 }),
+    );
+    await run(() =>
+      postMaintenanceCostJournal(deps, { maintenanceId: "m-1", maintenanceNumber: "MNT-00002", date: day, amount: 800 }),
+    );
+    await run(() =>
+      postAssetPurchaseJournal(deps, { assetId: "a-1", assetCode: "AST-1", date: day, amount: 450_000 }),
+    );
+    // Nothing for a zero cost, and each document only once.
+    await run(() => postRepairCostJournal(deps, { repairId: "r-2", repairNumber: "RPR-00005", date: day, amount: 0 }));
+    await run(() =>
+      postRepairCostJournal(deps, { repairId: "r-1", repairNumber: "RPR-00004", date: day, amount: 1200 }),
+    );
+
+    expect(await balances()).toEqual({ "5300": 2000, "1600": 450_000, "1010": -452_000 });
+    expect((await run(() => accountRepository.findByAccountCode("1600")))?.name).toBe("Equipment & Vehicles");
   });
 });

@@ -17,7 +17,10 @@
 import "dotenv/config";
 
 import {
+  postAssetPurchaseJournal,
   postExpensePaidJournal,
+  postMaintenanceCostJournal,
+  postRepairCostJournal,
   postHireInCostJournal,
   postHireInPaymentJournal,
   postPaymentReceivedJournal,
@@ -136,6 +139,40 @@ async function planFor(db: typeof prisma): Promise<{ plans: Plan[]; voids: Array
         label: `hire-in paid ${hire.agreementNumber}`,
         amount: money(hire.amountPaid),
         run: (deps) => postHireInPaymentJournal(deps, { agreementId: hire.id, agreementNumber: hire.agreementNumber, date: hire.updatedAt, amount: money(hire.amountPaid) }),
+      });
+    }
+  }
+
+  // 2026-11-20: repair and maintenance costs, and equipment bought.
+  for (const repair of await db.repair.findMany({ where: { status: "COMPLETED" }, orderBy: { createdAt: "asc" } })) {
+    const amount = money(repair.actualCost);
+    if (amount > 0 && !(await hasActiveJournal(db, "OTHER", repair.id))) {
+      plans.push({
+        label: `repair cost ${repair.repairNumber}`,
+        amount,
+        run: (deps) => postRepairCostJournal(deps, { repairId: repair.id, repairNumber: repair.repairNumber, date: repair.completedAt ?? repair.updatedAt, amount }),
+      });
+    }
+  }
+
+  for (const job of await db.maintenance.findMany({ where: { status: "COMPLETED" }, orderBy: { createdAt: "asc" } })) {
+    const amount = money(job.actualCost);
+    if (amount > 0 && !(await hasActiveJournal(db, "OTHER", job.id))) {
+      plans.push({
+        label: `maintenance cost ${job.maintenanceNumber}`,
+        amount,
+        run: (deps) => postMaintenanceCostJournal(deps, { maintenanceId: job.id, maintenanceNumber: job.maintenanceNumber, date: job.completedAt ?? job.updatedAt, amount }),
+      });
+    }
+  }
+
+  for (const asset of await db.asset.findMany({ orderBy: { purchaseDate: "asc" } })) {
+    const amount = money(asset.purchaseCost);
+    if (amount > 0 && !(await hasActiveJournal(db, "OTHER", asset.id))) {
+      plans.push({
+        label: `equipment bought ${asset.assetCode} (${asset.name})`,
+        amount,
+        run: (deps) => postAssetPurchaseJournal(deps, { assetId: asset.id, assetCode: asset.assetCode, date: asset.purchaseDate, amount }),
       });
     }
   }
