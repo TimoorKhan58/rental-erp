@@ -63,7 +63,7 @@ export function CompleteMaintenanceDialog({
           <p className="text-xs text-muted-foreground">
             {costInvalid
               ? "Enter an amount of zero or more."
-              : "Kept on this job for your records. Record the payment itself as an expense."}
+              : "Added to your books as Repairs & Maintenance, paid in cash. Don't also enter it as an expense."}
           </p>
         </div>
         <div className="flex justify-end gap-2">

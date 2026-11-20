@@ -368,4 +368,52 @@ export async function postHireInPaymentJournal(
   });
 }
 
+/** A finished repair job's cost, paid in cash (2026-11-20 decision). */
+export async function postRepairCostJournal(
+  deps: OperationalJournalPostingDeps,
+  input: { repairId: string; repairNumber: string; date: Date; amount: number },
+): Promise<JournalEntry | null> {
+  return postPair(deps, {
+    amount: input.amount,
+    date: input.date,
+    description: `Repair cost ${input.repairNumber}`,
+    referenceType: "OTHER",
+    referenceId: input.repairId,
+    debit: { account: await ensureStandardAccount(deps, DEFAULT_ACCOUNT_CODES.REPAIRS_AND_MAINTENANCE), memo: "Repair" },
+    credit: { account: await moneyAccountFor(deps, "CASH"), memo: "Money paid" },
+  });
+}
+
+/** A finished maintenance job's actual cost, paid in cash. */
+export async function postMaintenanceCostJournal(
+  deps: OperationalJournalPostingDeps,
+  input: { maintenanceId: string; maintenanceNumber: string; date: Date; amount: number },
+): Promise<JournalEntry | null> {
+  return postPair(deps, {
+    amount: input.amount,
+    date: input.date,
+    description: `Maintenance cost ${input.maintenanceNumber}`,
+    referenceType: "OTHER",
+    referenceId: input.maintenanceId,
+    debit: { account: await ensureStandardAccount(deps, DEFAULT_ACCOUNT_CODES.REPAIRS_AND_MAINTENANCE), memo: "Maintenance" },
+    credit: { account: await moneyAccountFor(deps, "CASH"), memo: "Money paid" },
+  });
+}
+
+/** Equipment the business bought for its own use (generator, vehicle…). */
+export async function postAssetPurchaseJournal(
+  deps: OperationalJournalPostingDeps,
+  input: { assetId: string; assetCode: string; date: Date; amount: number },
+): Promise<JournalEntry | null> {
+  return postPair(deps, {
+    amount: input.amount,
+    date: input.date,
+    description: `Equipment bought ${input.assetCode}`,
+    referenceType: "OTHER",
+    referenceId: input.assetId,
+    debit: { account: await ensureStandardAccount(deps, DEFAULT_ACCOUNT_CODES.EQUIPMENT_AND_VEHICLES), memo: "Equipment" },
+    credit: { account: await moneyAccountFor(deps, "CASH"), memo: "Money paid" },
+  });
+}
+
 export type { JournalEntryId };

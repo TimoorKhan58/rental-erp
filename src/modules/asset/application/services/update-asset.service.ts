@@ -1,4 +1,9 @@
 import {
+  postAssetPurchaseJournal,
+  voidOperationalJournals,
+} from "@/modules/accounting/application/services/operational-journal-posting.service";
+import { toUserId as toAccountingUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
+import {
   AssetInvalidStatusError,
   AssetInvariantError,
 } from "@/modules/asset/domain";
@@ -44,7 +49,10 @@ export class UpdateAssetService {
         assetRepository,
         categoryRepository,
         warehouseRepository,
+        accountRepository,
+        journalEntryRepository,
         auditLogger,
+        userId,
       }) => {
         const existing = await assetRepository.findById(assetId);
 
@@ -113,6 +121,23 @@ export class UpdateAssetService {
 
         const previousValues = toAssetAuditValues(existing);
         const updated = await assetRepository.update(assetId, updateData);
+
+        // Books: a corrected price or date replaces the purchase entry.
+        const costChanged =
+          updated.purchaseCost !== existing.purchaseCost ||
+          updated.purchaseDate.getTime() !== existing.purchaseDate.getTime();
+        if (
+          costChanged &&
+          userId !== undefined &&
+          accountRepository !== undefined &&
+          journalEntryRepository !== undefined
+        ) {
+          await voidOperationalJournals(journalEntryRepository, "OTHER", updated.id);
+          await postAssetPurchaseJournal(
+            { accountRepository, journalEntryRepository, userId: toAccountingUserId(userId) },
+            { assetId: updated.id, assetCode: updated.assetCode, date: updated.purchaseDate, amount: updated.purchaseCost },
+          );
+        }
 
         await auditLogger.log({
           module: ASSET_MODULE,

@@ -1,3 +1,5 @@
+import { createAccountRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-account.repository";
+import { createJournalEntryRepositoryFromUnitOfWork } from "@/modules/accounting/infrastructure/factories/create-journal-entry.repository";
 import type { IAssetTransactionRunner } from "@/modules/asset/application/services/asset-transaction.runner";
 import { createWarehouseRepositoryFromUnitOfWork } from "@/modules/warehouse/infrastructure/factories/create-warehouse.repository";
 import type { SharedDeps } from "@/shared/infrastructure/di/shared-deps";
@@ -21,6 +23,8 @@ export function createAssetTransactionRunner(
           assetRepository: createAssetRepositoryFromUnitOfWork(context),
           categoryRepository: createAssetCategoryRepositoryFromUnitOfWork(context),
           warehouseRepository: createWarehouseRepositoryFromUnitOfWork(context),
+          accountRepository: createAccountRepositoryFromUnitOfWork(context),
+          journalEntryRepository: createJournalEntryRepositoryFromUnitOfWork(context),
           auditLogger: context.deps.auditLogger,
           userId: options.userId,
         }),

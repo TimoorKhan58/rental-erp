@@ -1,3 +1,5 @@
+import type { IAccountRepository } from "@/modules/accounting/domain/account.repository.interface";
+import type { IJournalEntryRepository } from "@/modules/accounting/domain/journal-entry.repository.interface";
 import type { IRepairRepository } from "@/modules/repair/domain";
 import type { IReturnRepository } from "@/modules/return/domain";
 import type { IRentalOrderRepository } from "@/modules/rental-order/domain/rental-order.repository.interface";
@@ -11,6 +13,9 @@ export interface RepairWriteScope {
   readonly rentalOrderRepository: IRentalOrderRepository;
   readonly inventoryRepository: IInventoryRepository;
   readonly stockMovementRepository: IStockMovementRepository;
+  /** Books (2026-11-20): optional so older test doubles stay valid. */
+  readonly accountRepository?: IAccountRepository;
+  readonly journalEntryRepository?: IJournalEntryRepository;
   readonly auditLogger: IAuditLogger;
   readonly userId: string | undefined;
 }
