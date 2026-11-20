@@ -8,7 +8,6 @@ import {
   Building2Icon,
   CalendarRangeIcon,
   ClockIcon,
-  DollarSignIcon,
   PencilIcon,
   UsersIcon,
   XIcon,
@@ -40,7 +39,6 @@ import {
   useRentalOrderPermissions,
 } from "../hooks";
 import { RentalOrderStatusBadge } from "../components/rental-order-status-badge";
-import { RentalOrderStatusTimeline } from "../components/rental-order-status-timeline";
 import { RentalReservationBadge } from "../components/rental-reservation-badge";
 import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
 import { RentalOrderLifecycleStrip } from "../components/rental-order-lifecycle-strip";
@@ -218,6 +216,8 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
   }
 
   const nextStep = getRentalOrderNextStep(order);
+  // Reservation details only matter until the items are sent out.
+  const isPreparing = ["DRAFT", "CONFIRMED", "RESERVED"].includes(order.status);
   const customerName = customer?.name ?? customerLabelById.get(order.customerId) ?? order.customerId;
   const warehouseName =
     warehouse?.name ?? warehouseLabelById.get(order.warehouseId) ?? order.warehouseId;
@@ -225,8 +225,8 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
   return (
     <PageContainer className="space-y-6">
       <PageHeader
-        title={order.orderNumber}
-        description={customerName}
+        title={customerName}
+        description={`Order ${order.orderNumber}`}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Rental Orders", href: ROUTES.rentalOrders },
@@ -301,35 +301,32 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             onReserve={() => setReserveOpen(true)}
           />
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <MetricTile
               label="Rental period"
               value={`${metrics.rentalDays} day${metrics.rentalDays === 1 ? "" : "s"}`}
               hint={`${formatDate(order.startDate)} – ${formatDate(order.endDate)}`}
               icon={<CalendarRangeIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
             />
-            <MetricTile
-              label="Line items"
-              value={order.items.length.toLocaleString()}
-              hint="Products on this order"
-            />
-            <MetricTile
-              label="Units reserved"
-              value={`${metrics.reserved} / ${metrics.total}`}
-              hint="Inventory allocation progress"
-            />
-            <MetricTile
-              label="Warehouse"
-              value={warehouseName}
-              hint="Fulfillment location"
-              icon={<Building2Icon className="size-4 text-muted-foreground" aria-hidden="true" />}
-            />
+            {isPreparing ? (
+              <MetricTile
+                label="Stock held"
+                value={`${metrics.reserved} of ${metrics.total}`}
+                hint="Items kept aside for this order"
+              />
+            ) : (
+              <MetricTile
+                label="Items"
+                value={`${metrics.total}`}
+                hint={`${order.items.length} product${order.items.length === 1 ? "" : "s"} on this order`}
+              />
+            )}
           </div>
 
-          {order.status !== "CANCELLED" ? (
+          {isPreparing ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Reservation progress</span>
+                <span className="font-medium">Stock held so far</span>
                 <span className="tabular-nums text-muted-foreground">
                   {metrics.reserved.toLocaleString()} of {metrics.total.toLocaleString()} units
                 </span>
@@ -354,7 +351,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             />
           </SectionCard>
 
-          {order.status !== "CANCELLED" ? (
+          {isPreparing ? (
             <RentalOrderShortfallSection
               orderId={order.id}
               orderNumber={order.orderNumber}
@@ -372,6 +369,14 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             canGenerate={order.status === "COMPLETED"}
           />
 
+          {order.remarks ? (
+            <SectionCard title="Remarks">
+              <p className="text-sm text-muted-foreground">{order.remarks}</p>
+            </SectionCard>
+          ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <RelatedEntityCard
             title="Customer"
             icon={<UsersIcon className="size-5" aria-hidden="true" />}
@@ -398,47 +403,6 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             href={warehouse ? ROUTES.warehouseDetail(warehouse.id) : undefined}
             linkLabel="View warehouse"
           />
-
-          {order.remarks ? (
-            <SectionCard title="Remarks">
-              <p className="text-sm text-muted-foreground">{order.remarks}</p>
-            </SectionCard>
-          ) : null}
-        </div>
-
-        <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
-          <SectionCard
-            title="Order workflow"
-            actions={<RentalOrderStatusBadge status={order.status} />}
-          >
-            <RentalOrderStatusTimeline status={order.status} />
-          </SectionCard>
-
-          <SectionCard
-            title="Pricing summary"
-            actions={
-              <DollarSignIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-            }
-          >
-            <dl className="space-y-4">
-              <DetailField label="Rental days" value={metrics.rentalDays} />
-              <DetailField label="Line items" value={order.items.length} />
-              <DetailField label="Order total" value={formatCurrency(metrics.orderTotal)} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard
-            title="Reservation"
-            actions={<RentalReservationBadge status={metrics.reservationStatus} />}
-          >
-            <dl className="space-y-4">
-              <DetailField
-                label="Units reserved"
-                value={`${metrics.reserved} of ${metrics.total}`}
-              />
-              <DetailField label="Order status" value={order.status} />
-            </dl>
-          </SectionCard>
 
           <SectionCard title="Timeline">
             <div className="space-y-3">
