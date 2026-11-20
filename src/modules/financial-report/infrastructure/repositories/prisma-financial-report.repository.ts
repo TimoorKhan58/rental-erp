@@ -477,43 +477,27 @@ export class PrismaFinancialReportRepository
     const profitLoss = await this.getProfitLoss(query);
     const dateFilter = buildJournalDateFilter(query.dateFrom, query.dateTo);
 
-    const [cashReceiptsRaw, cashPaymentsRaw] = await this.runner.run(
-      async (db) => {
-        const payments = await db.payment.aggregate({
+    // Real money in and out: debits and credits on the cash and bank
+    // accounts (codes 10xx: 1000 Cash, 1010 Cash in hand, 1020 Bank…).
+    // It used to count customer payments and every expense, so purchases,
+    // supplier and hire-in payments were missing (QA A4).
+    const cashTotals = await this.runner.run(
+      (db) =>
+        db.journalEntryLine.aggregate({
           where: {
-            status: "POSTED",
-            ...(dateFilter !== undefined ? { paymentDate: dateFilter } : {}),
-          },
-          _sum: { amount: true },
-        });
-
-        const expenseLines = await db.journalEntryLine.findMany({
-          where: {
-            account: { accountType: "EXPENSE" },
+            account: { accountType: "ASSET", accountCode: { startsWith: "10" } },
             journalEntry: {
               status: FINANCIAL_REPORT_POSTED_STATUS,
-              ...(dateFilter !== undefined
-                ? { journalDate: dateFilter }
-                : {}),
+              ...(dateFilter !== undefined ? { journalDate: dateFilter } : {}),
             },
           },
-          select: { debit: true },
-        });
-
-        return [payments, expenseLines] as const;
-      },
+          _sum: { debit: true, credit: true },
+        }),
       { model: MODEL, operation: "getCashFlowSummary" },
     );
 
-    const cashReceipts = roundMoney(
-      decimalToNumber(cashReceiptsRaw._sum.amount ?? 0),
-    );
-    const cashPayments = roundMoney(
-      cashPaymentsRaw.reduce(
-        (sum, line) => sum + decimalToNumber(line.debit),
-        0,
-      ),
-    );
+    const cashReceipts = roundMoney(decimalToNumber(cashTotals._sum.debit ?? 0));
+    const cashPayments = roundMoney(decimalToNumber(cashTotals._sum.credit ?? 0));
     const adjustments = 0;
     const cashFromOperations = roundMoney(profitLoss.netProfit + adjustments);
 

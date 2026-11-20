@@ -18,6 +18,13 @@ export const MaintenanceIdParamSchema = z.object({
   id: UUIDSchema,
 });
 
+/** Optional details given when completing a job. */
+export const CompleteMaintenanceSchema = z.object({
+  actualCost: z.coerce.number().min(0).max(999_999_999).optional(),
+});
+
+export type CompleteMaintenanceInput = z.infer<typeof CompleteMaintenanceSchema>;
+
 export const CreateMaintenanceSchema = z.object({
   maintenanceNumber: TrimmedStringSchema.max(50).optional(),
   productId: UUIDSchema,

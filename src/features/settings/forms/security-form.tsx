@@ -9,6 +9,7 @@ import {
   SwitchField,
 } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
+import { ROUTES } from "@/config/routes";
 import { SectionCard } from "@/components/design-system/card";
 import {
   updateSecurityFormSchema,
@@ -66,19 +67,26 @@ export function SecurityForm({
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Authentication status">
+      <SectionCard
+        title="Your password"
+        description="Change the password you use to sign in. Staff can do the same from their name at the top right."
+        actions={
+          <AppButton render={<a href={ROUTES.changePassword} />} variant="outline">
+            Change my password
+          </AppButton>
+        }
+      >
         <dl className="grid gap-4 sm:grid-cols-2">
           <ReadOnlyField label="Application" value={security.appName} />
           <ReadOnlyField label="Version" value={security.appVersion} />
           <ReadOnlyField
-            label="Environment"
+            label="Running as"
             value={ENVIRONMENT_LABELS[security.environment] ?? security.environment}
           />
         </dl>
         <p className="mt-4 text-xs text-muted-foreground">
-          Self-service password change, active session management, and MFA are not
-          exposed by the current authentication APIs. Use an administrator password
-          reset when credential changes are required.
+          Forgotten passwords: the owner can set a temporary one from Users. Two-step sign-in is not
+          available yet.
         </p>
       </SectionCard>
 
@@ -103,70 +111,70 @@ export function SecurityForm({
               control={form.control}
               name="minPasswordLength"
               label="Minimum password length"
-              description="Stored policy record. Live password rules use AUTH_MIN_PASSWORD_LENGTH."
+              description="For your records. The real minimum is set when RentCore is installed."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="maxLoginAttempts"
               label="Max login attempts"
-              description="Stored policy record. Live sign-in limits use Better Auth rate-limit environment settings."
+              description="For your records. Repeated wrong sign-ins are already slowed down automatically."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="lockoutDurationMinutes"
               label="Lockout duration (minutes)"
-              description="Stored policy record. It does not currently lock accounts after failed attempts."
+              description="For your records. Accounts are not locked yet."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="sessionTimeoutMinutes"
               label="Session timeout (minutes)"
-              description="Stored policy record. Session lifetime uses AUTH_SESSION_EXPIRES_IN_SECONDS."
+              description="For your records. How long people stay signed in is set when RentCore is installed."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="rememberMeDurationDays"
               label="Remember-me duration (days)"
-              description="Stored policy record. It is not applied to the current session cookie."
+              description="For your records. Not applied yet."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="maxConcurrentSessions"
               label="Max concurrent sessions"
-              description="Stored policy record. Concurrent sessions are not limited from this field."
+              description="For your records. Not applied yet."
               disabled={disabled}
             />
             <NumberField
               control={form.control}
               name="passwordExpiryDays"
               label="Password expiry (days)"
-              description="Stored policy record. Leave empty to store no expiry. Passwords do not expire from this field."
+              description="For your records. Leave empty for no expiry. Passwords do not expire yet."
               disabled={disabled}
             />
             <SwitchField
               control={form.control}
               name="requireEmailVerification"
               label="Require email verification"
-              description="Stored flag only. Sign-in does not require email verification from this switch."
+              description="For your records. Not applied yet."
               disabled={disabled}
             />
             <SwitchField
               control={form.control}
               name="allowPasswordReset"
               label="Allow password reset"
-              description="Stored flag only. Administrator password reset remains available from Users."
+              description="For your records. The owner can always set a temporary password from Users."
               disabled={disabled}
             />
             <SwitchField
               control={form.control}
               name="ipWhitelistEnabled"
-              label="IP whitelist enabled"
-              description="Stored flag only. Sign-in does not apply an IP allow-list from this switch."
+              label="Only allow sign-in from known places"
+              description="For your records. Not applied yet."
               disabled={disabled}
             />
           </div>

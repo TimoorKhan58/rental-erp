@@ -89,6 +89,7 @@ export const ROUTES = {
   accountingJournalEntryDetail: (id: string) => `/accounting/journal-entries/${id}`,
   accountingGeneralLedger: "/accounting/general-ledger",
   accountingTrialBalance: "/accounting/trial-balance",
+  accountingOpeningBalance: "/accounting/opening-balance",
   reports: "/reports",
   reportsAnalytics: "/reports/analytics",
   reportsProfitLoss: "/reports/profit-loss",

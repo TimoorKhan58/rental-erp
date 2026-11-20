@@ -45,7 +45,7 @@ export function buildWorkItems(summary: LiveDashboardSummary): WorkItem[] {
     });
   }
 
-  items.push({
+  if (!summary.moneyHidden) items.push({
     id: "invoices",
     count: work.unpaidInvoices,
     tone: work.overdueInvoices > 0 ? "urgent" : work.unpaidInvoices > 0 ? "attention" : "calm",

@@ -31,6 +31,8 @@ export function CancelRentalOrderDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
+      destructive
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel rental order"

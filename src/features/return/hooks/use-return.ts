@@ -19,7 +19,7 @@ import {
   receiveReturn,
   updateReturn,
 } from "../services";
-import { fetchAllPages } from "@/lib/api/fetch-all-pages";
+import { fetchAllPages, fetchAllWithStatuses } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -47,11 +47,20 @@ export function useReturnPermissions() {
   };
 }
 
+const RETURNABLE_ORDER_STATUSES = ["DISPATCHED", "ON_RENT", "PARTIALLY_RETURNED"] as const;
+
 export function useReturnFilterOptions() {
   const rentalOrders = useQuery({
     queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
     queryFn: () => getRentalOrders({ pageSize: 100 }),
     staleTime: 5 * 60_000,
+  });
+
+  // Orders that are out with customers, however old (not only the newest 100).
+  const returnableOrders = useQuery({
+    queryKey: queryKeys.rentalOrders.list({ statuses: RETURNABLE_ORDER_STATUSES }),
+    queryFn: () => fetchAllWithStatuses(getRentalOrders, RETURNABLE_ORDER_STATUSES),
+    staleTime: 60_000,
   });
 
   const completedDispatches = useQuery({
@@ -89,6 +98,10 @@ export function useReturnFilterOptions() {
     }),
   );
 
+  const returnableRentalOrderOptions: LookupOption[] = (returnableOrders.data?.items ?? []).map(
+    (order) => ({ id: order.id, label: order.orderNumber }),
+  );
+
   const rentalOrderLabelById = new Map(rentalOrderOptions.map((item) => [item.id, item.label]));
   const dispatchLabelById = new Map(dispatchOptions.map((item) => [item.id, item.label]));
   const dispatchRentalOrderById = new Map(
@@ -110,6 +123,7 @@ export function useReturnFilterOptions() {
 
   return {
     rentalOrderOptions,
+    returnableRentalOrderOptions,
     dispatchOptions,
     completedDispatchOptions,
     rentalOrderLabelById,

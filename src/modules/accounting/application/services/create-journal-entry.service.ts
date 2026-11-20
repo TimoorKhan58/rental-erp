@@ -2,6 +2,7 @@ import {
   JournalEntry,
   JournalEntryInvariantError,
 } from "@/modules/accounting/domain";
+import type { IJournalEntryRepository } from "@/modules/accounting/domain/journal-entry.repository.interface";
 import { parseRequest } from "@/shared/application/validation";
 import {
   ConflictError,
@@ -27,6 +28,21 @@ import type { IAccountingTransactionRunner } from "./accounting-transaction.runn
 import { toJournalEntryAuditValues } from "./journal-entry-audit.mapper";
 import { validateAccountsForJournalLines } from "./journal-entry-account.validation";
 
+/** "JE-20261120-1", "JE-20261120-2"… for entries typed in by hand. */
+async function nextManualJournalNumber(
+  journalEntryRepository: Pick<IJournalEntryRepository, "findByJournalNumber">,
+  journalDate: Date | string,
+): Promise<string> {
+  const day = new Date(journalDate).toISOString().slice(0, 10).replaceAll("-", "");
+  for (let n = 1; n <= 500; n += 1) {
+    const candidate = `JE-${day}-${n}`;
+    if ((await journalEntryRepository.findByJournalNumber(candidate)) === null) {
+      return candidate;
+    }
+  }
+  return `JE-${day}-${Date.now()}`;
+}
+
 export class CreateJournalEntryService {
   constructor(
     private readonly transactionRunner: IAccountingTransactionRunner,
@@ -43,7 +59,11 @@ export class CreateJournalEntryService {
           });
         }
 
-        const createData = toCreateJournalEntryData(data, toUserId(userId));
+        const journalNumber =
+          data.journalNumber && data.journalNumber.trim() !== ""
+            ? data.journalNumber
+            : await nextManualJournalNumber(journalEntryRepository, data.journalDate);
+        const createData = toCreateJournalEntryData({ ...data, journalNumber }, toUserId(userId));
 
         try {
           JournalEntry.create(createData);

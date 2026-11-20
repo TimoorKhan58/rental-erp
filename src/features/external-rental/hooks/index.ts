@@ -20,7 +20,7 @@ import {
   settleExternalRental,
   writeOffExternalRental,
 } from "../services";
-import { fetchAllPages } from "@/lib/api/fetch-all-pages";
+import { fetchAllPages, fetchAllWithStatuses } from "@/lib/api/fetch-all-pages";
 
 async function invalidateExternalRental(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -80,10 +80,19 @@ export function useExternalRentalFilterOptions() {
     staleTime: 5 * 60_000,
   });
 
+  // The newest 100 orders for names in lists, plus every open order however
+  // old, so any order that needs a hire-in can be picked (QA X5).
   const rentalOrders = useQuery({
-    queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
-    queryFn: () => getRentalOrders({ pageSize: 100 }),
-    staleTime: 5 * 60_000,
+    queryKey: queryKeys.rentalOrders.list({ pageSize: 100, withOpen: true }),
+    queryFn: async () => {
+      const [recent, open] = await Promise.all([
+        getRentalOrders({ pageSize: 100 }),
+        fetchAllWithStatuses(getRentalOrders, ["CONFIRMED", "RESERVED", "ON_RENT"] as const),
+      ]);
+      const byId = new Map([...recent.items, ...open.items].map((order) => [order.id, order]));
+      return { ...recent, items: [...byId.values()] };
+    },
+    staleTime: 60_000,
   });
 
   const supplierOptions = (suppliers.data?.items ?? []).map((item) => ({

@@ -19,6 +19,7 @@ import {
   useCreateExternalRental,
   useExternalRentalFilterOptions,
 } from "../hooks";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type CreateFormValues = {
   supplierId: string;
@@ -52,9 +53,9 @@ export function ExternalRentalCreatePage() {
       supplierId: "",
       warehouseId: "",
       rentalOrderId: "",
-      hireStartDate: new Date().toISOString(),
-      hireEndDate: new Date().toISOString(),
-      expectedReturnToSupplierDate: new Date().toISOString(),
+      hireStartDate: calendarDayToIso(new Date()),
+      hireEndDate: calendarDayToIso(new Date()),
+      expectedReturnToSupplierDate: calendarDayToIso(new Date()),
       remarks: "",
       items: [
         {

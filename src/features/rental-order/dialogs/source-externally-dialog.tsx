@@ -111,14 +111,14 @@ export function SourceExternallyDialog({
     <AppModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Source externally"
-      description={`Cover owned shortfall for "${orderNumber}" via supplier hire-in.`}
+      title="Hire from a supplier"
+      description={`You don't own enough for ${orderNumber}. Hire the missing items from another supplier.`}
       size="lg"
     >
       {createdAgreementId ? (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            External rental agreement created. Owned inventory was not changed.
+            Hire-in created. Next: confirm it with the supplier, then receive the items when they arrive.
           </p>
           <div className="flex justify-end gap-2">
             <AppButton variant="outline" onClick={() => onOpenChange(false)}>
@@ -127,7 +127,7 @@ export function SourceExternallyDialog({
             <AppButton
               render={<Link href={ROUTES.externalRentalDetail(createdAgreementId)} />}
             >
-              Open agreement
+              Open hire-in
             </AppButton>
           </div>
         </div>
@@ -156,19 +156,19 @@ export function SourceExternallyDialog({
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Owned available
+                You have free
               </dt>
               <dd className="tabular-nums">{item.ownedFulfillableQuantity}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Shortfall
+                Short by
               </dt>
               <dd className="tabular-nums font-medium">{item.shortfallQuantity}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Remaining shortfall
+                Still to arrange
               </dt>
               <dd className="tabular-nums font-medium">
                 {item.remainingShortfallQuantity}
@@ -239,7 +239,7 @@ export function SourceExternallyDialog({
               Cancel
             </AppButton>
             <AppButton type="submit" loading={mutation.isPending}>
-              Create agreement
+              Create hire-in
             </AppButton>
           </div>
         </AppForm>

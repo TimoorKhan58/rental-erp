@@ -18,6 +18,7 @@ import {
 import { useAssetFilterOptions, useTransferAsset } from "../hooks";
 import { toTransferAssetPayload } from "../mappers";
 import type { AssetResponse } from "../types";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type TransferAssetDialogProps = {
   asset: AssetResponse | null;
@@ -36,7 +37,7 @@ export function TransferAssetDialog({
     resolver: zodResolver(transferAssetFormSchema),
     defaultValues: {
       toWarehouseId: "",
-      transferDate: new Date().toISOString(),
+      transferDate: calendarDayToIso(new Date()),
       reason: "",
     },
   });
@@ -45,7 +46,7 @@ export function TransferAssetDialog({
     if (open) {
       form.reset({
         toWarehouseId: "",
-        transferDate: new Date().toISOString(),
+        transferDate: calendarDayToIso(new Date()),
         reason: "",
       });
     }

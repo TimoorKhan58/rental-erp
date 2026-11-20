@@ -23,13 +23,13 @@ describe("CreateJournalEntrySchema", () => {
     expect(result.lines).toHaveLength(2);
   });
 
-  it("rejects empty journal number", () => {
-    expect(() =>
+  it("accepts an empty journal number (the next number is filled in)", () => {
+    expect(
       CreateJournalEntrySchema.parse({
         ...VALID_CREATE_JOURNAL_INPUT,
         journalNumber: "",
-      }),
-    ).toThrow();
+      }).journalNumber,
+    ).toBe("");
   });
 
   it("rejects empty description", () => {

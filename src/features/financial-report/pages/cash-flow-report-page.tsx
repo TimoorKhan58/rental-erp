@@ -34,12 +34,9 @@ function CashFlowContent() {
     () =>
       data
         ? [
-            { label: "Net income", value: data.netIncome },
-            { label: "Adjustments", value: data.adjustments },
-            { label: "Operations", value: data.cashFromOperations },
-            { label: "Receipts", value: data.cashReceipts },
-            { label: "Payments", value: data.cashPayments },
-            { label: "Net change", value: data.netCashChange },
+            { label: "Money in", value: data.cashReceipts },
+            { label: "Money out", value: data.cashPayments },
+            { label: "Change", value: data.netCashChange },
           ]
         : [],
     [data],
@@ -91,25 +88,25 @@ function CashFlowContent() {
         <LoadingState label="Loading cash flow..." />
       ) : data ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard label="Cash from operations" value={formatCurrency(data.cashFromOperations)} />
-            <MetricCard label="Cash receipts" value={formatCurrency(data.cashReceipts)} />
-            <MetricCard label="Cash payments" value={formatCurrency(data.cashPayments)} />
-            <MetricCard label="Net income" value={formatCurrency(data.netIncome)} />
-            <MetricCard label="Adjustments" value={formatCurrency(data.adjustments)} />
-            <MetricCard label="Net cash change" value={formatCurrency(data.netCashChange)} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard label="Money in" value={formatCurrency(data.cashReceipts)} />
+            <MetricCard label="Money out" value={formatCurrency(data.cashPayments)} />
+            <MetricCard label="Cash and bank went up / down by" value={formatCurrency(data.netCashChange)} />
+            <MetricCard label="Profit (for comparison)" value={formatCurrency(data.netIncome)} />
           </div>
 
           <AmountBarChart
             title="Cash flow summary"
-            description="Posted journal cash-flow components"
+            description="Money in and out of your cash and bank accounts"
             data={chartData}
             isLoading={isLoading}
           />
 
           <SectionCard title="Notes">
             <p className="text-sm text-muted-foreground">
-              These figures come from your accounts. They may differ from your bank statement.
+              Money in and out counts everything that went through your cash and bank accounts: customer
+              payments, expenses, supplier and hire-in payments. Profit is different because it counts
+              invoices when they are issued, not when they are paid.
             </p>
           </SectionCard>
         </>

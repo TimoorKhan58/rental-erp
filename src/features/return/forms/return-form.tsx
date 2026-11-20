@@ -1,5 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query";
+import { getDispatches } from "@/features/dispatch/services";
+
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +29,7 @@ import {
 } from "../mappers";
 import { useReturnFilterOptions, useReturnsByDispatch } from "../hooks";
 import { ReturnLineItemsField } from "./return-line-items-field";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type ReturnFormBaseProps = {
   onCancel: () => void;
@@ -53,7 +58,7 @@ const createDefaults: CreateReturnFormValues = {
   returnNumber: "",
   rentalOrderId: "",
   dispatchId: "",
-  returnDate: new Date().toISOString(),
+  returnDate: calendarDayToIso(new Date()),
   remarks: "",
   items: [{ rentalOrderItemId: "", dispatchItemId: "", quantity: 1, notes: "" }],
 };
@@ -72,26 +77,21 @@ function CreateReturnForm({
   onCancel,
   isSubmitting = false,
 }: CreateReturnFormProps) {
-  const { rentalOrderOptions, completedDispatchOptions, dispatchRentalOrderById } =
+  const { rentalOrderOptions, returnableRentalOrderOptions, productLabelById } =
     useReturnFilterOptions();
   const selectedRentalOrderId = defaultValues?.rentalOrderId;
+  // Orders out with customers, however old (QA X5: only the newest 100
+  // orders and dispatches were looked at before).
   const eligibleRentalOrderOptions = useMemo(() => {
-    const completedOrderIds = new Set(
-      completedDispatchOptions
-        .map((option) => dispatchRentalOrderById.get(option.id))
-        .filter((id): id is string => Boolean(id)),
-    );
-
-    return rentalOrderOptions.filter(
-      (option) =>
-        completedOrderIds.has(option.id) || option.id === selectedRentalOrderId,
-    );
-  }, [
-    completedDispatchOptions,
-    dispatchRentalOrderById,
-    rentalOrderOptions,
-    selectedRentalOrderId,
-  ]);
+    const options = [...returnableRentalOrderOptions];
+    if (selectedRentalOrderId && !options.some((option) => option.id === selectedRentalOrderId)) {
+      const selected = rentalOrderOptions.find((option) => option.id === selectedRentalOrderId);
+      if (selected) {
+        options.unshift(selected);
+      }
+    }
+    return options;
+  }, [returnableRentalOrderOptions, rentalOrderOptions, selectedRentalOrderId]);
   const form = useForm<CreateReturnFormValues>({
     resolver: zodResolver(createReturnFormSchema),
     defaultValues: { ...createDefaults, ...defaultValues },
@@ -103,26 +103,27 @@ function CreateReturnForm({
   const { data: rentalOrder } = useRentalOrder(rentalOrderId);
   const { data: priorReturns } = useReturnsByDispatch(dispatchId);
 
+  const orderDispatches = useQuery({
+    queryKey: queryKeys.dispatches.list({ rentalOrderId, status: "COMPLETED", pageSize: 100 }),
+    queryFn: () => getDispatches({ rentalOrderId, status: "COMPLETED", pageSize: 100 }),
+    enabled: Boolean(rentalOrderId),
+  });
   const dispatchOptionsForOrder = useMemo(
     () =>
-      completedDispatchOptions.filter(
-        (option) => dispatchRentalOrderById.get(option.id) === rentalOrderId,
-      ),
-    [completedDispatchOptions, dispatchRentalOrderById, rentalOrderId],
+      (orderDispatches.data?.items ?? []).map((item) => ({
+        id: item.id,
+        label: item.dispatchNumber,
+      })),
+    [orderDispatches.data],
   );
 
-  const { rentalOrderItemLabelById } = useReturnFilterOptions();
   const itemLabelById = useMemo(() => {
-    const labels = new Map(rentalOrderItemLabelById);
-
+    const labels = new Map<string, string>();
     for (const item of rentalOrder?.items ?? []) {
-      if (!labels.has(item.id)) {
-        labels.set(item.id, item.productId);
-      }
+      labels.set(item.id, productLabelById.get(item.productId) ?? "Item");
     }
-
     return labels;
-  }, [rentalOrder?.items, rentalOrderItemLabelById]);
+  }, [rentalOrder?.items, productLabelById]);
 
   useEffect(() => {
     if (!rentalOrderId) {

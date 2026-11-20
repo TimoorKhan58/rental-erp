@@ -22,7 +22,7 @@ const OPERATIONAL_LINKS = [
   { label: "Products", href: ROUTES.reportsProducts },
   { label: "Suppliers", href: ROUTES.reportsSuppliers },
   { label: "Warehouses", href: ROUTES.reportsWarehouses },
-  { label: "Procurement", href: ROUTES.reportsProcurement },
+  { label: "Purchases", href: ROUTES.reportsProcurement },
   { label: "Dispatches", href: ROUTES.reportsDispatches },
   { label: "Returns", href: ROUTES.reportsReturns },
   { label: "Repairs", href: ROUTES.reportsRepairs },

@@ -130,4 +130,5 @@ export type QtyItemsPayload = {
 
 export type SettleExternalRentalPayload = {
   paymentAmount: number;
+  paymentMethod?: "CASH" | "BANK_TRANSFER" | "CHEQUE" | "CARD" | "ONLINE" | "OTHER";
 };

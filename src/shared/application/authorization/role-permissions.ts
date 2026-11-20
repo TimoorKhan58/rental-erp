@@ -99,9 +99,8 @@ const WORKER_PERMISSIONS: Permission[] = [
   PERMISSIONS.maintenances.start,
   PERMISSIONS.maintenances.complete,
   PERMISSIONS.maintenances.cancel,
-  PERMISSIONS.rentalInvoices.read,
-  PERMISSIONS.payments.read,
-  PERMISSIONS.supplierPayments.read,
+  // No invoices, customer payments or supplier payments: workers must not
+  // see money (owner's decision, 2026-11-20).
   PERMISSIONS.notifications.read,
   PERMISSIONS.settings.read,
   PERMISSIONS.dashboard.read,

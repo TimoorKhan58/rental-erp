@@ -58,7 +58,7 @@ export function RentalOrderFormSummary({
     },
     {
       id: "inventory",
-      label: "Inventory",
+      label: "Items",
       done: filledItems.length > 0,
     },
     {

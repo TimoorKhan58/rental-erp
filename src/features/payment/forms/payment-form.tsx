@@ -24,6 +24,7 @@ import {
 } from "../schemas";
 import { METHOD_LABELS } from "../mappers";
 import { usePayableInvoices, usePaymentFilterOptions } from "../hooks";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type PaymentFormBaseProps = {
   onCancel: () => void;
@@ -56,7 +57,7 @@ const createDefaults: CreatePaymentFormValues = {
   paymentNumber: "",
   customerId: "",
   rentalInvoiceId: "",
-  paymentDate: new Date().toISOString(),
+  paymentDate: calendarDayToIso(new Date()),
   paymentMethod: "BANK_TRANSFER",
   referenceNumber: "",
   notes: "",
@@ -161,7 +162,7 @@ function CreatePaymentForm({
             step={0.01}
             description={
               selectedInvoice
-                ? `Enter amount up to ${formatCurrency(selectedInvoice.balance)} (validated by backend).`
+                ? `Up to ${formatCurrency(selectedInvoice.balance)} still owed on this invoice.`
                 : "The amount can't be more than what is still owed on the invoice."
             }
           />

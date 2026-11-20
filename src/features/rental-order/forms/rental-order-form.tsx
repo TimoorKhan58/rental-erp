@@ -271,7 +271,7 @@ function CreateRentalOrderForm({
             <CardContent className="p-4 md:p-5">
             <SectionHeading
               step={3}
-              title="Inventory"
+              title="Items"
               description="Add the items, how many and the daily rate. RentCore shows how many are free for your dates."
             />
             <RentalOrderLineItemsField
@@ -446,7 +446,7 @@ function EditRentalOrderForm({
             <CardContent className="p-4 md:p-5">
             <SectionHeading
               step={3}
-              title="Inventory"
+              title="Items"
               description="Adjust products, quantities, and rates."
             />
             <RentalOrderLineItemsField

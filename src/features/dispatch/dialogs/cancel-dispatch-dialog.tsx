@@ -31,11 +31,12 @@ export function CancelDispatchDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel dispatch"
       destructive
-      description={`Cancel "${dispatch.dispatchNumber}"? Draft and ready dispatches can be cancelled. Inventory is not posted until a dispatch is completed.`}
+      description={`Cancel "${dispatch.dispatchNumber}"? Nothing has left your stock yet, so stock does not change.`}
       confirmLabel="Cancel dispatch"
       onConfirm={() => void handleConfirm()}
       isLoading={cancelMutation.isPending}

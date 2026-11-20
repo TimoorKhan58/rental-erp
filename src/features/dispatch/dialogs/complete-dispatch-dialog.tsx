@@ -30,9 +30,9 @@ export function CompleteDispatchDialog({
     <ConfirmModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Complete dispatch"
+      title="Mark as sent"
       description={`Complete "${dispatch.dispatchNumber}"? The items leave your stock and the order shows as out with the customer.`}
-      confirmLabel="Complete dispatch"
+      confirmLabel="Mark as sent"
       onConfirm={() => void handleConfirm()}
       isLoading={completeMutation.isPending}
     />

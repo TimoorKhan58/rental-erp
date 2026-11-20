@@ -4,3 +4,4 @@ export * from "./general-ledger-page";
 export * from "./journal-entry-detail-page";
 export * from "./journal-entry-list-page";
 export * from "./trial-balance-page";
+export * from "./opening-balance-page";

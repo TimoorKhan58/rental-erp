@@ -202,6 +202,7 @@ export function SupplierPaymentsSection({
       />
 
       <ConfirmModal
+        cancelLabel="No, keep it"
         open={voidTarget !== null}
         onOpenChange={(open) => {
           if (!open) setVoidTarget(null);

@@ -172,7 +172,7 @@ export function ReservationCalendar() {
     return (
       <QueryErrorState
         title="Could not load calendar"
-        description="Failed to load rental orders for the reservation calendar."
+        description="Could not load orders for the calendar."
         onRetry={() => void listQuery.refetch()}
       />
     );
@@ -193,7 +193,7 @@ export function ReservationCalendar() {
             onChange={setLocalSearch}
             placeholder="Search order number or notes..."
             className="w-full sm:max-w-xs"
-            aria-label="Search reservations by order number or notes"
+            aria-label="Search orders by order number or notes"
           />
           <Select
             value={customerId ?? "all"}
@@ -258,7 +258,7 @@ export function ReservationCalendar() {
           leftIcon={<RefreshCwIcon className="size-4" aria-hidden="true" />}
           onClick={handleRefresh}
           loading={listQuery.isFetching && !listQuery.isLoading}
-          aria-label="Refresh reservation calendar"
+          aria-label="Refresh calendar"
         >
           Refresh
         </AppButton>
@@ -345,10 +345,10 @@ export function ReservationCalendar() {
         ) : null}
 
         {listQuery.isLoading && !listQuery.data ? (
-          <LoadingState label="Loading reservation calendar..." />
+          <LoadingState label="Loading calendar..." />
         ) : visibleEvents.length === 0 ? (
           <EmptyState
-            title={hasFilters ? "No reservations match these filters" : "No reservations in this period"}
+            title={hasFilters ? "No orders match these filters" : "No orders in this period"}
             description={
               hasFilters
                 ? "Try clearing search or filters. Results apply to the visible week or month."

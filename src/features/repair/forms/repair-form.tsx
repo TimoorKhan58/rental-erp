@@ -26,6 +26,7 @@ import {
   useRepairFilterOptions,
   useRepairsByReturn,
 } from "../hooks";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type RepairFormBaseProps = {
   onCancel: () => void;
@@ -60,7 +61,7 @@ const createDefaults: CreateRepairFormValues = {
   warehouseId: "",
   quantity: 1,
   repairCost: 0,
-  repairDate: new Date().toISOString(),
+  repairDate: calendarDayToIso(new Date()),
   repairNotes: "",
   technician: "",
 };
@@ -79,7 +80,7 @@ function CreateRepairForm({
   onCancel,
   isSubmitting = false,
 }: CreateRepairFormProps) {
-  const { returnOptions, productLabelById, warehouseLabelById } = useRepairFilterOptions();
+  const { repairableReturnOptions, productLabelById, warehouseLabelById } = useRepairFilterOptions();
   const form = useForm<CreateRepairFormValues>({
     resolver: zodResolver(createRepairFormSchema),
     defaultValues: { ...createDefaults, ...defaultValues },
@@ -166,7 +167,7 @@ function CreateRepairForm({
             name="returnId"
             label="Return"
             placeholder="Select return"
-            options={returnOptions.map((option) => ({
+            options={repairableReturnOptions.map((option) => ({
               value: option.id,
               label: option.label,
             }))}

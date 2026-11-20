@@ -220,9 +220,10 @@ export function useCompleteMaintenance() {
   const queryClient = useQueryClient();
 
   return useAppMutation({
-    mutationFn: completeMaintenance,
+    mutationFn: ({ id, actualCost }: { id: string; actualCost?: number }) =>
+      completeMaintenance(id, actualCost === undefined ? {} : { actualCost }),
     showSuccessToast: true,
-    successMessage: "Maintenance completed successfully.",
+    successMessage: "Maintenance completed.",
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.maintenances.lists() }),

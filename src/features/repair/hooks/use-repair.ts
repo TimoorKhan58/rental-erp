@@ -18,6 +18,7 @@ import {
   startRepair,
   updateRepair,
 } from "../services";
+import { returnsWithDamageWaiting } from "../mappers/repair-form.mapper";
 import { fetchAllPages } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
@@ -47,9 +48,15 @@ export function useRepairPermissions() {
 
 export function useRepairFilterOptions() {
   const completedReturns = useQuery({
-    queryKey: queryKeys.returns.list({ pageSize: 100, status: "COMPLETED" }),
-    queryFn: () => getReturns({ pageSize: 100, status: "COMPLETED" }),
-    staleTime: 5 * 60_000,
+    queryKey: queryKeys.returns.list({ pageSize: 100, status: "COMPLETED", all: true }),
+    queryFn: () => fetchAllPages(getReturns, { status: "COMPLETED" }),
+    staleTime: 60_000,
+  });
+
+  const allRepairs = useQuery({
+    queryKey: queryKeys.repairs.list({ pageSize: 100, all: true }),
+    queryFn: () => fetchAllPages(getRepairs, {}),
+    staleTime: 60_000,
   });
 
   const products = useQuery({
@@ -79,6 +86,12 @@ export function useRepairFilterOptions() {
     label: `${item.warehouseCode} — ${item.name}`,
   }));
 
+  // Only returns with damaged items still waiting for a repair job.
+  const repairableReturnOptions: LookupOption[] = returnsWithDamageWaiting(
+    completedReturns.data?.items ?? [],
+    allRepairs.data?.items ?? [],
+  ).map((item) => ({ id: item.id, label: item.returnNumber }));
+
   const returnLabelById = new Map(returnOptions.map((item) => [item.id, item.label]));
   const productLabelById = new Map(productOptions.map((item) => [item.id, item.label]));
   const warehouseLabelById = new Map(warehouseOptions.map((item) => [item.id, item.label]));
@@ -91,6 +104,7 @@ export function useRepairFilterOptions() {
 
   return {
     returnOptions,
+    repairableReturnOptions,
     productOptions,
     warehouseOptions,
     returnLabelById,
@@ -98,7 +112,8 @@ export function useRepairFilterOptions() {
     warehouseLabelById,
     productNameById,
     warehouseNameById,
-    isLoading: completedReturns.isLoading || products.isLoading || warehouses.isLoading,
+    isLoading:
+      completedReturns.isLoading || allRepairs.isLoading || products.isLoading || warehouses.isLoading,
   };
 }
 

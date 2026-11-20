@@ -272,9 +272,11 @@ export class PrismaNotificationRepository implements INotificationRepository {
       filter.toDate = query.toDate;
     }
 
-    if (query.recipientId !== undefined) {
-      filter.recipientId = query.recipientId;
-    }
+    // Everyone's list (and the bell's unread count) is their own inbox.
+    // Owners could see every staff member's messages here, which they can
+    // never mark as read, so the bell stayed stuck (QA T4). Owners can still
+    // look at someone else's inbox by asking for that person.
+    filter.recipientId = query.recipientId ?? query.access.viewerUserId;
 
     if (query.search !== undefined) {
       filter.search = query.search;

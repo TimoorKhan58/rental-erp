@@ -107,6 +107,32 @@ function buildOperationalJournalNumber(
   return `JE-${referenceType.slice(0, 3)}-${referenceId.slice(0, 8)}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
+/**
+ * A number people can read: "JE-" + the document's own number, which every
+ * description ends with ("Invoice issued INV-2026-011" → "JE-INV-2026-011").
+ * A second entry for the same document (instalments, reversals) gets "-2",
+ * "-3"… QA A2: numbers looked like "JE-OTH-uuid-timestamp".
+ */
+export async function readableOperationalJournalNumber(
+  journalEntryRepository: Pick<IJournalEntryRepository, "findByJournalNumber">,
+  description: string,
+  fallback: () => string,
+): Promise<string> {
+  const documentNumber = description.trim().split(/\s+/).pop() ?? "";
+  if (!/^[A-Za-z]+-[A-Za-z0-9-]+$/.test(documentNumber) || documentNumber.length > 40) {
+    return fallback();
+  }
+
+  const base = `JE-${documentNumber}`;
+  for (let attempt = 1; attempt <= 20; attempt += 1) {
+    const candidate = attempt === 1 ? base : `${base}-${attempt}`;
+    if ((await journalEntryRepository.findByJournalNumber(candidate)) === null) {
+      return candidate;
+    }
+  }
+  return fallback();
+}
+
 async function createAndPostOperationalJournal(
   deps: OperationalJournalPostingDeps,
   input: {
@@ -136,7 +162,11 @@ async function createAndPostOperationalJournal(
   }
 
   const createData = {
-    journalNumber: buildOperationalJournalNumber(input.referenceType, input.referenceId),
+    journalNumber: await readableOperationalJournalNumber(
+      deps.journalEntryRepository,
+      input.description,
+      () => buildOperationalJournalNumber(input.referenceType, input.referenceId),
+    ),
     journalDate: input.journalDate,
     description: input.description,
     referenceType: input.referenceType,

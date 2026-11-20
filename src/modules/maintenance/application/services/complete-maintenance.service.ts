@@ -12,7 +12,9 @@ import {
 import type { MaintenanceDto } from "../dtos/maintenance.dto";
 import { toMaintenanceDto, toMaintenanceId } from "../mappers/maintenance.mapper";
 import {
+  CompleteMaintenanceSchema,
   MaintenanceIdParamSchema,
+  type CompleteMaintenanceInput,
   type MaintenanceIdParamInput,
 } from "../schemas/maintenance.schemas";
 import { toMaintenanceAuditValues } from "./maintenance-audit.mapper";
@@ -27,8 +29,12 @@ export class CompleteMaintenanceService {
     private readonly transactionRunner: IMaintenanceTransactionRunner,
   ) {}
 
-  async execute(params: MaintenanceIdParamInput): Promise<MaintenanceDto> {
+  async execute(
+    params: MaintenanceIdParamInput,
+    details: CompleteMaintenanceInput = {},
+  ): Promise<MaintenanceDto> {
     const { id } = parseRequest(MaintenanceIdParamSchema, params);
+    const { actualCost } = parseRequest(CompleteMaintenanceSchema, details);
 
     return this.transactionRunner.run(
       async ({
@@ -88,6 +94,7 @@ export class CompleteMaintenanceService {
           {
             status: completed.status,
             completedAt: completed.completedAt,
+            ...(actualCost !== undefined ? { actualCost } : {}),
           },
         );
 

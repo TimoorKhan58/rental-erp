@@ -1,3 +1,4 @@
+import { OpeningBalanceService } from "@/modules/accounting/application/services/opening-balance.service";
 import type { AccountingApplicationServices as AccountingApplicationServicesBase } from "@/modules/accounting/application/services/accounting-application-services.interface";
 import { AccountingService } from "@/modules/accounting/application/services/accounting.service";
 import type { IAccountingService } from "@/modules/accounting/application/services/accounting-application-services.interface";
@@ -47,6 +48,11 @@ export function createAccountingApplicationServices(
   const updateJournalEntry = new UpdateJournalEntryService(transactionRunner);
   const postJournalEntry = new PostJournalEntryService(transactionRunner);
   const voidJournalEntry = new VoidJournalEntryService(transactionRunner);
+  const openingBalance = new OpeningBalanceService(
+    transactionRunner,
+    accountRepository,
+    journalEntryRepository,
+  );
 
   return {
     getAccountById,
@@ -59,6 +65,7 @@ export function createAccountingApplicationServices(
     updateJournalEntry,
     postJournalEntry,
     voidJournalEntry,
+    openingBalance,
     accountingService: new AccountingService(
       getAccountById,
       listAccounts,

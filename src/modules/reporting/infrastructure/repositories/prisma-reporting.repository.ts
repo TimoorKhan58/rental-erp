@@ -717,10 +717,36 @@ export class PrismaReportingRepository implements IReportingRepository {
     const orders = await repositoryFindMany(
       this.runner,
       (db) =>
+        // Filters run in the database and only needed columns are read
+        // (QA: 1.5 s on two years of data when every order was loaded whole).
         db.rentalOrder.findMany({
-          include: {
-            customer: true,
-            warehouse: true,
+          where: {
+            ...(query.customerId !== undefined ? { customerId: query.customerId } : {}),
+            ...(query.warehouseId !== undefined ? { warehouseId: query.warehouseId } : {}),
+            ...(query.status !== undefined ? { status: query.status as never } : {}),
+            ...(query.dateFrom !== undefined || query.dateTo !== undefined
+              ? {
+                  bookingDate: {
+                    ...(query.dateFrom !== undefined ? { gte: query.dateFrom } : {}),
+                    ...(query.dateTo !== undefined ? { lte: query.dateTo } : {}),
+                  },
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+            orderNumber: true,
+            customerId: true,
+            warehouseId: true,
+            status: true,
+            bookingDate: true,
+            eventStartDate: true,
+            eventEndDate: true,
+            expectedReturnDate: true,
+            actualReturnDate: true,
+            grandTotal: true,
+            customer: { select: { name: true } },
+            warehouse: { select: { name: true } },
           },
         }),
       { model: MODEL, operation: "getRentalReport" },
@@ -1245,77 +1271,80 @@ export class PrismaReportingRepository implements IReportingRepository {
   }
 
   async getCustomerReport(query: CustomerReportQuery): Promise<CustomerReport> {
-    const [customers, orders, invoices] = await this.runner.run(
+    // Only the columns needed, filtered and summed by the database, then one
+    // pass per list. It used to load every order with its customer and
+    // compare each customer with each order (4 s on two years of data).
+    const [customers, orders, balances] = await this.runner.run(
       async (db) => {
-        const customerWhere =
-          query.customerId !== undefined
-            ? { id: query.customerId, isActive: true }
-            : { isActive: true };
+        const bookingDate =
+          query.dateFrom !== undefined || query.dateTo !== undefined
+            ? {
+                ...(query.dateFrom !== undefined ? { gte: query.dateFrom } : {}),
+                ...(query.dateTo !== undefined ? { lte: query.dateTo } : {}),
+              }
+            : undefined;
 
-        const [customerRows, orderRows, invoiceRows] = await Promise.all([
-          db.customer.findMany({ where: customerWhere }),
-          db.rentalOrder.findMany({
-            include: { customer: true },
+        return Promise.all([
+          db.customer.findMany({
+            where:
+              query.customerId !== undefined
+                ? { id: query.customerId, isActive: true }
+                : { isActive: true },
+            select: { id: true, customerCode: true, name: true },
           }),
-          db.rentalInvoice.findMany({
+          db.rentalOrder.findMany({
             where: {
-              status: { in: ["ISSUED", "PARTIALLY_PAID", "PAID"] },
+              ...(query.customerId !== undefined ? { customerId: query.customerId } : {}),
+              ...(bookingDate !== undefined ? { bookingDate } : {}),
             },
+            select: { customerId: true, bookingDate: true, grandTotal: true, status: true },
+          }),
+          db.rentalInvoice.groupBy({
+            by: ["customerId"],
+            where: { status: { in: ["ISSUED", "PARTIALLY_PAID"] } },
+            _sum: { balance: true },
           }),
         ]);
-
-        return [customerRows, orderRows, invoiceRows] as const;
       },
       { model: MODEL, operation: "getCustomerReport" },
     );
 
+    const outstandingByCustomer = new Map(
+      balances.map((row) => [row.customerId, decimalToNumber(row._sum.balance ?? 0)]),
+    );
+    const ordersByCustomer = new Map<
+      string,
+      { count: number; completed: number; revenue: number; last: Date | null }
+    >();
+    for (const order of orders) {
+      const totals = ordersByCustomer.get(order.customerId) ?? {
+        count: 0,
+        completed: 0,
+        revenue: 0,
+        last: null,
+      };
+      totals.count += 1;
+      if (order.status === "COMPLETED") {
+        totals.completed += 1;
+      }
+      totals.revenue += decimalToNumber(order.grandTotal);
+      if (totals.last === null || order.bookingDate > totals.last) {
+        totals.last = order.bookingDate;
+      }
+      ordersByCustomer.set(order.customerId, totals);
+    }
+
     const mapped: CustomerReportLine[] = customers.map((customer) => {
-      const customerOrders = orders.filter((order) => {
-        if (order.customerId !== customer.id) {
-          return false;
-        }
-        return inDateRange(order.bookingDate, query.dateFrom, query.dateTo);
-      });
-
-      const outstandingBalance = roundMoney(
-        invoices
-          .filter(
-            (invoice) =>
-              invoice.customerId === customer.id &&
-              ["ISSUED", "PARTIALLY_PAID"].includes(invoice.status),
-          )
-          .reduce((sum, invoice) => sum + decimalToNumber(invoice.balance), 0),
-      );
-
-      const revenue = roundMoney(
-        customerOrders.reduce(
-          (sum, order) => sum + decimalToNumber(order.grandTotal),
-          0,
-        ),
-      );
-
-      const lastOrderDate =
-        customerOrders.length === 0
-          ? null
-          : customerOrders.reduce(
-              (latest, order) =>
-                latest === null || order.bookingDate > latest
-                  ? order.bookingDate
-                  : latest,
-              null as Date | null,
-            );
-
+      const totals = ordersByCustomer.get(customer.id);
       return {
         customerId: customer.id,
         customerCode: customer.customerCode,
         customerName: customer.name,
-        orderCount: customerOrders.length,
-        completedOrderCount: customerOrders.filter(
-          (order) => order.status === "COMPLETED",
-        ).length,
-        revenue,
-        outstandingBalance,
-        lastOrderDate,
+        orderCount: totals?.count ?? 0,
+        completedOrderCount: totals?.completed ?? 0,
+        revenue: roundMoney(totals?.revenue ?? 0),
+        outstandingBalance: roundMoney(outstandingByCustomer.get(customer.id) ?? 0),
+        lastOrderDate: totals?.last ?? null,
       };
     });
 
@@ -1569,10 +1598,33 @@ export class PrismaReportingRepository implements IReportingRepository {
     const [products, orderItems, inventories, invoices] = await this.runner.run(
       async (db) => {
         const [productRows, itemRows, inventoryRows, invoiceRows] = await Promise.all([
-          db.product.findMany({ where: { isActive: true } }),
+          db.product.findMany({
+            where: { isActive: true },
+            select: {
+              id: true,
+              productCode: true,
+              name: true,
+              isRentable: true,
+              totalQuantity: true,
+            },
+          }),
+          // Only lines of orders booked in the period, only needed columns
+          // (QA: 3 s on two years of data when every line was loaded whole).
           db.rentalOrderItem.findMany({
-            include: {
-              rentalOrder: true,
+            where: {
+              rentalOrder: {
+                bookingDate: {
+                  ...(period.dateFrom !== undefined ? { gte: period.dateFrom } : {}),
+                  ...(period.dateTo !== undefined ? { lte: period.dateTo } : {}),
+                },
+              },
+            },
+            select: {
+              productId: true,
+              rentalOrderId: true,
+              quantity: true,
+              numberOfDays: true,
+              lineTotal: true,
             },
           }),
           db.inventory.findMany({
@@ -1600,17 +1652,18 @@ export class PrismaReportingRepository implements IReportingRepository {
       { model: MODEL, operation: "getRentalInsights" },
     );
 
+    const itemsByProduct = new Map<string, typeof orderItems>();
+    for (const item of orderItems) {
+      const list = itemsByProduct.get(item.productId);
+      if (list === undefined) {
+        itemsByProduct.set(item.productId, [item]);
+      } else {
+        list.push(item);
+      }
+    }
+
     const productLines: RentalInsightsProductLine[] = products.map((product) => {
-      const productItems = orderItems.filter((item) => {
-        if (item.productId !== product.id) {
-          return false;
-        }
-        return inDateRange(
-          item.rentalOrder.bookingDate,
-          period.dateFrom,
-          period.dateTo,
-        );
-      });
+      const productItems = itemsByProduct.get(product.id) ?? [];
 
       const rentalOrderIds = new Set(
         productItems.map((item) => item.rentalOrderId),
@@ -1636,10 +1689,8 @@ export class PrismaReportingRepository implements IReportingRepository {
       };
     });
 
-    const rentableLines = productLines.filter((line) => {
-      const product = products.find((row) => row.id === line.productId);
-      return product?.isRentable ?? false;
-    });
+    const rentableIds = new Set(products.filter((row) => row.isRentable).map((row) => row.id));
+    const rentableLines = productLines.filter((line) => rentableIds.has(line.productId));
 
     const topByRevenue = [...rentableLines]
       .sort((a, b) => b.revenue - a.revenue || b.quantityDays - a.quantityDays)
@@ -1733,10 +1784,37 @@ export class PrismaReportingRepository implements IReportingRepository {
     const [products, orderItems, inventories] = await this.runner.run(
       async (db) => {
         const [productRows, itemRows, inventoryRows] = await Promise.all([
-          db.product.findMany({ where: { isActive: true } }),
+          db.product.findMany({
+            where: { isActive: true },
+            select: {
+              id: true,
+              productCode: true,
+              name: true,
+              rentalPricePerDay: true,
+              totalQuantity: true,
+              isRentable: true,
+            },
+          }),
+          // Dates filtered in the database, only needed columns, grouped once
+          // below (QA: 2.7 s on two years of data).
           db.rentalOrderItem.findMany({
-            include: {
-              rentalOrder: true,
+            where:
+              query.dateFrom !== undefined || query.dateTo !== undefined
+                ? {
+                    rentalOrder: {
+                      bookingDate: {
+                        ...(query.dateFrom !== undefined ? { gte: query.dateFrom } : {}),
+                        ...(query.dateTo !== undefined ? { lte: query.dateTo } : {}),
+                      },
+                    },
+                  }
+                : {},
+            select: {
+              productId: true,
+              rentalOrderId: true,
+              quantity: true,
+              numberOfDays: true,
+              lineTotal: true,
             },
           }),
           db.inventory.findMany({
@@ -1761,17 +1839,18 @@ export class PrismaReportingRepository implements IReportingRepository {
       );
     }
 
+    const itemsByProduct = new Map<string, typeof orderItems>();
+    for (const item of orderItems) {
+      const list = itemsByProduct.get(item.productId);
+      if (list === undefined) {
+        itemsByProduct.set(item.productId, [item]);
+      } else {
+        list.push(item);
+      }
+    }
+
     const mapped: ProductReportLine[] = products.map((product) => {
-      const productItems = orderItems.filter((item) => {
-        if (item.productId !== product.id) {
-          return false;
-        }
-        return inDateRange(
-          item.rentalOrder.bookingDate,
-          query.dateFrom,
-          query.dateTo,
-        );
-      });
+      const productItems = itemsByProduct.get(product.id) ?? [];
 
       const rentalOrderIds = new Set(
         productItems.map((item) => item.rentalOrderId),

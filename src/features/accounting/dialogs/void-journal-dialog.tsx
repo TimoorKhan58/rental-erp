@@ -36,6 +36,8 @@ export function VoidJournalDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
+      destructive
       open={open}
       onOpenChange={onOpenChange}
       title="Void journal entry"

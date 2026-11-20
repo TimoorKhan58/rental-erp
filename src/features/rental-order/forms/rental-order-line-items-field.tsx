@@ -18,6 +18,7 @@ import {
 } from "../mappers";
 import type { CreateRentalOrderFormValues } from "../schemas";
 import { DateAwareAvailabilityHint } from "../components/date-aware-availability-hint";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type RentalOrderLineItemsFieldProps = {
   productOptions: Array<{ id: string; label: string; keywords?: string; rate?: number }>;
@@ -319,9 +320,9 @@ export function RentalOrderLineItemsField({
           onClick={() =>
             append(
               createEmptyLineItem(
-                orderStartDate || new Date().toISOString(),
+                orderStartDate || calendarDayToIso(new Date()),
                 orderEndDate ||
-                  new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                  calendarDayToIso(new Date(Date.now() + 24 * 60 * 60 * 1000)),
               ),
             )
           }

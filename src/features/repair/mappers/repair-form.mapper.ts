@@ -74,3 +74,22 @@ export function computePriorRepairedByItem(
 
   return totals;
 }
+
+type ReturnWithItems = {
+  id: string;
+  items: ReadonlyArray<{ id: string; damagedQuantity: number }>;
+};
+
+/**
+ * Returns that still have damaged items waiting for a repair job (QA R1:
+ * the repair form listed every return, most with nothing to repair).
+ */
+export function returnsWithDamageWaiting<T extends ReturnWithItems>(
+  returns: readonly T[],
+  repairs: RepairResponse[],
+): T[] {
+  const repaired = computePriorRepairedByItem(repairs);
+  return returns.filter((record) =>
+    record.items.some((item) => item.damagedQuantity - (repaired.get(item.id) ?? 0) > 0),
+  );
+}

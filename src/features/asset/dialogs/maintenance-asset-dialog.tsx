@@ -20,6 +20,7 @@ import {
 import { useAddAssetMaintenance } from "../hooks";
 import { toMaintenancePayload } from "../mappers";
 import type { AssetResponse } from "../types";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type MaintenanceAssetDialogProps = {
   asset: AssetResponse | null;
@@ -36,7 +37,7 @@ export function MaintenanceAssetDialog({
   const form = useForm<MaintenanceAssetFormValues>({
     resolver: zodResolver(maintenanceAssetFormSchema),
     defaultValues: {
-      serviceDate: new Date().toISOString(),
+      serviceDate: calendarDayToIso(new Date()),
       vendor: "",
       cost: 0,
       description: "",
@@ -47,7 +48,7 @@ export function MaintenanceAssetDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        serviceDate: new Date().toISOString(),
+        serviceDate: calendarDayToIso(new Date()),
         vendor: "",
         cost: undefined as unknown as number,
         description: "",

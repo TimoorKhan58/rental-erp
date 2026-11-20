@@ -15,10 +15,13 @@ export const JOURNAL_STATUS_LABELS: Record<JournalEntryStatus, string> = {
 };
 
 export const REFERENCE_TYPE_LABELS: Record<JournalReferenceType, string> = {
-  RENTAL_INVOICE: "Rental invoice",
-  PAYMENT: "Payment",
-  MANUAL: "Manual",
-  OTHER: "Other",
+  RENTAL_INVOICE: "Invoice",
+  PAYMENT: "Customer payment",
+  MANUAL: "Entered by hand",
+  OTHER: "Expense / other",
+  PURCHASE_ORDER: "Purchase",
+  SUPPLIER_PAYMENT: "Supplier payment",
+  EXTERNAL_RENTAL: "Hire-in",
 };
 
 export function canEditJournalEntry(status: JournalEntryStatus): boolean {

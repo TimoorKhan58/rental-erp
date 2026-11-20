@@ -30,15 +30,15 @@ type SummaryCardConfig = {
 const cardConfigs: SummaryCardConfig[] = [
   {
     id: "activeRepairs",
-    label: "Active repairs",
-    hint: "Excluding cancelled",
+    label: "All repair jobs",
+    hint: "Open and finished, not cancelled",
     icon: ClipboardListIcon,
     iconClass: "bg-primary/12 text-primary",
   },
   {
     id: "pendingActionCount",
-    label: "Needs action",
-    hint: "Pending or in progress",
+    label: "Still open",
+    hint: "Waiting or being repaired",
     icon: WrenchIcon,
     iconClass: "bg-warning-muted text-warning-foreground",
     accentClass: "border-warning/30",

@@ -39,6 +39,8 @@ export type LiveDashboardSummary = {
   revenueThisMonth: number;
   paymentsThisMonth: number;
   averageRentalDuration: number;
+  /** Money left out by the server because this person may not see it. */
+  moneyHidden?: boolean;
   /** Today's work and the next 7 days (usability revamp R2). */
   worklist: DashboardWorklist;
 };

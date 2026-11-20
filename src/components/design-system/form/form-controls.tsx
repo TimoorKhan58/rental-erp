@@ -632,8 +632,11 @@ export function DatePickerField<T extends FieldValues>({
                 />
               }
             >
-              <CalendarIcon className="size-4" />
-              {dateValue ? format(dateValue, "PPP") : "Pick a date"}
+              {/* One line: the icon used to sit above the date (QA UX 13). */}
+              <span className="flex min-w-0 items-center gap-2">
+                <CalendarIcon className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{dateValue ? format(dateValue, "d MMM yyyy") : "Pick a date"}</span>
+              </span>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar

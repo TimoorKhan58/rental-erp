@@ -24,6 +24,7 @@ import type { PostJournalEntryService } from "./post-journal-entry.service";
 import type { UpdateAccountService } from "./update-account.service";
 import type { UpdateJournalEntryService } from "./update-journal-entry.service";
 import type { VoidJournalEntryService } from "./void-journal-entry.service";
+import type { OpeningBalanceService } from "./opening-balance.service";
 
 export interface AccountingApplicationServices {
   getAccountById: GetAccountByIdService;
@@ -36,6 +37,8 @@ export interface AccountingApplicationServices {
   updateJournalEntry: UpdateJournalEntryService;
   postJournalEntry: PostJournalEntryService;
   voidJournalEntry: VoidJournalEntryService;
+  /** Optional so older test doubles stay valid. */
+  openingBalance?: OpeningBalanceService;
 }
 
 export type AccountingServiceResolver = (

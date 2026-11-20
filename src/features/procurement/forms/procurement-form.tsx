@@ -18,6 +18,7 @@ import {
 } from "../schemas";
 import { useProcurementFilterOptions } from "../hooks";
 import { ProcurementLineItemsField } from "./procurement-line-items-field";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type ProcurementFormBaseProps = {
   onCancel: () => void;
@@ -43,7 +44,7 @@ const createDefaults: CreateProcurementFormValues = {
   poNumber: "",
   supplierId: "",
   warehouseId: "",
-  orderDate: new Date().toISOString(),
+  orderDate: calendarDayToIso(new Date()),
   expectedDate: "",
   remarks: "",
   items: [{ productId: "", quantity: 1, unitCost: 0 }],

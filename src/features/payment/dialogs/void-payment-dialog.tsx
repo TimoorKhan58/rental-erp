@@ -37,6 +37,7 @@ export function VoidPaymentDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
       open={open}
       onOpenChange={onOpenChange}
       title="Void payment"

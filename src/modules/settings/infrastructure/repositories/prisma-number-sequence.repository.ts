@@ -198,18 +198,21 @@ export class PrismaNumberSequenceRepository implements INumberSequenceRepository
       paddingLength: sequence.paddingLength,
     });
 
-    const number = sequence.currentNumber;
-    const formattedNumber = sequence.formatNumber(number);
-    const nextSequence = sequence.withNextNumber(number);
-
+    // Add one in the database itself. The row stays locked until this
+    // transaction ends, so two people saving at the same moment each get
+    // their own number (reading first and writing number + 1 gave both the
+    // same number and one of them an error — QA load test L1).
     const saved = await db.documentSequence.update({
       where: { id: record.id },
       data: {
-        currentNumber: nextSequence.currentNumber,
+        currentNumber: { increment: 1 },
       },
     });
 
     const savedDomain = toNumberSequenceDomain(saved);
+    const number = savedDomain.currentNumber - 1;
+    sequence.withNextNumber(number);
+    const formattedNumber = savedDomain.formatNumber(number);
 
     return {
       sequence: savedDomain,

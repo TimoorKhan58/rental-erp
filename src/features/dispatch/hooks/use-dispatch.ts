@@ -18,7 +18,7 @@ import {
   getDispatches,
   updateDispatch,
 } from "../services";
-import { fetchAllPages } from "@/lib/api/fetch-all-pages";
+import { fetchAllPages, fetchAllWithStatuses } from "@/lib/api/fetch-all-pages";
 
 type LookupOption = {
   id: string;
@@ -46,13 +46,20 @@ export function useDispatchPermissions() {
   };
 }
 
-const ELIGIBLE_DISPATCH_ORDER_STATUSES = new Set(["CONFIRMED", "RESERVED", "ON_RENT"]);
+const ELIGIBLE_DISPATCH_ORDER_STATUS_LIST = ["CONFIRMED", "RESERVED", "ON_RENT"] as const;
 
 export function useDispatchFilterOptions() {
   const rentalOrders = useQuery({
     queryKey: queryKeys.rentalOrders.list({ pageSize: 100 }),
     queryFn: () => getRentalOrders({ pageSize: 100 }),
     staleTime: 5 * 60_000,
+  });
+
+  // Orders that can go out, however old (QA X5: only the newest 100 before).
+  const eligibleOrders = useQuery({
+    queryKey: queryKeys.rentalOrders.list({ statuses: ELIGIBLE_DISPATCH_ORDER_STATUS_LIST }),
+    queryFn: () => fetchAllWithStatuses(getRentalOrders, ELIGIBLE_DISPATCH_ORDER_STATUS_LIST),
+    staleTime: 60_000,
   });
 
   const customers = useQuery({
@@ -86,8 +93,7 @@ export function useDispatchFilterOptions() {
     label: order.orderNumber,
   }));
 
-  const eligibleRentalOrderOptions = allRentalOrders
-    .filter((order) => ELIGIBLE_DISPATCH_ORDER_STATUSES.has(order.status))
+  const eligibleRentalOrderOptions = (eligibleOrders.data?.items ?? [])
     .map((order) =>
       toRentalOrderSelectorOption(order, customerNameById, customerPhoneById),
     );
@@ -244,7 +250,7 @@ export function useMarkDispatchReady() {
   return useAppMutation({
     mutationFn: (id: string) => updateDispatch(id, { markReady: true }),
     showSuccessToast: true,
-    successMessage: "Dispatch marked as ready.",
+    successMessage: "Marked as ready to go.",
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),
@@ -266,7 +272,7 @@ export function useCompleteDispatch() {
   return useAppMutation({
     mutationFn: completeDispatch,
     showSuccessToast: true,
-    successMessage: "Dispatch completed successfully.",
+    successMessage: "Marked as sent. The items are now out with the customer.",
     onSuccess: async (data) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dispatches.lists() }),

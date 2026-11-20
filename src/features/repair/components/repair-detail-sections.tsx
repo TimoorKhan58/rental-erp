@@ -181,7 +181,7 @@ export function RepairInventoryImpactSection({
       {canReadInventory ? (
         <SectionCard
           title="Inventory record"
-          description="Current warehouse position. Owned stock increases only after Complete posts IN."
+          description="Stock of this item at the warehouse. The repaired items are added back when you press Complete."
           actions={
             inventoryRecord ? (
               <AppButton
@@ -198,7 +198,7 @@ export function RepairInventoryImpactSection({
             <LoadingState label="Loading inventory..." />
           ) : !inventoryRecord ? (
             <p className="text-sm text-muted-foreground">
-              No inventory record found for this product and warehouse.
+              This item has no stock record at this warehouse yet.
             </p>
           ) : (
             <dl className="grid gap-4 sm:grid-cols-3">
@@ -233,8 +233,8 @@ export function RepairInventoryImpactSection({
 
       {canReadMovements ? (
         <SectionCard
-          title="Inventory movements"
-          description="Stock movements created when this repair is completed."
+          title="Stock changes"
+          description="What this repair changed in stock."
         >
           <StockMovementHistoryTable
             movements={stockMovements}
@@ -243,8 +243,8 @@ export function RepairInventoryImpactSection({
             showProductColumn={false}
             emptyMessage={
               repair.status === "COMPLETED"
-                ? "No stock movements found for this repair yet."
-                : "Inventory movements will appear after the repair is completed."
+                ? "No stock changes for this repair yet."
+                : "Stock changes appear here once the repair is completed."
             }
           />
         </SectionCard>

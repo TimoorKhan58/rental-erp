@@ -84,7 +84,7 @@ export function ProcurementEditPage({ procurementId }: ProcurementEditPageProps)
         description="Update draft purchase order details and line items."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Procurement", href: ROUTES.procurements },
+          { label: "Purchases", href: ROUTES.procurements },
           { label: procurement.poNumber, href: ROUTES.procurementDetail(procurementId) },
           { label: "Edit" },
         ]}

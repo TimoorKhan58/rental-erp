@@ -193,7 +193,7 @@ export function getDispatchTableColumns({
               <DropdownMenuItem onClick={() => onMarkReady(row)}>Mark ready</DropdownMenuItem>
             ) : null}
             {canComplete && canCompleteDispatch(row.status) ? (
-              <DropdownMenuItem onClick={() => onComplete(row)}>Complete dispatch</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onComplete(row)}>Mark as sent</DropdownMenuItem>
             ) : null}
             {canCancel && canCancelDispatch(row.status) ? (
               <>

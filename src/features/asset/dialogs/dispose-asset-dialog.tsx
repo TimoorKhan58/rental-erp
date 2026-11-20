@@ -18,6 +18,7 @@ import {
 import { useDisposeAsset } from "../hooks";
 import { toDisposeAssetPayload } from "../mappers";
 import type { AssetResponse } from "../types";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type DisposeAssetDialogProps = {
   asset: AssetResponse | null;
@@ -34,7 +35,7 @@ export function DisposeAssetDialog({
   const form = useForm<DisposeAssetFormValues>({
     resolver: zodResolver(disposeAssetFormSchema),
     defaultValues: {
-      disposalDate: new Date().toISOString(),
+      disposalDate: calendarDayToIso(new Date()),
       disposalAmount: undefined,
       disposalReason: "",
     },
@@ -43,7 +44,7 @@ export function DisposeAssetDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        disposalDate: new Date().toISOString(),
+        disposalDate: calendarDayToIso(new Date()),
         disposalAmount: undefined,
         disposalReason: "",
       });

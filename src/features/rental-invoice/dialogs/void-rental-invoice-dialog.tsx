@@ -68,6 +68,7 @@ export function VoidRentalInvoiceDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
       open={open}
       onOpenChange={onOpenChange}
       title="Void invoice"

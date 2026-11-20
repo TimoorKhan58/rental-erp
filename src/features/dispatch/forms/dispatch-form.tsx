@@ -23,7 +23,9 @@ import {
 import { DELIVERY_METHOD_LABELS } from "../mappers";
 import { useDispatchFilterOptions } from "../hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
+import { useExternalRentals } from "@/features/external-rental/hooks";
 import { DispatchLineItemsField } from "./dispatch-line-items-field";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type DispatchFormBaseProps = {
   onCancel: () => void;
@@ -54,7 +56,7 @@ const deliveryOptions = DELIVERY_METHODS.map((method) => ({
 const createDefaults: CreateDispatchFormValues = {
   dispatchNumber: "",
   rentalOrderId: "",
-  dispatchDate: new Date().toISOString(),
+  dispatchDate: calendarDayToIso(new Date()),
   deliveryMethod: "DELIVERY",
   vehicleNumber: "",
   driverName: "",
@@ -63,6 +65,26 @@ const createDefaults: CreateDispatchFormValues = {
   remarks: "",
   items: [{ productId: "", rentalOrderItemId: "", quantity: 1, notes: "" }],
 };
+
+/** Hired items received for each order line and not yet sent out. */
+function hiredQuantityByOrderItem(
+  agreements: ReadonlyArray<{
+    status: string;
+    items: ReadonlyArray<{ rentalOrderItemId: string; quantityAllocated: number; quantityDispatched: number }>;
+  }>,
+): Map<string, number> {
+  const hired = new Map<string, number>();
+  for (const agreement of agreements) {
+    if (agreement.status === "CANCELLED") {
+      continue;
+    }
+    for (const item of agreement.items) {
+      const ready = Math.max(0, item.quantityAllocated - item.quantityDispatched);
+      hired.set(item.rentalOrderItemId, (hired.get(item.rentalOrderItemId) ?? 0) + ready);
+    }
+  }
+  return hired;
+}
 
 export function DispatchForm(props: DispatchFormProps) {
   if (props.mode === "create") {
@@ -86,26 +108,38 @@ function CreateDispatchForm({
 
   const rentalOrderId = form.watch("rentalOrderId");
   const { data: rentalOrder } = useRentalOrder(rentalOrderId);
+  // Items hired from a supplier for this order can go out too (QA H3: the
+  // screen only offered your own reserved stock).
+  const { data: hireIns, isLoading: hireInsLoading } = useExternalRentals({
+    rentalOrderId: rentalOrderId || undefined,
+    pageSize: 20,
+  });
 
   useEffect(() => {
-    if (!rentalOrder) {
+    if (!rentalOrder || (rentalOrderId && hireInsLoading)) {
       return;
     }
 
+    const hiredByOrderItem = hiredQuantityByOrderItem(
+      (hireIns?.items ?? []).filter((agreement) => agreement.rentalOrderId === rentalOrder.id),
+    );
     const items = rentalOrder.items
-      .filter((item) => item.reservedQuantity > 0)
-      .map((item) => ({
-        productId: item.productId,
-        rentalOrderItemId: item.id,
-        quantity: item.reservedQuantity,
-        maxQuantity: item.reservedQuantity,
-        notes: "",
-      }));
+      .map((item) => {
+        const available = item.reservedQuantity + (hiredByOrderItem.get(item.id) ?? 0);
+        return {
+          productId: item.productId,
+          rentalOrderItemId: item.id,
+          quantity: available,
+          maxQuantity: available,
+          notes: "",
+        };
+      })
+      .filter((item) => item.quantity > 0);
 
     if (items.length > 0) {
       form.setValue("items", items);
     }
-  }, [rentalOrder, form]);
+  }, [rentalOrder, rentalOrderId, hireIns, hireInsLoading, form]);
 
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
@@ -179,18 +213,28 @@ function EditDispatchForm({
 }: EditDispatchFormProps) {
   const { productLabelById } = useDispatchFilterOptions();
   const { data: rentalOrder } = useRentalOrder(rentalOrderId);
+  const { data: hireIns, isLoading: hireInsLoading } = useExternalRentals({
+    rentalOrderId,
+    pageSize: 20,
+  });
   const form = useForm<UpdateDispatchFormValues>({
     resolver: zodResolver(updateDispatchFormSchema),
     defaultValues,
   });
 
   useEffect(() => {
-    if (!rentalOrder) {
+    if (!rentalOrder || hireInsLoading) {
       return;
     }
 
+    const hiredByOrderItem = hiredQuantityByOrderItem(
+      (hireIns?.items ?? []).filter((agreement) => agreement.rentalOrderId === rentalOrder.id),
+    );
     const maxByProductId = new Map(
-      rentalOrder.items.map((item) => [item.productId, item.reservedQuantity]),
+      rentalOrder.items.map((item) => [
+        item.productId,
+        item.reservedQuantity + (hiredByOrderItem.get(item.id) ?? 0),
+      ]),
     );
 
     const currentItems = form.getValues("items");
@@ -201,7 +245,7 @@ function EditDispatchForm({
         maxQuantity: maxByProductId.get(item.productId),
       })),
     );
-  }, [rentalOrder, form]);
+  }, [rentalOrder, hireIns, hireInsLoading, form]);
 
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">

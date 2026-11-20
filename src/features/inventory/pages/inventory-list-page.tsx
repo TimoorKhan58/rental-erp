@@ -39,7 +39,7 @@ export function InventoryListPage() {
                 leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
                 onClick={() => setCreateOpen(true)}
               >
-                New record
+                Add item to a warehouse
               </AppButton>
             ) : null}
           </>

@@ -65,7 +65,7 @@ describe("proxy session gate", () => {
     const response = await proxy(createRequest("/login"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://localhost/");
+    expect(response.headers.get("location")).toBe("http://localhost/dashboard");
   });
 
   it("redirects unauthenticated users to login with callback", async () => {

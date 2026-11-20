@@ -13,7 +13,7 @@ export type CreateAccountFormValues = z.infer<typeof createAccountFormSchema>;
 
 export const createJournalEntryFormSchema = z
   .object({
-    journalNumber: z.string().trim().min(1, "Journal number is required").max(50),
+    journalNumber: z.string().trim().max(50),
     journalDate: z.string().min(1, "Journal date is required"),
     description: z.string().trim().min(1, "Description is required").max(500),
     debitAccountId: z.string().uuid("Select a debit account"),

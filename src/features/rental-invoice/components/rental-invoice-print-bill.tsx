@@ -1,5 +1,6 @@
 "use client";
 
+import { useCompanySettings } from "@/features/settings/hooks";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { RentalInvoiceLineItemsTable } from "./rental-invoice-line-items-table";
 import type { RentalInvoiceResponse } from "../types";
@@ -24,11 +25,31 @@ export function RentalInvoicePrintBill({
   orderNumber,
   className,
 }: RentalInvoicePrintBillProps) {
+  // The customer must see who the bill is from (QA V1).
+  const { data: company } = useCompanySettings();
+  const companyName = company?.businessName?.trim() || company?.companyName?.trim() || "";
+  const companyPlace = [company?.address, company?.city].filter((part) => part?.trim()).join(", ");
+  const companyContact = [company?.phone, company?.email].filter((part) => part?.trim()).join(" · ");
+
   return (
     <div
       id="rental-invoice-print-bill"
       className={className}
     >
+      {companyName ? (
+        <div className="mb-5 flex items-start gap-4 border-b border-border pb-4">
+          {company?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- printed bill; logo is any web address
+            <img src={company.logoUrl} alt="" className="size-14 rounded-md object-contain" />
+          ) : null}
+          <div className="space-y-0.5 text-sm">
+            <p className="font-heading text-xl font-semibold">{companyName}</p>
+            {companyPlace ? <p className="text-muted-foreground">{companyPlace}</p> : null}
+            {companyContact ? <p className="text-muted-foreground">{companyContact}</p> : null}
+            {company?.ntn ? <p className="text-muted-foreground">NTN {company.ntn}</p> : null}
+          </div>
+        </div>
+      ) : null}
       <header className="space-y-4 border-b border-border pb-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">

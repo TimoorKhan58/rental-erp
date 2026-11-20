@@ -144,6 +144,7 @@ export function ProcurementLineItemsField({
                       <span>{line?.quantity ?? "—"}</span>
                     ) : (
                       <NumberField
+                        className="[&_label]:sr-only"
                         control={form.control}
                         name={`items.${index}.quantity`}
                         label="Quantity"
@@ -157,6 +158,7 @@ export function ProcurementLineItemsField({
                       <span>{line ? formatCurrency(line.unitCost) : "—"}</span>
                     ) : (
                       <NumberField
+                        className="[&_label]:sr-only"
                         control={form.control}
                         name={`items.${index}.unitCost`}
                         label="Unit cost"

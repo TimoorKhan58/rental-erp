@@ -28,6 +28,8 @@ export interface DashboardSummaryDto {
   paymentsThisMonth: number;
   averageRentalDuration: number;
   worklist: DashboardWorklist;
+  /** True when money was left out because this person may not see it (workers). */
+  moneyHidden?: boolean;
 }
 
 export interface InventoryReportLineDto {

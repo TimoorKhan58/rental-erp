@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
+  KeyRoundIcon,
   MenuIcon,
   PlusIcon,
   SearchIcon,
@@ -175,6 +176,10 @@ export function Topbar() {
               <DropdownMenuItem render={<Link href={ROUTES.settings} />}>
                 <SettingsIcon aria-hidden="true" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<a href={ROUTES.changePassword} />}>
+                <KeyRoundIcon aria-hidden="true" />
+                Change password
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {session ? (

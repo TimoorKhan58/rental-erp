@@ -2,6 +2,7 @@
 
 import { DashboardSkeleton } from "@/components/design-system/loading";
 import { PageContainer } from "@/components/layout";
+import { useFinancialReportPermissions } from "@/features/financial-report/hooks/use-financial-report";
 import { useOrganizationName } from "@/features/settings/hooks";
 
 import { useLiveDashboardSummary } from "../hooks";
@@ -19,6 +20,8 @@ import { WeekSchedule } from "./today/week-schedule";
 export function DashboardPage() {
   const summary = useLiveDashboardSummary();
   const { organizationName } = useOrganizationName();
+  // Insights are a report: only for people who may read reports (not workers).
+  const { canReadOperational } = useFinancialReportPermissions();
 
   if (summary.isLoading && !summary.data) {
     return (
@@ -57,7 +60,7 @@ export function DashboardPage() {
             <StockNow summary={data} />
           </div>
           <MonthSoFar summary={data} />
-          <BusinessInsightsSection />
+          {canReadOperational && !data.moneyHidden ? <BusinessInsightsSection /> : null}
         </>
       ) : null}
     </PageContainer>

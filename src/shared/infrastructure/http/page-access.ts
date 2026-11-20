@@ -29,6 +29,9 @@ export function isPublicPagePath(pathname: string, isDevelopment = false): boole
   return PUBLIC_PATHS.has(pathname) || (isDevelopment && pathname === "/dev/fluid-grid-qa");
 }
 
+/** Where signed-in business users land. */
+export const BUSINESS_HOME = "/dashboard";
+
 export function decidePageAccess(
   pathname: string,
   kind: SignedInKind,
@@ -54,9 +57,15 @@ export function decidePageAccess(
     return { action: "redirect", to: "/login", callbackUrl: pathname };
   }
 
+  // "/" only redirects to the dashboard; doing that here avoids a blank
+  // page while the app shell waits for a redirect that never draws (QA V2).
+  if (pathname === "/" && kind === "business") {
+    return { action: "redirect", to: BUSINESS_HOME };
+  }
+
   if (isPublicPagePath(pathname, isDevelopment)) {
     if (pathname === "/login" && kind === "business") {
-      return { action: "redirect", to: "/" };
+      return { action: "redirect", to: BUSINESS_HOME };
     }
     return { action: "next" };
   }

@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { postHireInPaymentJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import {
@@ -119,8 +120,9 @@ export class SettleExternalRentalService {
             {
               agreementId: updated.id,
               agreementNumber: updated.agreementNumber,
-              date: new Date(),
+              date: await getBusinessToday(),
               amount: data.paymentAmount,
+              paymentMethod: data.paymentMethod ?? null,
             },
           );
         }

@@ -86,7 +86,7 @@ describe("describeHoldsOnOtherDates (AVL-03)", () => {
     });
 
     expect(message).toBe(
-      "None of the 15 Tables can be reserved now. The rest are held by bookings on other dates: 15 by RO-00012 until 22 Nov 2026. This order's booking for its own dates is safe. Reserve again after those items come back.",
+      "Tables: none of the 15 can be reserved now. The rest are held by bookings on other dates: 15 by RO-00012 until 22 Nov 2026. This order's booking for its own dates is safe. Reserve again after those items come back.",
     );
   });
 

@@ -48,7 +48,7 @@ export function SupplierProcurementSummarySection({
 
   return (
     <SectionCard
-      title="Procurement summary"
+      title="Purchases summary"
       description="Purchase orders and outstanding balances for this supplier."
       actions={
         totalCount > 0 ? (
