@@ -29,15 +29,15 @@ type SummaryCardConfig = {
 const cardConfigs: SummaryCardConfig[] = [
   {
     id: "activeDispatches",
-    label: "Active deliveries",
-    hint: "Excluding cancelled",
+    label: "All deliveries",
+    hint: "Not counting cancelled",
     icon: ClipboardListIcon,
     iconClass: "bg-primary/12 text-primary",
   },
   {
     id: "pendingActionCount",
     label: "Needs action",
-    hint: "Draft or ready to ship",
+    hint: "Waiting to be sent",
     icon: PackageIcon,
     iconClass: "bg-warning-muted text-warning-foreground",
     accentClass: "border-warning/30",
@@ -45,14 +45,14 @@ const cardConfigs: SummaryCardConfig[] = [
   {
     id: "inTransitCount",
     label: "In transit",
-    hint: "Dispatched and en route",
+    hint: "Sent, not yet delivered",
     icon: TruckIcon,
     iconClass: "bg-info/12 text-info",
   },
   {
     id: "completedCount",
     label: "Completed",
-    hint: "Successfully delivered",
+    hint: "Delivered",
     icon: CheckCircle2Icon,
     iconClass: "bg-success-muted text-success",
   },

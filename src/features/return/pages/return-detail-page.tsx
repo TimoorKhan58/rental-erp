@@ -11,7 +11,6 @@ import {
   ArrowUpRightIcon,
   CalendarIcon,
   ClipboardListIcon,
-  ClockIcon,
   PencilIcon,
   TruckIcon,
   UsersIcon,
@@ -61,7 +60,6 @@ import {
   ReturnInventoryImpactSection,
   ReturnStatusBadge,
   ReturnStatusTimeline,
-  ReturnWorkflowProgressBar,
   ReturnLineItemsTable,
 } from "../components";
 import { CancelReturnDialog } from "../dialogs/cancel-return-dialog";
@@ -332,13 +330,7 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricTile
-              label="Line items"
-              value={returnRecord.items.length.toLocaleString()}
-              hint="Products on this return"
-              icon={<ClipboardListIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
-            />
+          <div className="grid gap-3 sm:grid-cols-3">
             <MetricTile
               label="Return date"
               value={formatDate(returnRecord.returnDate)}
@@ -368,17 +360,6 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
             />
           </div>
 
-          {returnRecord.status !== "CANCELLED" ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Return workflow</span>
-                <span className="text-muted-foreground">
-                  Draft → Received → Inspected → Completed
-                </span>
-              </div>
-              <ReturnWorkflowProgressBar status={returnRecord.status} size="md" />
-            </div>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -479,7 +460,7 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
 
         <div className="space-y-6">
           <SectionCard
-            title="Return workflow"
+            title="Where it is now"
             actions={<ReturnStatusBadge status={returnRecord.status} />}
           >
             <ReturnStatusTimeline status={returnRecord.status} />
@@ -498,41 +479,22 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
             linkLabel="View warehouse"
           />
 
-          <SectionCard title="Milestones">
+          <SectionCard title="History">
             <dl className="space-y-4">
+              <DetailField label="Created" value={`${formatDateTime(returnRecord.createdAt)} · by ${createdByLabel}`} />
               <DetailField
                 label="Received at"
                 value={returnRecord.receivedAt ? formatDateTime(returnRecord.receivedAt) : null}
               />
               <DetailField
-                label="Inspected at"
+                label="Checked at"
                 value={returnRecord.inspectedAt ? formatDateTime(returnRecord.inspectedAt) : null}
               />
               <DetailField
-                label="Completed at"
+                label="Finished at"
                 value={returnRecord.completedAt ? formatDateTime(returnRecord.completedAt) : null}
               />
             </dl>
-          </SectionCard>
-
-          <SectionCard title="Timeline">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Created</p>
-                  <p className="text-muted-foreground">{formatDateTime(returnRecord.createdAt)}</p>
-                  <p className="text-xs text-muted-foreground">By {createdByLabel}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Last updated</p>
-                  <p className="text-muted-foreground">{formatDateTime(returnRecord.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
           </SectionCard>
 
           <RentalOrderBillingSection

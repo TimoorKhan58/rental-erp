@@ -111,11 +111,14 @@ export function getReturnTableColumns({
     },
     {
       id: "workflow",
-      header: "Progress",
+      header: "Status",
       cell: (row) => (
         <div className="min-w-[8rem] space-y-1.5">
           <ReturnStatusBadge status={row.status} />
-          <ReturnWorkflowProgressBar status={row.status} />
+          {/* A bar for finished or cancelled rows only repeated the badge. */}
+          {row.status !== "COMPLETED" && row.status !== "CANCELLED" ? (
+            <ReturnWorkflowProgressBar status={row.status} />
+          ) : null}
         </div>
       ),
     },
