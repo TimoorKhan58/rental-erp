@@ -11,11 +11,11 @@ function Tile({ label, value, note, href }: { label: string; value: string; note
   const body = (
     <>
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-xl font-semibold tabular-nums text-foreground">{value}</span>
+      <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">{value}</span>
       <span className="text-xs text-muted-foreground">{note}</span>
     </>
   );
-  const className = "flex min-w-0 flex-col gap-0.5 rounded-md border border-border bg-card px-3 py-2.5";
+  const className = "flex min-w-0 flex-col gap-1 rounded-xl border border-border bg-card px-4 py-3.5 shadow-soft";
   return href ? (
     <Link href={href} className={`${className} transition-colors hover:border-primary/50`}>
       {body}
@@ -35,14 +35,14 @@ export function StockNow({ summary }: { summary: LiveDashboardSummary }) {
   return (
     <section aria-labelledby="stock-heading" className="min-w-0 space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="stock-heading" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 id="stock-heading" className="text-sm font-semibold text-foreground">
           Stock right now
         </h2>
         <Link href={ROUTES.inventory} className="text-xs font-medium text-primary hover:underline">
           Open inventory
         </Link>
       </div>
-      <div className="space-y-3 rounded-md border border-border bg-card p-3">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-soft">
         <div className="flex h-2.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
           <span className="h-full bg-success" style={{ width: `${(free / total) * 100}%` }} />
           <span className="h-full bg-info" style={{ width: `${(booked / total) * 100}%` }} />
@@ -83,7 +83,7 @@ export function MonthSoFar({ summary }: { summary: LiveDashboardSummary }) {
   return (
     <section aria-labelledby="month-heading" className="space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="month-heading" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 id="month-heading" className="text-sm font-semibold text-foreground">
           This month so far
         </h2>
         <Link href={ROUTES.reportsAnalytics} className="text-xs font-medium text-primary hover:underline">

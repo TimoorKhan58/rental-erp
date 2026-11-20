@@ -21,9 +21,9 @@ export function DashboardGreeting({ organizationName }: { organizationName: stri
   const now = new Date();
 
   return (
-    <header className="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <header className="flex flex-col gap-3 pb-2 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0 space-y-0.5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {formatDate(now, { weekday: "long", day: "numeric", month: "long" })}
           {organizationName ? ` · ${organizationName}` : ""}
         </p>
