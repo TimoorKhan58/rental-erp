@@ -227,6 +227,7 @@ export async function handleCompleteMaintenance(
 ): Promise<Response> {
   return runCatchingApiHandler(request, async () => {
     const params = parseRequest(MaintenanceIdParamSchema, { id });
+    const details = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
     const result = await runMaintenanceApiRoute({
       request,
@@ -235,7 +236,7 @@ export async function handleCompleteMaintenance(
       permission: PERMISSIONS.maintenances.complete,
       resolveServices,
       handler: async (_ctx, services) =>
-        services.completeMaintenance.execute(params),
+        services.completeMaintenance.execute(params, details ?? {}),
     });
 
     if (result.status === 200 && "data" in result.body) {

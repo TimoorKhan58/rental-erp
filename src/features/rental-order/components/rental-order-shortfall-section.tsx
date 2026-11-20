@@ -33,7 +33,7 @@ export function RentalOrderShortfallSection({
 
   if (isLoading) {
     return (
-      <SectionCard title="Owned inventory shortfall">
+      <SectionCard title="Not enough stock">
         <LoadingState label="Calculating shortfall…" />
       </SectionCard>
     );
@@ -41,7 +41,7 @@ export function RentalOrderShortfallSection({
 
   if (isError || !data) {
     return (
-      <SectionCard title="Owned inventory shortfall">
+      <SectionCard title="Not enough stock">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Could not load shortfall information.
@@ -59,7 +59,7 @@ export function RentalOrderShortfallSection({
   return (
     <>
       <SectionCard
-        title="Owned inventory shortfall"
+        title="Not enough stock"
         actions={
           data.hasActiveExternalRentalAgreement &&
           data.activeExternalRentalAgreementId ? (
@@ -74,15 +74,14 @@ export function RentalOrderShortfallSection({
                 />
               }
             >
-              View active ERA
+              Open the hire-in
             </AppButton>
           ) : null
         }
       >
         {shortageItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No owned-inventory shortfall for this order. External sourcing is not
-            needed.
+            You own enough for this order. Nothing needs to be hired.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border">
@@ -93,13 +92,13 @@ export function RentalOrderShortfallSection({
                     Product
                   </th>
                   <th className="px-3 py-2 font-medium" scope="col">
-                    Required
+                    Needed
                   </th>
                   <th className="px-3 py-2 font-medium" scope="col">
-                    Owned available
+                    You have free
                   </th>
                   <th className="px-3 py-2 font-medium" scope="col">
-                    Shortfall
+                    Short by
                   </th>
                   <th className="px-3 py-2 font-medium" scope="col">
                     Action
@@ -141,11 +140,11 @@ export function RentalOrderShortfallSection({
                               setDialogOpen(true);
                             }}
                           >
-                            Source Externally
+                            Hire from supplier
                           </AppButton>
                         ) : data.hasActiveExternalRentalAgreement ? (
                           <span className="text-xs text-muted-foreground">
-                            Active ERA exists
+                            Hire-in already arranged
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>

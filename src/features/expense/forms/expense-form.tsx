@@ -27,6 +27,7 @@ import {
 import { METHOD_LABELS, TYPE_LABELS } from "../mappers";
 import { useExpenseFilterOptions, useExpensePermissions } from "../hooks";
 import { CreateExpenseCategoryDialog } from "../components";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type ExpenseFormBaseProps = {
   onCancel: () => void;
@@ -63,7 +64,7 @@ const methodOptions = [
 
 const createDefaults = {
   expenseNumber: "",
-  expenseDate: new Date().toISOString(),
+  expenseDate: calendarDayToIso(new Date()),
   categoryId: "",
   expenseType: "MANUAL" as const,
   paymentMethod: "",

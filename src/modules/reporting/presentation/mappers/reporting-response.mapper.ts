@@ -19,6 +19,30 @@ export function toDashboardResponse(dto: DashboardSummaryDto): DashboardSummaryD
   return dto;
 }
 
+/**
+ * Workers run the stock side and must not see money (owner's decision,
+ * 2026-11-20): invoice counts, amounts to collect, this month's billing and
+ * stock value are blanked before the dashboard leaves the server.
+ */
+export function withoutDashboardMoney(dto: DashboardSummaryDto): DashboardSummaryDto {
+  return {
+    ...dto,
+    inventoryValue: 0,
+    outstandingInvoices: 0,
+    paidInvoices: 0,
+    revenueThisMonth: 0,
+    paymentsThisMonth: 0,
+    worklist: {
+      ...dto.worklist,
+      unpaidInvoices: 0,
+      overdueInvoices: 0,
+      oldestOverdueDays: null,
+      amountToCollect: 0,
+    },
+    moneyHidden: true,
+  };
+}
+
 export function toAnalyticsOverviewResponse(
   dto: AnalyticsOverviewDto,
 ): AnalyticsOverviewDto {

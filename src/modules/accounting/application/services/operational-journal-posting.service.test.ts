@@ -13,6 +13,7 @@ import {
   postPurchaseReceivedJournal,
   postRentalInvoiceIssuedJournal,
   postSupplierPaymentJournal,
+  readableOperationalJournalNumber,
   voidOperationalJournals,
 } from "./operational-journal-posting.service";
 
@@ -51,6 +52,24 @@ function setup(existingCodes: Array<[string, string]> = []) {
 }
 
 describe("automatic accounting (2026-11-19 audit)", () => {
+  it("numbers entries after their document: JE-INV-1, then JE-INV-1-2", async () => {
+    const { deps, run, journalEntryRepository } = setup();
+    await run(() =>
+      postHireInPaymentJournal(deps, { agreementId: "era-1", agreementNumber: "ERA-00012", date: day, amount: 100 }),
+    );
+    await run(() =>
+      postHireInPaymentJournal(deps, { agreementId: "era-1", agreementNumber: "ERA-00012", date: day, amount: 50 }),
+    );
+
+    const numbers = (await run(() => journalEntryRepository.findPaged({ page: 1, pageSize: 10 }))).items
+      .map((entry) => entry.journalNumber)
+      .sort();
+    expect(numbers).toEqual(["JE-ERA-00012", "JE-ERA-00012-2"]);
+    await expect(
+      readableOperationalJournalNumber(journalEntryRepository, "no number here", () => "fallback"),
+    ).resolves.toBe("fallback");
+  });
+
   it("creates a missing standard account instead of skipping the entry", async () => {
     const { deps, run, balances, accountRepository } = setup();
 

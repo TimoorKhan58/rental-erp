@@ -47,7 +47,7 @@ export function toJournalEntryDto(entry: JournalEntry): JournalEntryDto {
 }
 
 export function toCreateJournalEntryData(
-  input: CreateJournalEntryInput,
+  input: CreateJournalEntryInput & { journalNumber: string },
   createdById: UserId,
 ): CreateJournalEntryData {
   return {

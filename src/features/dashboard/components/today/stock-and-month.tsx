@@ -76,6 +76,10 @@ export function StockNow({ summary }: { summary: LiveDashboardSummary }) {
 /** This month's money and orders, in plain words (usability revamp R2). */
 export function MonthSoFar({ summary }: { summary: LiveDashboardSummary }) {
   const active = summary.confirmedOrders + summary.reservedOrders + summary.worklist.ordersOutWithCustomers;
+  // Workers don't see money: the server leaves it out and sets moneyHidden.
+  if (summary.moneyHidden) {
+    return null;
+  }
   return (
     <section aria-labelledby="month-heading" className="space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">

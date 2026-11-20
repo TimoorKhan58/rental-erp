@@ -16,13 +16,15 @@ import {
   updatePayment,
   voidPayment,
 } from "../services";
-import { fetchAllPages } from "@/lib/api/fetch-all-pages";
+import { fetchAllPages, fetchAllWithStatuses } from "@/lib/api/fetch-all-pages";
+import { STATUS_LABELS as INVOICE_STATUS_LABELS } from "@/features/rental-invoice/mappers/rental-invoice-status.mapper";
 
 type LookupOption = {
   id: string;
   label: string;
   keywords?: string;
 };
+
 
 const PAYABLE_INVOICE_STATUSES = ["ISSUED", "PARTIALLY_PAID"] as const;
 
@@ -68,7 +70,7 @@ export function usePaymentFilterOptions() {
   const invoiceOptions = (rentalInvoices.data?.items ?? []).map((item) => ({
     id: item.id,
     customerId: item.customerId,
-    label: `${item.invoiceNumber} (${item.status})`,
+    label: `${item.invoiceNumber} (${INVOICE_STATUS_LABELS[item.status as keyof typeof INVOICE_STATUS_LABELS] ?? item.status})`,
     balance: item.balance,
     status: item.status,
   }));
@@ -102,8 +104,9 @@ export function usePaymentSummaryStats() {
 
 export function usePayableInvoices(customerId: string) {
   return useQuery({
-    queryKey: queryKeys.rentalInvoices.list({ customerId, pageSize: 100 }),
-    queryFn: () => getRentalInvoices({ customerId, pageSize: 100 }),
+    // Every unpaid invoice of this customer, however old (QA X5).
+    queryKey: queryKeys.rentalInvoices.list({ customerId, statuses: PAYABLE_INVOICE_STATUSES }),
+    queryFn: () => fetchAllWithStatuses(getRentalInvoices, PAYABLE_INVOICE_STATUSES, { customerId }),
     enabled: Boolean(customerId),
     select: (data) =>
       data.items.filter((invoice) =>

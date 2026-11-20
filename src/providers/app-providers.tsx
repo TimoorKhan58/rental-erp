@@ -29,7 +29,8 @@ export function AppProviders({ children }: AppProvidersProps) {
           <LocaleProvider>
             <TooltipProvider delay={300}>
               {children}
-              <Toaster richColors closeButton />
+              {/* Top centre: at the bottom right it covered the Save buttons (QA UX 12). */}
+              <Toaster richColors closeButton position="top-center" />
             </TooltipProvider>
           </LocaleProvider>
         </AuthProvider>

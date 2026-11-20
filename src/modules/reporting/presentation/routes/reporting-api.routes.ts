@@ -18,12 +18,13 @@ import {
   WarehouseReportQuerySchema,
 } from "@/modules/reporting/application/schemas/reporting.schemas";
 import { parseRequest } from "@/shared/application/validation";
-import { PERMISSIONS } from "@/shared/application/authorization";
+import { can, PERMISSIONS } from "@/shared/application/authorization";
 
 import {
   toAnalyticsOverviewResponse,
   toCustomerReportResponse,
   toDashboardResponse,
+  withoutDashboardMoney,
   toDispatchReportResponse,
   toInventoryReportResponse,
   toMaintenanceReportResponse,
@@ -64,7 +65,12 @@ export async function handleGetDashboard(
       // workers) needs it; full reports stay behind reports:read (QA-014).
       permission: PERMISSIONS.dashboard.read,
       resolveServices,
-      handler: async (_ctx, services) => services.getDashboard.execute(input),
+      handler: async (ctx, services) => {
+        const summary = await services.getDashboard.execute(input);
+        return can(ctx.request, PERMISSIONS.rentalInvoices.read)
+          ? summary
+          : withoutDashboardMoney(summary);
+      },
     });
 
     if (result.status === 200 && "data" in result.body) {

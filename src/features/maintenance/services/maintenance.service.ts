@@ -44,8 +44,11 @@ export async function startMaintenance(id: string): Promise<MaintenanceResponse>
   return apiPost<MaintenanceResponse>(`${BASE}/${id}/start`);
 }
 
-export async function completeMaintenance(id: string): Promise<MaintenanceResponse> {
-  return apiPost<MaintenanceResponse>(`${BASE}/${id}/complete`);
+export async function completeMaintenance(
+  id: string,
+  details: { actualCost?: number } = {},
+): Promise<MaintenanceResponse> {
+  return apiPost<MaintenanceResponse>(`${BASE}/${id}/complete`, details);
 }
 
 export async function cancelMaintenance(id: string): Promise<MaintenanceResponse> {

@@ -23,6 +23,7 @@ import {
 import { generateAssetCode } from "../mappers";
 import { useAssetFilterOptions, useAssetPermissions } from "../hooks";
 import { CreateAssetCategoryDialog } from "../components";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type AssetFormBaseProps = {
   onCancel: () => void;
@@ -49,7 +50,7 @@ const createDefaults = {
   name: "",
   categoryId: "",
   serialNumber: "",
-  purchaseDate: new Date().toISOString(),
+  purchaseDate: calendarDayToIso(new Date()),
   residualValue: 0,
   usefulLifeMonths: 36,
   warehouseId: "",

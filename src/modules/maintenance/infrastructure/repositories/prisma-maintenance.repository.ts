@@ -334,6 +334,10 @@ export class PrismaMaintenanceRepository implements IMaintenanceRepository {
           update.completedAt = data.completedAt;
         }
 
+        if (data.actualCost !== undefined) {
+          update.actualCost = data.actualCost;
+        }
+
         const expectedList = Array.isArray(expected) ? [...expected] : [expected];
 
         const claimed = await db.maintenance.updateMany({

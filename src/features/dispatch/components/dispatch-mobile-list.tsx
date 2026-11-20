@@ -115,7 +115,7 @@ export function DispatchMobileList({
                   ) : null}
                   {showComplete ? (
                     <DropdownMenuItem onClick={() => onComplete(row)}>
-                      Complete dispatch
+                      Mark as sent
                     </DropdownMenuItem>
                   ) : null}
                   {showCancel ? (

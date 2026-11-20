@@ -48,7 +48,7 @@ export const createDispatchFormSchema = z
       if (item.maxQuantity !== undefined && item.quantity > item.maxQuantity) {
         ctx.addIssue({
           code: "custom",
-          message: `Cannot exceed reserved quantity of ${item.maxQuantity}`,
+          message: `Only ${item.maxQuantity} ready to send (your reserved stock plus items hired for this order)`,
           path: ["items", index, "quantity"],
         });
       }
@@ -73,7 +73,7 @@ export const updateDispatchFormSchema = z
       if (item.maxQuantity !== undefined && item.quantity > item.maxQuantity) {
         ctx.addIssue({
           code: "custom",
-          message: `Cannot exceed reserved quantity of ${item.maxQuantity}`,
+          message: `Only ${item.maxQuantity} ready to send (your reserved stock plus items hired for this order)`,
           path: ["items", index, "quantity"],
         });
       }

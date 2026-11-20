@@ -68,7 +68,7 @@ export function ReceiveProcurementDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Receive goods"
-      description={`Record received quantities for "${procurement.poNumber}".`}
+      description={`How many arrived for ${procurement.poNumber}?`}
       size="lg"
     >
       <AppForm form={form} onSubmit={handleSubmit} className="space-y-4">
@@ -108,6 +108,7 @@ export function ReceiveProcurementDialog({
                     <td className="px-3 py-2">{item.maxQuantity}</td>
                     <td className="px-3 py-2">
                       <NumberField
+                        className="[&_label]:sr-only"
                         control={form.control}
                         name={`items.${index}.quantity`}
                         label="Quantity to receive"

@@ -95,11 +95,14 @@ export function describeHoldsOnOtherDates(input: {
   bookableQuantity: number;
   holds: HoldOnOtherDates[];
 }): string {
-  const item = input.productName ?? "units";
+  // Item names are not turned into plurals ("300 Foam Chair" read badly and
+  // many names are Urdu), so the name goes first: "Foam Chair: only 200 of 300…".
+  const prefix = input.productName ? `${input.productName}: ` : "";
+  const units = input.productName ? "" : " units";
   const canReserve =
     input.bookableQuantity > 0
-      ? `Only ${input.bookableQuantity} of the ${input.requestedQuantity} ${item} can be reserved now.`
-      : `None of the ${input.requestedQuantity} ${item} can be reserved now.`;
+      ? `${prefix}${input.productName ? "only" : "Only"} ${input.bookableQuantity} of the ${input.requestedQuantity}${units} can be reserved now.`
+      : `${prefix}${input.productName ? "none" : "None"} of the ${input.requestedQuantity}${units} can be reserved now.`;
 
   const named = input.holds.slice(0, MAX_ORDERS_NAMED).map((hold) => {
     const order = hold.orderNumber ?? "another order";

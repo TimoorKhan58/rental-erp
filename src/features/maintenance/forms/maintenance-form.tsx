@@ -23,6 +23,7 @@ import {
 } from "../schemas";
 import { SERVICE_TYPE_LABELS } from "../mappers";
 import { useMaintenanceFilterOptions } from "../hooks";
+import { calendarDayToIso } from "@/lib/utils/local-date";
 
 type MaintenanceFormBaseProps = {
   onCancel: () => void;
@@ -59,7 +60,7 @@ const createDefaults: CreateMaintenanceFormValues = {
   inventoryId: "",
   quantity: 1,
   serviceType: "PREVENTIVE",
-  scheduledDate: new Date().toISOString(),
+  scheduledDate: calendarDayToIso(new Date()),
   estimatedCost: 0,
   actualCost: 0,
   technician: "",
@@ -116,8 +117,8 @@ function CreateMaintenanceForm({
           <SelectField
             control={form.control}
             name="inventoryId"
-            label="Inventory"
-            placeholder="Select inventory record"
+            label="Item"
+            placeholder="Choose the item and warehouse"
             options={inventoryOptions.map((option) => ({
               value: option.id,
               label: option.label,

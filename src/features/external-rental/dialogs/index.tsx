@@ -6,6 +6,8 @@ import { AppButton } from "@/components/design-system/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import type { ExternalRentalResponse } from "../types";
+import { PAYMENT_METHODS, type PaymentMethod } from "@/features/payment/types";
+import { METHOD_LABELS } from "@/features/payment/mappers";
 import {
   useAllocateExternalRental,
   useCancelExternalRental,
@@ -272,9 +274,13 @@ export function SupplierReturnExternalRentalDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Return to supplier"
-      description={`Return company-custody qty for ${agreement.agreementNumber}.`}
+      description={`Send hired items back to the supplier for ${agreement.agreementNumber}. The numbers below are what you have in hand.`}
     >
       <div className="space-y-4">
+        <p className="rounded-md border border-warning/40 bg-warning-muted px-3 py-2 text-sm text-warning-foreground">
+          Did the customer lose or break any hired item beyond repair? Close this and use
+          “Write off” for those first, then send back only what you really have.
+        </p>
         <QtyLinesEditor lines={lines} onChange={setLines} />
         <div className="flex justify-end gap-2">
           <AppButton variant="outline" onClick={() => onOpenChange(false)}>
@@ -377,17 +383,35 @@ export function SettleExternalRentalDialog({
   const [paymentAmount, setPaymentAmount] = useState(
     agreement.outstandingBalance,
   );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
 
   return (
     <AppModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Record settlement"
-      description={`Outstanding balance: ${formatCurrency(agreement.outstandingBalance)}`}
+      title="Pay the supplier"
+      description={`Still owed: ${formatCurrency(agreement.outstandingBalance)}`}
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Payment amount</label>
+          <label className="text-sm font-medium" htmlFor="settle-payment-method">
+            Paid by
+          </label>
+          <select
+            id="settle-payment-method"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={paymentMethod}
+            onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+          >
+            {PAYMENT_METHODS.map((method) => (
+              <option key={method} value={method}>
+                {METHOD_LABELS[method]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Amount paid</label>
           <Input
             type="number"
             min={0.01}
@@ -406,12 +430,12 @@ export function SettleExternalRentalDialog({
             onClick={async () => {
               await mutation.mutateAsync({
                 id: agreement.id,
-                payload: { paymentAmount },
+                payload: { paymentAmount, paymentMethod },
               });
               onOpenChange(false);
             }}
           >
-            Settle
+            Record payment
           </AppButton>
         </div>
       </div>
@@ -433,6 +457,8 @@ export function CancelExternalRentalDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
+      destructive
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel external rental"

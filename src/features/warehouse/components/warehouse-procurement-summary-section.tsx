@@ -42,7 +42,7 @@ export function WarehouseProcurementSummarySection({
 
   return (
     <SectionCard
-      title="Procurement summary"
+      title="Purchases summary"
       description="Purchase orders assigned to this warehouse."
       actions={
         totalCount > 0 ? (

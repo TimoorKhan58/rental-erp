@@ -9,6 +9,7 @@ import {
 } from "@/shared/application/validation";
 
 import { EXTERNAL_RENTAL_AGREEMENT_STATUSES } from "@/modules/external-rental/domain";
+import { PAYMENT_METHODS } from "@/modules/payment/domain/payment.constants";
 
 const NonNegativeNumberSchema = z.coerce.number().nonnegative();
 
@@ -107,6 +108,8 @@ export const WriteOffExternalRentalSchema = z
 export const SettleExternalRentalSchema = z
   .object({
     paymentAmount: PositiveNumberSchema,
+    /** Cash or bank: decides which money account the books use (QA H4). */
+    paymentMethod: z.enum(PAYMENT_METHODS).optional(),
   })
   .strict();
 

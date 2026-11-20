@@ -61,6 +61,7 @@ export function DispatchLineItemsField({
                       <span>{line?.quantity ?? "—"}</span>
                     ) : (
                       <NumberField
+                        className="[&_label]:sr-only"
                         control={form.control}
                         name={`items.${index}.quantity`}
                         label="Quantity"
@@ -69,7 +70,7 @@ export function DispatchLineItemsField({
                         step={1}
                         description={
                           line?.maxQuantity !== undefined
-                            ? `Max reserved: ${line.maxQuantity}`
+                            ? `Up to ${line.maxQuantity} ready`
                             : undefined
                         }
                       />
@@ -80,6 +81,7 @@ export function DispatchLineItemsField({
                       <span>{line?.notes || "—"}</span>
                     ) : (
                       <TextField
+                        className="[&_label]:sr-only"
                         control={form.control}
                         name={`items.${index}.notes`}
                         label="Notes"

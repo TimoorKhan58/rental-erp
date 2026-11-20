@@ -11,6 +11,7 @@ const LINKS = [
   { label: "Journal entries", href: ROUTES.accountingJournalEntries },
   { label: "General ledger", href: ROUTES.accountingGeneralLedger },
   { label: "Trial balance", href: ROUTES.accountingTrialBalance },
+  { label: "Opening balance", href: ROUTES.accountingOpeningBalance },
 ] as const;
 
 export function AccountingSubNav() {

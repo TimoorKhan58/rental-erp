@@ -3,9 +3,10 @@ import { z } from "zod";
 const phoneSchema = z
   .string()
   .trim()
+  .min(1, "Phone is required")
   .min(7, "Phone number is too short")
   .max(20, "Phone number is too long")
-  .regex(/^[+]?[\d\s()-]+$/, "Invalid phone number format");
+  .regex(/^[+]?[\d\s()-]+$/, "Use digits only, for example 0300 1234567");
 
 const cnicSchema = z
   .string()

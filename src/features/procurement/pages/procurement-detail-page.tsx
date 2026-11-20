@@ -131,7 +131,7 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
         description={`Supplier: ${supplierLabelById.get(procurement.supplierId) ?? procurement.supplierId}`}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Procurement", href: ROUTES.procurements },
+          { label: "Purchases", href: ROUTES.procurements },
           { label: procurement.poNumber },
         ]}
         actions={

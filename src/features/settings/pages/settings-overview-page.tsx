@@ -12,25 +12,25 @@ import { useSettingsPermissions } from "../hooks";
 const SECTIONS = [
   {
     title: "Profile",
-    description: "Your account name and email. Role is read-only here.",
+    description: "Your name, email and password.",
     href: ROUTES.settingsProfile,
     requires: "profile" as const,
   },
   {
     title: "Company",
-    description: "Organization identity and stored company defaults. Company name and locale codes are applied after save.",
+    description: "Your company name, address, phone, currency and time zone.",
     href: ROUTES.settingsCompany,
     requires: "settings" as const,
   },
   {
     title: "Preferences",
-    description: "Browser theme plus stored locale and dashboard fields. Theme stays on this device.",
+    description: "Light or dark screen, language and date style.",
     href: ROUTES.settingsPreferences,
     requires: "settings" as const,
   },
   {
     title: "Security",
-    description: "Stored security policy record. Live sign-in still uses Better Auth environment configuration.",
+    description: "Change your password and see the sign-in rules.",
     href: ROUTES.settingsSecurity,
     requires: "settings" as const,
   },

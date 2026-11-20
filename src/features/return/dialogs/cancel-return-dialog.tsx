@@ -31,10 +31,12 @@ export function CancelReturnDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
+      destructive
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel return"
-      description={`Cancel "${returnRecord.returnNumber}"? This cannot be undone. Inventory is unchanged because stock movements post only when a return is completed.`}
+      description={`Cancel "${returnRecord.returnNumber}"? This cannot be undone. Stock does not change, because a return only changes stock when it is finished.`}
       confirmLabel="Cancel return"
       onConfirm={() => void handleConfirm()}
       isLoading={cancelMutation.isPending}

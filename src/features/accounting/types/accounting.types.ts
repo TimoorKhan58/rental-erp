@@ -17,6 +17,9 @@ export const JOURNAL_REFERENCE_TYPES = [
   "PAYMENT",
   "MANUAL",
   "OTHER",
+  "PURCHASE_ORDER",
+  "SUPPLIER_PAYMENT",
+  "EXTERNAL_RENTAL",
 ] as const;
 export type JournalReferenceType = (typeof JOURNAL_REFERENCE_TYPES)[number];
 
@@ -62,7 +65,7 @@ export type CreateAccountPayload = {
 };
 
 export type CreateJournalEntryPayload = {
-  journalNumber: string;
+  journalNumber?: string;
   journalDate: string;
   description: string;
   referenceType?: JournalReferenceType | null;

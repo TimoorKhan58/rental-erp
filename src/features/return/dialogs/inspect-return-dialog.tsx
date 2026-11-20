@@ -59,7 +59,7 @@ export function InspectReturnDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Inspect returned items"
-      description={`Record condition for "${returnRecord.returnNumber}". Condition quantities must sum to the returned quantity. Mixed-source lines require owned and external GOOD/DAMAGED/LOST attribution and cannot use missing. Inspection does not restock inventory.`}
+      description={`Check what came back on ${returnRecord.returnNumber}: how many are good, damaged or lost. The numbers on each line must add up to what came back. For hired items, say which were yours and which were hired. Stock changes only when you finish the return.`}
       size="lg"
     >
       <AppForm form={form} onSubmit={handleSubmit} className="space-y-4">

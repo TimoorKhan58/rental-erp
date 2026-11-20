@@ -441,7 +441,7 @@ describe("payment route handlers", () => {
     expect(result.status).toBe(403);
   });
 
-  it("allows worker role to read payments", async () => {
+  it("refuses payments to the worker role (workers do not see money)", async () => {
     mockSession(USER_ROLES.WORKER);
     const services = createMockServices();
     services.listPayments.execute.mockResolvedValue({
@@ -464,6 +464,7 @@ describe("payment route handlers", () => {
         }),
     });
 
-    expect(result.status).toBe(200);
+    expect(result.status).toBe(403);
+    expect(services.listPayments.execute).not.toHaveBeenCalled();
   });
 });

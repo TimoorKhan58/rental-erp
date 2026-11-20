@@ -32,6 +32,8 @@ export function CancelProcurementDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
+      destructive
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel purchase order"

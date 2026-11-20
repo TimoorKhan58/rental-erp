@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { postPurchaseReceivedJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import { PURCHASE_ORDER_REFERENCE_TYPE } from "@/modules/procurement/domain/purchase-order.constants";
@@ -161,7 +162,7 @@ export class ReceivePurchaseOrderService {
           {
             purchaseOrderId: existing.id,
             poNumber: existing.poNumber,
-            receivedDate: new Date(),
+            receivedDate: await getBusinessToday(),
             amount: Math.round(receivedValue * 100) / 100,
           },
         );

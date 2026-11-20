@@ -592,7 +592,7 @@ export function ProcurementReportPage() {
     params.status
       ? {
           id: "status",
-          label: `Status: ${params.status}`,
+          label: `Status: ${humanStatus(params.status)}`,
           onClear: () => setStatusFilter(undefined),
         }
       : null,
@@ -614,9 +614,9 @@ export function ProcurementReportPage() {
 
   return (
     <OperationalListReportShell<ProcurementReportLine>
-      title="Procurement Report"
+      title="Purchases Report"
       description="Purchase orders by order date, supplier, warehouse, and status. Approve does not receive stock."
-      breadcrumb="Procurement"
+      breadcrumb="Purchases"
       searchPlaceholder="Search PO number, supplier, warehouse, or status..."
       emptyTitle="No procurement data"
       emptyDescription="Purchase orders will appear here."
@@ -708,7 +708,7 @@ export function DispatchReportPage() {
     params.status
       ? {
           id: "status",
-          label: `Status: ${params.status}`,
+          label: `Status: ${humanStatus(params.status)}`,
           onClear: () => setStatusFilter(undefined),
         }
       : null,
@@ -811,7 +811,7 @@ export function ReturnReportPage() {
     params.status
       ? {
           id: "status",
-          label: `Status: ${params.status}`,
+          label: `Status: ${humanStatus(params.status)}`,
           onClear: () => setStatusFilter(undefined),
         }
       : null,
@@ -910,7 +910,7 @@ export function RepairReportPage() {
     params.status
       ? {
           id: "status",
-          label: `Status: ${params.status}`,
+          label: `Status: ${humanStatus(params.status)}`,
           onClear: () => setStatusFilter(undefined),
         }
       : null,
@@ -1025,7 +1025,7 @@ export function MaintenanceReportPage() {
     params.status
       ? {
           id: "status",
-          label: `Status: ${params.status}`,
+          label: `Status: ${humanStatus(params.status)}`,
           onClear: () => setStatusFilter(undefined),
         }
       : null,
@@ -1099,4 +1099,10 @@ export function MaintenanceReportPage() {
       }
     />
   );
+}
+
+/** "PARTIALLY_RETURNED" → "Partially returned" for filter chips. */
+function humanStatus(status: string): string {
+  const words = status.replaceAll("_", " ").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }

@@ -24,7 +24,7 @@ export function ProcurementCreatePage() {
         description="Start a purchase order as a draft. Stock does not change until the goods are received."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Procurement", href: ROUTES.procurements },
+          { label: "Purchases", href: ROUTES.procurements },
           { label: "New purchase order" },
         ]}
       />

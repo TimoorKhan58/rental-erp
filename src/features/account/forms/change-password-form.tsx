@@ -63,7 +63,7 @@ export function ChangePasswordForm() {
       <PasswordField
         control={form.control}
         name="currentPassword"
-        label="Current (temporary) password"
+        label="Current password"
         disabled={isSubmitting}
       />
       <PasswordField

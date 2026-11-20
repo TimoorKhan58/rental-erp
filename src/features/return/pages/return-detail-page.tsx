@@ -33,7 +33,7 @@ import {
   rentalOrderBackLabel,
   resolveRentalWorkflowParent,
 } from "@/features/rental-order/navigation/rental-workflow-breadcrumbs";
-import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime, countLabel } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
 import { useRentalOrder } from "@/features/rental-order/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
@@ -355,7 +355,9 @@ export function ReturnDetailPage({ returnId }: ReturnDetailPageProps) {
               label="Inspection"
               value={
                 metrics.showInspection
-                  ? `${metrics.damageTotals.damaged + metrics.damageTotals.lost} issues`
+                  ? metrics.damageTotals.damaged + metrics.damageTotals.lost === 0
+                    ? "All good"
+                    : countLabel(metrics.damageTotals.damaged + metrics.damageTotals.lost, "problem")
                   : "Pending"
               }
               hint={

@@ -40,7 +40,7 @@ export function LoginForm() {
     setIsSubmitting(false);
 
     if (result.error) {
-      setError(result.error.message ?? "Invalid email or password.");
+      setError(signInErrorMessage(result.error));
       return;
     }
 
@@ -116,4 +116,25 @@ export function LoginForm() {
       </CardContent>
     </Card>
   );
+}
+
+/** Plain reasons for a refused sign-in (QA P3: a switched-off company saw no reason). */
+export function signInErrorMessage(error: { message?: string; status?: number; code?: string }): string {
+  const message = error.message?.trim() ?? "";
+  if (/business account is inactive/i.test(message)) {
+    return "Your company's RentCore account has been switched off. Please contact RentCore support.";
+  }
+  if (/user account is inactive/i.test(message)) {
+    return "Your login has been switched off. Please ask your company owner to turn it back on.";
+  }
+  if (error.status === 403 && message === "") {
+    return "You can't sign in right now. Your login or your company's account may be switched off.";
+  }
+  if (error.status === 429) {
+    return "Too many tries. Please wait a minute and try again.";
+  }
+  if (error.code === "INVALID_EMAIL_OR_PASSWORD" || message === "") {
+    return "Wrong email or password.";
+  }
+  return message;
 }

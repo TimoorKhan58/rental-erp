@@ -27,7 +27,8 @@ export const JournalEntryIdParamSchema = z.object({
 });
 
 export const CreateJournalEntrySchema = z.object({
-  journalNumber: NonEmptyStringSchema.max(50),
+  /** Left empty, the next "JE-<date>-<n>" number is used. */
+  journalNumber: z.union([NonEmptyStringSchema.max(50), z.literal("")]).optional(),
   journalDate: DateSchema,
   description: NonEmptyStringSchema.max(500),
   referenceType: z.enum(JOURNAL_REFERENCE_TYPES).optional().nullable(),

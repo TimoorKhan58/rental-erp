@@ -41,12 +41,12 @@ export function ReservationCalendarMobileList({
                 {today ? " · Today" : ""}
               </p>
               <span className="text-[11px] text-muted-foreground">
-                {dayEvents.length} reservation{dayEvents.length === 1 ? "" : "s"}
+                {dayEvents.length} order{dayEvents.length === 1 ? "" : "s"}
               </span>
             </div>
 
             {dayEvents.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No reservations</p>
+              <p className="text-xs text-muted-foreground">No orders</p>
             ) : (
               <ul className="space-y-1.5">
                 {dayEvents.map((event) => (

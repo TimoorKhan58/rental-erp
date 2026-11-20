@@ -64,4 +64,6 @@ export interface UpdateMaintenanceStatusData {
   status: MaintenanceStatus;
   startedAt?: Date | null;
   completedAt?: Date | null;
+  /** What the job really cost, entered when completing it. */
+  actualCost?: number;
 }

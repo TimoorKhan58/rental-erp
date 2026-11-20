@@ -72,11 +72,11 @@ describe("Phase 57 F-11 — WORKER mutation permission granularity", () => {
     );
   });
 
-  describe("financial read access preserved for WORKER", () => {
+  describe("workers do not see money (2026-11-20)", () => {
     it.each(WORKER_FINANCIAL_READS)(
-      "T57.3 allows WORKER read %s",
+      "T57.3 denies WORKER read %s",
       (permission) => {
-        expect(ROLE_PERMISSIONS[USER_ROLES.WORKER]).toContain(permission);
+        expect(ROLE_PERMISSIONS[USER_ROLES.WORKER]).not.toContain(permission);
       },
     );
   });

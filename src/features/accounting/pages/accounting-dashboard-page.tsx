@@ -44,7 +44,7 @@ export function AccountingDashboardPage() {
     <PageContainer>
       <PageHeader
         title="Accounting"
-        description="General ledger, chart of accounts, and financial reporting."
+        description="Your books: accounts, entries and money reports."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Accounting" },
@@ -115,6 +115,11 @@ export function AccountingDashboardPage() {
               </Link>
             </li>
             <li>
+              <Link href={ROUTES.accountingOpeningBalance} className="text-primary hover:underline">
+                Opening balance (money you started with)
+              </Link>
+            </li>
+            <li>
               <Link href={ROUTES.reportsProfitLoss} className="text-primary hover:underline">
                 Profit &amp; loss report
               </Link>
@@ -162,11 +167,12 @@ export function AccountingDashboardPage() {
           </ul>
         </SectionCard>
 
-        <SectionCard title="Operational posting">
+        <SectionCard title="What goes into the books by itself">
           <p className="text-sm text-muted-foreground">
-            Journal entries are created automatically when rental invoices are issued, payments are
-            posted, and expenses are paid. Ensure the default chart of accounts is seeded (codes
-            1000, 1100, 4000, 5000).
+            RentCore writes the book entries for you when you issue an invoice, receive a payment,
+            pay an expense, receive a purchase, pay a supplier, or hire items in. Missing standard
+            accounts are added automatically. Enter your opening balance once, so cash and bank
+            start from the right amount.
           </p>
           <ul className="mt-3 space-y-2 text-sm">
             <li>

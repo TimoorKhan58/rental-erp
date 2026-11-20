@@ -21,7 +21,9 @@ describe("decidePageAccess (SaaS phase 3b)", () => {
 
   it("keeps business users in the app", () => {
     expect(decidePageAccess("/customers", "business")).toEqual({ action: "next" });
-    expect(decidePageAccess("/login", "business")).toEqual({ action: "redirect", to: "/" });
+    expect(decidePageAccess("/login", "business")).toEqual({ action: "redirect", to: "/dashboard" });
+    // "/" goes straight to the dashboard instead of drawing a blank page.
+    expect(decidePageAccess("/", "business")).toEqual({ action: "redirect", to: "/dashboard" });
     // The platform page itself answers not-found for them.
     expect(decidePageAccess("/platform", "business")).toEqual({ action: "next" });
   });

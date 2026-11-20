@@ -112,6 +112,7 @@ export function ReserveRentalOrderDialog({
                     <td className="px-3 py-2">{item.maxQuantity}</td>
                     <td className="px-3 py-2">
                       <NumberField
+                        className="[&_label]:sr-only"
                         control={form.control}
                         name={`items.${index}.quantity`}
                         label="Quantity to reserve"

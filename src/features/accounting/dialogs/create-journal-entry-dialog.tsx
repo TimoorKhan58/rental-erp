@@ -28,8 +28,9 @@ type CreateJournalEntryDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+/** Empty: the server gives the next "JE-<date>-<n>" number. */
 function buildManualJournalNumber(): string {
-  return `JE-MAN-${Date.now()}`;
+  return "";
 }
 
 export function CreateJournalEntryDialog({
@@ -79,7 +80,7 @@ export function CreateJournalEntryDialog({
   const handleSubmit = async (values: CreateJournalEntryFormValues) => {
     const amount = Number(values.amount);
     const created = await createMutation.mutateAsync({
-      journalNumber: values.journalNumber.trim(),
+      journalNumber: values.journalNumber.trim() || undefined,
       journalDate: values.journalDate,
       description: values.description.trim(),
       referenceType: "MANUAL",
@@ -120,7 +121,7 @@ export function CreateJournalEntryDialog({
             control={form.control}
             name="journalNumber"
             label="Journal number"
-            placeholder="JE-MAN-001"
+            placeholder="Filled in for you"
           />
           <TextField control={form.control} name="journalDate" label="Journal date" type="date" />
         </div>

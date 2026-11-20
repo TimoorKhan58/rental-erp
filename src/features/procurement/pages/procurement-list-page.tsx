@@ -18,7 +18,7 @@ export function ProcurementListPage() {
         description="Stock you buy from suppliers. Draft an order, approve it, then receive the goods; stock goes up only when goods are received."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Procurement" },
+          { label: "Purchases" },
         ]}
         actions={
           canCreate ? (

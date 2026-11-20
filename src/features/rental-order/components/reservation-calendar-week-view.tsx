@@ -57,7 +57,7 @@ export function ReservationCalendarWeekView({
               <div className="space-y-1.5 p-2">
                 {dayEvents.length === 0 ? (
                   <p className="px-1 py-6 text-center text-xs text-muted-foreground">
-                    No reservations
+                    No orders
                   </p>
                 ) : (
                   dayEvents.map((event) => (

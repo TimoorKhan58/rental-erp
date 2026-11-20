@@ -31,6 +31,8 @@ export function CancelRepairDialog({
 
   return (
     <ConfirmModal
+      cancelLabel="No, keep it"
+      destructive
       open={open}
       onOpenChange={onOpenChange}
       title="Cancel repair"

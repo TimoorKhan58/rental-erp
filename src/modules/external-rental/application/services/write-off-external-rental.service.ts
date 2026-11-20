@@ -1,3 +1,4 @@
+import { getBusinessToday } from "@/shared/infrastructure/time";
 import { postHireInCostJournal } from "@/modules/accounting/application/services/operational-journal-posting.service";
 import { toUserId } from "@/modules/accounting/application/mappers/journal-entry.mapper";
 import {
@@ -134,7 +135,7 @@ export class WriteOffExternalRentalService {
             {
               agreementId: updated.id,
               agreementNumber: updated.agreementNumber,
-              date: new Date(),
+              date: await getBusinessToday(),
               amount: updated.totalHireInCost,
             },
           );

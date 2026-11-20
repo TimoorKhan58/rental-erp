@@ -175,7 +175,7 @@ export function MaintenanceInventoryImpactSection({
       {canReadInventory ? (
         <SectionCard
           title="Inventory record"
-          description="Current warehouse position. Start posts OUT; Complete posts IN."
+          description="Stock of this item at the warehouse. Start takes the items out of stock; Complete puts them back."
           actions={
             inventoryRecord ? (
               <AppButton
@@ -225,7 +225,7 @@ export function MaintenanceInventoryImpactSection({
 
       {canReadMovements ? (
         <SectionCard
-          title="Inventory movements"
+          title="Stock changes"
           description="OUT posts at Start. IN posts at Complete, or at Cancel if the job had already started."
         >
           <StockMovementHistoryTable
@@ -235,8 +235,8 @@ export function MaintenanceInventoryImpactSection({
             showProductColumn={false}
             emptyMessage={
               maintenance.status === "COMPLETED" || maintenance.status === "IN_PROGRESS"
-                ? "No stock movements found for this maintenance job yet."
-                : "Inventory movements will appear after maintenance is started."
+                ? "No stock changes for this job yet."
+                : "Stock changes appear here once the job is started."
             }
           />
         </SectionCard>
