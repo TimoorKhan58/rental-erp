@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import {
   calculateOrderTotalFromItems,
   calculateOrderRentalDays,
@@ -79,13 +79,15 @@ export function getRentalOrderTableColumns({
         />
       ),
       cell: (row) => (
-        <Link href={ROUTES.rentalOrderDetail(row.id)} className="group block min-w-[8rem]">
-          <span className="font-medium text-primary group-hover:underline">
-            {row.orderNumber}
-          </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
+        // Who it is for comes first: that is what people look for.
+        <Link
+          href={ROUTES.rentalOrderDetail(row.id)}
+          className={cn("group block min-w-[8rem]", row.status === "CANCELLED" && "opacity-60")}
+        >
+          <span className="block font-medium text-foreground group-hover:text-primary group-hover:underline">
             {resolveCustomerName(row.customerId)}
           </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">{row.orderNumber}</span>
         </Link>
       ),
     },
@@ -124,16 +126,20 @@ export function getRentalOrderTableColumns({
     },
     {
       id: "reservation",
-      header: "Reservation",
+      header: "Stock held",
       cell: (row) => {
         const { reserved, total } = getOrderReservedUnits(row);
+
+        // Only orders still being prepared need a reservation status; for
+        // finished, cancelled or out-on-rent orders it was just noise.
+        if (!["DRAFT", "CONFIRMED", "RESERVED"].includes(row.status)) {
+          return <span className="text-muted-foreground">—</span>;
+        }
 
         return (
           <div className="min-w-[8rem] space-y-1.5">
             <RentalReservationBadge status={deriveReservationStatus(row)} />
-            {row.status !== "CANCELLED" ? (
-              <RentalOrderReservationProgressBar reserved={reserved} total={total} />
-            ) : null}
+            <RentalOrderReservationProgressBar reserved={reserved} total={total} />
           </div>
         );
       },
@@ -153,9 +159,9 @@ export function getRentalOrderTableColumns({
     },
     {
       id: "total",
-      header: "Value",
+      header: "Total",
       cell: (row) => (
-        <span className="font-medium tabular-nums">
+        <span className={cn("font-medium tabular-nums", row.status === "CANCELLED" && "text-muted-foreground line-through")}>
           {formatCurrency(calculateOrderTotalFromItems(row.items))}
         </span>
       ),

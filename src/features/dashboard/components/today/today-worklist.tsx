@@ -21,10 +21,12 @@ type WorkItem = {
   href: string;
 };
 
+// Calm style: no heavy coloured bars. A soft round badge carries the count and
+// the tone; finished ("calm") rows fade back so the eye goes to what needs doing.
 const TONE: Record<Tone, { row: string; count: string }> = {
-  urgent: { row: "border-l-destructive", count: "text-destructive" },
-  attention: { row: "border-l-warning", count: "text-warning-foreground" },
-  calm: { row: "border-l-success", count: "text-success" },
+  urgent: { row: "", count: "bg-error-muted text-destructive" },
+  attention: { row: "", count: "bg-warning-muted text-warning-foreground" },
+  calm: { row: "opacity-80", count: "bg-success-muted text-success" },
 };
 
 /** What needs doing, most urgent first, each with one button (usability revamp R2). */
@@ -107,19 +109,24 @@ export function TodayWorklist({ summary }: { summary: LiveDashboardSummary }) {
   const items = buildWorkItems(summary);
   return (
     <section aria-labelledby="today-work-heading" className="space-y-2">
-      <h2 id="today-work-heading" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <h2 id="today-work-heading" className="text-sm font-semibold text-foreground">
         Your work today
       </h2>
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {items.map((item) => (
           <li
             key={item.id}
             className={cn(
-              "grid grid-cols-[3rem_1fr] items-center gap-3 rounded-md border border-l-4 border-border bg-card px-3 py-2.5 sm:grid-cols-[3rem_1fr_auto]",
+              "grid grid-cols-[2.5rem_1fr] items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 shadow-soft sm:grid-cols-[2.5rem_1fr_auto]",
               TONE[item.tone].row,
             )}
           >
-            <span className={cn("text-center text-2xl font-semibold tabular-nums", TONE[item.tone].count)}>
+            <span
+              className={cn(
+                "flex size-10 items-center justify-center rounded-full text-lg font-semibold tabular-nums",
+                TONE[item.tone].count,
+              )}
+            >
               {item.count}
             </span>
             <div className="min-w-0">

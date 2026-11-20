@@ -219,7 +219,7 @@ export function RentalOrderLineItemsField({
                   requestedQuantity={line?.quantity}
                 />
 
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className={readOnly ? "grid gap-2 sm:grid-cols-3" : "grid gap-3 sm:grid-cols-4"}>
                   {readOnly ? (
                     <>
                       <div>
@@ -253,9 +253,15 @@ export function RentalOrderLineItemsField({
                         min={0.01}
                         step={0.01}
                       />
-                      <div className="flex flex-col justify-end pb-1">
+                      <div className="flex flex-col justify-end pb-2">
                         <p className="text-[length:var(--text-caption)] text-muted-foreground">Days</p>
                         <p className="text-sm font-medium tabular-nums">{lineDays}</p>
+                      </div>
+                      <div className="flex flex-col justify-end pb-2 sm:items-end">
+                        <p className="text-[length:var(--text-caption)] text-muted-foreground">This line</p>
+                        <p className="text-base font-semibold tabular-nums text-foreground">
+                          {formatCurrency((line?.quantity || 0) * (line?.dailyRate || 0) * lineDays)}
+                        </p>
                       </div>
                     </>
                   )}

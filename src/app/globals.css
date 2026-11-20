@@ -71,7 +71,8 @@
      * Slate-teal authority, restrained gold accent, cool neutral canvas
      * (avoids generic warm cream + gold SaaS look).
      */
-    --background: #eef1f3;
+    /* Calm and clean (2026-11-20): paler canvas, softer lines, rounder corners. */
+    --background: #f6f8f9;
     --foreground: #152028;
     --card: #ffffff;
     --card-foreground: #152028;
@@ -79,15 +80,15 @@
     --popover-foreground: #152028;
     --primary: #1b3a4b;
     --primary-foreground: #ffffff;
-    --secondary: #e4e9ed;
+    --secondary: #edf1f4;
     --secondary-foreground: #152028;
-    --muted: #e4e9ed;
+    --muted: #edf1f4;
     --muted-foreground: #5b6b76;
-    --accent: #e4e9ed;
+    --accent: #edf1f4;
     --accent-foreground: #152028;
     --destructive: #b91c1c;
-    --border: #d2d9df;
-    --input: #d2d9df;
+    --border: #e1e6ea;
+    --input: #d5dce2;
     --ring: #1b3a4b;
     --brand: #c8860a;
     --brand-foreground: #ffffff;
@@ -106,7 +107,7 @@
     --viz-heat-2: #6da7ec;
     --viz-heat-3: #2a78d6;
     --viz-heat-4: #184f95;
-    --radius: 0.375rem;
+    --radius: 0.625rem;
     --navbar: #1b3a4b;
     --sidebar: #ffffff;
     --sidebar-foreground: #4a5a66;
@@ -114,7 +115,7 @@
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #e8eef2;
     --sidebar-accent-foreground: #1b3a4b;
-    --sidebar-border: #d2d9df;
+    --sidebar-border: #e1e6ea;
     --sidebar-ring: #1b3a4b;
     --scrollbar-thumb: color-mix(in oklch, var(--foreground) 22%, transparent);
     --scrollbar-thumb-hover: color-mix(in oklch, var(--foreground) 38%, transparent);

@@ -25,13 +25,13 @@
   --primary-active: #0f2430;
   --primary-disabled: rgba(27, 58, 75, 0.45);
 
-  --secondary-hover: #d7dee4;
-  --secondary-active: #ccd5dc;
+  --secondary-hover: #e3e9ed;
+  --secondary-active: #d8e0e6;
 
-  --muted-hover: #d7dee4;
-  --border-strong: #b8c2cb;
+  --muted-hover: #e3e9ed;
+  --border-strong: #c3ccd4;
 
-  --shadow-color: rgba(21, 32, 40, 0.06);
+  --shadow-color: rgba(21, 32, 40, 0.05);
 }
 
 .dark {
