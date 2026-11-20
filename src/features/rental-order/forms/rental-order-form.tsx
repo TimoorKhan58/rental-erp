@@ -158,6 +158,13 @@ function CreateRentalOrderForm({
   const warehouseId = form.watch("warehouseId");
   const formError = form.formState.errors.root?.message;
 
+  // With only one warehouse there is nothing to choose: pick it for them.
+  useEffect(() => {
+    if (!warehouseId && warehouseOptions.length === 1) {
+      form.setValue("warehouseId", warehouseOptions[0]!.id, { shouldValidate: true });
+    }
+  }, [warehouseId, warehouseOptions, form]);
+
   const mergedCustomerOptions = useMemo(
     () => mergeCustomerOptions(customerOptions, extraCustomerOptions),
     [customerOptions, extraCustomerOptions],
@@ -248,8 +255,8 @@ function CreateRentalOrderForm({
               <SwitchField
                 control={form.control}
                 name="bookInAdvance"
-                label="Book in advance"
-                description="Reserve future dates on the reservation calendar."
+                label="This is a future booking"
+                description="Turn on when the event is later. The dates are then held for this customer on the booking calendar."
                 className="md:col-span-2"
               />
               <DatePickerField
