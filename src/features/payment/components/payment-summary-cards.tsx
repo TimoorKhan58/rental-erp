@@ -30,23 +30,23 @@ type SummaryCardConfig = {
 const cardConfigs: SummaryCardConfig[] = [
   {
     id: "activePayments",
-    label: "Active payments",
-    hint: "Excluding void",
+    label: "All payments",
+    hint: "Not counting voided",
     icon: ClipboardListIcon,
     iconClass: "bg-primary/12 text-primary",
   },
   {
     id: "totalCollected",
     label: "Total collected",
-    hint: "Posted payment amount",
+    hint: "Posted payments, in total",
     icon: CircleDollarSignIcon,
     iconClass: "bg-success-muted text-success",
     format: (value) => formatCurrency(value),
   },
   {
     id: "pendingCount",
-    label: "Pending to post",
-    hint: "Awaiting posting",
+    label: "Not posted yet",
+    hint: "Recorded, not counted yet",
     icon: ClockIcon,
     iconClass: "bg-warning-muted text-warning-foreground",
     accentClass: "border-warning/30",
@@ -54,7 +54,7 @@ const cardConfigs: SummaryCardConfig[] = [
   {
     id: "postedCount",
     label: "Posted",
-    hint: "Successfully posted",
+    hint: "Counted in your books",
     icon: CheckCircle2Icon,
     iconClass: "bg-info/12 text-info",
   },

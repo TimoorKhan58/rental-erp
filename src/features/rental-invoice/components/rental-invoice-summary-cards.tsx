@@ -30,15 +30,15 @@ type SummaryCardConfig = {
 const cardConfigs: SummaryCardConfig[] = [
   {
     id: "activeInvoices",
-    label: "Active invoices",
-    hint: "Excluding void",
+    label: "All invoices",
+    hint: "Not counting voided",
     icon: ClipboardListIcon,
     iconClass: "bg-primary/12 text-primary",
   },
   {
     id: "totalOutstanding",
     label: "Outstanding",
-    hint: "Total balance due",
+    hint: "Still to collect",
     icon: CircleDollarSignIcon,
     iconClass: "bg-warning-muted text-warning-foreground",
     accentClass: "border-warning/30",
@@ -47,7 +47,7 @@ const cardConfigs: SummaryCardConfig[] = [
   {
     id: "outstandingCount",
     label: "Unpaid invoices",
-    hint: "With balance remaining",
+    hint: "Waiting for payment",
     icon: WalletIcon,
     iconClass: "bg-info/12 text-info",
   },

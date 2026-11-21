@@ -61,12 +61,10 @@ export function getPaymentTableColumns({
       ),
       cell: (row) => (
         <Link href={ROUTES.paymentDetail(row.id)} className="group block min-w-[8rem]">
-          <span className="font-medium text-primary group-hover:underline">
-            {row.paymentNumber}
+          <span className="block font-medium text-foreground group-hover:text-primary group-hover:underline">
+            {customerNameOnly(customerLabelById.get(row.customerId) ?? row.customerId)}
           </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            {customerLabelById.get(row.customerId) ?? row.customerId}
-          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">{row.paymentNumber}</span>
         </Link>
       ),
     },
@@ -78,17 +76,21 @@ export function getPaymentTableColumns({
           href={ROUTES.rentalInvoiceDetail(row.rentalInvoiceId)}
           className="text-sm text-primary hover:underline"
         >
-          {invoiceLabelById.get(row.rentalInvoiceId) ?? row.rentalInvoiceId}
+          {/* The invoice's own status in brackets was noise here. */}
+          {(invoiceLabelById.get(row.rentalInvoiceId) ?? row.rentalInvoiceId).replace(/\s*\([^)]*\)\s*$/, "")}
         </Link>
       ),
     },
     {
       id: "workflow",
-      header: "Progress",
+      header: "Status",
       cell: (row) => (
         <div className="min-w-[8rem] space-y-1.5">
           <PaymentRecordStatusBadge status={row.status} />
-          <PaymentWorkflowProgressBar status={row.status} />
+          {/* A bar only helps while the payment is still waiting to be posted. */}
+          {row.status !== "POSTED" && row.status !== "VOID" ? (
+            <PaymentWorkflowProgressBar status={row.status} />
+          ) : null}
         </div>
       ),
     },
@@ -196,4 +198,10 @@ export function getPaymentTableColumns({
       headerClassName: "w-12",
     },
   ];
+}
+
+/** "CUS-00039 — Ali Khan" → "Ali Khan". */
+function customerNameOnly(label: string): string {
+  const separator = " — ";
+  return label.includes(separator) ? label.split(separator).slice(1).join(separator) : label;
 }
