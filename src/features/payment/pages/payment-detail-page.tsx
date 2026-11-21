@@ -10,7 +10,6 @@ import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
   CalendarIcon,
-  ClockIcon,
   CreditCardIcon,
   ClipboardListIcon,
   FileTextIcon,
@@ -50,7 +49,6 @@ import { PaymentDetailsTable } from "../components/payment-details-table";
 import { PaymentJournalSection } from "../components/payment-journal-section";
 import { PaymentRecordStatusBadge } from "../components/payment-status-badge";
 import { PaymentStatusTimeline } from "../components/payment-status-timeline";
-import { PaymentWorkflowProgressBar } from "../components/payment-workflow-progress-bar";
 import { PostPaymentDialog } from "../dialogs/post-payment-dialog";
 import { VoidPaymentDialog } from "../dialogs/void-payment-dialog";
 
@@ -354,15 +352,6 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
             />
           </div>
 
-          {payment.status !== "VOID" ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Payment workflow</span>
-                <span className="text-muted-foreground">Pending → Posted</span>
-              </div>
-              <PaymentWorkflowProgressBar status={payment.status} size="md" />
-            </div>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -420,14 +409,15 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
 
         <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
-            title="Payment workflow"
+            title="Where it is now"
             actions={<PaymentRecordStatusBadge status={payment.status} />}
           >
             <PaymentStatusTimeline status={payment.status} />
           </SectionCard>
 
-          <SectionCard title="Milestones">
+          <SectionCard title="History">
             <dl className="space-y-4">
+              <DetailField label="Created" value={formatDateTime(payment.createdAt)} />
               <DetailField
                 label="Posted at"
                 value={payment.postedAt ? formatDateTime(payment.postedAt) : null}
@@ -437,25 +427,6 @@ export function PaymentDetailPage({ paymentId }: PaymentDetailPageProps) {
                 value={payment.voidedAt ? formatDateTime(payment.voidedAt) : null}
               />
             </dl>
-          </SectionCard>
-
-          <SectionCard title="Timeline">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Created</p>
-                  <p className="text-muted-foreground">{formatDateTime(payment.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Last updated</p>
-                  <p className="text-muted-foreground">{formatDateTime(payment.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
           </SectionCard>
 
           <PaymentJournalSection paymentId={payment.id} />

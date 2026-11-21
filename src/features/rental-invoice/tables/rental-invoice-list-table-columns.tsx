@@ -21,7 +21,6 @@ import {
 import { PaymentStatusBadge } from "../components/payment-status-badge";
 import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-payment-progress-bar";
-import { RentalInvoiceWorkflowProgressBar } from "../components/rental-invoice-workflow-progress-bar";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type {
   ListRentalInvoicesParams,
@@ -64,12 +63,11 @@ export function getRentalInvoiceTableColumns({
       ),
       cell: (row) => (
         <Link href={ROUTES.rentalInvoiceDetail(row.id)} className="group block min-w-[8rem]">
-          <span className="font-medium text-primary group-hover:underline">
-            {row.invoiceNumber}
+          {/* Who it is for comes first; the customer code is not needed here. */}
+          <span className="block font-medium text-foreground group-hover:text-primary group-hover:underline">
+            {customerNameOnly(customerLabelById.get(row.customerId) ?? row.customerId)}
           </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            {customerLabelById.get(row.customerId) ?? row.customerId}
-          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">{row.invoiceNumber}</span>
         </Link>
       ),
     },
@@ -80,16 +78,6 @@ export function getRentalInvoiceTableColumns({
         <span className="text-sm">
           {rentalOrderLabelById.get(row.rentalOrderId) ?? row.rentalOrderId}
         </span>
-      ),
-    },
-    {
-      id: "workflow",
-      header: "Progress",
-      cell: (row) => (
-        <div className="min-w-[8rem] space-y-1.5">
-          <RentalInvoiceStatusBadge status={row.status} />
-          <RentalInvoiceWorkflowProgressBar status={row.status} />
-        </div>
       ),
     },
     {
@@ -140,17 +128,21 @@ export function getRentalInvoiceTableColumns({
     },
     {
       id: "payment",
-      header: "Collection",
-      cell: (row) => (
-        <div className="min-w-[7rem] space-y-1.5">
-          <PaymentStatusBadge
-            status={row.status}
-            balance={row.balance}
-            paidAmount={row.paidAmount}
-          />
-          <RentalInvoicePaymentProgressBar invoice={row} />
-        </div>
-      ),
+      header: "Status",
+      // One status instead of two columns that both said "Paid" with a bar.
+      cell: (row) =>
+        row.status === "DRAFT" || row.status === "VOID" ? (
+          <RentalInvoiceStatusBadge status={row.status} />
+        ) : (
+          <div className="min-w-[7rem] space-y-1.5">
+            <PaymentStatusBadge
+              status={row.status}
+              balance={row.balance}
+              paidAmount={row.paidAmount}
+            />
+            {row.status !== "PAID" ? <RentalInvoicePaymentProgressBar invoice={row} /> : null}
+          </div>
+        ),
     },
     {
       id: "createdAt",
@@ -205,4 +197,10 @@ export function getRentalInvoiceTableColumns({
       headerClassName: "w-12",
     },
   ];
+}
+
+/** "CUS-00039 — Ali Khan" → "Ali Khan". */
+function customerNameOnly(label: string): string {
+  const separator = " — ";
+  return label.includes(separator) ? label.split(separator).slice(1).join(separator) : label;
 }

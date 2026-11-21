@@ -58,7 +58,7 @@ const createDefaults: CreatePaymentFormValues = {
   customerId: "",
   rentalInvoiceId: "",
   paymentDate: calendarDayToIso(new Date()),
-  paymentMethod: "BANK_TRANSFER",
+  paymentMethod: "CASH",
   referenceNumber: "",
   notes: "",
 } as CreatePaymentFormValues;

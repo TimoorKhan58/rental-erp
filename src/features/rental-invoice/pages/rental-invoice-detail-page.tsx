@@ -13,7 +13,6 @@ import {
   ArrowUpRightIcon,
   CalendarIcon,
   ClipboardListIcon,
-  ClockIcon,
   PencilIcon,
   PrinterIcon,
   ReceiptIcon,
@@ -55,7 +54,6 @@ import { RentalInvoicePaymentsSection } from "../components/rental-invoice-payme
 import { RentalInvoicePaymentProgressBar } from "../components/rental-invoice-payment-progress-bar";
 import { RentalInvoiceStatusBadge } from "../components/rental-invoice-status-badge";
 import { RentalInvoiceStatusTimeline } from "../components/rental-invoice-status-timeline";
-import { RentalInvoiceWorkflowProgressBar } from "../components/rental-invoice-workflow-progress-bar";
 import { ConfirmModal } from "@/components/design-system/modal";
 import { EditInvoiceAdditionalChargesDialog } from "../dialogs/edit-invoice-additional-charges-dialog";
 import { IssueRentalInvoiceDialog } from "../dialogs/issue-rental-invoice-dialog";
@@ -351,7 +349,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <MetricTile
               label="Paid"
               value={formatCurrency(invoice.paidAmount)}
@@ -370,23 +368,9 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
               hint="Payment due date"
               icon={<CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
             />
-            <MetricTile
-              label="Line items"
-              value={metrics.lineItemCount.toLocaleString()}
-              hint="Charges, discounts, and taxes"
-              icon={<ClipboardListIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
-            />
           </div>
 
           {invoice.status !== "VOID" ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Invoice workflow</span>
-                  <span className="text-muted-foreground">Draft → Issued → Paid</span>
-                </div>
-                <RentalInvoiceWorkflowProgressBar status={invoice.status} size="md" />
-              </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Payment collection</span>
@@ -396,7 +380,6 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
                 </div>
                 <RentalInvoicePaymentProgressBar invoice={invoice} size="md" />
               </div>
-            </div>
           ) : null}
       </section>
 
@@ -415,21 +398,11 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             />
           </SectionCard>
 
-          <SectionCard title="Payment state">
-            <dl className="grid gap-3 sm:grid-cols-2">
-              <DetailField label="Subtotal" value={formatCurrency(invoice.subtotal)} />
-              <DetailField label="Discount" value={formatCurrency(invoice.discount)} />
-              <DetailField label="Tax" value={formatCurrency(invoice.tax)} />
-              <DetailField label="Grand total" value={formatCurrency(invoice.grandTotal)} />
-              <DetailField label="Paid amount" value={formatCurrency(invoice.paidAmount)} />
-              <DetailField label="Outstanding balance" value={formatCurrency(invoice.balance)} />
-            </dl>
-            {canVoid && canVoidRentalInvoice(invoice.status) ? (
-              <p className="mt-4 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                An invoice that already has payments counted against it cannot be voided.
-              </p>
-            ) : null}
-          </SectionCard>
+          {canVoid && canVoidRentalInvoice(invoice.status) ? (
+            <p className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+              An invoice that already has payments counted against it cannot be voided.
+            </p>
+          ) : null}
 
           {invoice.notes ? (
             <SectionCard title="Notes">
@@ -464,14 +437,15 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
 
         <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
-            title="Invoice workflow"
+            title="Where it is now"
             actions={<RentalInvoiceStatusBadge status={invoice.status} />}
           >
             <RentalInvoiceStatusTimeline status={invoice.status} />
           </SectionCard>
 
-          <SectionCard title="Milestones">
+          <SectionCard title="History">
             <dl className="space-y-4">
+              <DetailField label="Created" value={formatDateTime(invoice.createdAt)} />
               <DetailField
                 label="Issued at"
                 value={invoice.issuedAt ? formatDateTime(invoice.issuedAt) : null}
@@ -481,25 +455,6 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
                 value={invoice.voidedAt ? formatDateTime(invoice.voidedAt) : null}
               />
             </dl>
-          </SectionCard>
-
-          <SectionCard title="Timeline">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Created</p>
-                  <p className="text-muted-foreground">{formatDateTime(invoice.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Last updated</p>
-                  <p className="text-muted-foreground">{formatDateTime(invoice.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
           </SectionCard>
 
           <RentalInvoiceJournalSection invoiceId={invoice.id} />
