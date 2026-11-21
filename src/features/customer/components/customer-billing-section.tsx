@@ -42,10 +42,6 @@ export function CustomerBillingSection({ customerId }: CustomerBillingSectionPro
   const outstandingInvoices = invoices.filter(
     (invoice) => invoice.status !== "VOID" && invoice.balance > 0,
   );
-  const totalOutstanding = outstandingInvoices.reduce(
-    (sum, invoice) => sum + invoice.balance,
-    0,
-  );
   const payableInvoice = outstandingInvoices.find(
     (invoice) => invoice.status === "ISSUED" || invoice.status === "PARTIALLY_PAID",
   );
@@ -53,75 +49,32 @@ export function CustomerBillingSection({ customerId }: CustomerBillingSectionPro
   return (
     <>
       <SectionCard
-        title="Billing summary"
-        description="What this customer still owes, and their latest payments."
-        actions={
-          canCreate && payableInvoice ? (
-            <AppButton
-              size="sm"
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
-              leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
-              render={
-                <Link
-                  href={ROUTES.paymentNewForInvoice(
-                    payableInvoice.id,
-                    customerId,
-                  )}
-                />
-              }
-            >
-              Record payment
-            </AppButton>
-          ) : null
-        }
-      >
-        {invoicesQuery.isLoading ? (
-          <LoadingState label="Loading billing summary..." />
-        ) : (
-          <dl className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-border bg-muted/15 px-3 py-2.5">
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Outstanding
-              </dt>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">
-                {formatCurrency(totalOutstanding)}
-              </dd>
-            </div>
-            <div className="rounded-md border border-border bg-muted/15 px-3 py-2.5">
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Open invoices
-              </dt>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">
-                {outstandingInvoices.length}
-              </dd>
-            </div>
-            <div className="rounded-md border border-border bg-muted/15 px-3 py-2.5">
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Recent payments
-              </dt>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">
-                {paymentsQuery.data?.meta.total ?? payments.length}
-              </dd>
-            </div>
-          </dl>
-        )}
-      </SectionCard>
-
-      <SectionCard
         title="Outstanding invoices"
         actions={
           outstandingInvoices.length > 0 ? (
-            <AppButton
-              variant="outline"
-              size="sm"
-              render={
-                <Link
-                  href={`${ROUTES.rentalInvoices}?customerId=${customerId}&paymentStatus=unpaid`}
-                />
-              }
-            >
-              View all
-            </AppButton>
+            <div className="flex items-center gap-2">
+              {canCreate && payableInvoice ? (
+                <AppButton
+                  size="sm"
+                  className="bg-brand text-brand-foreground hover:bg-brand/90"
+                  leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+                  render={<Link href={ROUTES.paymentNewForInvoice(payableInvoice.id, customerId)} />}
+                >
+                  Record payment
+                </AppButton>
+              ) : null}
+              <AppButton
+                variant="outline"
+                size="sm"
+                render={
+                  <Link
+                    href={`${ROUTES.rentalInvoices}?customerId=${customerId}&paymentStatus=unpaid`}
+                  />
+                }
+              >
+                View all
+              </AppButton>
+            </div>
           ) : null
         }
       >

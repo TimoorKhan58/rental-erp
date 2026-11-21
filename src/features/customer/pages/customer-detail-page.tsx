@@ -14,6 +14,7 @@ import { formatDate, formatDateTime } from "@/lib/utils";
 import { useRentalOrderPermissions } from "@/features/rental-order/hooks";
 import { useCustomer, useCustomerPermissions } from "../hooks";
 import { CustomerProfileCard } from "../components/customer-profile-card";
+import { CustomerAtAGlance } from "../components/customer-at-a-glance";
 import { CustomerBillingSection } from "../components/customer-billing-section";
 import { CustomerRentalActivitySection } from "../components/customer-rental-activity-section";
 import { DeleteCustomerDialog } from "../dialogs/delete-customer-dialog";
@@ -98,29 +99,23 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
         onDelete={() => setDeleteOpen(true)}
       />
 
+      <CustomerAtAGlance customerId={customer.id} />
+
       <div className="app-grid">
         <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-8">
-          <SectionCard title="Customer details">
-            <dl className="grid gap-3 sm:grid-cols-2">
+          {/* What they owe comes before their order history. */}
+          <CustomerBillingSection customerId={customer.id} />
+          <CustomerRentalActivitySection customerId={customer.id} />
+        </div>
+
+        <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-4">
+          <SectionCard title="Details">
+            <dl className="space-y-3">
               <DetailField label="Customer code" value={customer.customerCode} />
               <DetailField label="CNIC" value={customer.cnic} />
               <DetailField label="Address" value={customer.address} />
               <DetailField label="Notes" value={customer.notes} />
-            </dl>
-          </SectionCard>
-
-          <CustomerRentalActivitySection customerId={customer.id} />
-          <CustomerBillingSection customerId={customer.id} />
-        </div>
-
-        <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-4">
-          <SectionCard title="Account timeline">
-            <dl className="space-y-3">
-              <DetailField
-                label="Status"
-                value={customer.isActive ? "Active" : "Inactive"}
-              />
-              <DetailField label="Created" value={formatDate(customer.createdAt)} />
+              <DetailField label="Customer since" value={formatDate(customer.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(customer.updatedAt)} />
             </dl>
           </SectionCard>

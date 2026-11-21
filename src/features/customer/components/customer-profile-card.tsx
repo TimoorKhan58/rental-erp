@@ -38,7 +38,7 @@ export function CustomerProfileCard({
 }: CustomerProfileCardProps) {
   return (
     <section
-      className="flex flex-col gap-4 rounded-md border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-5"
       aria-label="Customer identity"
     >
       <div className="flex min-w-0 items-start gap-3">
