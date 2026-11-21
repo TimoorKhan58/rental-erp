@@ -98,25 +98,25 @@ export function RentalOrderLineItemsTable({
       </div>
 
       <div className="hidden overflow-x-auto rounded-xl border border-border/60 md:block">
-        <table className="w-full min-w-[920px] text-sm">
+        <table className="w-full min-w-[600px] text-sm">
           <thead>
             <tr className="border-b bg-muted/30 text-left">
-              <th className="px-4 py-3 font-medium" scope="col">
+              <th className="px-3 py-2.5 font-medium" scope="col">
                 Product
               </th>
-              <th className="px-4 py-3 font-medium" scope="col">
+              <th className="px-3 py-2.5 font-medium" scope="col">
                 Rental period
               </th>
-              <th className="px-4 py-3 font-medium" scope="col">
+              <th className="px-3 py-2.5 font-medium" scope="col">
                 Reservation
               </th>
-              <th className="px-4 py-3 font-medium text-right" scope="col">
+              <th className="px-3 py-2.5 font-medium text-right" scope="col">
                 Qty
               </th>
-              <th className="px-4 py-3 font-medium text-right" scope="col">
+              <th className="px-3 py-2.5 font-medium text-right" scope="col">
                 Daily rate
               </th>
-              <th className="px-4 py-3 font-medium text-right" scope="col">
+              <th className="px-3 py-2.5 font-medium text-right" scope="col">
                 Subtotal
               </th>
             </tr>
@@ -131,7 +131,7 @@ export function RentalOrderLineItemsTable({
                   key={item.id}
                   className="border-b last:border-b-0 transition-colors hover:bg-muted/20"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     <p className="font-medium">{resolveProductName(item.productId)}</p>
                     {remaining > 0 ? (
                       <p className="text-xs text-warning-foreground">
@@ -139,7 +139,7 @@ export function RentalOrderLineItemsTable({
                       </p>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     <p className="font-medium text-foreground">
                       {item.numberOfDays} day{item.numberOfDays === 1 ? "" : "s"}
                     </p>
@@ -147,7 +147,7 @@ export function RentalOrderLineItemsTable({
                       {formatDate(item.startDate)} – {formatDate(item.endDate)}
                     </p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     <div className="min-w-[8rem] space-y-1.5">
                       <div className="flex items-center justify-between gap-2 text-xs tabular-nums">
                         <span className="font-medium">{item.reservedQuantity}</span>
@@ -159,11 +159,11 @@ export function RentalOrderLineItemsTable({
                       />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">
+                  <td className="px-3 py-2.5 text-right tabular-nums">{item.quantity}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">
                     {formatCurrency(item.dailyRate)}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium tabular-nums">
+                  <td className="px-3 py-2.5 text-right font-medium tabular-nums">
                     {formatCurrency(subtotal)}
                   </td>
                 </tr>
@@ -172,10 +172,10 @@ export function RentalOrderLineItemsTable({
           </tbody>
           <tfoot>
             <tr className="bg-muted/20">
-              <td colSpan={5} className="px-4 py-3 text-right font-medium">
+              <td colSpan={5} className="px-3 py-2.5 text-right font-medium">
                 Order total
               </td>
-              <td className="px-4 py-3 text-right font-heading text-base font-semibold tabular-nums">
+              <td className="px-3 py-2.5 text-right font-heading text-base font-semibold tabular-nums">
                 {formatCurrency(orderTotal)}
               </td>
             </tr>

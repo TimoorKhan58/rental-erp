@@ -12,8 +12,6 @@ import {
   Building2Icon,
   CalendarIcon,
   ClipboardListIcon,
-  ClockIcon,
-  MapPinIcon,
   PencilIcon,
   TruckIcon,
   UsersIcon,
@@ -43,9 +41,7 @@ import {
   canEditDispatch,
   canMarkDispatchReady,
   DELIVERY_METHOD_LABELS,
-  getDispatchOperatorGuidance,
   getDispatchTotalQuantity,
-  getOperatorDispatchWorkflowCaption,
 } from "../mappers";
 import {
   useDispatch,
@@ -55,7 +51,6 @@ import {
 } from "../hooks";
 import { DispatchStatusBadge } from "../components/dispatch-status-badge";
 import { DispatchStatusTimeline } from "../components/dispatch-status-timeline";
-import { DispatchWorkflowProgressBar } from "../components/dispatch-workflow-progress-bar";
 import { DispatchLineItemsTable } from "../components/dispatch-line-items-table";
 import { DispatchInventoryImpactSection } from "../components/dispatch-inventory-impact-section";
 import {
@@ -191,16 +186,6 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
     [dispatch],
   );
 
-  const operatorGuidance = useMemo(
-    () =>
-      dispatch
-        ? getDispatchOperatorGuidance({
-            status: dispatch.status,
-            deliveryMethod: dispatch.deliveryMethod,
-          })
-        : null,
-    [dispatch],
-  );
 
   if (isLoading) {
     return (
@@ -337,13 +322,7 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricTile
-              label="Line items"
-              value={dispatch.items.length.toLocaleString()}
-              hint="Products on this delivery"
-              icon={<ClipboardListIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
-            />
+          <div className="grid gap-3 sm:grid-cols-2">
             <MetricTile
               label="Dispatch date"
               value={formatDate(dispatch.dispatchDate)}
@@ -356,43 +335,9 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
               hint={dispatch.vehicleNumber ?? "No vehicle assigned"}
               icon={<TruckIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
             />
-            <MetricTile
-              label="Warehouse"
-              value={warehouseName || "—"}
-              hint="Fulfillment location"
-              icon={<Building2Icon className="size-4 text-muted-foreground" aria-hidden="true" />}
-            />
           </div>
 
-          {dispatch.status !== "CANCELLED" && operatorGuidance ? (
-            <div className="space-y-3">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm">
-                <span className="font-medium">Operator workflow</span>
-                <span className="text-muted-foreground">
-                  {getOperatorDispatchWorkflowCaption()}
-                </span>
-              </div>
-              <DispatchWorkflowProgressBar status={dispatch.status} size="md" />
-              <div
-                className="rounded-md border border-border bg-muted/20 px-3 py-3 text-sm"
-                role="status"
-                aria-live="polite"
-              >
-                <p className="text-muted-foreground">{operatorGuidance.statusMeaning}</p>
-                {operatorGuidance.nextActionLabel ? (
-                  <p className="mt-2 font-medium">
-                    Next: {operatorGuidance.nextActionLabel}
-                    {operatorGuidance.nextActionHint ? (
-                      <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                        {operatorGuidance.nextActionHint}
-                      </span>
-                    ) : null}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
+                </CardContent>
       </Card>
 
       <div className="app-grid">
@@ -481,50 +426,28 @@ export function DispatchDetailPage({ dispatchId }: DispatchDetailPageProps) {
 
         <div className="min-w-0 space-y-6 sm:col-span-6 lg:col-span-4">
           <SectionCard
-            title="Dispatch workflow"
+            title="Where it is now"
             actions={<DispatchStatusBadge status={dispatch.status} />}
           >
             <DispatchStatusTimeline status={dispatch.status} />
           </SectionCard>
 
-          <SectionCard
-            title="Milestones"
-            actions={<MapPinIcon className="size-4 text-muted-foreground" aria-hidden="true" />}
-          >
+          <SectionCard title="History">
             <dl className="space-y-4">
+              <DetailField label="Created" value={`${formatDateTime(dispatch.createdAt)} · by ${createdByLabel}`} />
               <DetailField
                 label="Ready at"
                 value={dispatch.readyAt ? formatDateTime(dispatch.readyAt) : null}
               />
               <DetailField
-                label="Dispatched at"
+                label="Sent at"
                 value={dispatch.dispatchedAt ? formatDateTime(dispatch.dispatchedAt) : null}
               />
               <DetailField
-                label="Completed at"
+                label="Finished at"
                 value={dispatch.completedAt ? formatDateTime(dispatch.completedAt) : null}
               />
             </dl>
-          </SectionCard>
-
-          <SectionCard title="Timeline">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Created</p>
-                  <p className="text-muted-foreground">{formatDateTime(dispatch.createdAt)}</p>
-                  <p className="text-xs text-muted-foreground">By {createdByLabel}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Last updated</p>
-                  <p className="text-muted-foreground">{formatDateTime(dispatch.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
           </SectionCard>
         </div>
       </div>
