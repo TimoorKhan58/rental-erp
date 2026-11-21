@@ -128,7 +128,7 @@ export function RepairAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="Repairs do not post journal entries or customer invoices automatically."
+      description="What this repair did in your books."
       actions={
         <AppButton
           variant="outline"
@@ -140,9 +140,9 @@ export function RepairAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Completing a repair posts inventory IN for the repair quantity. Repair cost stays on this
-        job. It does not create an expense, customer invoice, or journal entry. Record a manual
-        journal from accounting if needed.
+        Finishing a repair puts the repaired items back into stock. The repair cost goes into your
+        books as Repairs &amp; Maintenance, paid in cash. You do not need to enter it again as an
+        expense. A repair does not create a customer invoice.
       </p>
     </SectionCard>
   );

@@ -122,7 +122,7 @@ export function MaintenanceAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="Maintenance does not post journal entries or expenses automatically."
+      description="What this job did in your books."
       actions={
         <AppButton
           variant="outline"
@@ -134,9 +134,9 @@ export function MaintenanceAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Starting posts inventory OUT and completing posts inventory IN. Estimated and actual cost
-        stay on this job. Maintenance does not create an expense or journal entry. Record a manual
-        journal from accounting if needed.
+        Starting a job takes the items out of stock, and finishing it puts them back. When you
+        finish it with an actual cost, that cost goes into your books as Repairs &amp; Maintenance,
+        paid in cash. You do not need to enter it again as an expense.
       </p>
     </SectionCard>
   );

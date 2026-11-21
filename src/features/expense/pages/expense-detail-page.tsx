@@ -361,7 +361,7 @@ export function ExpenseDetailPage({ expenseId }: ExpenseDetailPageProps) {
                       View journal entry
                     </Link>
                   ) : expense.status === "PAID" ? (
-                    "Paid without a journal — expense or cash accounts were not available"
+                    "Paid, but no book entry was made. Ask support to check."
                   ) : (
                     "No journal until marked paid"
                   )}

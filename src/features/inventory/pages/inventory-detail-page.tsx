@@ -6,7 +6,6 @@ import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
   Building2Icon,
-  ClockIcon,
   PackageIcon,
   PencilIcon,
   ScaleIcon,
@@ -20,7 +19,7 @@ import { SectionCard } from "@/components/design-system/card";
 import { AppButton } from "@/components/design-system/button";
 import { LoadingState } from "@/components/feedback";
 import { ROUTES } from "@/config/routes";
-import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { useProduct } from "@/features/product/hooks";
 import { useWarehouse } from "@/features/warehouse/hooks";
 import {
@@ -37,7 +36,6 @@ import {
   useInventoryRecoveryMaps,
   useInventoryRelatedData,
 } from "../hooks";
-import { InventoryStatusBadge } from "../components/inventory-status-badge";
 import { InventoryPresentationChipBadge } from "../components/inventory-presentation-chip";
 import { InventoryQuantityBreakdown } from "../components/inventory-quantity-breakdown";
 import { InventoryRecoveryIndicator } from "../components/inventory-recovery-indicator";
@@ -292,12 +290,10 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
                 />
               ))}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Last updated {formatDateTime(inventory.updatedAt)}
-            </p>
             <p className="text-xs text-muted-foreground">
-              On-hand corrections use Adjust stock (ADJUSTMENT movement). Thresholds and
-              active status use Edit thresholds — stock quantities are not edited there.
+              To correct how many you have, use <strong className="font-medium">Adjust stock</strong>.
+              <strong className="font-medium"> Edit thresholds</strong> only changes the warning levels
+              and whether the item is active; it does not change your stock.
             </p>
           </div>
           {recoveryMetrics ? (
@@ -314,10 +310,9 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
 
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <span className="font-medium">Availability vs thresholds</span>
+            <span className="font-medium">Stock level</span>
             <span className="tabular-nums text-muted-foreground">
-              {inventory.availableQuantity.toLocaleString()} available · reorder{" "}
-              {inventory.minimumStock.toLocaleString()}
+              Warn me when free stock drops to {inventory.minimumStock.toLocaleString()}
             </span>
           </div>
           <InventoryStockLevelBar
@@ -332,32 +327,6 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
 
       <div className="app-grid">
         <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-8">
-          <RelatedEntityCard
-            title="Product"
-            icon={<PackageIcon className="size-4" aria-hidden="true" />}
-            iconClass="bg-success-muted text-success"
-            fields={[
-              { label: "Name", value: product?.name ?? productLabel },
-              { label: "Product code", value: product?.productCode },
-              { label: "Unit", value: product?.unit },
-            ]}
-            href={product ? ROUTES.productDetail(product.id) : undefined}
-            linkLabel="View product"
-          />
-
-          <RelatedEntityCard
-            title="Warehouse"
-            icon={<Building2Icon className="size-4" aria-hidden="true" />}
-            iconClass="bg-primary/10 text-primary"
-            fields={[
-              { label: "Name", value: warehouse?.name ?? warehouseLabel },
-              { label: "Warehouse code", value: warehouse?.warehouseCode },
-              { label: "Address", value: warehouse?.address },
-            ]}
-            href={warehouse ? ROUTES.warehouseDetail(warehouse.id) : undefined}
-            linkLabel="View warehouse"
-          />
-
           <SectionCard
             title="Thresholds & limits"
             description="When to warn that this item is running low. Changing these does not change your stock."
@@ -389,17 +358,35 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
         </div>
 
         <div className="min-w-0 space-y-5 sm:col-span-6 lg:col-span-4">
-          <SectionCard
-            title="Record details"
-            actions={<InventoryStatusBadge isActive={inventory.isActive} />}
-          >
+          <RelatedEntityCard
+            title="Product"
+            icon={<PackageIcon className="size-4" aria-hidden="true" />}
+            iconClass="bg-success-muted text-success"
+            fields={[
+              { label: "Name", value: product?.name ?? productLabel },
+              { label: "Product code", value: product?.productCode },
+              { label: "Unit", value: product?.unit },
+            ]}
+            href={product ? ROUTES.productDetail(product.id) : undefined}
+            linkLabel="View product"
+          />
+
+          <RelatedEntityCard
+            title="Warehouse"
+            icon={<Building2Icon className="size-4" aria-hidden="true" />}
+            iconClass="bg-primary/10 text-primary"
+            fields={[
+              { label: "Name", value: warehouse?.name ?? warehouseLabel },
+              { label: "Warehouse code", value: warehouse?.warehouseCode },
+              { label: "Address", value: warehouse?.address },
+            ]}
+            href={warehouse ? ROUTES.warehouseDetail(warehouse.id) : undefined}
+            linkLabel="View warehouse"
+          />
+
+          <SectionCard title="History">
             <dl className="space-y-4">
-              <DetailField label="Operational status" value={presentationChips[0]?.label} />
-              <DetailField
-                label="Record status"
-                value={inventory.isActive ? "Active" : "Inactive"}
-              />
-              <DetailField label="Created" value={formatDate(inventory.createdAt)} />
+              <DetailField label="Created" value={formatDateTime(inventory.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(inventory.updatedAt)} />
             </dl>
           </SectionCard>
@@ -430,41 +417,7 @@ export function InventoryDetailPage({ inventoryId }: InventoryDetailPageProps) {
                 ) : null}
               </dl>
             </SectionCard>
-          ) : (
-            <SectionCard
-              title="Cost recovery"
-              description="Recovery metrics require product cost data."
-            >
-              <p className="text-sm text-muted-foreground">
-                Add replacement cost to the product to track purchase cost recovery.
-              </p>
-            </SectionCard>
-          )}
-
-          <SectionCard title="Timeline">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon
-                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <div>
-                  <p className="font-medium">Created</p>
-                  <p className="text-muted-foreground">{formatDateTime(inventory.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon
-                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <div>
-                  <p className="font-medium">Last updated</p>
-                  <p className="text-muted-foreground">{formatDateTime(inventory.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
-          </SectionCard>
+          ) : null}
         </div>
       </div>
 
