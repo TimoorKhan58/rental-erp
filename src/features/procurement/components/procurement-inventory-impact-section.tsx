@@ -50,7 +50,7 @@ export function ProcurementInventoryImpactSection({
   return (
     <SectionCard
       title="Inventory impact"
-      description="Stock IN movements posted when goods were received against this purchase order. Receiving increases on-hand quantity; it does not reserve stock or post journals."
+      description="Stock added when goods arrived for this purchase. Receiving adds to what you have in stock."
       actions={
         movements.length > 0 ? (
           <AppButton

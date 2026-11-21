@@ -926,7 +926,7 @@ export function RepairReportPage() {
   return (
     <OperationalListReportShell<RepairReportLine>
       title="Repairs Report"
-      description="Repair jobs by repair date. Job costs are not posted expenses or journals."
+      description="Repair jobs by repair date. Finished repairs with a cost are in your books as Repairs & Maintenance."
       breadcrumb="Repairs"
       searchPlaceholder="Search repair number, product, or status..."
       emptyTitle="No repair data"
@@ -1041,7 +1041,7 @@ export function MaintenanceReportPage() {
   return (
     <OperationalListReportShell<MaintenanceReportLine>
       title="Maintenance Report"
-      description="Maintenance jobs by scheduled date. Job costs are not posted expenses or journals."
+      description="Maintenance jobs by scheduled date. Finished jobs with an actual cost are in your books as Repairs & Maintenance."
       breadcrumb="Maintenance"
       searchPlaceholder="Search number, product, status, or service type..."
       emptyTitle="No maintenance data"

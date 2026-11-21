@@ -127,8 +127,8 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
   return (
     <PageContainer>
       <PageHeader
-        title={procurement.poNumber}
-        description={`Supplier: ${supplierLabelById.get(procurement.supplierId) ?? procurement.supplierId}`}
+        title={supplier?.name ?? (supplierLabelById.get(procurement.supplierId) ?? procurement.supplierId).replace(/^.*? — /, "")}
+        description={`Purchase ${procurement.poNumber} · ${STATUS_LABELS[procurement.status]}`}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Purchases", href: ROUTES.procurements },
@@ -181,76 +181,19 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Order total" value={formatCurrency(orderTotal)} />
         <MetricCard label="Paid" value={formatCurrency(procurement.paidAmount)} />
-        <MetricCard label="Balance" value={formatCurrency(procurement.balance)} />
+        <MetricCard label="Still owed" value={formatCurrency(procurement.balance)} />
         <MetricCard
           label="Received"
           value={`${totalReceived} / ${totalOrdered}`}
-          hint="Units received vs ordered"
-        />
-        <MetricCard
-          label="Status"
-          value={<ProcurementStatusBadge status={procurement.status} />}
+          hint="Items arrived out of ordered"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Purchase order header">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="PO number" value={procurement.poNumber} />
-              <DetailField label="Order date" value={formatDate(procurement.orderDate)} />
-              <DetailField
-                label="Expected date"
-                value={
-                  procurement.expectedDate ? formatDate(procurement.expectedDate) : null
-                }
-              />
-              <DetailField label="Remarks" value={procurement.remarks} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Supplier">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Supplier" value={supplier?.name ?? supplierLabelById.get(procurement.supplierId)} />
-              <DetailField label="Supplier code" value={supplier?.supplierCode} />
-              <DetailField label="Phone" value={supplier?.phone} />
-              <DetailField label="Email" value={supplier?.email} />
-              {supplier ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.supplierDetail(supplier.id)} />}
-                  >
-                    View supplier
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Warehouse">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Warehouse" value={warehouse?.name ?? warehouseLabelById.get(procurement.warehouseId)} />
-              <DetailField label="Warehouse code" value={warehouse?.warehouseCode} />
-              <DetailField label="Address" value={warehouse?.address} />
-              {warehouse ? (
-                <div className="sm:col-span-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={ROUTES.warehouseDetail(warehouse.id)} />}
-                  >
-                    View warehouse
-                  </AppButton>
-                </div>
-              ) : null}
-            </dl>
-          </SectionCard>
-
           <SectionCard title="Line items">
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full min-w-[640px] text-sm">
@@ -306,30 +249,68 @@ export function ProcurementDetailPage({ procurementId }: ProcurementDetailPagePr
 
         <div className="space-y-6">
           <SectionCard
-            title="Status timeline"
+            title="Where it is now"
             actions={<ProcurementStatusBadge status={procurement.status} />}
           >
             <ProcurementStatusTimeline status={procurement.status} />
           </SectionCard>
 
-          <SectionCard title="Receiving status">
+          <SupplierPaymentsSection procurement={procurement} />
+
+          <SectionCard title="Order details">
             <dl className="space-y-4">
+              <DetailField label="Order date" value={formatDate(procurement.orderDate)} />
               <DetailField
-                label="Units received"
-                value={`${totalReceived} of ${totalOrdered}`}
+                label="Expected date"
+                value={procurement.expectedDate ? formatDate(procurement.expectedDate) : null}
               />
-              <DetailField label="Current status" value={STATUS_LABELS[procurement.status]} />
+              <DetailField label="Remarks" value={procurement.remarks} />
             </dl>
           </SectionCard>
 
-          <SectionCard title="Record details">
+          <SectionCard title="Supplier">
             <dl className="space-y-4">
-              <DetailField label="Created" value={formatDate(procurement.createdAt)} />
+              <DetailField label="Name" value={supplier?.name ?? supplierLabelById.get(procurement.supplierId)} />
+              <DetailField label="Phone" value={supplier?.phone} />
+              <DetailField label="Email" value={supplier?.email} />
+            </dl>
+            {supplier ? (
+              <AppButton
+                className="mt-4"
+                variant="outline"
+                size="sm"
+                render={<Link href={ROUTES.supplierDetail(supplier.id)} />}
+              >
+                View supplier
+              </AppButton>
+            ) : null}
+          </SectionCard>
+
+          <SectionCard title="Goes to">
+            <dl className="space-y-4">
+              <DetailField label="Warehouse" value={warehouse?.name ?? warehouseLabelById.get(procurement.warehouseId)} />
+              <DetailField label="Address" value={warehouse?.address} />
+            </dl>
+            {warehouse ? (
+              <AppButton
+                className="mt-4"
+                variant="outline"
+                size="sm"
+                render={<Link href={ROUTES.warehouseDetail(warehouse.id)} />}
+              >
+                View warehouse
+              </AppButton>
+            ) : null}
+          </SectionCard>
+
+          <SectionCard title="History">
+            <dl className="space-y-4">
+              <DetailField label="Created" value={formatDateTime(procurement.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(procurement.updatedAt)} />
             </dl>
           </SectionCard>
 
-          <SupplierPaymentsSection procurement={procurement} />
+          
 
           <ProcurementAuditSection
             procurementId={procurement.id}

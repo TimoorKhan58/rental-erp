@@ -6,6 +6,7 @@ import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
 import { useProcurementPermissions } from "../hooks";
+import { ProcurementSummaryCards } from "../components/procurement-summary-cards";
 import { ProcurementListTable } from "../tables";
 
 export function ProcurementListPage() {
@@ -15,7 +16,7 @@ export function ProcurementListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Purchases"
-        description="Stock you buy from suppliers. Draft an order, approve it, then receive the goods; stock goes up only when goods are received."
+        description="Stock you buy from suppliers. Create an order, approve it, then receive the goods. Your stock goes up only when the goods arrive."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Purchases" },
@@ -31,6 +32,8 @@ export function ProcurementListPage() {
           ) : undefined
         }
       />
+
+      <ProcurementSummaryCards />
 
       <ProcurementListTable />
     </PageContainer>
