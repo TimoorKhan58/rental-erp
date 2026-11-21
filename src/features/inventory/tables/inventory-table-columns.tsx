@@ -118,6 +118,7 @@ export function getInventoryTableColumns({
       cell: (row) => (
         <div className="min-w-[12rem] space-y-1.5">
           <InventoryQuantityBreakdown
+            size="inline"
             quantityOnHand={row.quantityOnHand}
             reservedQuantity={row.reservedQuantity}
             availableQuantity={row.availableQuantity}
