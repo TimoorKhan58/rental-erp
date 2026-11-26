@@ -53,7 +53,7 @@ function BalanceSheetContent() {
           asOfDate={asOfDate}
           onAsOfDateChange={setAsOfDate}
           onChange={() => undefined}
-          fieldHint="Posted journals as of this journal date"
+          fieldHint="Shows the position on this day"
         />
         <AppButton
           variant="outline"
@@ -79,33 +79,33 @@ function BalanceSheetContent() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
-              label="Total assets"
+              label="What you own"
               value={formatCurrency(data.totalAssets)}
-              hint="Posted journals"
+              hint="Cash, bank, equipment and money owed to you"
             />
             <MetricCard
-              label="Total liabilities"
+              label="What you owe"
               value={formatCurrency(data.totalLiabilities)}
-              hint="Posted journals"
+              hint="Mostly suppliers"
             />
             <MetricCard
-              label="Total equity"
+              label="Your share"
               value={formatCurrency(data.totalEquity)}
-              hint="Posted journals"
+              hint="What you put in (opening balance)"
             />
             <MetricCard
-              label="Net income"
+              label="Profit so far"
               value={formatCurrency(data.netIncome)}
-              hint="Posted journal income minus expenses"
+              hint="Income minus costs"
             />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
             {(
               [
-                ["Assets", data.assets],
-                ["Liabilities", data.liabilities],
-                ["Equity", data.equity],
+                ["What you own", data.assets],
+                ["What you owe", data.liabilities],
+                ["Your share", data.equity],
               ] as const
             ).map(([title, section]) => (
               <SectionCard key={title} title={title}>
@@ -130,7 +130,9 @@ function BalanceSheetContent() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Balanced: {data.isBalanced ? "Yes" : "No"}
+            {data.isBalanced
+              ? "The books balance: what you own equals what you owe plus your share."
+              : "The books do not balance. Ask your accountant to check the entries."}
           </p>
         </>
       ) : null}

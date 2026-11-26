@@ -62,7 +62,7 @@ function ExpenseContent() {
           dateFrom={dateFrom}
           dateTo={dateTo}
           onChange={setDateRange}
-          fieldHint="Posted journal date"
+          fieldHint="Counted by the date of each entry"
         />
         <AppButton
           variant="outline"
@@ -87,17 +87,17 @@ function ExpenseContent() {
       ) : data ? (
         <>
           <MetricCard
-            label="Posted journal expenses"
+            label="Costs"
             value={formatCurrency(data.totalExpenses)}
             hint="GL expense accounts — not the operational Expenses module"
           />
           <AmountBarChart
-            title="Expenses by account"
-            description="Posted journal expense accounts"
+            title="Costs by type"
+            description="For the dates you chose"
             data={chartData}
             isLoading={isLoading}
           />
-          <SectionCard title="Expense lines">
+          <SectionCard title="Cost lines">
             <DataTableShell
               columns={columns}
               data={data.lines}
@@ -105,7 +105,7 @@ function ExpenseContent() {
               emptyState={
                 <EmptyState
                   title="No expense lines"
-                  description="No posted journal expense accounts for this period."
+                  description="No costs in this period."
                 />
               }
             />
@@ -121,7 +121,7 @@ export function ExpenseReportPage() {
     <PageContainer>
       <PageHeader
         title="Expense Report"
-        description="Costs recorded in your accounts for the chosen dates."
+        description="Where your money went, for the dates you chose."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

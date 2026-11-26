@@ -70,7 +70,7 @@ function ProfitLossContent() {
           dateFrom={dateFrom}
           dateTo={dateTo}
           onChange={setDateRange}
-          fieldHint="Posted journal date"
+          fieldHint="Counted by the date of each entry"
         />
         <AppButton
           variant="outline"
@@ -96,47 +96,47 @@ function ProfitLossContent() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              label="Posted journal revenue"
+              label="Income"
               value={formatCurrency(data.totalRevenue)}
-              hint="Posted INCOME accounts"
+              hint="Rent you have invoiced"
             />
             <MetricCard
-              label="Posted journal expenses"
+              label="Costs"
               value={formatCurrency(data.totalExpenses)}
-              hint="Posted EXPENSE accounts — not the Expenses module"
+              hint="Expenses, hire-ins, repairs and upkeep"
             />
             <MetricCard
-              label="Net profit"
+              label="Profit"
               value={formatCurrency(data.netProfit)}
-              hint="Posted journal revenue minus posted journal expenses"
+              hint="Income minus costs"
             />
           </div>
 
           <AmountBarChart
-            title="Account amounts"
-            description="Posted journal account amounts for the selected dates"
+            title="Income and costs"
+            description="For the dates you chose"
             data={chartData}
             isLoading={isLoading}
           />
 
-          <SectionCard title="Revenue accounts">
+          <SectionCard title="Where income came from">
             <DataTableShell
               columns={revenueColumns}
               data={data.revenue}
               getRowId={(row) => row.accountId}
               emptyState={
-                <EmptyState title="No revenue lines" description="No revenue accounts for this period." />
+                <EmptyState title="No income yet" description="No income in this period." />
               }
             />
           </SectionCard>
 
-          <SectionCard title="Expense accounts">
+          <SectionCard title="Where money went">
             <DataTableShell
               columns={expenseColumns}
               data={data.expenses}
               getRowId={(row) => row.accountId}
               emptyState={
-                <EmptyState title="No expense lines" description="No expense accounts for this period." />
+                <EmptyState title="No costs yet" description="No costs in this period." />
               }
             />
           </SectionCard>
