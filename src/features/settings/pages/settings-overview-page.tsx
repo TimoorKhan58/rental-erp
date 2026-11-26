@@ -24,13 +24,13 @@ const SECTIONS = [
   },
   {
     title: "Preferences",
-    description: "Light or dark screen, language and date style.",
+    description: "Light or dark screen.",
     href: ROUTES.settingsPreferences,
     requires: "settings" as const,
   },
   {
     title: "Security",
-    description: "Change your password and see the sign-in rules.",
+    description: "Change your password.",
     href: ROUTES.settingsSecurity,
     requires: "settings" as const,
   },

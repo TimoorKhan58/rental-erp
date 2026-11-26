@@ -107,7 +107,7 @@ export function SettingsPreferencesPage() {
     <PageContainer>
       <PageHeader
         title="Preferences"
-        description="Light or dark look, and how dates and numbers are shown."
+        description="Light or dark screen."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },
