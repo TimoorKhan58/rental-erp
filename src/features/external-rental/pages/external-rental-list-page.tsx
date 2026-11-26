@@ -26,7 +26,7 @@ export function ExternalRentalListPage() {
   const searchParams = useSearchParams();
   const supplierId = searchParams.get("supplierId") ?? undefined;
   const { canCreate } = useExternalRentalPermissions();
-  const { supplierLabelById, warehouseLabelById } =
+  const { supplierLabelById, rentalOrderLabelById } =
     useExternalRentalFilterOptions();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -45,11 +45,11 @@ export function ExternalRentalListPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="External Rentals"
+        title="Hire-ins"
         description="Items you hire from other suppliers when you do not have enough of your own."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "External Rentals" },
+          { label: "Hire-ins" },
         ]}
         actions={
           canCreate ? (
@@ -57,7 +57,7 @@ export function ExternalRentalListPage() {
               leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.externalRentalsNew} />}
             >
-              New agreement
+              New hire-in
             </AppButton>
           ) : undefined
         }
@@ -67,7 +67,7 @@ export function ExternalRentalListPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search agreement number..."
+          placeholder="Search by hire-in number..."
           className="max-w-sm"
         />
         <AppButton
@@ -81,55 +81,53 @@ export function ExternalRentalListPage() {
       </div>
 
       {isLoading ? (
-        <LoadingState label="Loading external rentals..." />
+        <LoadingState label="Loading hire-ins..." />
       ) : isError ? (
         <EmptyState
-          title="Unable to load agreements"
+          title="Could not load hire-ins"
           description={error?.message ?? "Please try again."}
         />
       ) : (data?.items.length ?? 0) === 0 ? (
         <EmptyState
-          title="No external rentals"
+          title="No hire-ins yet"
           description="Hire items from a supplier when your own stock is not enough."
         />
       ) : (
         <>
           <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[960px] text-sm">
+            <table className="w-full min-w-[820px] text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left">
-                  <th className="px-3 py-2 font-medium">Agreement</th>
-                  <th className="px-3 py-2 font-medium">Supplier</th>
-                  <th className="px-3 py-2 font-medium">Rental order</th>
-                  <th className="px-3 py-2 font-medium">Warehouse</th>
+                  <th className="px-3 py-2 font-medium">Hire-in</th>
+                  <th className="px-3 py-2 font-medium">For order</th>
                   <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Settlement</th>
+                  <th className="px-3 py-2 font-medium">Payment</th>
                   <th className="px-3 py-2 font-medium">Hire period</th>
-                  <th className="px-3 py-2 font-medium text-right">Due</th>
+                  <th className="px-3 py-2 font-medium text-right">Cost</th>
                   <th className="px-3 py-2 font-medium text-right">Paid</th>
-                  <th className="px-3 py-2 font-medium text-right">Outstanding</th>
+                  <th className="px-3 py-2 font-medium text-right">Still owed</th>
                 </tr>
               </thead>
               <tbody>
                 {(data?.items ?? []).map((row: ExternalRentalResponse) => (
                   <tr key={row.id} className="border-b last:border-b-0">
                     <td className="px-3 py-2">
-                      <Link
-                        href={ROUTES.externalRentalDetail(row.id)}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {row.agreementNumber}
+                      {/* The supplier comes first, like customers elsewhere. */}
+                      <Link href={ROUTES.externalRentalDetail(row.id)} className="group block">
+                        <span className="block font-medium text-foreground group-hover:text-primary group-hover:underline">
+                          {nameOnly(supplierLabelById.get(row.supplierId) ?? row.supplierId)}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">{row.agreementNumber}</span>
                       </Link>
                     </td>
                     <td className="px-3 py-2">
-                      {supplierLabelById.get(row.supplierId) ?? row.supplierId}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      {row.rentalOrderId}
-                    </td>
-                    <td className="px-3 py-2">
-                      {warehouseLabelById.get(row.warehouseId) ??
-                        row.warehouseId}
+                      {/* Was the raw internal id; the order number is what people know. */}
+                      <Link
+                        href={ROUTES.rentalOrderDetail(row.rentalOrderId)}
+                        className="text-primary hover:underline"
+                      >
+                        {rentalOrderLabelById.get(row.rentalOrderId)?.replace(/ — .*$/, "") ?? "View order"}
+                      </Link>
                     </td>
                     <td className="px-3 py-2">
                       <ExternalRentalStatusBadge status={row.status} />
@@ -150,7 +148,13 @@ export function ExternalRentalListPage() {
                       {formatCurrency(row.amountPaid)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {formatCurrency(row.outstandingBalance)}
+                      {row.status !== "CANCELLED" && row.outstandingBalance > 0 ? (
+                        <span className="font-medium tabular-nums text-warning-foreground">
+                          {formatCurrency(row.outstandingBalance)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -172,4 +176,10 @@ export function ExternalRentalListPage() {
       )}
     </PageContainer>
   );
+}
+
+/** "SUP-00003 — zeeshan" → "zeeshan". */
+function nameOnly(label: string): string {
+  const separator = " — ";
+  return label.includes(separator) ? label.split(separator).slice(1).join(separator) : label;
 }

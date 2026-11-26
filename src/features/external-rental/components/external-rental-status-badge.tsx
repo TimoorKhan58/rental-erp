@@ -32,9 +32,9 @@ const STATUS_SEMANTIC: Record<
 };
 
 const SETTLEMENT_LABELS: Record<ExternalRentalSettlementStatus, string> = {
-  UNSETTLED: "Unsettled",
-  PARTIALLY_SETTLED: "Partially settled",
-  SETTLED: "Settled",
+  UNSETTLED: "Not paid",
+  PARTIALLY_SETTLED: "Part paid",
+  SETTLED: "Paid",
 };
 
 const SETTLEMENT_SEMANTIC: Record<

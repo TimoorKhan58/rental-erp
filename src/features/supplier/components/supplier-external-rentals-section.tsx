@@ -47,7 +47,7 @@ export function SupplierExternalRentalsSection({
 
   return (
     <SectionCard
-      title="External rentals"
+      title="Hire-ins"
       description="Hire-in agreements sourced from this supplier."
       actions={
         totalCount > 0 ? (

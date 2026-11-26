@@ -217,7 +217,7 @@ export function ExternalRentalCreatePage() {
         description="Pick the rental order that is short, then enter how many you are hiring and what each costs."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "External Rentals", href: ROUTES.externalRentals },
+          { label: "Hire-ins", href: ROUTES.externalRentals },
           { label: "New agreement" },
         ]}
       />
