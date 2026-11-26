@@ -1,11 +1,11 @@
 import type { AccountType, JournalEntryStatus, JournalReferenceType } from "../types";
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  ASSET: "Asset",
-  LIABILITY: "Liability",
-  EQUITY: "Equity",
+  ASSET: "What you own",
+  LIABILITY: "What you owe",
+  EQUITY: "Your share",
   INCOME: "Income",
-  EXPENSE: "Expense",
+  EXPENSE: "Cost",
 };
 
 export const JOURNAL_STATUS_LABELS: Record<JournalEntryStatus, string> = {

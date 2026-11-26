@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { DataTableColumn } from "@/components/shared";
 import { ROUTES } from "@/config/routes";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { AccountTypeBadge } from "../components/account-type-badge";
 import { SortableColumnHeader } from "./account-sortable-column-header";
 import type { AccountResponse, AccountSortField, ListAccountsParams } from "../types";
@@ -11,11 +11,14 @@ import type { AccountResponse, AccountSortField, ListAccountsParams } from "../t
 type AccountTableColumnOptions = {
   params: ListAccountsParams;
   onSort: (field: AccountSortField, order: ListAccountsParams["sortOrder"]) => void;
+  /** Current balance of each account, by account id (hidden when undefined). */
+  balanceByAccountId?: ReadonlyMap<string, number>;
 };
 
 export function getAccountTableColumns({
   params,
   onSort,
+  balanceByAccountId,
 }: AccountTableColumnOptions): Array<DataTableColumn<AccountResponse>> {
   return [
     {
@@ -64,6 +67,22 @@ export function getAccountTableColumns({
       ),
       cell: (row) => <AccountTypeBadge accountType={row.accountType} />,
     },
+    ...(balanceByAccountId
+      ? [
+          {
+            id: "balance",
+            header: "Balance",
+            cell: (row: AccountResponse) => {
+              const balance = balanceByAccountId.get(row.id) ?? 0;
+              return (
+                <span className={balance < 0 ? "font-medium tabular-nums text-destructive" : "font-medium tabular-nums"}>
+                  {formatCurrency(balance)}
+                </span>
+              );
+            },
+          },
+        ]
+      : []),
     {
       id: "description",
       header: "Description",
@@ -81,19 +100,6 @@ export function getAccountTableColumns({
         />
       ),
       cell: (row) => (row.isActive ? "Active" : "Inactive"),
-    },
-    {
-      id: "createdAt",
-      header: (
-        <SortableColumnHeader
-          label="Created"
-          field="createdAt"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => formatDate(row.createdAt),
     },
   ];
 }

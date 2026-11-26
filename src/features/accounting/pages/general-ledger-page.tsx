@@ -15,7 +15,7 @@ export function GeneralLedgerPage() {
     <PageContainer>
       <PageHeader
         title="General ledger"
-        description="View posted ledger entries by account."
+        description="Every entry on one account, in date order, with a running balance."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Accounting", href: ROUTES.accounting },

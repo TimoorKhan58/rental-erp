@@ -11,7 +11,7 @@ export function ChartOfAccountsPage() {
     <PageContainer>
       <PageHeader
         title="Chart of accounts"
-        description="Browse and filter the organization chart of accounts."
+        description="Every account your books use, with what is in it right now."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Accounting", href: ROUTES.accounting },

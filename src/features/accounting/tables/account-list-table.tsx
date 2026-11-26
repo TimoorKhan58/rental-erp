@@ -22,6 +22,7 @@ import {
   useAccountListParams,
   useAccountingPermissions,
   useChartOfAccounts,
+  useTrialBalance,
 } from "../hooks";
 import { CreateAccountDialog } from "../dialogs/create-account-dialog";
 import { getAccountTableColumns } from "./account-list-table-columns";
@@ -52,7 +53,12 @@ export function AccountListTable() {
     return () => window.clearTimeout(timer);
   }, [localSearch, params.search, setSearch]);
 
-  const columns = getAccountTableColumns({ params, onSort: setSorting });
+  const trialBalance = useTrialBalance({});
+  const balanceByAccountId = trialBalance.data
+    ? new Map(trialBalance.data.lines.map((line) => [line.accountId, line.endingBalance]))
+    : undefined;
+
+  const columns = getAccountTableColumns({ params, onSort: setSorting, balanceByAccountId });
 
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.accounting.accounts.lists() });

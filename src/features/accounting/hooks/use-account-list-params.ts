@@ -19,7 +19,8 @@ export function useAccountListParams() {
     return {
       page: Number(searchParams.get("page") ?? DEFAULT_PAGE),
       pageSize: Number(searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE),
-      sortBy: (searchParams.get("sortBy") as AccountSortField | null) ?? undefined,
+      // Accounts are read in code order (1000, 1010, 1100…), not newest first.
+      sortBy: (searchParams.get("sortBy") as AccountSortField | null) ?? "accountCode",
       sortOrder:
         (searchParams.get("sortOrder") as ListAccountsParams["sortOrder"]) ?? "asc",
       search: searchParams.get("search") ?? undefined,
