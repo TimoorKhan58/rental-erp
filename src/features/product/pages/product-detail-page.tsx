@@ -187,38 +187,36 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
         }
       />
 
+      <section aria-label="Product at a glance" className="grid gap-3 sm:grid-cols-3">
+        <div className="flex flex-col gap-1 rounded-xl border border-border bg-card px-4 py-3.5 shadow-soft">
+          <span className="text-xs text-muted-foreground">Daily rent</span>
+          <span className="text-2xl font-semibold tabular-nums tracking-tight">
+            {formatCurrency(Number(product.rentalRate))}
+          </span>
+          <span className="text-xs text-muted-foreground">Per item, per day</span>
+        </div>
+        {relatedData.permissions.canReadInventory ? (
+          <div className="flex flex-col gap-1 rounded-xl border border-border bg-card px-4 py-3.5 shadow-soft">
+            <span className="text-xs text-muted-foreground">Free to rent</span>
+            <span className="text-2xl font-semibold tabular-nums tracking-tight">
+              {relatedData.isLoading ? "…" : relatedData.inventorySummary.availableQuantity.toLocaleString()}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {relatedData.isLoading ? "Checking stock" : `of ${relatedData.inventorySummary.quantityOnHand.toLocaleString()} in stock`}
+            </span>
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-1 rounded-xl border border-border bg-card px-4 py-3.5 shadow-soft">
+          <span className="text-xs text-muted-foreground">Cost to replace</span>
+          <span className="text-2xl font-semibold tabular-nums tracking-tight">
+            {product.replacementCost === null ? "—" : formatCurrency(Number(product.replacementCost))}
+          </span>
+          <span className="text-xs text-muted-foreground">If it is lost or broken</span>
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard
-            title="Profile"
-            actions={<ProductStatusBadge isActive={product.isActive} />}
-          >
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Product code" value={product.productCode} />
-              <DetailField label="Name" value={product.name} />
-              <DetailField label="Unit" value={product.unit} />
-              <DetailField label="Variants" value={product.variantCount} />
-              <DetailField label="Description" value={product.description} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Pricing">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Daily rent"
-                value={formatCurrency(Number(product.rentalRate))}
-              />
-              <DetailField
-                label="Cost to replace"
-                value={
-                  product.replacementCost === null
-                    ? null
-                    : formatCurrency(Number(product.replacementCost))
-                }
-              />
-            </dl>
-          </SectionCard>
-
           <ProductDetailSections
             product={product}
             categoryName={categoryName}
@@ -238,10 +236,15 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
         </div>
 
         <div className="space-y-6">
-          <SectionCard title="Account">
+          <SectionCard
+            title="Details"
+            actions={<ProductStatusBadge isActive={product.isActive} />}
+          >
             <dl className="space-y-4">
-              <DetailField label="Status" value={product.isActive ? "Active" : "Inactive"} />
-              <DetailField label="Created" value={formatDate(product.createdAt)} />
+              <DetailField label="Product code" value={product.productCode} />
+              <DetailField label="Unit" value={product.unit} />
+              <DetailField label="Description" value={product.description} />
+              <DetailField label="Added" value={formatDate(product.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(product.updatedAt)} />
             </dl>
           </SectionCard>

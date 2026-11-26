@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { SupplierStatusBadge } from "../components/supplier-status-badge";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { SupplierResponse, SupplierSortField, ListSuppliersParams } from "../types";
@@ -29,6 +29,8 @@ type SupplierTableColumnOptions = {
   canDelete: boolean;
   onDelete: (supplier: SupplierResponse) => void;
   onToggleStatus: (supplier: SupplierResponse) => void;
+  /** What you still owe each supplier (purchases + hire-ins), by supplier id. */
+  owedBySupplier?: ReadonlyMap<string, number>;
 };
 
 export function getSupplierTableColumns({
@@ -42,6 +44,7 @@ export function getSupplierTableColumns({
   canDelete,
   onDelete,
   onToggleStatus,
+  owedBySupplier,
 }: SupplierTableColumnOptions): Array<DataTableColumn<SupplierResponse>> {
   const allSelected = allRowIds.length > 0 && allRowIds.every((id) => selectedIds.has(id));
 
@@ -91,21 +94,6 @@ export function getSupplierTableColumns({
       ),
     },
     {
-      id: "supplierCode",
-      header: (
-        <SortableColumnHeader
-          label="Code"
-          field="supplierCode"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => (
-        <span className="text-sm text-muted-foreground">{row.supplierCode}</span>
-      ),
-    },
-    {
       id: "phone",
       header: (
         <SortableColumnHeader
@@ -118,6 +106,22 @@ export function getSupplierTableColumns({
       ),
       cell: (row) => row.phone,
     },
+    ...(owedBySupplier
+      ? [
+          {
+            id: "owed",
+            header: "You owe",
+            cell: (row: SupplierResponse) => {
+              const owed = owedBySupplier.get(row.id) ?? 0;
+              return owed > 0 ? (
+                <span className="font-medium tabular-nums text-warning-foreground">{formatCurrency(owed)}</span>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              );
+            },
+          },
+        ]
+      : []),
     {
       id: "email",
       header: (

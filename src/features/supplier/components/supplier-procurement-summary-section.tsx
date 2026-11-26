@@ -35,12 +35,15 @@ export function SupplierProcurementSummarySection({
   const totalCount = data?.meta.total ?? 0;
   const recentOrders = orders.slice(0, 5);
 
-  const totalOrderValue = orders.reduce(
+  // A cancelled purchase is not owed (it used to be counted, so this box
+  // disagreed with the amount shown at the top of the page).
+  const counted = orders.filter((order) => order.status !== "CANCELLED");
+  const totalOrderValue = counted.reduce(
     (sum, order) => sum + (order.orderTotal ?? 0),
     0,
   );
-  const totalPaid = orders.reduce((sum, order) => sum + (order.paidAmount ?? 0), 0);
-  const totalOutstanding = orders.reduce(
+  const totalPaid = counted.reduce((sum, order) => sum + (order.paidAmount ?? 0), 0);
+  const totalOutstanding = counted.reduce(
     (sum, order) => sum + (order.balance ?? 0),
     0,
   );
@@ -131,7 +134,7 @@ export function SupplierProcurementSummarySection({
                       {formatCurrency(order.orderTotal ?? 0)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {formatCurrency(order.balance ?? 0)}
+                      {order.status === "CANCELLED" ? "—" : formatCurrency(order.balance ?? 0)}
                     </td>
                   </tr>
                 ))}

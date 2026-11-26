@@ -135,13 +135,11 @@ export function ExternalRentalDetailPage({
   return (
     <PageContainer>
       <PageHeader
-        title={agreement.agreementNumber}
-        description={`Supplier: ${
-          supplierLabelById.get(agreement.supplierId) ?? agreement.supplierId
-        }`}
+        title={(supplierLabelById.get(agreement.supplierId) ?? agreement.supplierId).replace(/^.*? — /, "")}
+        description={`Hire-in ${agreement.agreementNumber}`}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "External Rentals", href: ROUTES.externalRentals },
+          { label: "Hire-ins", href: ROUTES.externalRentals },
           { label: agreement.agreementNumber },
         ]}
         actions={
@@ -224,7 +222,7 @@ export function ExternalRentalDetailPage({
             </div>
             <div className="space-y-1">
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Settlement
+                Payment
               </dt>
               <dd>
                 <ExternalRentalSettlementBadge
@@ -233,36 +231,36 @@ export function ExternalRentalDetailPage({
               </dd>
             </div>
             <DetailField
-              label="Warehouse"
-              value={
+              label="Goes to"
+              value={(
                 warehouseLabelById.get(agreement.warehouseId) ??
                 agreement.warehouseId
-              }
+              ).replace(/^.*? — /, "")}
             />
             <div className="space-y-1">
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Rental order
+                For order
               </dt>
               <dd className="text-sm">
                 <Link
                   href={ROUTES.rentalOrderDetail(agreement.rentalOrderId)}
                   className="text-primary underline-offset-4 hover:underline"
                 >
-                  {rentalOrderLabelById.get(agreement.rentalOrderId) ??
-                    agreement.rentalOrderId}
+                  {rentalOrderLabelById.get(agreement.rentalOrderId)?.replace(/ — .*$/, "") ??
+                    "View order"}
                 </Link>
               </dd>
             </div>
             <DetailField
-              label="Hire start"
+              label="Hired from"
               value={formatDate(agreement.hireStartDate)}
             />
             <DetailField
-              label="Hire end"
+              label="Hired until"
               value={formatDate(agreement.hireEndDate)}
             />
             <DetailField
-              label="Expected return to supplier"
+              label="Send back to supplier by"
               value={formatDate(agreement.expectedReturnToSupplierDate)}
             />
             <DetailField label="Remarks" value={agreement.remarks} />
@@ -272,19 +270,19 @@ export function ExternalRentalDetailPage({
         <SectionCard title="Money">
           <dl className="space-y-3">
             <DetailField
-              label="Amount due"
+              label="Cost of items received"
               value={formatCurrency(agreement.amountDue)}
             />
             <DetailField
-              label="Amount paid"
+              label="Paid so far"
               value={formatCurrency(agreement.amountPaid)}
             />
             <DetailField
-              label="Outstanding"
+              label="Still owed"
               value={formatCurrency(agreement.outstandingBalance)}
             />
             <DetailField
-              label="Total hire-in cost"
+              label="Full cost if everything arrives"
               value={formatCurrency(agreement.totalHireInCost)}
             />
           </dl>
@@ -293,52 +291,40 @@ export function ExternalRentalDetailPage({
 
       <SectionCard title="Items" className="mt-4">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-left">
-                <th className="px-3 py-2 font-medium">Product</th>
-                <th className="px-3 py-2 font-medium">Req</th>
-                <th className="px-3 py-2 font-medium">Conf</th>
-                <th className="px-3 py-2 font-medium">Recv</th>
-                <th className="px-3 py-2 font-medium">Alloc</th>
-                <th className="px-3 py-2 font-medium">Disp</th>
-                <th className="px-3 py-2 font-medium">Cust ret</th>
-                <th className="px-3 py-2 font-medium">Supp ret</th>
-                <th className="px-3 py-2 font-medium">Written off</th>
-                <th className="px-3 py-2 font-medium">With customer</th>
-                <th className="px-3 py-2 font-medium">In custody</th>
-                <th className="px-3 py-2 font-medium">Owed</th>
-                <th className="px-3 py-2 font-medium text-right">Unit cost</th>
+                <th className="px-3 py-2 font-medium">Item</th>
+                <th className="px-3 py-2 font-medium text-right">Hired</th>
+                <th className="px-3 py-2 font-medium text-right">With customer</th>
+                <th className="px-3 py-2 font-medium text-right">With you</th>
+                <th className="px-3 py-2 font-medium text-right">Sent back</th>
+                <th className="px-3 py-2 font-medium text-right">Lost</th>
+                <th className="px-3 py-2 font-medium text-right">Cost each</th>
               </tr>
             </thead>
             <tbody>
               {agreement.items.map((item) => (
                 <tr key={item.id} className="border-b last:border-b-0">
                   <td className="px-3 py-2">
-                    {productLabelById.get(item.productId) ?? item.productId}
+                    {(productLabelById.get(item.productId) ?? item.productId).replace(/^.*? — /, "")}
                   </td>
-                  <td className="px-3 py-2">{item.quantityRequested}</td>
-                  <td className="px-3 py-2">{item.quantityConfirmed}</td>
-                  <td className="px-3 py-2">{item.quantityReceived}</td>
-                  <td className="px-3 py-2">{item.quantityAllocated}</td>
-                  <td className="px-3 py-2">{item.quantityDispatched}</td>
-                  <td className="px-3 py-2">
-                    {item.quantityReturnedFromCustomer}
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {item.quantityConfirmed || item.quantityRequested}
                   </td>
-                  <td className="px-3 py-2">
-                    {item.quantityReturnedToSupplier}
-                  </td>
-                  <td className="px-3 py-2">{item.quantityWrittenOff}</td>
-                  <td className="px-3 py-2">{item.qtyWithCustomer}</td>
-                  <td className="px-3 py-2">{item.qtyInCompanyCustody}</td>
-                  <td className="px-3 py-2">{item.qtyOwedToSupplier}</td>
-                  <td className="px-3 py-2 text-right">
-                    {formatCurrency(item.unitCost)}
-                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{item.qtyWithCustomer}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{item.qtyInCompanyCustody}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{item.quantityReturnedToSupplier}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{item.quantityWrittenOff}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(item.unitCost)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Hired = how many you asked the supplier for. With customer and With you are where the items are
+            right now. Sent back and Lost are what you no longer owe the supplier items for.
+          </p>
         </div>
       </SectionCard>
 

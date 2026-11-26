@@ -5,7 +5,7 @@ type InventoryQuantityBreakdownProps = {
   reservedQuantity: number;
   availableQuantity: number;
   /** compact = table cell; detail = larger hierarchy */
-  size?: "compact" | "detail";
+  size?: "compact" | "detail" | "inline";
   className?: string;
 };
 
@@ -20,6 +20,28 @@ export function InventoryQuantityBreakdown({
   size = "compact",
   className,
 }: InventoryQuantityBreakdownProps) {
+  if (size === "inline") {
+    // Table rows: the number people act on (free to rent) first, the rest in
+    // small text. The three labelled columns repeated on every row were noise.
+    return (
+      <div
+        className={cn("min-w-[10rem] tabular-nums", className)}
+        aria-label={`On hand ${quantityOnHand}, committed ${reservedQuantity}, available ${availableQuantity}`}
+      >
+        <p className="text-sm">
+          <span className={cn("text-base font-semibold", availableQuantity <= 0 && "text-destructive")}>
+            {availableQuantity.toLocaleString()}
+          </span>{" "}
+          <span className="text-muted-foreground">free to rent</span>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {quantityOnHand.toLocaleString()} in stock
+          {reservedQuantity > 0 ? ` · ${reservedQuantity.toLocaleString()} booked` : ""}
+        </p>
+      </div>
+    );
+  }
+
   if (size === "detail") {
     return (
       <dl

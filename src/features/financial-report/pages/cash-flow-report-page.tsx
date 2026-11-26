@@ -64,7 +64,7 @@ function CashFlowContent() {
           dateFrom={dateFrom}
           dateTo={dateTo}
           onChange={setDateRange}
-          fieldHint="Posted journal date"
+          fieldHint="Counted by the date of each entry"
         />
         <AppButton
           variant="outline"

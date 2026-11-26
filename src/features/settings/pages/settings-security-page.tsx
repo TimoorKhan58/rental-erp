@@ -74,7 +74,7 @@ export function SettingsSecurityPage() {
     <PageContainer>
       <PageHeader
         title="Security"
-        description="Password and sign-in rules for your team."
+        description="Change your password."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Settings", href: ROUTES.settings },

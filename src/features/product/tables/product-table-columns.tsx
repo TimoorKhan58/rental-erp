@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { ProductStatusBadge } from "../components/product-status-badge";
 import { SortableColumnHeader } from "./sortable-column-header";
 import type { ProductResponse, ProductSortField, ListProductsParams } from "../types";
@@ -29,6 +29,8 @@ type ProductTableColumnOptions = {
   canDelete: boolean;
   onDelete: (product: ProductResponse) => void;
   onToggleStatus: (product: ProductResponse) => void;
+  /** Free / in-stock count per product; the column is hidden when undefined. */
+  stockByProduct?: ReadonlyMap<string, { free: number; inStock: number }>;
 };
 
 export function getProductTableColumns({
@@ -42,6 +44,7 @@ export function getProductTableColumns({
   canDelete,
   onDelete,
   onToggleStatus,
+  stockByProduct,
 }: ProductTableColumnOptions): Array<DataTableColumn<ProductResponse>> {
   const allSelected = allRowIds.length > 0 && allRowIds.every((id) => selectedIds.has(id));
 
@@ -91,21 +94,6 @@ export function getProductTableColumns({
       ),
     },
     {
-      id: "productCode",
-      header: (
-        <SortableColumnHeader
-          label="Code"
-          field="productCode"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => (
-        <span className="text-sm text-muted-foreground">{row.productCode}</span>
-      ),
-    },
-    {
       id: "unit",
       header: (
         <SortableColumnHeader
@@ -131,6 +119,28 @@ export function getProductTableColumns({
       ),
       cell: (row) => formatCurrency(Number(row.rentalRate)),
     },
+    ...(stockByProduct
+      ? [
+          {
+            id: "freeToRent",
+            header: "Free to rent",
+            cell: (row: ProductResponse) => {
+              const stock = stockByProduct.get(row.id);
+              if (!stock) {
+                return <span className="text-muted-foreground">—</span>;
+              }
+              return (
+                <div className="tabular-nums">
+                  <span className={stock.free <= 0 ? "font-medium text-destructive" : "font-medium"}>
+                    {stock.free.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-muted-foreground"> of {stock.inStock.toLocaleString()}</span>
+                </div>
+              );
+            },
+          },
+        ]
+      : []),
     {
       id: "replacementCost",
       header: (
@@ -159,19 +169,6 @@ export function getProductTableColumns({
         />
       ),
       cell: (row) => <ProductStatusBadge isActive={row.isActive} />,
-    },
-    {
-      id: "createdAt",
-      header: (
-        <SortableColumnHeader
-          label="Created"
-          field="createdAt"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => formatDate(row.createdAt),
     },
     {
       id: "actions",

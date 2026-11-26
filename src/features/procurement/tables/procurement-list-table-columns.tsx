@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { canApproveProcurement, canCancelProcurement, canEditProcurement, canReceiveProcurement } from "../mappers";
 import { ProcurementStatusBadge } from "../components/procurement-status-badge";
 import { SortableColumnHeader } from "./sortable-column-header";
@@ -50,31 +50,30 @@ export function getProcurementTableColumns({
       id: "poNumber",
       header: (
         <SortableColumnHeader
-          label="PO number"
+          label="Purchase"
           field="poNumber"
           currentSortBy={params.sortBy}
           currentSortOrder={params.sortOrder}
           onSort={onSort}
         />
       ),
+      // Who it is bought from comes first, like customers on orders and invoices.
       cell: (row) => (
         <Link
           href={ROUTES.procurementDetail(row.id)}
-          className="font-medium text-primary hover:underline"
+          className={cn("group block min-w-[8rem]", row.status === "CANCELLED" && "opacity-60")}
         >
-          {row.poNumber}
+          <span className="block font-medium text-foreground group-hover:text-primary group-hover:underline">
+            {nameOnly(supplierLabelById.get(row.supplierId) ?? row.supplierId)}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">{row.poNumber}</span>
         </Link>
       ),
     },
     {
-      id: "supplier",
-      header: "Supplier",
-      cell: (row) => supplierLabelById.get(row.supplierId) ?? row.supplierId,
-    },
-    {
       id: "warehouse",
-      header: "Warehouse",
-      cell: (row) => warehouseLabelById.get(row.warehouseId) ?? row.warehouseId,
+      header: "Goes to",
+      cell: (row) => nameOnly(warehouseLabelById.get(row.warehouseId) ?? row.warehouseId),
     },
     {
       id: "status",
@@ -97,12 +96,22 @@ export function getProcurementTableColumns({
     {
       id: "paidAmount",
       header: "Paid",
-      cell: (row) => formatCurrency(row.paidAmount),
+      cell: (row) => (
+        <span className={row.status === "CANCELLED" ? "text-muted-foreground" : undefined}>
+          {formatCurrency(row.paidAmount)}
+        </span>
+      ),
     },
     {
       id: "balance",
-      header: "Balance",
-      cell: (row) => formatCurrency(row.balance),
+      header: "Still owed",
+      // Only what you really still owe stands out.
+      cell: (row) =>
+        row.status !== "CANCELLED" && row.balance > 0 ? (
+          <span className="font-medium tabular-nums text-warning-foreground">{formatCurrency(row.balance)}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       id: "orderDate",
@@ -176,4 +185,10 @@ export function getProcurementTableColumns({
       headerClassName: "w-12",
     },
   ];
+}
+
+/** "SUP-00001 — Ali Traders" → "Ali Traders". */
+function nameOnly(label: string): string {
+  const separator = " — ";
+  return label.includes(separator) ? label.split(separator).slice(1).join(separator) : label;
 }

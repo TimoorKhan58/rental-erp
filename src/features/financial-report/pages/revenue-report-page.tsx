@@ -62,7 +62,7 @@ function RevenueContent() {
           dateFrom={dateFrom}
           dateTo={dateTo}
           onChange={setDateRange}
-          fieldHint="Posted journal date"
+          fieldHint="Counted by the date of each entry"
         />
         <AppButton
           variant="outline"
@@ -87,17 +87,17 @@ function RevenueContent() {
       ) : data ? (
         <>
           <MetricCard
-            label="Posted journal revenue"
+            label="Income"
             value={formatCurrency(data.totalRevenue)}
             hint="Posted INCOME accounts"
           />
           <AmountBarChart
-            title="Revenue by account"
-            description="Posted journal income accounts"
+            title="Income by type"
+            description="For the dates you chose"
             data={chartData}
             isLoading={isLoading}
           />
-          <SectionCard title="Revenue lines">
+          <SectionCard title="Income lines">
             <DataTableShell
               columns={columns}
               data={data.lines}
@@ -118,7 +118,7 @@ export function RevenueReportPage() {
     <PageContainer>
       <PageHeader
         title="Revenue Report"
-        description="Posted journal income accounts for the selected journal dates."
+        description="Where your income comes from, for the dates you chose."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Reports", href: ROUTES.reports },

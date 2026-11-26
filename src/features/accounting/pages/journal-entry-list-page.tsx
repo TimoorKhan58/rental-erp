@@ -15,7 +15,7 @@ export function JournalEntryListPage() {
     <PageContainer>
       <PageHeader
         title="Journal entries"
-        description="View and manage general ledger journal entries."
+        description="Every change to your books, one line each. Most are made by RentCore for you."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Accounting", href: ROUTES.accounting },

@@ -113,7 +113,7 @@ export function ProcurementAccountingSection() {
   return (
     <SectionCard
       title="Accounting entries"
-      description="Purchase orders do not post automatic journals."
+      description="What this purchase did in your books."
       actions={
         <AppButton
           variant="outline"
@@ -125,9 +125,9 @@ export function ProcurementAccountingSection() {
       }
     >
       <p className="text-sm text-muted-foreground">
-        Receiving posts inventory IN only. Posted supplier payments update the paid amount
-        on this order. Neither flow creates an expense, cash journal, or inventory valuation
-        entry. Record manual journal entries from accounting when needed.
+        When goods are received, RentCore adds their cost to your books as Rental Equipment
+        and as money owed to the supplier. When you pay the supplier, it takes the payment
+        out of cash or bank and reduces what you owe. You do not need to enter these by hand.
       </p>
     </SectionCard>
   );

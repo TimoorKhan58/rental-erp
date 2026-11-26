@@ -73,7 +73,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     items: [
       { label: "Purchases", href: ROUTES.procurements, icon: ShoppingCart },
       { label: "Suppliers", href: ROUTES.suppliers, icon: Building2 },
-      { label: "External Rentals", href: ROUTES.externalRentals, icon: PackageOpen },
+      { label: "Hire-ins", href: ROUTES.externalRentals, icon: PackageOpen },
       { label: "Repairs", href: ROUTES.repairs, icon: Wrench },
       { label: "Maintenance", href: ROUTES.maintenance, icon: Settings2 },
       { label: "Assets", href: ROUTES.assets, icon: Boxes },

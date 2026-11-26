@@ -73,20 +73,31 @@ export function PlatformBusinessesView() {
         <div className="min-w-0 text-sm">
           <div className="font-medium">{row.plan.name ?? "No plan"}</div>
           <div className="text-xs text-muted-foreground tabular-nums">
-            <span className={atLimit(row.activeUsers, row.plan.maxUsers) ? "font-medium text-amber-600" : undefined}>
+            <span className={atLimit(row.activeUsers, row.plan.maxUsers) ? "font-medium text-warning-foreground" : undefined}>
               Users {usage(row.activeUsers, row.plan.maxUsers)}
             </span>
             {" · "}
-            <span className={atLimit(row.activeWarehouses, row.plan.maxWarehouses) ? "font-medium text-amber-600" : undefined}>
+            <span className={atLimit(row.activeWarehouses, row.plan.maxWarehouses) ? "font-medium text-warning-foreground" : undefined}>
               Warehouses {usage(row.activeWarehouses, row.plan.maxWarehouses)}
             </span>
           </div>
         </div>
       ),
     },
-    { id: "orders", header: "Orders", cell: (row) => row.rentalOrders, className: "tabular-nums" },
-    { id: "last", header: "Last order", cell: (row) => formatDate(row.lastOrderAt) },
-    { id: "signin", header: "Last sign-in", cell: (row) => formatDate(row.lastSignInAt) },
+    {
+      id: "activity",
+      header: "Activity",
+      cell: (row) => (
+        <div className="min-w-0 text-sm">
+          <div className="tabular-nums">
+            {row.rentalOrders} {row.rentalOrders === 1 ? "order" : "orders"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Last order {formatDate(row.lastOrderAt)} · Last sign-in {formatDate(row.lastSignInAt)}
+          </div>
+        </div>
+      ),
+    },
     {
       id: "actions",
       header: <span className="sr-only">Actions</span>,
@@ -125,6 +136,25 @@ export function PlatformBusinessesView() {
         <h2 className="text-lg font-semibold">Businesses</h2>
         <AppButton onClick={() => setCreating(true)}>New business</AppButton>
       </div>
+      {query.data !== undefined && query.data.length > 0 && (
+        <dl className="grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "All businesses", value: query.data.length },
+            { label: "Active", value: query.data.filter((b) => b.isActive).length },
+            {
+              label: "Near their plan limit",
+              value: query.data.filter(
+                (b) => atLimit(b.activeUsers, b.plan.maxUsers) || atLimit(b.activeWarehouses, b.plan.maxWarehouses),
+              ).length,
+            },
+          ].map((tile) => (
+            <div key={tile.label} className="rounded-xl border border-border bg-card px-4 py-3 shadow-soft">
+              <dt className="text-xs text-muted-foreground">{tile.label}</dt>
+              <dd className="text-2xl font-semibold tabular-nums tracking-tight">{tile.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       {query.isError ? (
         <InlineError message="Could not load the businesses. Refresh to try again." />
       ) : (

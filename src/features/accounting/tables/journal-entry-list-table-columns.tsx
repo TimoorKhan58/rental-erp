@@ -79,9 +79,8 @@ export function getJournalEntryTableColumns({
     },
     {
       id: "referenceType",
-      header: "Reference",
-      cell: (row) =>
-        row.referenceType ? REFERENCE_TYPE_LABELS[row.referenceType] : "—",
+      header: "Type",
+      cell: (row) => entryTypeLabel(row),
     },
     {
       id: "description",
@@ -100,19 +99,6 @@ export function getJournalEntryTableColumns({
         />
       ),
       cell: (row) => <JournalStatusBadge status={row.status} />,
-    },
-    {
-      id: "createdAt",
-      header: (
-        <SortableColumnHeader
-          label="Created"
-          field="createdAt"
-          currentSortBy={params.sortBy}
-          currentSortOrder={params.sortOrder}
-          onSort={onSort}
-        />
-      ),
-      cell: (row) => formatDate(row.createdAt),
     },
     {
       id: "actions",
@@ -164,4 +150,20 @@ export function getJournalEntryTableColumns({
       headerClassName: "w-12",
     },
   ];
+}
+
+/**
+ * What kind of entry this is. Repairs, equipment and the opening balance are
+ * all stored under "other", which read as "Expense / other" (QA A2); the
+ * description says which they are.
+ */
+function entryTypeLabel(row: { referenceType: keyof typeof REFERENCE_TYPE_LABELS | null; description: string }): string {
+  const description = row.description.toLowerCase();
+  if (row.referenceType === null || row.referenceType === "OTHER") {
+    if (description.startsWith("opening balance")) return "Opening balance";
+    if (description.startsWith("equipment bought")) return "Equipment";
+    if (description.startsWith("repair cost") || description.startsWith("maintenance cost")) return "Repair / upkeep";
+    if (description.startsWith("expense paid")) return "Expense";
+  }
+  return row.referenceType ? REFERENCE_TYPE_LABELS[row.referenceType] : "—";
 }

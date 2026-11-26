@@ -15,7 +15,7 @@ export function TrialBalancePage() {
     <PageContainer>
       <PageHeader
         title="Trial balance"
-        description="The balance of every account, from posted journal entries."
+        description="The balance of every account. Money in and money out must match."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Accounting", href: ROUTES.accounting },

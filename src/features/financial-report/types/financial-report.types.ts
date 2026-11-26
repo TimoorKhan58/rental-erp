@@ -231,6 +231,7 @@ export type CustomerReportResponse = {
 };
 
 export type ReportHubCard = {
+  group: "money" | "sales" | "stock" | "work";
   title: string;
   description: string;
   href: string;
