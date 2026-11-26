@@ -27,6 +27,7 @@ import {
   useProductListParams,
 } from "../hooks";
 import { getProductTableColumns } from "./product-table-columns";
+import { useProductStock } from "../hooks/use-product-stock";
 import { DeleteProductDialog } from "../dialogs/delete-product-dialog";
 import { ToggleProductStatusDialog } from "../dialogs/toggle-product-status-dialog";
 import type { ProductResponse } from "../types";
@@ -71,7 +72,10 @@ export function ProductListTable({ onCreateClick }: ProductListTableProps) {
   const rows = useMemo(() => data?.items ?? [], [data?.items]);
   const allRowIds = useMemo(() => rows.map((row) => row.id), [rows]);
 
+  const stockByProduct = useProductStock();
+
   const columns = getProductTableColumns({
+    stockByProduct,
     params,
     onSort: setSorting,
     selectedIds,

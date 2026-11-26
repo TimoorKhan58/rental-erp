@@ -75,7 +75,6 @@ export function ProductDetailSections({
   product,
   categoryName,
   brandName,
-  unitName,
   tagNames,
   attributeEntries,
   inventoryRows,
@@ -89,17 +88,19 @@ export function ProductDetailSections({
 }: ProductDetailSectionsProps) {
   return (
     <>
+      {/* Only when something is set, and without the second "Unit" field that repeated the one in Details. */}
+      {categoryName || brandName || tagNames.length > 0 ? (
       <SectionCard title="Classification">
         <dl className="grid gap-4 sm:grid-cols-2">
           <DetailField label="Category" value={categoryName} />
           <DetailField label="Brand" value={brandName} />
-          <DetailField label="Unit (from list)" value={unitName} />
           <DetailField
             label="Tags"
             value={tagNames.length > 0 ? tagNames.join(", ") : null}
           />
         </dl>
       </SectionCard>
+      ) : null}
 
       {attributeEntries.length > 0 ? (
         <SectionCard title="Attributes">
@@ -250,9 +251,9 @@ function ProductInventorySection({
       }
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <MetricCard label="On hand" value={String(inventorySummary.quantityOnHand)} />
-        <MetricCard label="Reserved" value={String(inventorySummary.reservedQuantity)} />
-        <MetricCard label="Available" value={String(inventorySummary.availableQuantity)} />
+        <MetricCard label="In stock" value={String(inventorySummary.quantityOnHand)} />
+        <MetricCard label="Booked" value={String(inventorySummary.reservedQuantity)} />
+        <MetricCard label="Free to rent" value={String(inventorySummary.availableQuantity)} />
       </div>
     </SectionCard>
   );
@@ -301,9 +302,9 @@ function ProductWarehouseSection({
           <thead>
             <tr className="border-b text-left text-muted-foreground">
               <th className="py-2 pr-4 font-medium">Warehouse</th>
-              <th className="py-2 pr-4 font-medium">On hand</th>
-              <th className="py-2 pr-4 font-medium">Reserved</th>
-              <th className="py-2 font-medium">Available</th>
+              <th className="py-2 pr-4 font-medium">In stock</th>
+              <th className="py-2 pr-4 font-medium">Booked</th>
+              <th className="py-2 font-medium">Free to rent</th>
             </tr>
           </thead>
           <tbody>
