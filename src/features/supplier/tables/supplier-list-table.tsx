@@ -25,6 +25,7 @@ import {
   useSupplierListParams,
 } from "../hooks";
 import { getSupplierTableColumns } from "./supplier-table-columns";
+import { useSupplierBalances } from "../hooks/use-supplier-balances";
 import { DeleteSupplierDialog } from "../dialogs/delete-supplier-dialog";
 import { ToggleSupplierStatusDialog } from "../dialogs/toggle-supplier-status-dialog";
 import type { SupplierResponse } from "../types";
@@ -57,7 +58,10 @@ export function SupplierListTable({ onCreateClick }: SupplierListTableProps) {
   const rows = useMemo(() => data?.items ?? [], [data?.items]);
   const allRowIds = useMemo(() => rows.map((row) => row.id), [rows]);
 
+  const { owedBySupplier, isLoaded: balancesLoaded } = useSupplierBalances();
+
   const columns = getSupplierTableColumns({
+    owedBySupplier: balancesLoaded ? owedBySupplier : undefined,
     params,
     onSort: setSorting,
     selectedIds,

@@ -24,6 +24,7 @@ import {
   SupplierRecentActivitySection,
   SupplierStatusBadge,
 } from "../components";
+import { SupplierAtAGlance } from "../components/supplier-at-a-glance";
 import { DeleteSupplierDialog } from "../dialogs/delete-supplier-dialog";
 import { ToggleSupplierStatusDialog } from "../dialogs/toggle-supplier-status-dialog";
 import { useSupplier, useSupplierPermissions } from "../hooks";
@@ -137,30 +138,10 @@ export function SupplierDetailPage({ supplierId }: SupplierDetailPageProps) {
         }
       />
 
+      <SupplierAtAGlance supplierId={supplier.id} />
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <SectionCard
-            title="Profile"
-            actions={<SupplierStatusBadge isActive={supplier.isActive} />}
-          >
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Supplier code" value={supplier.supplierCode} />
-              <DetailField label="Name" value={supplier.name} />
-              <DetailField label="Phone" value={supplier.phone} />
-              <DetailField label="Email" value={supplier.email} />
-              <DetailField label="Address" value={supplier.address} />
-              <DetailField label="Notes" value={supplier.notes} />
-            </dl>
-          </SectionCard>
-
-          <SectionCard title="Contact details">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Phone" value={supplier.phone} />
-              <DetailField label="Email" value={supplier.email} />
-              <DetailField label="Address" value={supplier.address} />
-            </dl>
-          </SectionCard>
-
           <SupplierProcurementSummarySection supplierId={supplier.id} />
 
           <SupplierExternalRentalsSection supplierId={supplier.id} />
@@ -169,10 +150,17 @@ export function SupplierDetailPage({ supplierId }: SupplierDetailPageProps) {
         </div>
 
         <div className="space-y-6">
-          <SectionCard title="Account">
+          <SectionCard
+            title="Details"
+            actions={<SupplierStatusBadge isActive={supplier.isActive} />}
+          >
             <dl className="space-y-4">
-              <DetailField label="Status" value={supplier.isActive ? "Active" : "Inactive"} />
-              <DetailField label="Created" value={formatDate(supplier.createdAt)} />
+              <DetailField label="Supplier code" value={supplier.supplierCode} />
+              <DetailField label="Phone" value={supplier.phone} />
+              <DetailField label="Email" value={supplier.email} />
+              <DetailField label="Address" value={supplier.address} />
+              <DetailField label="Notes" value={supplier.notes} />
+              <DetailField label="Supplier since" value={formatDate(supplier.createdAt)} />
               <DetailField label="Last updated" value={formatDateTime(supplier.updatedAt)} />
             </dl>
           </SectionCard>

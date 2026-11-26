@@ -63,54 +63,29 @@ export function SupplierPaymentsSummarySection({
             </div>
           </dl>
 
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[480px] text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40 text-left">
-                  <th className="px-3 py-2 font-medium" scope="col">
-                    Number
-                  </th>
-                  <th className="px-3 py-2 font-medium" scope="col">
-                    Date
-                  </th>
-                  <th className="px-3 py-2 font-medium" scope="col">
-                    Method
-                  </th>
-                  <th className="px-3 py-2 font-medium text-right" scope="col">
-                    Amount
-                  </th>
-                  <th className="px-3 py-2 font-medium" scope="col">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b last:border-b-0">
-                    <td className="px-3 py-2">
-                      <Link
-                        href={ROUTES.procurementDetail(payment.purchaseOrderId)}
-                        className="font-medium text-primary hover:underline"
-                        title="View purchase order"
-                      >
-                        {payment.paymentNumber}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">{formatDate(payment.paymentDate)}</td>
-                    <td className="px-3 py-2">
-                      {METHOD_LABELS[payment.paymentMethod]}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {formatCurrency(payment.amount)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <PaymentRecordStatusBadge status={payment.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* A list, not a table: the side column is too narrow for five columns. */}
+          <ul className="divide-y divide-border rounded-xl border">
+            {payments.map((payment) => (
+              <li key={payment.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
+                <div className="min-w-0">
+                  <Link
+                    href={ROUTES.procurementDetail(payment.purchaseOrderId)}
+                    className="font-medium text-primary hover:underline"
+                    title="View purchase order"
+                  >
+                    {payment.paymentNumber}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(payment.paymentDate)} · {METHOD_LABELS[payment.paymentMethod]}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="font-medium tabular-nums">{formatCurrency(payment.amount)}</span>
+                  {payment.status !== "POSTED" ? <PaymentRecordStatusBadge status={payment.status} /> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </SectionCard>
