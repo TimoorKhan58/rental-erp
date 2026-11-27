@@ -23,7 +23,7 @@ export function RentalOrderCalendarPage() {
         description="Each order shown across its rental dates, so you can see busy days at a glance."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Rental Orders", href: ROUTES.rentalOrders },
+          { label: "Orders", href: ROUTES.rentalOrders },
           { label: "Calendar" },
         ]}
         actions={

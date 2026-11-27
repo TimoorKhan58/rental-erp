@@ -39,7 +39,7 @@ export function RentalOrderCreatePage() {
         description="Choose the customer, the dates and the items, then check and create the order."
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Rental Orders", href: ROUTES.rentalOrders },
+          { label: "Orders", href: ROUTES.rentalOrders },
           { label: "New rental order" },
         ]}
       />

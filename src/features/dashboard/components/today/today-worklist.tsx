@@ -105,13 +105,31 @@ export function buildWorkItems(summary: LiveDashboardSummary): WorkItem[] {
   return items;
 }
 
-export function TodayWorklist({ summary }: { summary: LiveDashboardSummary }) {
-  const items = buildWorkItems(summary);
+export function TodayWorklist({
+  summary,
+  onlyOpen = false,
+  title = "Your work today",
+}: {
+  summary: LiveDashboardSummary;
+  /** Leave out finished ("calm") rows, so only what needs doing shows. */
+  onlyOpen?: boolean;
+  title?: string;
+}) {
+  const all = buildWorkItems(summary);
+  // Home lists today's send-outs one by one, so leave that row out there.
+  const items = onlyOpen
+    ? all.filter((item) => item.tone !== "calm" && item.id !== "out-today")
+    : all;
   return (
     <section aria-labelledby="today-work-heading" className="space-y-2">
       <h2 id="today-work-heading" className="text-sm font-semibold text-foreground">
-        Your work today
+        {title}
       </h2>
+      {items.length === 0 ? (
+        <p className="rounded-xl border border-border bg-card px-4 py-4 text-sm text-muted-foreground shadow-soft">
+          All clear. Nothing is late, waiting to be checked or unpaid.
+        </p>
+      ) : null}
       <ul className="space-y-2.5">
         {items.map((item) => (
           <li

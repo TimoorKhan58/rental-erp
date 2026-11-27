@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDaysIcon, PlusIcon, WalletIcon } from "lucide-react";
+import { CalendarDaysIcon, PlusIcon } from "lucide-react";
 
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
@@ -14,8 +14,17 @@ function greeting(hour: number): string {
   return "Good evening";
 }
 
-/** Who and when, plus the three things people start most often (usability revamp R2). */
-export function DashboardGreeting({ organizationName }: { organizationName: string }) {
+/**
+ * Who and when, and how many jobs today (UI redesign). One main button;
+ * "New order" also sits in the top bar on every page.
+ */
+export function DashboardGreeting({
+  organizationName,
+  headline,
+}: {
+  organizationName: string;
+  headline?: string;
+}) {
   const { data: session } = useSession();
   const firstName = session?.user.name?.trim().split(/\s+/)[0];
   const now = new Date();
@@ -29,15 +38,12 @@ export function DashboardGreeting({ organizationName }: { organizationName: stri
         </p>
         <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
           {greeting(now.getHours())}
-          {firstName ? `, ${firstName}` : ""}
+          {firstName ? `, ${firstName}` : ""}.{headline ? ` ${headline}` : ""}
         </h1>
       </div>
       <div className="flex flex-wrap gap-2">
         <AppButton render={<Link href={ROUTES.rentalOrdersNew} />} leftIcon={<PlusIcon className="size-4" />}>
-          New rental order
-        </AppButton>
-        <AppButton variant="outline" render={<Link href={ROUTES.paymentsNew} />} leftIcon={<WalletIcon className="size-4" />}>
-          Receive payment
+          New order
         </AppButton>
         <AppButton
           variant="outline"

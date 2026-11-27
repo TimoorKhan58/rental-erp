@@ -16,13 +16,28 @@ type PageHeaderProps = {
   className?: string;
 };
 
+/**
+ * The menu and section tabs already say where you are (UI redesign), so a
+ * leading "Dashboard" crumb is dropped, and a trail that is only the
+ * current page is not shown. Deeper trails (list › record) stay as a way back.
+ */
+export function visibleBreadcrumbs(
+  breadcrumbs: BreadcrumbItem[] | undefined,
+): BreadcrumbItem[] {
+  const trail = (breadcrumbs ?? []).filter(
+    (item, index) => !(index === 0 && item.label === "Dashboard"),
+  );
+  return trail.length > 1 ? trail : [];
+}
+
 export function PageHeader({
   title,
   description,
-  breadcrumbs,
+  breadcrumbs: rawBreadcrumbs,
   actions,
   className,
 }: PageHeaderProps) {
+  const breadcrumbs = visibleBreadcrumbs(rawBreadcrumbs);
   return (
     <header className={cn("mb-4 space-y-2", className)}>
       {breadcrumbs && breadcrumbs.length > 0 ? (

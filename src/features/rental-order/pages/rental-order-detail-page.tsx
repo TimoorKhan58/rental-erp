@@ -229,7 +229,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
         description={`Order ${order.orderNumber}`}
         breadcrumbs={[
           { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Rental Orders", href: ROUTES.rentalOrders },
+          { label: "Orders", href: ROUTES.rentalOrders },
           { label: order.orderNumber },
         ]}
         actions={

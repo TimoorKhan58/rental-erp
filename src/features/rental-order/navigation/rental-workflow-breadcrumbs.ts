@@ -36,7 +36,7 @@ export function buildWorkflowDetailBreadcrumbs(input: {
 }): BreadcrumbItem[] {
   const crumbs: BreadcrumbItem[] = [
     { label: "Dashboard", href: ROUTES.dashboard },
-    { label: "Rental Orders", href: ROUTES.rentalOrders },
+    { label: "Orders", href: ROUTES.rentalOrders },
   ];
 
   if (input.rentalParent) {
@@ -58,7 +58,7 @@ export function buildPaymentDetailBreadcrumbs(input: {
 }): BreadcrumbItem[] {
   const crumbs: BreadcrumbItem[] = [
     { label: "Dashboard", href: ROUTES.dashboard },
-    { label: "Rental Orders", href: ROUTES.rentalOrders },
+    { label: "Orders", href: ROUTES.rentalOrders },
   ];
 
   if (input.rentalParent) {

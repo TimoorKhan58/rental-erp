@@ -28,7 +28,7 @@ describe("rental workflow breadcrumbs", () => {
 
     expect(crumbs.map((c) => c.label)).toEqual([
       "Dashboard",
-      "Rental Orders",
+      "Orders",
       "RO-100",
       "Dispatches",
       "DIS-9",
@@ -45,7 +45,7 @@ describe("rental workflow breadcrumbs", () => {
 
     expect(crumbs.map((c) => c.label)).toEqual([
       "Dashboard",
-      "Rental Orders",
+      "Orders",
       "Returns",
       "RET-1",
     ]);
@@ -60,7 +60,7 @@ describe("rental workflow breadcrumbs", () => {
 
     expect(crumbs.map((c) => c.label)).toEqual([
       "Dashboard",
-      "Rental Orders",
+      "Orders",
       "RO-100",
       "Rental Invoices",
       "INV-50",
