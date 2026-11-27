@@ -2,8 +2,15 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NAVIGATION_GROUPS } from "@/constants/navigation";
-import { filterNavigationGroups } from "@/constants/navigation-access";
+import {
+  NAVIGATION_AREAS,
+  NAVIGATION_GROUPS,
+  SETTINGS_AREA,
+} from "@/constants/navigation";
+import {
+  filterNavigationAreas,
+  filterNavigationGroups,
+} from "@/constants/navigation-access";
 import { getCurrentUserPermissions } from "@/features/customer/services";
 import { queryKeys } from "@/lib/query";
 
@@ -17,15 +24,25 @@ export function useVisibleNavigation() {
   const permissions = useMemo(() => data?.permissions ?? [], [data?.permissions]);
   const ready = !isLoading && !isError && data !== undefined;
 
-  const groups = useMemo(() => {
+  const { areas, settingsArea, groups } = useMemo(() => {
     if (!ready) {
-      return NAVIGATION_GROUPS;
+      return {
+        areas: NAVIGATION_AREAS,
+        settingsArea: SETTINGS_AREA,
+        groups: NAVIGATION_GROUPS,
+      };
     }
 
-    return filterNavigationGroups(NAVIGATION_GROUPS, permissions);
+    return {
+      areas: filterNavigationAreas(NAVIGATION_AREAS, permissions),
+      settingsArea: filterNavigationAreas([SETTINGS_AREA], permissions)[0] ?? null,
+      groups: filterNavigationGroups(NAVIGATION_GROUPS, permissions),
+    };
   }, [permissions, ready]);
 
   return {
+    areas,
+    settingsArea,
     groups,
     permissions,
     ready,

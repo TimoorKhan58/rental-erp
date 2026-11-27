@@ -1,96 +1,137 @@
 import { ROUTES } from "@/config/routes";
-import type { NavigationGroup, NavigationItem } from "./navigation.types";
+import type {
+  NavigationArea,
+  NavigationGroup,
+  NavigationItem,
+} from "./navigation.types";
 import {
   BarChart3,
-  Bell,
-  BookOpen,
-  Box,
-  Boxes,
-  Building2,
   CalendarDays,
   ClipboardList,
-  CreditCard,
-  FileText,
-  LayoutDashboard,
+  House,
   Package,
-  PackageOpen,
-  Receipt,
-  ScrollText,
   Settings,
-  Settings2,
-  ShoppingCart,
-  Tags,
-  Truck,
-  Undo2,
-  UserCog,
   Users,
-  Warehouse,
-  Wrench,
+  Wallet,
 } from "lucide-react";
 
-export type { NavigationGroup, NavigationItem } from "./navigation.types";
+export type {
+  NavigationArea,
+  NavigationGroup,
+  NavigationItem,
+  NavigationSection,
+} from "./navigation.types";
 
 /**
- * Grouped by daily work, in plain words (usability revamp R5): rentals,
- * then money, then customers and stock, then buying and upkeep, then admin.
+ * The main menu: 7 areas for daily work, plus Settings at the bottom
+ * (UI redesign). Every page that used to be its own menu item is now a
+ * section (a tab along the top of its area). Web addresses are unchanged.
  */
-export const NAVIGATION_GROUPS: NavigationGroup[] = [
+export const NAVIGATION_AREAS: NavigationArea[] = [
   {
-    label: "Today",
-    items: [{ label: "Dashboard", href: ROUTES.dashboard, icon: LayoutDashboard }],
-  },
-  {
-    label: "Rentals",
-    items: [
-      { label: "Rental Orders", href: ROUTES.rentalOrders, icon: ClipboardList },
-      { label: "Booking Calendar", href: ROUTES.rentalOrdersCalendar, icon: CalendarDays },
-      { label: "Dispatches", href: ROUTES.dispatches, icon: Truck },
-      { label: "Returns", href: ROUTES.returns, icon: Undo2 },
+    id: "home",
+    label: "Home",
+    icon: House,
+    sections: [
+      { label: "Today", href: ROUTES.dashboard },
+      { label: "Notifications", href: ROUTES.notifications },
     ],
   },
   {
+    id: "orders",
+    label: "Orders",
+    icon: ClipboardList,
+    sections: [
+      { label: "All orders", href: ROUTES.rentalOrders },
+      { label: "Going out", href: ROUTES.dispatches },
+      { label: "Coming back", href: ROUTES.returns },
+    ],
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    icon: CalendarDays,
+    sections: [{ label: "Calendar", href: ROUTES.rentalOrdersCalendar }],
+  },
+  {
+    id: "stock",
+    label: "Stock",
+    icon: Package,
+    sections: [
+      { label: "Items", href: ROUTES.products },
+      { label: "Stock levels", href: ROUTES.inventory },
+      { label: "Warehouses", href: ROUTES.warehouses },
+      { label: "Purchases", href: ROUTES.procurements },
+      { label: "Suppliers", href: ROUTES.suppliers },
+      { label: "Hire-ins", href: ROUTES.externalRentals },
+      { label: "Repairs", href: ROUTES.repairs },
+      { label: "Upkeep", href: ROUTES.maintenance },
+      { label: "Assets", href: ROUTES.assets },
+      { label: "Catalog", href: ROUTES.catalog },
+    ],
+  },
+  {
+    id: "customers",
+    label: "Customers",
+    icon: Users,
+    sections: [{ label: "Customers", href: ROUTES.customers }],
+  },
+  {
+    id: "money",
     label: "Money",
-    items: [
-      { label: "Invoices", href: ROUTES.rentalInvoices, icon: FileText },
-      { label: "Payments", href: ROUTES.payments, icon: CreditCard },
-      { label: "Expenses", href: ROUTES.expenses, icon: Receipt },
-      { label: "Reports", href: ROUTES.reports, icon: BarChart3 },
-      { label: "Accounting", href: ROUTES.accounting, icon: BookOpen },
+    icon: Wallet,
+    sections: [
+      { label: "Invoices", href: ROUTES.rentalInvoices },
+      { label: "Payments", href: ROUTES.payments },
+      { label: "Expenses", href: ROUTES.expenses },
+      { label: "Accounting", href: ROUTES.accounting },
     ],
   },
   {
-    label: "Customers & stock",
-    items: [
-      { label: "Customers", href: ROUTES.customers, icon: Users },
-      { label: "Inventory", href: ROUTES.inventory, icon: Package },
-      { label: "Products", href: ROUTES.products, icon: Box },
-      { label: "Catalog", href: ROUTES.catalog, icon: Tags },
-      { label: "Warehouses", href: ROUTES.warehouses, icon: Warehouse },
-    ],
-  },
-  {
-    label: "Buying & upkeep",
-    items: [
-      { label: "Purchases", href: ROUTES.procurements, icon: ShoppingCart },
-      { label: "Suppliers", href: ROUTES.suppliers, icon: Building2 },
-      { label: "Hire-ins", href: ROUTES.externalRentals, icon: PackageOpen },
-      { label: "Repairs", href: ROUTES.repairs, icon: Wrench },
-      { label: "Maintenance", href: ROUTES.maintenance, icon: Settings2 },
-      { label: "Assets", href: ROUTES.assets, icon: Boxes },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { label: "Users", href: ROUTES.users, icon: UserCog },
-      { label: "Activity Log", href: ROUTES.audit, icon: ScrollText },
-      { label: "Notifications", href: ROUTES.notifications, icon: Bell },
-      { label: "Settings", href: ROUTES.settings, icon: Settings },
-    ],
+    id: "reports",
+    label: "Reports",
+    icon: BarChart3,
+    sections: [{ label: "Reports", href: ROUTES.reports }],
   },
 ];
 
-/** Flat list — backward compatible for consumers that expect a single array. */
+/** Shown at the bottom of the menu, apart from daily work. */
+export const SETTINGS_AREA: NavigationArea = {
+  id: "settings",
+  label: "Settings",
+  icon: Settings,
+  sections: [
+    { label: "Company", href: ROUTES.settings },
+    { label: "Staff and logins", href: ROUTES.users },
+    { label: "Activity log", href: ROUTES.audit },
+  ],
+};
+
+export const ALL_NAVIGATION_AREAS: NavigationArea[] = [
+  ...NAVIGATION_AREAS,
+  SETTINGS_AREA,
+];
+
+/** Every destination in the menu, in order. */
+export const NAVIGATION_SECTION_HREFS: string[] = ALL_NAVIGATION_AREAS.flatMap(
+  (area) => area.sections.map((section) => section.href),
+);
+
+/**
+ * Old grouped shape, kept for code that wants a flat list of destinations.
+ * One group per area; each item is a section.
+ */
+export const NAVIGATION_GROUPS: NavigationGroup[] = ALL_NAVIGATION_AREAS.map(
+  (area) => ({
+    label: area.label,
+    items: area.sections.map((section) => ({
+      label: section.label,
+      href: section.href,
+      icon: area.icon,
+    })),
+  }),
+);
+
 export const NAVIGATION_ITEMS: NavigationItem[] = NAVIGATION_GROUPS.flatMap(
   (group) => group.items,
 );
