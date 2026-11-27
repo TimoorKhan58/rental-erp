@@ -1,6 +1,10 @@
 export { RentalOrderStatusBadge } from "./rental-order-status-badge";
 export { RentalOrderStatusTimeline } from "./rental-order-status-timeline";
-export { RentalOrderLifecycleStrip } from "./rental-order-lifecycle-strip";
+export {
+  RentalOrderProgress,
+  currentProgressIndex,
+  orderProgressSteps,
+} from "./rental-order-progress";
 export { RentalReservationBadge } from "./rental-reservation-badge";
 export { RentalOrderSummaryCards } from "./rental-order-summary-cards";
 export { RentalOrderStatusFilterChips } from "./rental-order-status-filter-chips";

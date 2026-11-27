@@ -47,6 +47,7 @@ import { RENTAL_ORDER_STATUSES } from "../types";
 import { ReservationCalendarMonthView } from "./reservation-calendar-month-view";
 import { ReservationCalendarMobileList } from "./reservation-calendar-mobile-list";
 import { ReservationCalendarWeekView } from "./reservation-calendar-week-view";
+import { DailyFreeStock } from "./daily-free-stock";
 
 export function ReservationCalendar() {
   const queryClient = useQueryClient();
@@ -88,8 +89,14 @@ export function ReservationCalendar() {
     },
     { keepPreviousData: true },
   );
-  const { customerOptions, warehouseOptions, customerNameById, customerLabelById, warehouseLabelById } =
-    useRentalOrderFilterOptions();
+  const {
+    customerOptions,
+    warehouseOptions,
+    productOptions,
+    customerNameById,
+    customerLabelById,
+    warehouseLabelById,
+  } = useRentalOrderFilterOptions();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -366,8 +373,14 @@ export function ReservationCalendar() {
           <>
             <ReservationCalendarMobileList days={mobileDays} events={visibleEvents} />
 
-            <TabsContent value="week" className="mt-4 max-md:hidden">
+            <TabsContent value="week" className="mt-4 space-y-4 max-md:hidden">
               <ReservationCalendarWeekView days={days} events={visibleEvents} />
+              <DailyFreeStock
+                days={days}
+                productOptions={productOptions}
+                warehouseOptions={warehouseOptions}
+                warehouseId={warehouseId}
+              />
             </TabsContent>
             <TabsContent value="month" className="mt-4 max-md:hidden">
               <ReservationCalendarMonthView

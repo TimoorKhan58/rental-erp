@@ -41,7 +41,8 @@ import {
 import { RentalOrderStatusBadge } from "../components/rental-order-status-badge";
 import { RentalReservationBadge } from "../components/rental-reservation-badge";
 import { RentalOrderReservationProgressBar } from "../components/rental-order-reservation-progress-bar";
-import { RentalOrderLifecycleStrip } from "../components/rental-order-lifecycle-strip";
+import { RentalOrderProgress, type OrderInvoiceStatus } from "../components/rental-order-progress";
+import { useRentalInvoices } from "@/features/rental-invoice/hooks";
 import { RentalOrderNextStep, getRentalOrderNextStep } from "../components/rental-order-next-step";
 import { RentalOrderLineItemsTable } from "../components/rental-order-line-items-table";
 import { RentalOrderShortfallSection } from "../components/rental-order-shortfall-section";
@@ -155,6 +156,15 @@ function RelatedEntityCard({
 export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
   const router = useRouter();
   const { data: order, isLoading, isError, error, refetch } = useRentalOrder(orderId);
+  // Same query as the billing section below, so it is fetched once.
+  const invoicesQuery = useRentalInvoices({
+    rentalOrderId: orderId,
+    page: 1,
+    pageSize: 10,
+    sortOrder: "desc",
+  });
+  const invoiceStatus: OrderInvoiceStatus | null =
+    invoicesQuery.data?.items.find((invoice) => invoice.status !== "VOID")?.status ?? null;
   const { canUpdate, canConfirm, canReserve, canCancel } = useRentalOrderPermissions();
   const { productLabelById, productNameById, customerLabelById, warehouseLabelById } =
     useRentalOrderFilterOptions();
@@ -286,7 +296,7 @@ export function RentalOrderDetailPage({ orderId }: RentalOrderDetailPageProps) {
             </div>
           </div>
 
-          <RentalOrderLifecycleStrip status={order.status} />
+          <RentalOrderProgress status={order.status} invoiceStatus={invoiceStatus} />
 
           <RentalOrderNextStep
             step={nextStep}
