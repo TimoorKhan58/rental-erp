@@ -22,7 +22,7 @@ describe("ReservationCalendarMobileList", () => {
 
     expect(html).toContain("RO-1001");
     expect(html).toContain("Ayesha Khan");
-    expect(html).toContain("Reserved");
+    expect(html).toContain("Items held");
     expect(html).toContain("/rental-orders/00000000-0000-4000-8000-000000000001");
   });
 });

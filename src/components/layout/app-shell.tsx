@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { SidebarProvider } from "./sidebar-context";
 import { MobileSidebar } from "./mobile-sidebar";
+import { SectionTabs } from "./section-tabs";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
@@ -29,6 +30,7 @@ export function AppShell({ children }: AppShellProps) {
             tabIndex={-1}
             className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto outline-none"
           >
+            <SectionTabs />
             {children}
           </main>
         </div>

@@ -22,15 +22,19 @@ export function canCancelRentalOrder(
   );
 }
 
+/**
+ * One set of order status words, used on every screen (UI redesign,
+ * see the design system board). Plain words a shop owner would say.
+ */
 export const STATUS_LABELS: Record<RentalOrderStatus, string> = {
   DRAFT: "Draft",
-  CONFIRMED: "Confirmed",
-  RESERVED: "Reserved",
-  DISPATCHED: "Dispatched",
-  ON_RENT: "On rent",
-  PARTIALLY_RETURNED: "Partially returned",
-  RETURNED: "Returned",
-  COMPLETED: "Completed",
+  CONFIRMED: "Booked",
+  RESERVED: "Items held",
+  DISPATCHED: "Sent out",
+  ON_RENT: "With customer",
+  PARTIALLY_RETURNED: "Partly back",
+  RETURNED: "Back",
+  COMPLETED: "Finished",
   CANCELLED: "Cancelled",
 };
 

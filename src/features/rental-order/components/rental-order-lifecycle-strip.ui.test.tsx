@@ -9,8 +9,8 @@ describe("RentalOrderLifecycleStrip", () => {
     );
 
     expect(html).toContain("Draft");
-    expect(html).toContain("Confirmed");
-    expect(html).toContain("Reserved");
+    expect(html).toContain("Booked");
+    expect(html).toContain("Items held");
     expect(html).toContain('aria-current="step"');
     expect(html).not.toContain("Cancelled");
   });
@@ -21,6 +21,6 @@ describe("RentalOrderLifecycleStrip", () => {
     );
 
     expect(html.toLowerCase()).toContain("cancelled");
-    expect(html).not.toContain("Dispatched");
+    expect(html).not.toContain("Sent out");
   });
 });

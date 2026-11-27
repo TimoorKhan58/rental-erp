@@ -1,6 +1,6 @@
 import { ROUTES } from "@/config/routes";
 import { PERMISSIONS, type Permission } from "@/shared/application/authorization/permissions";
-import type { NavigationGroup } from "./navigation.types";
+import type { NavigationArea, NavigationGroup } from "./navigation.types";
 
 /**
  * Presentation-only visibility map.
@@ -62,6 +62,24 @@ export function canAccessNavHref(
   permissions: readonly string[],
 ): boolean {
   return canAccessWithPermissions(NAV_ITEM_REQUIRED_ANY[href], permissions);
+}
+
+/**
+ * Keeps only the sections a person may open, and drops areas left empty.
+ * An area opens on its first visible section.
+ */
+export function filterNavigationAreas(
+  areas: readonly NavigationArea[],
+  permissions: readonly string[],
+): NavigationArea[] {
+  return areas
+    .map((area) => ({
+      ...area,
+      sections: area.sections.filter((section) =>
+        canAccessNavHref(section.href, permissions),
+      ),
+    }))
+    .filter((area) => area.sections.length > 0);
 }
 
 export function filterNavigationGroups(
