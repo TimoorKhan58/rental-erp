@@ -30,15 +30,15 @@ type SummaryCardConfig = {
 const cardConfigs: SummaryCardConfig[] = [
   {
     id: "activeOrders",
-    label: "Active orders",
-    hint: "Excluding cancelled",
+    label: "All orders",
+    hint: "Not counting cancelled",
     icon: ClipboardListIcon,
     iconClass: "bg-primary/12 text-primary",
   },
   {
     id: "totalRevenue",
-    label: "Pipeline value",
-    hint: "Estimated order totals",
+    label: "Value of these orders",
+    hint: "Order totals added up",
     icon: DollarSignIcon,
     iconClass: "bg-success-muted text-success",
     format: (value) => formatCurrency(value),
@@ -46,15 +46,15 @@ const cardConfigs: SummaryCardConfig[] = [
   {
     id: "pendingActionCount",
     label: "Needs action",
-    hint: "Draft or awaiting reservation",
+    hint: "Drafts, and booked orders with items not held yet",
     icon: CalendarClockIcon,
     iconClass: "bg-warning-muted text-warning-foreground",
     accentClass: "border-warning/30",
   },
   {
     id: "reservedCount",
-    label: "Fully reserved",
-    hint: "Inventory allocated",
+    label: "Items held",
+    hint: "Every item put aside for the order",
     icon: PackageCheckIcon,
     iconClass: "bg-success-muted text-success",
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3Icon, CalendarDaysIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
@@ -17,38 +17,17 @@ export function RentalOrderListPage() {
   return (
     <PageContainer className="space-y-5">
       <PageHeader
-        title="Rental Orders"
-        description="Every booking, grouped by where it is: drafts, upcoming, out with customers, late and finished."
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Rental Orders" },
-        ]}
+        title="Orders"
+        description="Every booking, from draft to paid. Open one to send it out, receive it back or bill it."
         actions={
-          <>
+          canCreate ? (
             <AppButton
-              variant="outline"
-              leftIcon={<CalendarDaysIcon className="size-4" aria-hidden="true" />}
-              render={<Link href={ROUTES.rentalOrdersCalendar} />}
+              leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
+              render={<Link href={ROUTES.rentalOrdersNew} />}
             >
-              Calendar
+              New order
             </AppButton>
-            <AppButton
-              variant="outline"
-              leftIcon={<BarChart3Icon className="size-4" aria-hidden="true" />}
-              render={<Link href={ROUTES.reportsRental} />}
-            >
-              View report
-            </AppButton>
-            {canCreate ? (
-              <AppButton
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-                leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
-                render={<Link href={ROUTES.rentalOrdersNew} />}
-              >
-                New rental order
-              </AppButton>
-            ) : null}
-          </>
+          ) : null
         }
       />
 
