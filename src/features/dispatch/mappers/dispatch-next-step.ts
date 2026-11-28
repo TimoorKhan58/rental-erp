@@ -26,7 +26,7 @@ export function getDispatchNextStep(dispatch: { status: DispatchStatus; rentalOr
         title: "Items are with the customer",
         text: "Record a return on the order when the items come back.",
         tone: "done",
-        action: { kind: "link", label: "Record return", href: `${ROUTES.returnsNew}?rentalOrderId=${dispatch.rentalOrderId}` },
+        action: { kind: "link", label: "Receive back", href: `${ROUTES.returnsNew}?rentalOrderId=${dispatch.rentalOrderId}` },
       };
     case "CANCELLED":
     default:

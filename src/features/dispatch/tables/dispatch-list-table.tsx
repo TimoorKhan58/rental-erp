@@ -186,7 +186,7 @@ export function DispatchListTable({ statusCounts }: DispatchListTableProps = {})
           </AppButton>
         ) : canCreate ? (
           <Link href={ROUTES.dispatchesNew}>
-            <EmptyStateActionButton>Create dispatch</EmptyStateActionButton>
+            <EmptyStateActionButton>Send out</EmptyStateActionButton>
           </Link>
         ) : undefined
       }

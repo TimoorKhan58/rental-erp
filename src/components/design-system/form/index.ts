@@ -9,6 +9,8 @@ export {
   RadioGroupField,
   SearchInput,
   SelectField,
+  StepperField,
+  clampStep,
   SwitchField,
   TextAreaField,
   TextField,

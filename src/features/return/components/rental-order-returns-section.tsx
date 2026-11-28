@@ -58,7 +58,7 @@ export function RentalOrderReturnsSection({
               size="sm"
               render={<Link href={`${ROUTES.returnsNew}?rentalOrderId=${rentalOrderId}`} />}
             >
-              Create return
+              Receive back
             </AppButton>
           ) : null}
           {totalCount > 0 ? (

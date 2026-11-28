@@ -104,7 +104,7 @@ export function DispatchInventoryImpactSection({
                   />
                 }
               >
-                Create return
+                Receive back
               </AppButton>
             ) : null}
             {relatedReturns.length > 0 && canReadReturns ? (

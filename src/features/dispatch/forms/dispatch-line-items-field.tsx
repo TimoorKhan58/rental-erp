@@ -1,9 +1,10 @@
 "use client";
 
 import { useFieldArray, useFormContext } from "react-hook-form";
-import { PlusIcon, Trash2Icon } from "lucide-react";
-import { NumberField, TextField } from "@/components/design-system/form";
+import { CheckCheckIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { StepperField, TextField } from "@/components/design-system/form";
 import { AppButton } from "@/components/design-system/button";
+import { cn } from "@/lib/utils";
 import type { CreateDispatchFormValues } from "../schemas";
 
 type DispatchLineItemsFieldProps = {
@@ -11,6 +12,16 @@ type DispatchLineItemsFieldProps = {
   readOnly?: boolean;
 };
 
+/** One tap adds 10 when there are many to count (chairs), else 1. */
+export function stepFor(maxQuantity: number | undefined): number {
+  return maxQuantity !== undefined && maxQuantity >= 100 ? 10 : 1;
+}
+
+/**
+ * What goes on the truck, one card per item (UI redesign, phone screens):
+ * big − / + buttons, "of N ready", and one button to load everything ready.
+ * Works the same on a desktop, where the cards sit in a row.
+ */
 export function DispatchLineItemsField({
   productLabelById,
   readOnly = false,
@@ -22,92 +33,99 @@ export function DispatchLineItemsField({
   });
 
   const items = form.watch("items");
+  const canFillAll = !readOnly && (items ?? []).some((line) => line?.maxQuantity !== undefined);
+
+  const fillAll = () => {
+    (items ?? []).forEach((line, index) => {
+      if (line?.maxQuantity !== undefined) {
+        form.setValue(`items.${index}.quantity`, line.maxQuantity, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    });
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[720px] text-sm">
-          <thead>
-            <tr className="border-b bg-muted/40 text-left">
-              <th className="px-3 py-2 font-medium" scope="col">Product</th>
-              <th className="px-3 py-2 font-medium" scope="col">Quantity</th>
-              <th className="px-3 py-2 font-medium" scope="col">Notes</th>
-              {!readOnly ? (
-                <th className="px-3 py-2 font-medium" scope="col">
-                  <span className="sr-only">Actions</span>
-                </th>
-              ) : null}
-            </tr>
-          </thead>
-          <tbody>
-            {fields.map((field, index) => {
-              const line = items?.[index];
+    <div className="space-y-3">
+      {canFillAll ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">Count what goes on the truck.</p>
+          <AppButton
+            type="button"
+            variant="outline"
+            size="sm"
+            leftIcon={<CheckCheckIcon className="size-4" aria-hidden="true" />}
+            onClick={fillAll}
+          >
+            Load everything ready
+          </AppButton>
+        </div>
+      ) : null}
 
-              return (
-                <tr key={field.id} className="border-b last:border-b-0">
-                  <td className="px-3 py-2 align-top">
-                    {readOnly ? (
-                      <span>
-                        {productLabelById.get(line?.productId ?? "") ?? line?.productId ?? "—"}
-                      </span>
-                    ) : (
-                      <span className="text-sm">
-                        {productLabelById.get(line?.productId ?? "") ?? line?.productId ?? "—"}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {readOnly ? (
-                      <span>{line?.quantity ?? "—"}</span>
-                    ) : (
-                      <NumberField
-                        className="[&_label]:sr-only"
-                        control={form.control}
-                        name={`items.${index}.quantity`}
-                        label="Quantity"
-                        min={1}
-                        max={line?.maxQuantity}
-                        step={1}
-                        description={
-                          line?.maxQuantity !== undefined
-                            ? `Up to ${line.maxQuantity} ready`
-                            : undefined
-                        }
-                      />
-                    )}
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {readOnly ? (
-                      <span>{line?.notes || "—"}</span>
-                    ) : (
-                      <TextField
-                        className="[&_label]:sr-only"
-                        control={form.control}
-                        name={`items.${index}.notes`}
-                        label="Notes"
-                      />
-                    )}
-                  </td>
-                  {!readOnly ? (
-                    <td className="px-3 py-2 align-top">
-                      <AppButton
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => remove(index)}
-                        disabled={fields.length <= 1}
-                        aria-label={`Remove line item ${index + 1}`}
-                      >
-                        <Trash2Icon className="size-4" />
-                      </AppButton>
-                    </td>
-                  ) : null}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ul className="space-y-2.5">
+        {fields.map((field, index) => {
+          const line = items?.[index];
+          const name = productLabelById.get(line?.productId ?? "") ?? line?.productId ?? "—";
+          const max = line?.maxQuantity;
+          const short = max !== undefined && (line?.quantity ?? 0) < max;
+
+          return (
+            <li
+              key={field.id}
+              className="grid gap-3 rounded-xl border border-border bg-card p-3 sm:p-4 md:grid-cols-[minmax(0,1.4fr)_auto_minmax(0,1fr)_auto] md:items-start"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">{name}</p>
+                {max !== undefined ? (
+                  <p className={cn("text-sm", short ? "text-warning-foreground" : "text-muted-foreground")}>
+                    {short ? `${max - (line?.quantity ?? 0)} fewer than the ${max} ready` : `All ${max} ready`}
+                  </p>
+                ) : null}
+              </div>
+
+              {readOnly ? (
+                <p className="text-base font-semibold tabular-nums">{line?.quantity ?? "—"}</p>
+              ) : (
+                <StepperField
+                  className="[&>label]:sr-only"
+                  control={form.control}
+                  name={`items.${index}.quantity`}
+                  label={`How many ${name}`}
+                  min={1}
+                  max={max}
+                  step={stepFor(max)}
+                />
+              )}
+
+              {readOnly ? (
+                <p className="text-sm text-muted-foreground">{line?.notes || "—"}</p>
+              ) : (
+                <TextField
+                  className="[&_label]:sr-only"
+                  control={form.control}
+                  name={`items.${index}.notes`}
+                  label={`Note for ${name}`}
+                />
+              )}
+
+              {!readOnly ? (
+                <AppButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="justify-self-end"
+                  onClick={() => remove(index)}
+                  disabled={fields.length <= 1}
+                  aria-label={`Leave out ${name}`}
+                >
+                  <Trash2Icon className="size-4" />
+                </AppButton>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
 
       {!readOnly ? (
         <AppButton

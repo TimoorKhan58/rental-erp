@@ -16,7 +16,7 @@ describe("order page next step (usability revamp R3)", () => {
     expect(getRentalOrderNextStep(order("CONFIRMED"), today).action?.label).toBe("Reserve items");
     expect(getRentalOrderNextStep(order("RESERVED"), today).action).toEqual({
       kind: "link",
-      label: "Create dispatch",
+      label: "Send out",
       href: "/dispatches/new?rentalOrderId=o1",
     });
     expect(getRentalOrderNextStep(order("ON_RENT"), today).title).toBe("Out with the customer");
