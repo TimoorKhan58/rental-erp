@@ -66,7 +66,7 @@ export function RentalInvoicePaymentsSection({
                 />
               }
             >
-              Record payment
+              Receive a payment
             </AppButton>
           ) : null}
         </div>

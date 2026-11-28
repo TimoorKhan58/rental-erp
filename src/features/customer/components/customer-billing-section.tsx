@@ -60,7 +60,7 @@ export function CustomerBillingSection({ customerId }: CustomerBillingSectionPro
                   leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
                   render={<Link href={ROUTES.paymentNewForInvoice(payableInvoice.id, customerId)} />}
                 >
-                  Record payment
+                  Receive a payment
                 </AppButton>
               ) : null}
               <AppButton

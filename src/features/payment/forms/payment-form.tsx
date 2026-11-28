@@ -101,6 +101,26 @@ function CreatePaymentForm({
     previousCustomerId.current = customerId;
   }, [customerId, form]);
 
+  // One open invoice: pick it for them. Picking an invoice fills in the full balance
+  // (unless they already typed their own amount), so the common case is one click.
+  const autoAmount = useRef<number | null>(null);
+  useEffect(() => {
+    if (customerId && !rentalInvoiceId && payableInvoices.length === 1) {
+      form.setValue("rentalInvoiceId", payableInvoices[0].id);
+    }
+  }, [customerId, rentalInvoiceId, payableInvoices, form]);
+  useEffect(() => {
+    if (!selectedInvoice) {
+      return;
+    }
+    const current = Number(form.getValues("amount"));
+    const untouched = !current || current === autoAmount.current;
+    if (untouched) {
+      autoAmount.current = selectedInvoice.balance;
+      form.setValue("amount", selectedInvoice.balance, { shouldValidate: false });
+    }
+  }, [selectedInvoice, form]);
+
   const invoiceOptions = payableInvoices.map((invoice) => ({
     value: invoice.id,
     label: `${invoice.invoiceNumber} — balance ${formatCurrency(invoice.balance)}`,
@@ -109,15 +129,12 @@ function CreatePaymentForm({
   return (
     <AppForm form={form} onSubmit={onSubmit} className="space-y-6">
       <SectionCard title="Payment details">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Payment number is assigned automatically on save.
-        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <ComboboxField
             control={form.control}
             name="customerId"
             label="Customer"
-            placeholder="Select customer"
+            placeholder="Choose a customer"
             searchPlaceholder="Search by name, code, or phone..."
             emptyMessage="No matching customers."
             options={customerOptions.map((option) => ({
@@ -129,8 +146,8 @@ function CreatePaymentForm({
           <ComboboxField
             control={form.control}
             name="rentalInvoiceId"
-            label="Rental invoice"
-            placeholder={customerId ? "Select invoice" : "Select a customer first"}
+            label="Invoice"
+            placeholder={customerId ? "Choose an invoice" : "Choose a customer first"}
             searchPlaceholder="Search invoice number..."
             emptyMessage="No matching invoices."
             options={invoiceOptions}
@@ -146,12 +163,12 @@ function CreatePaymentForm({
           <DatePickerField
             control={form.control}
             name="paymentDate"
-            label="Payment date"
+            label="Date received"
           />
           <SelectField
             control={form.control}
             name="paymentMethod"
-            label="Payment method"
+            label="Paid by"
             options={methodOptions}
           />
           <NumberField
@@ -169,8 +186,8 @@ function CreatePaymentForm({
           <TextField
             control={form.control}
             name="referenceNumber"
-            label="Reference number"
-            placeholder="Optional"
+            label="Reference"
+            placeholder="Optional: cheque or transfer number"
           />
           <TextAreaField
             control={form.control}
@@ -181,7 +198,7 @@ function CreatePaymentForm({
         </div>
       </SectionCard>
 
-      <div className="flex justify-end gap-2">
+      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
         <AppButton type="button" variant="outline" onClick={onCancel}>
           Cancel
         </AppButton>
@@ -190,7 +207,7 @@ function CreatePaymentForm({
           className="bg-brand text-brand-foreground hover:bg-brand/90"
           loading={isSubmitting}
         >
-          Record payment
+          Save payment
         </AppButton>
       </div>
     </AppForm>
@@ -242,12 +259,12 @@ function EditPaymentForm({
           <DatePickerField
             control={form.control}
             name="paymentDate"
-            label="Payment date"
+            label="Date received"
           />
           <SelectField
             control={form.control}
             name="paymentMethod"
-            label="Payment method"
+            label="Paid by"
             options={methodOptions}
           />
           <NumberField
@@ -261,8 +278,8 @@ function EditPaymentForm({
           <TextField
             control={form.control}
             name="referenceNumber"
-            label="Reference number"
-            placeholder="Optional"
+            label="Reference"
+            placeholder="Optional: cheque or transfer number"
           />
           <TextAreaField
             control={form.control}
