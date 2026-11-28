@@ -180,7 +180,7 @@ export function ReturnListTable({ statusCounts }: ReturnListTableProps = {}) {
           </AppButton>
         ) : canCreate ? (
           <Link href={ROUTES.returnsNew}>
-            <EmptyStateActionButton>Create return</EmptyStateActionButton>
+            <EmptyStateActionButton>Receive back</EmptyStateActionButton>
           </Link>
         ) : undefined
       }

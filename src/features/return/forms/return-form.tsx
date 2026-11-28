@@ -227,12 +227,12 @@ function CreateReturnForm({
         <ReturnLineItemsField itemLabelById={itemLabelById} allowAdd={false} />
       </SectionCard>
 
-      <div className="flex justify-end gap-2">
+      <div className="sticky bottom-0 z-10 -mx-4 flex gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur max-sm:[&>*]:flex-1 sm:static sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <AppButton type="button" variant="outline" onClick={onCancel}>
           Cancel
         </AppButton>
         <AppButton type="submit" loading={isSubmitting}>
-          Create return
+          Receive back
         </AppButton>
       </div>
     </AppForm>
@@ -321,7 +321,7 @@ function EditReturnForm({
         <ReturnLineItemsField itemLabelById={itemLabelById} allowAdd={false} />
       </SectionCard>
 
-      <div className="flex justify-end gap-2">
+      <div className="sticky bottom-0 z-10 -mx-4 flex gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur max-sm:[&>*]:flex-1 sm:static sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <AppButton type="button" variant="outline" onClick={onCancel}>
           Cancel
         </AppButton>

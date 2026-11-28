@@ -110,6 +110,88 @@ export function NumberField<T extends FieldValues>({
   );
 }
 
+/** Keeps a stepper value whole and inside min/max. */
+export function clampStep(value: number, min?: number, max?: number): number {
+  let next = Math.round(Number.isFinite(value) ? value : 0);
+  if (min !== undefined) next = Math.max(min, next);
+  if (max !== undefined) next = Math.min(max, next);
+  return next;
+}
+
+/**
+ * StepperField: a count with big − and + buttons (UI redesign, phone
+ * screens). 44px tap targets for warehouse staff counting on a phone; the
+ * number can still be typed. `step` is how much one tap changes it.
+ */
+export function StepperField<T extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  disabled,
+  className,
+  min,
+  max,
+  step = 1,
+}: BaseFieldProps<T> & { min?: number; max?: number; step?: number }) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      label={label}
+      description={description}
+      className={className}
+      render={(field) => {
+        const current = typeof field.value === "number" ? field.value : 0;
+        const set = (value: number) => field.onChange(clampStep(value, min, max));
+        return (
+          <div
+            role="group"
+            aria-label={label}
+            className="flex h-11 w-full max-w-[12rem] items-stretch overflow-hidden rounded-lg border border-input bg-background"
+          >
+            <button
+              type="button"
+              aria-label={`One less ${label}`}
+              disabled={disabled || (min !== undefined && current <= min)}
+              onClick={() => set(current - step)}
+              className="w-11 shrink-0 text-lg font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-40"
+            >
+              −
+            </button>
+            <input
+              id={name}
+              name={field.name}
+              ref={field.ref}
+              onBlur={field.onBlur}
+              type="number"
+              inputMode="numeric"
+              disabled={disabled}
+              min={min}
+              max={max}
+              value={field.value ?? ""}
+              onChange={(event) => {
+                const value = event.target.value;
+                field.onChange(value === "" ? undefined : Number(value));
+              }}
+              className="min-w-0 flex-1 border-x border-input bg-transparent text-center text-base font-semibold tabular-nums outline-none focus-visible:bg-muted/50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <button
+              type="button"
+              aria-label={`One more ${label}`}
+              disabled={disabled || (max !== undefined && current >= max)}
+              onClick={() => set(current + step)}
+              className="w-11 shrink-0 text-lg font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+        );
+      }}
+    />
+  );
+}
+
 /** CurrencyField — currency formatted numeric input. */
 export function CurrencyField<T extends FieldValues>({
   control,

@@ -64,7 +64,7 @@ export function RentalOrderDispatchesSection({
                 <Link href={`${ROUTES.dispatchesNew}?rentalOrderId=${rentalOrderId}`} />
               }
             >
-              Create dispatch
+              Send out
             </AppButton>
           ) : null}
           {totalCount > 0 ? (

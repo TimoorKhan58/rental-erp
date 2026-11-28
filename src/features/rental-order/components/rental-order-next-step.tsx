@@ -44,7 +44,7 @@ export function getRentalOrderNextStep(
         title: "Send the items out",
         text: "The stock is kept aside. Create a dispatch when it leaves the warehouse.",
         tone: "normal",
-        action: { kind: "link", label: "Create dispatch", href: `${ROUTES.dispatchesNew}${forOrder}` },
+        action: { kind: "link", label: "Send out", href: `${ROUTES.dispatchesNew}${forOrder}` },
       };
     case "DISPATCHED":
     case "ON_RENT":
@@ -56,7 +56,7 @@ export function getRentalOrderNextStep(
             title: `Late by ${late} ${pluralWord(late, "day")}`,
             text: "The items were due back. Call the customer, then record the return when they come in.",
             tone: "urgent",
-            action: { kind: "link", label: "Record return", href: `${ROUTES.returnsNew}${forOrder}` },
+            action: { kind: "link", label: "Receive back", href: `${ROUTES.returnsNew}${forOrder}` },
           }
         : {
             title: partly ? "Waiting for the rest to come back" : "Out with the customer",
@@ -64,7 +64,7 @@ export function getRentalOrderNextStep(
               ? "Some items are back. Record a return for the rest when they arrive."
               : "Record the return when the items come back.",
             tone: "normal",
-            action: { kind: "link", label: "Record return", href: `${ROUTES.returnsNew}${forOrder}` },
+            action: { kind: "link", label: "Receive back", href: `${ROUTES.returnsNew}${forOrder}` },
           };
     }
     case "RETURNED":
