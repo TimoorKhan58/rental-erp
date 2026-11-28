@@ -52,10 +52,14 @@ export function useFinancialReportPermissions() {
   };
 }
 
-export function useProfitLoss(params: DateRangeParams = {}) {
+export function useProfitLoss(
+  params: DateRangeParams = {},
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: queryKeys.financialReports.profitLoss(params),
     queryFn: () => getProfitLoss(params),
+    enabled: options.enabled ?? true,
   });
 }
 

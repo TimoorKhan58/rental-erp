@@ -22,6 +22,7 @@ import {
   dateRangeFilterChip,
   PROFIT_LOSS_CSV_COLUMNS,
 } from "../mappers";
+import { describeChange, previousPeriod } from "../mappers/report-compare.mapper";
 import { useDateRangeParams, useProfitLoss } from "../hooks";
 
 function ProfitLossContent() {
@@ -30,6 +31,12 @@ function ProfitLossContent() {
     dateRangeFilterChip(dateFrom, dateTo, "Journal date", clearDateRange),
   ]);
   const { data, isLoading, isError, error, refetch, isFetching } = useProfitLoss(params);
+  // With both dates chosen, also load the same-length period just before it.
+  const earlier = previousPeriod(dateFrom, dateTo);
+  const { data: before } = useProfitLoss(earlier ?? {}, { enabled: earlier !== null });
+  const incomeChange = data && before ? describeChange(data.totalRevenue, before.totalRevenue) : null;
+  const costChange = data && before ? describeChange(data.totalExpenses, before.totalExpenses, false) : null;
+  const profitChange = data && before ? describeChange(data.netProfit, before.netProfit) : null;
 
   const revenueColumns = getAccountAmountColumns("Revenue");
   const expenseColumns = getAccountAmountColumns("Expense");
@@ -98,16 +105,19 @@ function ProfitLossContent() {
             <MetricCard
               label="Income"
               value={formatCurrency(data.totalRevenue)}
+              change={incomeChange}
               hint="Rent you have invoiced"
             />
             <MetricCard
               label="Costs"
               value={formatCurrency(data.totalExpenses)}
+              change={costChange}
               hint="Expenses, hire-ins, repairs and upkeep"
             />
             <MetricCard
               label="Profit"
               value={formatCurrency(data.netProfit)}
+              change={profitChange}
               hint="Income minus costs"
             />
           </div>

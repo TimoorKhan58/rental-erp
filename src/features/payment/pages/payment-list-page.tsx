@@ -17,15 +17,10 @@ export function PaymentListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Payments"
-        description="Money received from customers against their invoices."
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Payments" },
-        ]}
+        description="Money received from customers, and whether it went to cash in hand or the bank."
         actions={
           canCreate ? (
             <AppButton
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
               leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.paymentsNew} />}
             >

@@ -175,7 +175,7 @@ export function ExpenseListTable({ statusCounts }: ExpenseListTableProps = {}) {
           </AppButton>
         ) : canCreate ? (
           <Link href={ROUTES.expensesNew}>
-            <EmptyStateActionButton>Record expense</EmptyStateActionButton>
+            <EmptyStateActionButton>Add an expense</EmptyStateActionButton>
           </Link>
         ) : undefined
       }
