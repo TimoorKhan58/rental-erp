@@ -165,10 +165,10 @@ export function CustomerListTable({ onCreateClick }: CustomerListTableProps) {
           </AppButton>
         ) : canCreate ? (
           onCreateClick ? (
-            <EmptyStateActionButton onClick={onCreateClick}>Create customer</EmptyStateActionButton>
+            <EmptyStateActionButton onClick={onCreateClick}>Add customer</EmptyStateActionButton>
           ) : (
             <Link href={ROUTES.customersNew}>
-              <EmptyStateActionButton>Create customer</EmptyStateActionButton>
+              <EmptyStateActionButton>Add customer</EmptyStateActionButton>
             </Link>
           )
         ) : undefined

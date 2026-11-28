@@ -61,7 +61,6 @@ export function CustomerEditPage({ customerId }: CustomerEditPageProps) {
       <header className="space-y-4">
         <AppBreadcrumb
           items={[
-            { label: "Dashboard", href: ROUTES.dashboard },
             { label: "Customers", href: ROUTES.customers },
             { label: customer.name, href: ROUTES.customerDetail(customer.id) },
             { label: "Edit" },

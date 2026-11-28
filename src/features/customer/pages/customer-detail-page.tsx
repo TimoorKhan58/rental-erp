@@ -84,7 +84,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
     <PageContainer className="space-y-5">
       <AppBreadcrumb
         items={[
-          { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Customers", href: ROUTES.customers },
           { label: customer.name },
         ]}

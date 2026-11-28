@@ -24,7 +24,6 @@ export function CustomerCreatePage() {
       <header className="space-y-4">
         <AppBreadcrumb
           items={[
-            { label: "Dashboard", href: ROUTES.dashboard },
             { label: "Customers", href: ROUTES.customers },
             { label: "New customer" },
           ]}
@@ -36,7 +35,7 @@ export function CustomerCreatePage() {
           <div className="space-y-1">
             <h1 className="font-heading text-2xl font-semibold tracking-tight">New customer</h1>
             <p className="text-sm text-muted-foreground">
-              Create a customer profile with contact details and account status.
+              Add a customer so you can put them on orders.
             </p>
           </div>
         </div>
