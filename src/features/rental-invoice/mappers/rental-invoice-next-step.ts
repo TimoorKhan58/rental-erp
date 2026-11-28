@@ -27,7 +27,7 @@ export function getRentalInvoiceNextStep(
           ? "The due date has passed. Follow up with the customer and record what they pay."
           : "Record each payment as the customer pays.",
         tone: overdue ? "urgent" : "normal",
-        action: { kind: "link", label: "Record payment", href: ROUTES.paymentNewForInvoice(invoice.id, invoice.customerId) },
+        action: { kind: "link", label: "Receive a payment", href: ROUTES.paymentNewForInvoice(invoice.id, invoice.customerId) },
       };
     }
     case "VOID":

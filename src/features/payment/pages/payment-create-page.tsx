@@ -32,12 +32,11 @@ export function PaymentCreatePage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Record payment"
-        description="Enter money received from a customer against one of their invoices."
+        title="Receive a payment"
+        description="Choose the customer and invoice. The full balance is filled in; change it if they paid part."
         breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Payments", href: ROUTES.payments },
-          { label: "Record payment" },
+          { label: "Receive a payment" },
         ]}
       />
 

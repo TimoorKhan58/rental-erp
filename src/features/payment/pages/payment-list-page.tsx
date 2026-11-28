@@ -24,7 +24,7 @@ export function PaymentListPage() {
               leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.paymentsNew} />}
             >
-              Record payment
+              Receive a payment
             </AppButton>
           ) : undefined
         }
