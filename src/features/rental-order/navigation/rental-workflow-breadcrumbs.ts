@@ -68,7 +68,7 @@ export function buildPaymentDetailBreadcrumbs(input: {
     });
   }
 
-  crumbs.push({ label: "Rental Invoices", href: ROUTES.rentalInvoices });
+  crumbs.push({ label: "Invoices", href: ROUTES.rentalInvoices });
 
   if (input.invoice) {
     crumbs.push({

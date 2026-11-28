@@ -17,18 +17,14 @@ export function ExpenseListPage() {
     <PageContainer className="space-y-5">
       <PageHeader
         title="Expenses"
-        description="Business costs like fuel, wages and rent. Record one, get it approved, then mark it paid."
-        breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Expenses" },
-        ]}
+        description="Money the business spends: fuel, wages, rent, repairs."
         actions={
           canCreate ? (
             <AppButton
               leftIcon={<PlusIcon className="size-4" aria-hidden="true" />}
               render={<Link href={ROUTES.expensesNew} />}
             >
-              Record expense
+              Add an expense
             </AppButton>
           ) : undefined
         }

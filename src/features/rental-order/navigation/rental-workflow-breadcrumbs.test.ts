@@ -62,7 +62,7 @@ describe("rental workflow breadcrumbs", () => {
       "Dashboard",
       "Orders",
       "RO-100",
-      "Rental Invoices",
+      "Invoices",
       "INV-50",
       "PAY-7",
     ]);

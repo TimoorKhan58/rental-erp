@@ -38,6 +38,8 @@ type CreateExpenseFormProps = ExpenseFormBaseProps & {
   mode: "create";
   defaultValues?: Partial<CreateExpenseFormValues>;
   onSubmit: (values: CreateExpenseFormValues) => void | Promise<void>;
+  /** Owner shortcut: save, approve and mark paid in one go. */
+  onSubmitAndPay?: (values: CreateExpenseFormValues) => void | Promise<void>;
 };
 
 type EditExpenseFormProps = ExpenseFormBaseProps & {
@@ -239,12 +241,24 @@ function ExpenseFormFields({
 function CreateExpenseForm({
   defaultValues,
   onSubmit,
+  onSubmitAndPay,
   onCancel,
   isSubmitting = false,
 }: CreateExpenseFormProps) {
   const form = useForm<CreateExpenseFormValues>({
     resolver: zodResolver(createExpenseFormSchema),
     defaultValues: { ...createDefaults, ...defaultValues },
+  });
+  const { canApprove, canPay } = useExpensePermissions();
+  const canSavePaid = Boolean(onSubmitAndPay) && canApprove && canPay;
+
+  const savePaid = form.handleSubmit(async (values) => {
+    // Paying needs to know how it was paid (cash or bank).
+    if (!values.paymentMethod) {
+      form.setError("paymentMethod", { message: "Choose how it was paid" });
+      return;
+    }
+    await onSubmitAndPay?.(values);
   });
 
   return (
@@ -254,8 +268,13 @@ function CreateExpenseForm({
         <AppButton type="button" variant="outline" onClick={onCancel}>
           Cancel
         </AppButton>
-        <AppButton type="submit" loading={isSubmitting}>
-          Record expense
+        {canSavePaid ? (
+          <AppButton type="button" loading={isSubmitting} onClick={() => void savePaid()}>
+            Save and mark paid
+          </AppButton>
+        ) : null}
+        <AppButton type="submit" variant={canSavePaid ? "outline" : "default"} loading={isSubmitting}>
+          {canSavePaid ? "Save as draft" : "Add expense"}
         </AppButton>
       </div>
     </AppForm>

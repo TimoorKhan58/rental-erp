@@ -13,6 +13,7 @@ import {
   ArrowUpRightIcon,
   CalendarIcon,
   ClipboardListIcon,
+  MessageCircleIcon,
   PencilIcon,
   PrinterIcon,
   ReceiptIcon,
@@ -34,6 +35,8 @@ import {
 } from "@/features/rental-order/navigation/rental-workflow-breadcrumbs";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer } from "@/features/customer/hooks";
+import { useOrganizationName } from "@/features/settings/hooks";
+import { buildInvoiceWhatsAppLink } from "../mappers/invoice-whatsapp";
 import { usePaymentPermissions } from "@/features/payment/hooks";
 import {
   canIssueRentalInvoice,
@@ -166,6 +169,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
   const { canCreate: canCreatePayment } = usePaymentPermissions();
   const { rentalOrderLabelById } = useRentalInvoiceFilterOptions();
   const { data: customer } = useCustomer(invoice?.customerId ?? "");
+  const { organizationName } = useOrganizationName();
   const convertMissingToLoss = useConvertMissingToLoss();
 
   const [issueOpen, setIssueOpen] = useState(false);
@@ -224,6 +228,21 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
     rentalOrderNumber: rentalOrderLabel,
   });
   const rentalBackHref = rentalOrderBackHref(rentalParent);
+  // Opens the owner's own WhatsApp with the bill message typed in; nothing is
+  // sent for them. Not offered for drafts or cancelled invoices.
+  const whatsAppLink =
+    invoice.status !== "DRAFT" && invoice.status !== "VOID"
+      ? buildInvoiceWhatsAppLink({
+          phone: customer?.phone,
+          customerName: customer?.name ?? "",
+          businessName: organizationName,
+          invoiceNumber: invoice.invoiceNumber,
+          orderNumber: rentalOrderLabel,
+          total: formatCurrency(invoice.grandTotal),
+          balance: formatCurrency(invoice.balance),
+          balanceIsZero: invoice.balance <= 0,
+        })
+      : null;
   const canRecordPayment =
     canCreatePayment &&
     invoice.status !== "VOID" &&
@@ -238,7 +257,7 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
         description={customer?.name ?? invoice.customerId}
         breadcrumbs={buildWorkflowDetailBreadcrumbs({
           rentalParent,
-          module: { label: "Rental Invoices", href: ROUTES.rentalInvoices },
+          module: { label: "Invoices", href: ROUTES.rentalInvoices },
           currentLabel: invoice.invoiceNumber,
         })}
         actions={
@@ -258,12 +277,21 @@ export function RentalInvoiceDetailPage({ invoiceId }: RentalInvoiceDetailPagePr
             >
               All invoices
             </AppButton>
+            {whatsAppLink ? (
+              <AppButton
+                variant="outline"
+                leftIcon={<MessageCircleIcon className="size-4" aria-hidden="true" />}
+                render={<a href={whatsAppLink} target="_blank" rel="noopener noreferrer" />}
+              >
+                Send on WhatsApp
+              </AppButton>
+            ) : null}
             <AppButton
               variant="outline"
               leftIcon={<PrinterIcon className="size-4" aria-hidden="true" />}
               onClick={() => setPrintPreviewOpen(true)}
             >
-              Print preview
+              Print or save as PDF
             </AppButton>
             {canUpdate && invoice.status === "DRAFT" ? (
               <AppButton
