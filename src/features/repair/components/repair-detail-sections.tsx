@@ -374,7 +374,7 @@ export function ReturnRepairFollowUpSection({
               size="sm"
               render={<Link href={`${ROUTES.repairsNew}?returnId=${returnId}`} />}
             >
-              Create repair
+              Send for repair
             </AppButton>
           ) : null}
           {totalCount > 0 ? (

@@ -5,6 +5,7 @@ import { PlusIcon } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { AppButton } from "@/components/design-system/button";
 import { ROUTES } from "@/config/routes";
+import { WarehouseStockCards } from "../components";
 import { useWarehousePermissions } from "../hooks";
 import { WarehouseListTable } from "../tables";
 
@@ -12,12 +13,11 @@ export function WarehouseListPage() {
   const { canCreate } = useWarehousePermissions();
 
   return (
-    <PageContainer>
+    <PageContainer className="space-y-5">
       <PageHeader
         title="Warehouses"
-        description="The places where you keep your stock."
+        description="Where your stock is kept, and how much of it is free to rent today."
         breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Warehouses" },
         ]}
         actions={
@@ -31,6 +31,8 @@ export function WarehouseListPage() {
           ) : undefined
         }
       />
+
+      <WarehouseStockCards />
 
       <WarehouseListTable />
     </PageContainer>

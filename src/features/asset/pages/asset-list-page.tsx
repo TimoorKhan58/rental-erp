@@ -19,7 +19,6 @@ export function AssetListPage() {
         title="Assets"
         description="Things the business owns and uses, like vehicles and generators, with their value."
         breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Assets" },
         ]}
         actions={

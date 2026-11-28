@@ -221,7 +221,7 @@ export function RepairListTable({ statusCounts }: RepairListTableProps = {}) {
           </AppButton>
         ) : canCreate ? (
           <Link href={ROUTES.repairsNew}>
-            <EmptyStateActionButton>Create repair</EmptyStateActionButton>
+            <EmptyStateActionButton>Send for repair</EmptyStateActionButton>
           </Link>
         ) : undefined
       }
