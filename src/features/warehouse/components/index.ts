@@ -3,3 +3,4 @@ export { WarehouseInventorySummarySection } from "./warehouse-inventory-summary-
 export { WarehouseProcurementSummarySection } from "./warehouse-procurement-summary-section";
 export { WarehouseRecentStockMovementSection } from "./warehouse-recent-stock-movement-section";
 export { WarehouseStatusBadge } from "./warehouse-status-badge";
+export { WarehouseStockCards } from "./warehouse-stock-cards";

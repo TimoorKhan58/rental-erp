@@ -241,7 +241,7 @@ function CreateRepairForm({
           Cancel
         </AppButton>
         <AppButton type="submit" loading={isSubmitting}>
-          Create repair
+          Send for repair
         </AppButton>
       </div>
     </AppForm>

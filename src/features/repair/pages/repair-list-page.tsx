@@ -19,7 +19,6 @@ export function RepairListPage() {
         title="Repairs"
         description="Fixing items that came back damaged. Repaired items go back into stock when the job is finished."
         breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
           { label: "Repairs" },
         ]}
         actions={

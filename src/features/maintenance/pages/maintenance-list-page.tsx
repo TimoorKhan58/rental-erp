@@ -16,11 +16,10 @@ export function MaintenanceListPage() {
   return (
     <PageContainer className="space-y-5">
       <PageHeader
-        title="Maintenance"
+        title="Upkeep"
         description="Regular servicing of your items. Items are out of stock while the job runs and come back when it is finished."
         breadcrumbs={[
-          { label: "Dashboard", href: ROUTES.dashboard },
-          { label: "Maintenance" },
+          { label: "Upkeep" },
         ]}
         actions={
           canCreate ? (
