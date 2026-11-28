@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import {
-  ArrowLeftIcon,
   MapPinIcon,
+  MessageCircleIcon,
+  MoreHorizontalIcon,
   PencilIcon,
   PhoneIcon,
   PlusIcon,
@@ -12,7 +13,14 @@ import {
   UserXIcon,
 } from "lucide-react";
 import { AppButton } from "@/components/design-system/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/config/routes";
+import { toWhatsAppNumber } from "@/features/rental-invoice/mappers/invoice-whatsapp";
 import { CustomerAvatar } from "./customer-avatar";
 import { CustomerStatusBadge } from "./customer-status-badge";
 import type { CustomerResponse } from "../types";
@@ -36,6 +44,7 @@ export function CustomerProfileCard({
   onToggleStatus,
   onDelete,
 }: CustomerProfileCardProps) {
+  const whatsAppNumber = toWhatsAppNumber(customer.phone);
   return (
     <section
       className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-5"
@@ -70,30 +79,6 @@ export function CustomerProfileCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <AppButton
-          variant="outline"
-          size="sm"
-          leftIcon={<ArrowLeftIcon className="size-4" aria-hidden="true" />}
-          render={<Link href={ROUTES.customers} />}
-        >
-          Back
-        </AppButton>
-        {canUpdate ? (
-          <AppButton
-            variant="outline"
-            size="sm"
-            leftIcon={
-              customer.isActive ? (
-                <UserXIcon className="size-4" aria-hidden="true" />
-              ) : (
-                <UserCheckIcon className="size-4" aria-hidden="true" />
-              )
-            }
-            onClick={onToggleStatus}
-          >
-            {customer.isActive ? "Deactivate" : "Activate"}
-          </AppButton>
-        ) : null}
         {canCreateOrder && customer.isActive ? (
           <AppButton
             size="sm"
@@ -102,6 +87,22 @@ export function CustomerProfileCard({
             render={<Link href={`${ROUTES.rentalOrdersNew}?customerId=${customer.id}`} />}
           >
             New order
+          </AppButton>
+        ) : null}
+        {whatsAppNumber ? (
+          <AppButton
+            variant="outline"
+            size="sm"
+            leftIcon={<MessageCircleIcon className="size-4" aria-hidden="true" />}
+            render={
+              <a
+                href={`https://wa.me/${whatsAppNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            WhatsApp
           </AppButton>
         ) : null}
         {canUpdate ? (
@@ -114,15 +115,38 @@ export function CustomerProfileCard({
             Edit
           </AppButton>
         ) : null}
-        {canDelete ? (
-          <AppButton
-            variant="destructive"
-            size="sm"
-            leftIcon={<Trash2Icon className="size-4" aria-hidden="true" />}
-            onClick={onDelete}
-          >
-            Delete
-          </AppButton>
+        {canUpdate || canDelete ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<MoreHorizontalIcon className="size-4" aria-hidden="true" />}
+                />
+              }
+            >
+              More
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {canUpdate ? (
+                <DropdownMenuItem onClick={onToggleStatus}>
+                  {customer.isActive ? (
+                    <UserXIcon aria-hidden="true" />
+                  ) : (
+                    <UserCheckIcon aria-hidden="true" />
+                  )}
+                  {customer.isActive ? "Deactivate" : "Activate"}
+                </DropdownMenuItem>
+              ) : null}
+              {canDelete ? (
+                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                  <Trash2Icon aria-hidden="true" />
+                  Delete customer
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </div>
     </section>
